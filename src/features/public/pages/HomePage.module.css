@@ -1,0 +1,43 @@
+.pageShell {
+  width: 100%;
+}
+
+.heroContainer {
+  width: 100%;
+  max-width: 1280px;
+  padding-inline: 48px;
+  box-sizing: border-box;
+  margin: 0 auto;
+}
+
+.contentContainer {
+  width: 100%;
+  max-width: 1280px;
+  padding-inline: 48px;
+  box-sizing: border-box;
+  margin: 0 auto;
+}
+
+.compactContainer {
+  width: 100%;
+  max-width: 1160px;
+  padding-inline: 48px;
+  box-sizing: border-box;
+  margin: 0 auto;
+}
+
+@media (max-width: 899px) {
+  .heroContainer,
+  .contentContainer,
+  .compactContainer {
+    padding-inline: 24px;
+  }
+}
+
+@media (max-width: 767px) {
+  .heroContainer,
+  .contentContainer,
+  .compactContainer {
+    padding-inline: 16px;
+  }
+}

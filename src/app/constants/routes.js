@@ -1,0 +1,40 @@
+export const appRoutes = {
+  public: {
+    home: "/",
+    about: "/about",
+    howItWorks: "/how-it-works",
+    calculator: "/calculator",
+    vendors: "/vendors",
+    financing: "/loan-financing",
+    contact: "/contact",
+    faq: "/faq",
+    terms: "/terms",
+    privacy: "/privacy",
+    booking: "/booking",
+    support: "/service-support",
+  },
+  auth: {
+    login: "/auth/login",
+    signup: "/auth/signup",
+  },
+  customer: {
+    dashboard: "/customer",
+    bookings: "/customer/bookings",
+    tenders: "/customer/tenders",
+    projects: "/customer/projects",
+    services: "/customer/services",
+    savings: "/customer/savings",
+    referrals: "/customer/referrals",
+    profile: "/customer/profile",
+  },
+  vendor: {
+    dashboard: "/vendor",
+    onboarding: "/vendor/onboarding",
+    leads: "/vendor/leads",
+    quotes: "/vendor/quotes",
+    projects: "/vendor/projects",
+    payments: "/vendor/payments",
+    profile: "/vendor/profile",
+  },
+};
+
