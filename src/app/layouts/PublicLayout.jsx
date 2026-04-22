@@ -35,12 +35,31 @@ export function PublicLayout() {
         }}
       >
         <Toolbar sx={{ minHeight: 72, px: 0 }}>
-          <Container maxWidth={false} disableGutters className={styles.navContainer}>
-            <Stack direction="row" spacing={1.5} alignItems="center" className={styles.brandSlot}>
-              <Box component="img" src={logoPlaceholder} alt="Sparkin logo" className={styles.brandImage} />
+          <Container
+            maxWidth={false}
+            disableGutters
+            className={styles.navContainer}
+          >
+            <Stack
+              direction="row"
+              spacing={1.5}
+              alignItems="center"
+              className={styles.brandSlot}
+            >
+              <Box
+                component="img"
+                src={logoPlaceholder}
+                alt="Sparkin logo"
+                className={styles.brandImage}
+              />
             </Stack>
 
-            <Stack direction="row" spacing={4} className={styles.navLinks} sx={{ display: { xs: "none", md: "flex" } }}>
+            <Stack
+              direction="row"
+              spacing={2.5}
+              className={styles.navLinks}
+              sx={{ display: { xs: "none", md: "flex" } }}
+            >
               {publicPrimaryNav.map((item) => (
                 <Typography
                   key={item.label}
@@ -48,25 +67,41 @@ export function PublicLayout() {
                   to={item.href}
                   variant="body2"
                   color="text.primary"
-                  sx={{ fontWeight: 600 }}
+                  sx={{
+                    fontWeight: 500,
+                    fontSize: "0.85rem",
+                    textDecoration: "none",
+                    lineHeight: 1,
+                    "&:hover": { color: "#0E56C8" },
+                  }}
                 >
                   {item.label}
                 </Typography>
               ))}
             </Stack>
 
-            <Stack direction="row" spacing={1.5} className={styles.navActions} sx={{ display: { xs: "none", sm: "flex" } }}>
+            <Stack
+              direction="row"
+              spacing={1.5}
+              className={styles.navActions}
+              sx={{ display: { xs: "none", sm: "flex" } }}
+            >
               <Button
                 component={RouterLink}
                 to="/auth/login"
                 variant="outlined"
                 color="inherit"
                 sx={{
-                  minWidth: 128,
-                  minHeight: 40,
-                  px: 2.5,
+                  minWidth: 98,
+                  minHeight: 36,
+                  px: 2.1,
                   py: 0.25,
-                  borderRadius: "0.5rem",
+                  borderRadius: "0.35rem",
+                  borderColor: "#0E56C8",
+                  color: "#10192F",
+                  fontSize: "0.8rem",
+                  fontWeight: 700,
+                  textTransform: "none",
                 }}
               >
                 Login
@@ -76,12 +111,16 @@ export function PublicLayout() {
                 to="/booking"
                 variant="contained"
                 sx={{
-                  minWidth: 130,
-                  minHeight: 40,
-                  px: 2.5,
+                  minWidth: 112,
+                  minHeight: 36,
+                  px: 2.1,
                   py: 0.25,
-                  borderRadius: "0.5rem",
-                  background: "linear-gradient(90deg, #0E56C8 0%, #13C784 100%)",
+                  borderRadius: "0.35rem",
+                  background:
+                    "linear-gradient(90deg, #0E56C8 0%, #13C784 100%)",
+                  fontSize: "0.8rem",
+                  fontWeight: 700,
+                  textTransform: "none",
                 }}
               >
                 Get a Quote
@@ -93,41 +132,79 @@ export function PublicLayout() {
 
       <Outlet />
 
-      <Box component="footer" sx={{ py: 8, bgcolor: "#0F1830", color: "white" }}>
-        <Container maxWidth={false} disableGutters className={styles.footerContainer}>
+      <Box
+        component="footer"
+        sx={{ py: { xs: 6.5, md: 7.5 }, bgcolor: "#121C32", color: "white" }}
+      >
+        <Container
+          maxWidth={false}
+          disableGutters
+          className={styles.footerContainer}
+        >
           <Box className={styles.footerTop}>
             <Box className={styles.footerBrand}>
-              <Typography variant="h5" sx={{ fontWeight: 800, mb: 2 }}>
+              <Typography
+                variant="h5"
+                sx={{ fontWeight: 800, mb: 2.2, fontSize: "1.1rem" }}
+              >
                 Sparkin Solar
               </Typography>
-              <Typography variant="body2" sx={{ opacity: 0.68, lineHeight: 1.8 }}>
-                Making solar simple and affordable. Luminous stewardship for a greener planet.
+              <Typography
+                variant="body2"
+                sx={{ opacity: 0.68, lineHeight: 1.7, maxWidth: 230 }}
+              >
+                Making solar simple and affordable. Luminous stewardship for a
+                greener planet.
               </Typography>
-              <Stack direction="row" spacing={1.5} sx={{ mt: 3 }}>
-                {[ShareOutlinedIcon, CameraAltOutlinedIcon, SmsOutlinedIcon].map((Icon, index) => (
+              <Stack direction="row" spacing={1.15} sx={{ mt: 3.1 }}>
+                {[
+                  ShareOutlinedIcon,
+                  CameraAltOutlinedIcon,
+                  SmsOutlinedIcon,
+                ].map((Icon, index) => (
                   <IconButton
                     key={index}
                     sx={{
                       color: "rgba(255,255,255,0.85)",
-                      border: "1px solid rgba(255,255,255,0.12)",
+                      p: 0,
+                      width: 26,
+                      height: 26,
+                      borderRadius: 0,
                     }}
                   >
-                    <Icon fontSize="small" />
+                    <Icon sx={{ fontSize: "1rem" }} />
                   </IconButton>
                 ))}
               </Stack>
             </Box>
 
             {[
-              { title: "Product", items: ["Calculator", "Booking", "Services", "Refer & Earn"] },
-              { title: "Company", items: ["About Us", "Why Choose Us", "Articles", "Blog"] },
-              { title: "Support", items: ["Contact Us", "FAQs", "Terms", "Privacy"] },
+              {
+                title: "Product",
+                items: ["Calculator", "Booking", "Services", "Refer & Earn"],
+              },
+              {
+                title: "Company",
+                items: ["About Us", "Why Choose Us", "Articles", "Blog"],
+              },
+              {
+                title: "Support",
+                items: ["Contact Us", "FAQs", "Terms", "Privacy"],
+              },
             ].map((group) => (
               <Box key={group.title}>
-                <Typography sx={{ fontWeight: 700, mb: 2.5 }}>{group.title}</Typography>
-                <Stack spacing={1.4}>
+                <Typography
+                  sx={{ fontWeight: 700, mb: 2.4, fontSize: "0.98rem" }}
+                >
+                  {group.title}
+                </Typography>
+                <Stack spacing={1.5}>
                   {group.items.map((item) => (
-                    <Typography key={item} variant="body2" sx={{ opacity: 0.72 }}>
+                    <Typography
+                      key={item}
+                      variant="body2"
+                      sx={{ opacity: 0.66, fontSize: "0.95rem" }}
+                    >
                       {item}
                     </Typography>
                   ))}
@@ -136,25 +213,43 @@ export function PublicLayout() {
             ))}
           </Box>
 
-          <Divider sx={{ my: 4, borderColor: "rgba(255,255,255,0.08)" }} />
+          <Divider sx={{ my: 4.5, borderColor: "rgba(255,255,255,0.06)" }} />
 
           <Box className={styles.footerBottom}>
-            <Stack direction={{ xs: "column", md: "row" }} spacing={3} className={styles.footerMeta} sx={{ color: "rgba(255,255,255,0.75)" }}>
+            <Stack
+              direction={{ xs: "column", md: "row" }}
+              spacing={3}
+              className={styles.footerMeta}
+              sx={{ color: "rgba(255,255,255,0.72)" }}
+            >
               <Stack direction="row" spacing={1} alignItems="center">
-                <MailOutlineRoundedIcon sx={{ fontSize: 18, color: "#13C784" }} />
-                <Typography variant="body2">hello@sparkin.com</Typography>
+                <MailOutlineRoundedIcon
+                  sx={{ fontSize: 18, color: "#13C784" }}
+                />
+                <Typography variant="body2" sx={{ fontSize: "0.95rem" }}>
+                  hello@sparkin.com
+                </Typography>
               </Stack>
               <Stack direction="row" spacing={1} alignItems="center">
-                <PhoneEnabledOutlinedIcon sx={{ fontSize: 18, color: "#13C784" }} />
-                <Typography variant="body2">+91 1800-000-000</Typography>
+                <PhoneEnabledOutlinedIcon
+                  sx={{ fontSize: 18, color: "#13C784" }}
+                />
+                <Typography variant="body2" sx={{ fontSize: "0.95rem" }}>
+                  +911800-000-000
+                </Typography>
               </Stack>
               <Stack direction="row" spacing={1} alignItems="center">
                 <PlaceOutlinedIcon sx={{ fontSize: 18, color: "#13C784" }} />
-                <Typography variant="body2">Hyderabad, India</Typography>
+                <Typography variant="body2" sx={{ fontSize: "0.95rem" }}>
+                  Hyderabad, India
+                </Typography>
               </Stack>
             </Stack>
-            <Typography variant="body2" sx={{ opacity: 0.56 }}>
-              (c) 2026 Sparkin Inc. All rights reserved.
+            <Typography
+              variant="body2"
+              sx={{ opacity: 0.5, fontSize: "0.95rem" }}
+            >
+              © 2026 Sparkin Inc. All rights reserved..
             </Typography>
           </Box>
         </Container>

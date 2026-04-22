@@ -1,0 +1,32 @@
+.pageShell {
+  width: 100%;
+}
+
+.contentContainer {
+  width: 100%;
+  max-width: 1280px;
+  padding-inline: 48px;
+  box-sizing: border-box;
+}
+
+.compactContainer {
+  width: 100%;
+  max-width: 980px;
+  padding-inline: 48px;
+  box-sizing: border-box;
+  margin: 0 auto;
+}
+
+@media (max-width: 899px) {
+  .contentContainer,
+  .compactContainer {
+    padding-inline: 24px;
+  }
+}
+
+@media (max-width: 767px) {
+  .contentContainer,
+  .compactContainer {
+    padding-inline: 16px;
+  }
+}

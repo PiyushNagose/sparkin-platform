@@ -26,6 +26,7 @@ import SettingsSuggestRoundedIcon from "@mui/icons-material/SettingsSuggestRound
 import ShieldOutlinedIcon from "@mui/icons-material/ShieldOutlined";
 import TrendingUpRoundedIcon from "@mui/icons-material/TrendingUpRounded";
 import VerifiedOutlinedIcon from "@mui/icons-material/VerifiedOutlined";
+import { Link as RouterLink } from "react-router-dom";
 import styles from "@/features/public/pages/HomePage.module.css";
 import heroBackgroundImage from "@/shared/assets/images/public/home/hero-background-placeholder.png";
 import animeshAvatarPlaceholder from "@/shared/assets/images/public/home/avatar-animesh-placeholder.svg";
@@ -206,7 +207,7 @@ const faqs = [
 function SectionTitle({ title, highlight, subtitle, centered = true }) {
   return (
     <Stack
-      spacing={1.25}
+      spacing={1.6}
       alignItems={centered ? "center" : "flex-start"}
       textAlign={centered ? "center" : "left"}
     >
@@ -347,87 +348,162 @@ function HomePage() {
               }}
             >
               <Grid size={{ xs: 12, lg: 7 }}>
-                <Chip
-                  label="Trusted by 50,000+ Homeowners"
-                  sx={{
-                    bgcolor: "#EAFFF5",
-                    color: "#0D8D61",
-                    fontWeight: 800,
-                    letterSpacing: 1.1,
-                    textTransform: "uppercase",
-                    mb: 2.25,
-                    height: 32,
-                    borderRadius: "0.5rem",
-                    fontSize: "0.75rem",
-                  }}
-                />
-                <Typography
-                  variant="h1"
-                  sx={{
-                    fontSize: { xs: "1.9rem", md: "3rem" },
-                    lineHeight: { xs: 1.08, md: 1.06 },
-                    letterSpacing: "-0.04em",
-                    maxWidth: 720,
-                  }}
-                >
-                  <Box component="span" sx={{ color: "#2392FF" }}>
-                    Switch to Solar Save More,
-                  </Box>
-                  <br />
-                  <Box component="span" sx={{ color: "#27D28F" }}>
-                    Live Smarter.
-                  </Box>
-                </Typography>
-                <Typography
-                  variant="h5"
-                  sx={{
-                    mt: 1.75,
-                    maxWidth: 540,
-                    lineHeight: 1.7,
-                    fontWeight: 500,
-                    color: "rgba(255,255,255,0.88)",
-                    fontSize: { xs: "0.92rem", md: "1rem" },
-                  }}
-                >
-                  Compare solar costs, choose trusted vendors, and install your
-                  system with complete transparency from quote to installation.
-                </Typography>
                 <Stack
-                  direction={{ xs: "column", sm: "row" }}
-                  spacing={1.5}
-                  sx={{ mt: 2.75 }}
+                  sx={{
+                    minHeight: { xs: "auto", lg: 430 },
+                    justifyContent: "space-between",
+                    alignItems: "flex-start",
+                  }}
                 >
-                  <Button
-                    variant="contained"
-                    size="large"
-                    startIcon={<BoltRoundedIcon />}
+                  <Box>
+                    <Chip
+                      label="Trusted by 50,000+ Homeowners"
+                      sx={{
+                        bgcolor: "#EAFFF5",
+                        color: "#0D8D61",
+                        fontWeight: 800,
+                        letterSpacing: 1.1,
+                        textTransform: "uppercase",
+                        mb: 2.25,
+                        height: 32,
+                        borderRadius: "0.5rem",
+                        fontSize: "0.75rem",
+                      }}
+                    />
+
+                    <Typography
+                      variant="h1"
+                      sx={{
+                        fontSize: { xs: "1.9rem", md: "3rem" },
+                        lineHeight: { xs: 1.08, md: 1.06 },
+                        letterSpacing: "-0.04em",
+                        maxWidth: 720,
+                      }}
+                    >
+                      <Box component="span" sx={{ color: "#2392FF" }}>
+                        Switch to Solar Save More,
+                      </Box>
+                      <br />
+                      <Box component="span" sx={{ color: "#27D28F" }}>
+                        Live Smarter.
+                      </Box>
+                    </Typography>
+
+                    <Typography
+                      variant="h5"
+                      sx={{
+                        mt: 1.75,
+                        maxWidth: 540,
+                        lineHeight: 1.7,
+                        fontWeight: 500,
+                        color: "rgba(255,255,255,0.88)",
+                        fontSize: { xs: "0.92rem", md: "1rem" },
+                      }}
+                    >
+                      Compare solar costs, choose trusted vendors, and install
+                      your system with complete transparency — from quote to
+                      installation.
+                    </Typography>
+
+                    <Stack
+                      direction={{ xs: "column", sm: "row" }}
+                      spacing={1.5}
+                      sx={{ mt: 2.75 }}
+                    >
+                      <Button
+                        component={RouterLink}
+                        to="/calculator"
+                        variant="contained"
+                        size="large"
+                        startIcon={<BoltRoundedIcon />}
+                        sx={{
+                          minWidth: 190,
+                          minHeight: 50,
+                          fontSize: "0.95rem",
+                          borderRadius: "0.5rem",
+                          background:
+                            "linear-gradient(90deg, #0E56C8 0%, #13C784 100%)",
+                        }}
+                      >
+                        Calculate Savings
+                      </Button>
+
+                      <Button
+                        component={RouterLink}
+                        to="/booking"
+                        variant="contained"
+                        size="large"
+                        endIcon={<ArrowForwardRoundedIcon />}
+                        sx={{
+                          minWidth: 190,
+                          minHeight: 50,
+                          fontSize: "0.95rem",
+                          borderRadius: "0.5rem",
+                          bgcolor: "white",
+                          color: "#10192F",
+                          "&:hover": { bgcolor: "#F8FBFF" },
+                        }}
+                      >
+                        Get Free Quotes
+                      </Button>
+                    </Stack>
+                  </Box>
+
+                  <Stack
+                    direction={{ xs: "column", md: "row" }}
+                    spacing={4}
                     sx={{
-                      minWidth: 190,
-                      minHeight: 50,
-                      fontSize: "0.95rem",
-                      borderRadius: "0.5rem",
-                      background:
-                        "linear-gradient(90deg, #0E56C8 0%, #13C784 100%)",
+                      mt: { xs: 3.75, md: 4.5 },
+                      pt: 2,
+                      borderTop: "1px solid rgba(255,255,255,0.1)",
+                      width: "100%",
                     }}
                   >
-                    Calculate Savings
-                  </Button>
-                  <Button
-                    variant="contained"
-                    size="large"
-                    endIcon={<ArrowForwardRoundedIcon />}
-                    sx={{
-                      minWidth: 190,
-                      minHeight: 50,
-                      fontSize: "0.95rem",
-                      borderRadius: "0.5rem",
-                      bgcolor: "white",
-                      color: "#10192F",
-                      "&:hover": { bgcolor: "#F8FBFF" },
-                    }}
-                  >
-                    Get Free Quotes
-                  </Button>
+                    {heroStats.map((stat) => (
+                      <Stack
+                        key={stat.label}
+                        direction="row"
+                        spacing={2}
+                        alignItems="center"
+                      >
+                        <Box
+                          sx={{
+                            width: 46,
+                            height: 46,
+                            borderRadius: "50%",
+                            bgcolor: "white",
+                            display: "grid",
+                            placeItems: "center",
+                            color: "primary.main",
+                          }}
+                        >
+                          {stat.icon}
+                        </Box>
+                        <Box>
+                          <Typography
+                            sx={{
+                              fontSize: "1.35rem",
+                              lineHeight: 1,
+                              fontWeight: 800,
+                            }}
+                          >
+                            {stat.value}
+                          </Typography>
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              textTransform: "uppercase",
+                              opacity: 0.76,
+                              letterSpacing: 0.5,
+                              fontSize: "0.66rem",
+                            }}
+                          >
+                            {stat.label}
+                          </Typography>
+                        </Box>
+                      </Stack>
+                    ))}
+                  </Stack>
                 </Stack>
               </Grid>
 
@@ -435,13 +511,14 @@ function HomePage() {
                 <Box
                   sx={{
                     ml: { lg: "auto" },
-                    mt: { xs: 2.5, lg: 2.5 },
+                    mt: { xs: 2.5, lg: 7.5 },
                     maxWidth: 350,
                     borderRadius: "2rem",
                     p: 1.5,
                     bgcolor: "rgba(255,255,255,0.7)",
                     backdropFilter: "blur(18px)",
                     border: "1px solid rgba(255,255,255,0.22)",
+                    boxShadow: "0 20px 50px rgba(8, 20, 40, 0.18)",
                   }}
                 >
                   <Stack
@@ -466,6 +543,7 @@ function HomePage() {
                       View All
                     </Typography>
                   </Stack>
+
                   <Stack spacing={1.5}>
                     {bidCards.map((bid) => (
                       <Box
@@ -493,6 +571,7 @@ function HomePage() {
                         >
                           {bid.initials}
                         </Box>
+
                         <Box sx={{ flex: 1 }}>
                           <Typography
                             sx={{
@@ -507,9 +586,10 @@ function HomePage() {
                             variant="body2"
                             sx={{ color: "#96A4B8", fontSize: "0.78rem" }}
                           >
-                            {"\u2605\u2605\u2605\u2605\u2605"} 4.8
+                            {"★★★★★"} 4.8
                           </Typography>
                         </Box>
+
                         <Stack alignItems="flex-end">
                           <Typography
                             sx={{
@@ -560,63 +640,6 @@ function HomePage() {
                 </Box>
               </Grid>
             </Grid>
-
-            <Stack
-              direction={{ xs: "column", md: "row" }}
-              spacing={4}
-              sx={{
-                position: "relative",
-                zIndex: 1,
-                mt: { xs: 3.75, md: 4.5 },
-                pt: 2,
-                borderTop: "1px solid rgba(255,255,255,0.1)",
-              }}
-            >
-              {heroStats.map((stat) => (
-                <Stack
-                  key={stat.label}
-                  direction="row"
-                  spacing={2}
-                  alignItems="center"
-                >
-                  <Box
-                    sx={{
-                      width: 46,
-                      height: 46,
-                      borderRadius: "50%",
-                      bgcolor: "white",
-                      display: "grid",
-                      placeItems: "center",
-                      color: "primary.main",
-                    }}
-                  >
-                    {stat.icon}
-                  </Box>
-                  <Box>
-                    <Typography
-                      sx={{
-                        fontSize: "1.35rem",
-                        lineHeight: 1,
-                        fontWeight: 800,
-                      }}
-                    >
-                      {stat.value}
-                    </Typography>
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        textTransform: "uppercase",
-                        opacity: 0.76,
-                        letterSpacing: 0.5,
-                        fontSize: "0.66rem",
-                      }}
-                    >
-                      {stat.label}
-                    </Typography>
-                  </Box>
-                </Stack>
-              ))}
-            </Stack>
           </Box>
         </Container>
       </Box>
@@ -624,8 +647,8 @@ function HomePage() {
       <Box
         sx={{
           bgcolor: "white",
-          pt: { xs: 5.5, md: 7.5 },
-          pb: { xs: 7.5, md: 10 },
+          pt: { xs: 6.5, md: 9 },
+          pb: { xs: 9, md: 12 },
         }}
       >
         <Container
@@ -640,7 +663,7 @@ function HomePage() {
               borderRadius: "2rem",
               overflow: "hidden",
               boxShadow: "0 24px 70px rgba(15,24,48,0.18)",
-              mb: { xs: 7.5, md: 9.5 },
+              mb: { xs: 8.5, md: 11 },
             }}
           >
             <Grid container>
@@ -826,7 +849,7 @@ function HomePage() {
           maxWidth={false}
           disableGutters
           className={styles.contentContainer}
-          sx={{ mt: { xs: 7, md: 9 } }}
+          sx={{ mt: { xs: 8.5, md: 11 } }}
         >
           <Stack
             spacing={1.35}
@@ -873,7 +896,7 @@ function HomePage() {
           <Grid
             container
             spacing={{ xs: 2.5, md: 3 }}
-            sx={{ mt: { xs: 5.5, md: 6.75 } }}
+            sx={{ mt: { xs: 6.5, md: 8 } }}
           >
             {steps.map((step) => (
               <Grid key={step.number} size={{ xs: 12, md: 4 }}>
@@ -969,7 +992,7 @@ function HomePage() {
             container
             spacing={{ xs: 4, md: 6 }}
             alignItems="center"
-            sx={{ py: { xs: 5.5, md: 6.75 } }}
+            sx={{ py: { xs: 7, md: 8.5 } }}
           >
             <Grid size={{ xs: 12, md: 6 }}>
               <Box sx={{ maxWidth: 460 }}>
@@ -1474,7 +1497,7 @@ function HomePage() {
         </Container>
       </Box>
 
-      <Box sx={{ py: { xs: 4, md: 4.75 }, bgcolor: "white" }}>
+      <Box sx={{ py: { xs: 5.5, md: 6.75 }, bgcolor: "white" }}>
         <Container
           maxWidth={false}
           disableGutters
@@ -1914,6 +1937,7 @@ function HomePage() {
                     sx={{
                       mb: 1.45,
                       fontSize: "1.1rem",
+                      fontWeight: 700,
                       lineHeight: 1.35,
                       maxWidth: 190,
                       color: "#18253A",
@@ -2035,6 +2059,7 @@ function HomePage() {
                       sx={{
                         mb: 1.4,
                         fontSize: "1.08rem",
+                        fontWeight: 700,
                         lineHeight: 1.35,
                         maxWidth: 230,
                         color: "#18253A",
@@ -2073,7 +2098,7 @@ function HomePage() {
         </Container>
       </Box>
 
-      <Box sx={{ py: { xs: 7.5, md: 8.75 }, bgcolor: "white" }}>
+      <Box sx={{ py: { xs: 8.5, md: 10.5 }, bgcolor: "white" }}>
         <Container
           maxWidth={false}
           disableGutters
@@ -2108,7 +2133,7 @@ function HomePage() {
             </Typography>
           </Stack>
 
-          <Grid container spacing={{ xs: 2.5, md: 3 }} sx={{ mt: 4.25 }}>
+          <Grid container spacing={{ xs: 2.5, md: 3 }} sx={{ mt: 5.25 }}>
             {serviceCards.map((card) => (
               <Grid key={card.title} size={{ xs: 12, md: 4 }}>
                 <Box
@@ -2200,7 +2225,7 @@ function HomePage() {
             ))}
           </Grid>
 
-          <Box sx={{ mt: { xs: 9.5, md: 12 } }}>
+          <Box sx={{ mt: { xs: 11, md: 13.5 } }}>
             <Stack
               spacing={1.2}
               alignItems="center"
@@ -2233,7 +2258,7 @@ function HomePage() {
                 Real stories from homeowners who made the switch.
               </Typography>
             </Stack>
-            <Grid container spacing={{ xs: 2.25, md: 3 }} sx={{ mt: 4 }}>
+            <Grid container spacing={{ xs: 2.25, md: 3 }} sx={{ mt: 5 }}>
               {testimonials.map((item) => (
                 <Grid key={item.name} size={{ xs: 12, md: 4 }}>
                   <Box
@@ -2309,7 +2334,7 @@ function HomePage() {
             </Grid>
           </Box>
 
-          <Box sx={{ mt: { xs: 8.5, md: 10.5 } }}>
+          <Box sx={{ mt: { xs: 10, md: 12 } }}>
             <Stack
               spacing={1.15}
               alignItems="center"
@@ -2328,7 +2353,7 @@ function HomePage() {
                 Common questions about switching to solar
               </Typography>
             </Stack>
-            <Stack spacing={1.6} sx={{ mt: 5.5 }}>
+            <Stack spacing={1.8} sx={{ mt: 6.25 }}>
               {faqs.map((faq, index) => (
                 <Accordion
                   key={faq.question}
@@ -2375,13 +2400,13 @@ function HomePage() {
         </Container>
       </Box>
 
-      <Box sx={{ pt: { xs: 4.5, md: 5.5 }, pb: 0, bgcolor: "#E9EEF7" }}>
+      <Box sx={{ pt: { xs: 6.5, md: 8 }, pb: 0, bgcolor: "#E9EEF7" }}>
         <Container
           maxWidth={false}
           disableGutters
           className={styles.contentContainer}
           sx={{
-            py: { xs: 5.5, md: 6.5 },
+            py: { xs: 6.75, md: 8.25 },
             px: { xs: 3, md: 6 },
             textAlign: "center",
           }}

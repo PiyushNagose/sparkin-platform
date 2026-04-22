@@ -1,4 +1,12 @@
 import { ScreenPlaceholder } from "@/shared/ui/placeholder/ScreenPlaceholder";
+import CalculatorPage from "@/features/public/pages/CalculatorPage";
+import CalculatorProcessingPage from "@/features/public/pages/CalculatorProcessingPage";
+import CalculatorResultsPage from "@/features/public/pages/CalculatorResultsPage";
+import CalculatorUnavailablePage from "@/features/public/pages/CalculatorUnavailablePage";
+import BookingStepOnePage from "@/features/public/pages/BookingStepOnePage";
+import BookingStepTwoPage from "@/features/public/pages/BookingStepTwoPage";
+import BookingStepThreePage from "@/features/public/pages/BookingStepThreePage";
+import BookingStepFourPage from "@/features/public/pages/BookingStepFourPage";
 import HomePage from "@/features/public/pages/HomePage";
 
 export const publicRoutes = [
@@ -30,14 +38,19 @@ export const publicRoutes = [
   },
   {
     path: "calculator",
-    element: (
-      <ScreenPlaceholder
-        eyebrow="Calculator"
-        title="Solar Savings Calculator"
-        description="Property type, bill amount, and location based calculator flow with loading, unavailable area, and results states."
-        sections={["Input form", "Processing state", "Unavailable-state card", "Savings results"]}
-      />
-    ),
+    element: <CalculatorPage />,
+  },
+  {
+    path: "calculator/processing",
+    element: <CalculatorProcessingPage />,
+  },
+  {
+    path: "calculator/results",
+    element: <CalculatorResultsPage />,
+  },
+  {
+    path: "calculator/unavailable",
+    element: <CalculatorUnavailablePage />,
   },
   {
     path: "vendors",
@@ -107,12 +120,28 @@ export const publicRoutes = [
   },
   {
     path: "booking",
+    element: <BookingStepOnePage />,
+  },
+  {
+    path: "booking/property",
+    element: <BookingStepTwoPage />,
+  },
+  {
+    path: "booking/roof",
+    element: <BookingStepThreePage />,
+  },
+  {
+    path: "booking/upload",
+    element: <BookingStepFourPage />,
+  },
+  {
+    path: "booking/submitted",
     element: (
       <ScreenPlaceholder
         eyebrow="Booking Flow"
-        title="Guided Quote Request"
-        description="Four-step quote request flow with progress tracking, uploads, success screen, and compare-quotes entry."
-        sections={["Step 1 personal details", "Step 2 property details", "Step 3 roof details", "Step 4 uploads and success"]}
+        title="Request Submitted"
+        description="Success confirmation, next-step guidance, and dashboard tracking entry point."
+        sections={["Success card", "Next steps", "Track request CTA", "Dashboard CTA"]}
       />
     ),
   },

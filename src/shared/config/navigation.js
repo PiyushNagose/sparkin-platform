@@ -1,9 +1,9 @@
 export const publicPrimaryNav = [
   { label: "Home", href: "/" },
-  { label: "How It Works", href: "/how-it-works" },
+  { label: "About Us", href: "/about-us" },
   { label: "Calculator", href: "/calculator" },
   { label: "Vendors", href: "/vendors" },
-  { label: "Resources", href: "/faq" },
+  { label: "Resources", href: "/resources" },
 ];
 
 export const portalNavigation = {
@@ -26,4 +26,3 @@ export const portalNavigation = {
     { label: "Settings", href: "/vendor/profile" },
   ],
 };
-
