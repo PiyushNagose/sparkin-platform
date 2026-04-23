@@ -7,6 +7,16 @@ import BookingStepOnePage from "@/features/public/pages/BookingStepOnePage";
 import BookingStepTwoPage from "@/features/public/pages/BookingStepTwoPage";
 import BookingStepThreePage from "@/features/public/pages/BookingStepThreePage";
 import BookingStepFourPage from "@/features/public/pages/BookingStepFourPage";
+import BookingSubmittedPage from "@/features/public/pages/BookingSubmittedPage";
+import LiveBiddingPage from "@/features/public/pages/LiveBiddingPage";
+import QuoteComparisonPage from "@/features/public/pages/QuoteComparisonPage";
+import VendorTataPowerPage from "@/features/public/pages/VendorTataPowerPage";
+import VendorConfirmSelectionPage from "@/features/public/pages/VendorConfirmSelectionPage";
+import SolarInstallationProjectPage from "@/features/public/pages/SolarInstallationProjectPage";
+import ServiceSupportPage from "@/features/public/pages/ServiceSupportPage";
+import CreateServiceRequestPage from "@/features/public/pages/CreateServiceRequestPage";
+import ServiceRequestSubmittedPage from "@/features/public/pages/ServiceRequestSubmittedPage";
+import TrackServiceRequestPage from "@/features/public/pages/TrackServiceRequestPage";
 import HomePage from "@/features/public/pages/HomePage";
 
 export const publicRoutes = [
@@ -136,24 +146,42 @@ export const publicRoutes = [
   },
   {
     path: "booking/submitted",
-    element: (
-      <ScreenPlaceholder
-        eyebrow="Booking Flow"
-        title="Request Submitted"
-        description="Success confirmation, next-step guidance, and dashboard tracking entry point."
-        sections={["Success card", "Next steps", "Track request CTA", "Dashboard CTA"]}
-      />
-    ),
+    element: <BookingSubmittedPage />,
+  },
+  {
+    path: "tenders/live",
+    element: <LiveBiddingPage />,
+  },
+  {
+    path: "quotes/compare",
+    element: <QuoteComparisonPage />,
+  },
+  {
+    path: "vendors/tata-power-solar",
+    element: <VendorTataPowerPage />,
+  },
+  {
+    path: "vendors/tata-power-solar/confirm",
+    element: <VendorConfirmSelectionPage />,
+  },
+  {
+    path: "project/installation",
+    element: <SolarInstallationProjectPage />,
   },
   {
     path: "service-support",
-    element: (
-      <ScreenPlaceholder
-        eyebrow="Support"
-        title="Customer Service and Support"
-        description="Service dashboard, service request creation, service success state, and live technician tracking."
-        sections={["System summary", "Service request form", "Success state", "Tracking screen"]}
-      />
-    ),
+    element: <ServiceSupportPage />,
+  },
+  {
+    path: "service-support/request",
+    element: <CreateServiceRequestPage />,
+  },
+  {
+    path: "service-support/request/submitted",
+    element: <ServiceRequestSubmittedPage />,
+  },
+  {
+    path: "service-support/track",
+    element: <TrackServiceRequestPage />,
   },
 ];

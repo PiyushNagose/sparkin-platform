@@ -181,15 +181,30 @@ export function PublicLayout() {
             {[
               {
                 title: "Product",
-                items: ["Calculator", "Booking", "Services", "Refer & Earn"],
+                items: [
+                  { label: "Calculator", href: "/calculator" },
+                  { label: "Booking", href: "/booking" },
+                  { label: "Services", href: "/service-support" },
+                  { label: "Refer & Earn", href: "/refer-earn" },
+                ],
               },
               {
                 title: "Company",
-                items: ["About Us", "Why Choose Us", "Articles", "Blog"],
+                items: [
+                  { label: "About Us", href: "/about-us" },
+                  { label: "Why Choose Us", href: "/why-choose-us" },
+                  { label: "Articles", href: "/articles" },
+                  { label: "Blog", href: "/blog" },
+                ],
               },
               {
                 title: "Support",
-                items: ["Contact Us", "FAQs", "Terms", "Privacy"],
+                items: [
+                  { label: "Contact Us", href: "/contact-us" },
+                  { label: "FAQs", href: "/faqs" },
+                  { label: "Terms", href: "/terms" },
+                  { label: "Privacy", href: "/privacy" },
+                ],
               },
             ].map((group) => (
               <Box key={group.title}>
@@ -201,11 +216,19 @@ export function PublicLayout() {
                 <Stack spacing={1.5}>
                   {group.items.map((item) => (
                     <Typography
-                      key={item}
+                      key={item.label}
+                      component={RouterLink}
+                      to={item.href}
                       variant="body2"
-                      sx={{ opacity: 0.66, fontSize: "0.95rem" }}
+                      sx={{
+                        opacity: 0.66,
+                        fontSize: "0.95rem",
+                        textDecoration: "none",
+                        color: "inherit",
+                        "&:hover": { opacity: 1, color: "#FFFFFF" },
+                      }}
                     >
-                      {item}
+                      {item.label}
                     </Typography>
                   ))}
                 </Stack>

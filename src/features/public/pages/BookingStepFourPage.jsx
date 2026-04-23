@@ -558,15 +558,15 @@ export default function BookingStepFourPage() {
                   <Grid size={{ xs: 12, md: 5.1 }}>
                     <Box
                       sx={{
-                        minHeight: 134,
+                        minHeight: 126,
                         borderRadius: "1rem",
                         border: "1px solid #EEF2F7",
                         bgcolor: "white",
-                        px: 1.55,
-                        py: 1.35,
+                        px: 1.4,
+                        py: 1.15,
                       }}
                     >
-                      <Stack spacing={1.1}>
+                      <Stack spacing={0.9}>
                         <Stack
                           direction="row"
                           justifyContent="space-between"
@@ -603,7 +603,7 @@ export default function BookingStepFourPage() {
                         <Typography
                           sx={{
                             color: "#202938",
-                            fontSize: "0.95rem",
+                            fontSize: "0.98rem",
                             fontWeight: 800,
                           }}
                         >
@@ -613,9 +613,9 @@ export default function BookingStepFourPage() {
                         <Typography
                           sx={{
                             color: "#6A778A",
-                            fontSize: "0.64rem",
+                            fontSize: "0.6rem",
                             lineHeight: 1.55,
-                            maxWidth: 220,
+                            maxWidth: 190,
                           }}
                         >
                           High potential for solar efficiency at your location.
@@ -633,7 +633,7 @@ export default function BookingStepFourPage() {
                           <Typography
                             sx={{
                               color: "#233044",
-                              fontSize: "0.62rem",
+                              fontSize: "0.58rem",
                               fontWeight: 700,
                             }}
                           >
@@ -647,7 +647,7 @@ export default function BookingStepFourPage() {
                   <Grid size={{ xs: 12, md: 6.9 }}>
                     <Box
                       sx={{
-                        minHeight: 134,
+                        minHeight: 126,
                         borderRadius: "1rem",
                         overflow: "hidden",
                         backgroundImage: `linear-gradient(180deg, rgba(7,18,31,0.02) 0%, rgba(8,17,28,0.62) 100%), url(${uploadSummaryPlaceholder})`,
@@ -655,7 +655,7 @@ export default function BookingStepFourPage() {
                         backgroundPosition: "center",
                         display: "flex",
                         alignItems: "flex-end",
-                        p: 1.35,
+                        p: 1.15,
                       }}
                     >
                       <Stack spacing={0.18}>
@@ -673,7 +673,7 @@ export default function BookingStepFourPage() {
                         <Typography
                           sx={{
                             color: "white",
-                            fontSize: "0.95rem",
+                            fontSize: "0.9rem",
                             lineHeight: 1.35,
                             fontWeight: 700,
                             maxWidth: 240,
@@ -688,7 +688,7 @@ export default function BookingStepFourPage() {
 
                 <Stack
                   direction={{ xs: "column", sm: "row" }}
-                  spacing={{ xs: 1.6, sm: 2 }}
+                  spacing={{ xs: 1.6, sm: 2.25 }}
                   justifyContent="space-between"
                   alignItems={{ xs: "flex-start", sm: "center" }}
                 >
@@ -709,9 +709,9 @@ export default function BookingStepFourPage() {
                     </Box>
                     <Typography
                       sx={{
-                        maxWidth: 255,
+                        maxWidth: 230,
                         color: "#6E798B",
-                        fontSize: "0.66rem",
+                        fontSize: "0.62rem",
                         lineHeight: 1.55,
                       }}
                     >
@@ -732,7 +732,7 @@ export default function BookingStepFourPage() {
                       sx={{
                         color: "#4A5668",
                         fontWeight: 700,
-                        fontSize: "0.9rem",
+                        fontSize: "0.86rem",
                         textTransform: "none",
                         minWidth: 0,
                         px: 0,
@@ -749,11 +749,11 @@ export default function BookingStepFourPage() {
                       variant="contained"
                       sx={{
                         width: { xs: "100%", sm: "auto" },
-                        minWidth: 168,
-                        minHeight: 40,
+                        minWidth: 170,
+                        minHeight: 42,
                         borderRadius: "1rem",
                         fontWeight: 700,
-                        fontSize: "0.88rem",
+                        fontSize: "0.84rem",
                         textTransform: "none",
                         background:
                           "linear-gradient(180deg, #0E56C8 0%, #0D49B0 100%)",
@@ -767,13 +767,13 @@ export default function BookingStepFourPage() {
               </Stack>
             </Box>
 
-            <Grid container spacing={1.4} sx={{ width: "100%", maxWidth: 620 }}>
+            <Grid container spacing={1.15} sx={{ width: "100%", maxWidth: 620 }}>
               {trustItems.map((item) => (
                 <Grid key={item.title} size={{ xs: 12, md: 4 }}>
                   <Box
                     sx={{
-                      px: 1.2,
-                      py: 1.05,
+                      px: 1.05,
+                      py: 0.9,
                       borderRadius: "1rem",
                       bgcolor: "rgba(255,255,255,0.94)",
                       border: "1px solid #EEF2F7",
@@ -783,8 +783,8 @@ export default function BookingStepFourPage() {
                     <Stack direction="row" spacing={0.9} alignItems="center">
                       <Box
                         sx={{
-                          width: 28,
-                          height: 28,
+                          width: 24,
+                          height: 24,
                           borderRadius: "50%",
                           bgcolor: item.bg,
                           color: item.color,
@@ -799,7 +799,7 @@ export default function BookingStepFourPage() {
                         <Typography
                           sx={{
                             color: "#202938",
-                            fontSize: "0.72rem",
+                            fontSize: "0.66rem",
                             fontWeight: 700,
                           }}
                         >
@@ -808,7 +808,7 @@ export default function BookingStepFourPage() {
                         <Typography
                           sx={{
                             color: "#7A8698",
-                            fontSize: "0.6rem",
+                            fontSize: "0.54rem",
                             lineHeight: 1.45,
                           }}
                         >
