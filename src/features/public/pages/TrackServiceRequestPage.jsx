@@ -80,11 +80,15 @@ export default function TrackServiceRequestPage() {
                 sx={{
                   color: "#20242B",
                   ...publicTypography.pageTitle,
+                  whiteSpace: { md: "nowrap" },
                 }}
               >
                 Track Your Service Request
-                <Box component="span" sx={{ ml: 0.28, fontSize: "0.8em" }}>
-                  📋
+                <Box
+                  component="span"
+                  sx={{ ml: 0.28, fontSize: "0.8em", display: "inline-block" }}
+                >
+                  {"\uD83D\uDCCB"}
                 </Box>
               </Typography>
               <Typography
@@ -664,3 +668,4 @@ export default function TrackServiceRequestPage() {
     </Box>
   );
 }
+

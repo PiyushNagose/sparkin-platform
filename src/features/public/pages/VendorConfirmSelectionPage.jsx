@@ -56,6 +56,7 @@ export default function VendorConfirmSelectionPage() {
                 sx={{
                   color: "#20242B",
                   ...publicTypography.heroTitle,
+                  whiteSpace: { md: "nowrap" },
                 }}
               >
                 Confirm your selection
@@ -319,3 +320,5 @@ export default function VendorConfirmSelectionPage() {
     </Box>
   );
 }
+
+

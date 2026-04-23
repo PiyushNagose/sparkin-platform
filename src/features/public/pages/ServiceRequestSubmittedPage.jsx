@@ -113,17 +113,30 @@ export default function ServiceRequestSubmittedPage() {
                   </Box>
                 </Box>
 
-                <Box sx={{ maxWidth: 360 }}>
+                <Box sx={{ maxWidth: 520 }}>
                   <Typography
                     variant="h1"
                     sx={{
                       color: "#20242B",
-                      ...publicTypography.pageTitle,
+                      fontSize: { xs: "1.55rem", sm: "1.7rem", md: "1.85rem", lg: "2rem" },
+                      lineHeight: 1.12,
+                      letterSpacing: "-0.04em",
+                      fontWeight: 800,
+                      textAlign: "center",
+                      maxWidth: 480,
+                      mx: "auto",
                     }}
                   >
                     Request submitted successfully
-                    <Box component="span" sx={{ ml: 0.35 }}>
-                      🎉
+                    <Box
+                      component="span"
+                      sx={{
+                        display: "block",
+                        mt: 0.35,
+                        textAlign: "center",
+                      }}
+                    >
+                      {"\uD83C\uDF89"}
                     </Box>
                   </Typography>
                   <Typography
@@ -289,3 +302,4 @@ export default function ServiceRequestSubmittedPage() {
     </Box>
   );
 }
+

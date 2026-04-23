@@ -147,9 +147,9 @@ export default function CalculatorUnavailablePage() {
                       color: "#202938",
                     }}
                   >
-                    We’re coming soon to
+                    We're coming soon
                     <br />
-                    your neighborhood! 📍
+                    to your neighborhood! {"\uD83D\uDCCD"}
                   </Typography>
 
                   <Typography
@@ -306,3 +306,4 @@ export default function CalculatorUnavailablePage() {
     </Box>
   );
 }
+

@@ -142,9 +142,14 @@ export default function BookingSubmittedPage() {
                 <Typography
                   variant="h1"
                   sx={{
-                    maxWidth: 280,
+                    maxWidth: 480,
                     color: "#20242B",
-                    ...publicTypography.pageTitle,
+                    fontSize: { xs: "1.55rem", sm: "1.7rem", md: "1.85rem", lg: "2rem" },
+                    lineHeight: 1.12,
+                    letterSpacing: "-0.04em",
+                    fontWeight: 800,
+                    textAlign: "center",
+                    mx: "auto",
                   }}
                 >
                   Your request has been submitted!

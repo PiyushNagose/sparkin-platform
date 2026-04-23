@@ -90,10 +90,11 @@ export default function CalculatorResultsPage() {
             <Box>
               <Typography
                 variant="h1"
-              sx={{
-                ...publicTypography.pageTitle,
-                color: "#18253A",
-              }}
+                sx={{
+                  ...publicTypography.pageTitle,
+                  color: "#18253A",
+                  whiteSpace: { md: "nowrap" },
+                }}
               >
                 Your Solar Potential
               </Typography>

@@ -128,6 +128,7 @@ export default function CreateServiceRequestPage() {
                 sx={{
                   color: "#20242B",
                   ...publicTypography.heroTitle,
+                  whiteSpace: { md: "nowrap" },
                 }}
               >
                 Create Service Request
@@ -580,3 +581,5 @@ export default function CreateServiceRequestPage() {
     </Box>
   );
 }
+
+
