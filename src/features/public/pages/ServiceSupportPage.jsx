@@ -20,6 +20,10 @@ import WarningAmberRoundedIcon from "@mui/icons-material/WarningAmberRounded";
 import serviceSystemPlaceholder from "@/shared/assets/images/public/support/service-system-placeholder.png";
 import serviceUpgradePlaceholder from "@/shared/assets/images/public/support/service-upgrade-placeholder.png";
 import styles from "@/features/public/pages/CalculatorPage.module.css";
+import {
+  publicPageSpacing,
+  publicTypography,
+} from "@/features/public/pages/publicPageStyles";
 
 const quickActions = [
   {
@@ -112,7 +116,7 @@ export default function ServiceSupportPage() {
     <Box className={styles.pageShell}>
       <Box
         sx={{
-          py: { xs: 6.75, md: 7.75 },
+          py: publicPageSpacing.pageYCompact,
           minHeight: "calc(100vh - 72px)",
           background:
             "radial-gradient(circle at top center, rgba(214,229,246,0.72) 0%, rgba(247,250,252,0.98) 24%, #F9FBFD 68%, #F7FAFB 100%)",
@@ -129,11 +133,9 @@ export default function ServiceSupportPage() {
               <Box sx={{ maxWidth: 560 }}>
                 <Typography
                   variant="h1"
-                  sx={{
+                sx={{
                     color: "#20242B",
-                    fontSize: { xs: "2.1rem", md: "2.95rem" },
-                    lineHeight: 1.05,
-                    letterSpacing: "-0.055em",
+                    ...publicTypography.heroTitle,
                   }}
                 >
                   Service & Support
@@ -145,8 +147,7 @@ export default function ServiceSupportPage() {
                   sx={{
                     mt: 0.7,
                     color: "#667084",
-                    fontSize: "0.92rem",
-                    lineHeight: 1.6,
+                    ...publicTypography.body,
                     maxWidth: 430,
                   }}
                 >

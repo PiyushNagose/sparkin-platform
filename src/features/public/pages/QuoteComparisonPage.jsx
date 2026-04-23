@@ -12,6 +12,10 @@ import StarRoundedIcon from "@mui/icons-material/StarRounded";
 import quoteAnalysisPlaceholder from "@/shared/assets/images/public/quotes/quote-analysis-placeholder.png";
 import quoteBiddingBannerPlaceholder from "@/shared/assets/images/public/quotes/quote-bidding-banner-placeholder.png";
 import styles from "@/features/public/pages/CalculatorPage.module.css";
+import {
+  publicPageSpacing,
+  publicTypography,
+} from "@/features/public/pages/publicPageStyles";
 
 const quotes = [
   {
@@ -285,7 +289,7 @@ export default function QuoteComparisonPage() {
     <Box className={styles.pageShell}>
       <Box
         sx={{
-          py: { xs: 7.5, md: 8.75 },
+          py: publicPageSpacing.pageYCompact,
           minHeight: "calc(100vh - 72px)",
           background:
             "radial-gradient(circle at top center, rgba(214,229,246,0.72) 0%, rgba(247,250,252,0.98) 22%, #F9FBFD 66%, #F7FAFB 100%)",
@@ -296,7 +300,7 @@ export default function QuoteComparisonPage() {
           disableGutters
           className={styles.contentContainer}
         >
-          <Stack spacing={{ xs: 4.2, md: 5.2 }}>
+          <Stack spacing={{ xs: 5.25, md: 6.5 }}>
             <Stack
               direction={{ xs: "column", md: "row" }}
               justifyContent="space-between"
@@ -307,9 +311,8 @@ export default function QuoteComparisonPage() {
                   variant="h1"
                   sx={{
                     color: "#20242B",
-                    fontSize: { xs: "2.45rem", md: "3.45rem" },
-                    lineHeight: 1.02,
-                    letterSpacing: "-0.055em",
+                    ...publicTypography.heroTitle,
+                    fontSize: { xs: "2.45rem", md: "3.35rem" },
                     maxWidth: 420,
                   }}
                 >

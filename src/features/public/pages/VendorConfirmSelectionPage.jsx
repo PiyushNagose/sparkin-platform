@@ -14,6 +14,10 @@ import SolarPowerRoundedIcon from "@mui/icons-material/SolarPowerRounded";
 import StarRoundedIcon from "@mui/icons-material/StarRounded";
 import { Link as RouterLink } from "react-router-dom";
 import styles from "@/features/public/pages/CalculatorPage.module.css";
+import {
+  publicPageSpacing,
+  publicTypography,
+} from "@/features/public/pages/publicPageStyles";
 
 const metricCards = [
   {
@@ -38,7 +42,7 @@ export default function VendorConfirmSelectionPage() {
     <Box className={styles.pageShell}>
       <Box
         sx={{
-          py: { xs: 7, md: 8.5 },
+          py: publicPageSpacing.pageYCompact,
           minHeight: "calc(100vh - 72px)",
           background:
             "radial-gradient(circle at top center, rgba(214,229,246,0.72) 0%, rgba(247,250,252,0.98) 24%, #F9FBFD 68%, #F7FAFB 100%)",
@@ -51,9 +55,7 @@ export default function VendorConfirmSelectionPage() {
                 variant="h1"
                 sx={{
                   color: "#20242B",
-                  fontSize: { xs: "2.35rem", md: "3.1rem" },
-                  lineHeight: 1.05,
-                  letterSpacing: "-0.055em",
+                  ...publicTypography.heroTitle,
                 }}
               >
                 Confirm your selection
@@ -61,8 +63,7 @@ export default function VendorConfirmSelectionPage() {
               <Typography
                 sx={{
                   color: "#667084",
-                  fontSize: "0.98rem",
-                  lineHeight: 1.6,
+                  ...publicTypography.body,
                   maxWidth: 420,
                 }}
               >

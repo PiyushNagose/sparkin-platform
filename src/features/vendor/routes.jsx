@@ -1,4 +1,5 @@
 import { ScreenPlaceholder } from "@/shared/ui/placeholder/ScreenPlaceholder";
+import VendorOnboardingPage from "@/features/vendor/pages/VendorOnboardingPage";
 
 export const vendorRoutes = [
   {
@@ -14,13 +15,7 @@ export const vendorRoutes = [
   },
   {
     path: "onboarding",
-    element: (
-      <ScreenPlaceholder
-        title="Vendor Onboarding"
-        description="Final review onboarding screen for company details, certificates, and profile completion."
-        sections={["Company profile", "Compliance uploads", "Experience and tier", "Submission CTA"]}
-      />
-    ),
+    element: <VendorOnboardingPage />,
   },
   {
     path: "leads",
@@ -73,4 +68,3 @@ export const vendorRoutes = [
     ),
   },
 ];
-

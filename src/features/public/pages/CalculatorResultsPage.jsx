@@ -12,6 +12,10 @@ import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
 import { Link as RouterLink } from "react-router-dom";
 import resultBannerImage from "@/shared/assets/images/public/calculator/calculator-results-banner-placeholder.png";
 import styles from "@/features/public/pages/CalculatorPage.module.css";
+import {
+  publicPageSpacing,
+  publicTypography,
+} from "@/features/public/pages/publicPageStyles";
 
 const overviewCards = [
   {
@@ -70,7 +74,7 @@ export default function CalculatorResultsPage() {
     <Box className={styles.pageShell}>
       <Box
         sx={{
-          py: { xs: 7.5, md: 8.75 },
+          py: publicPageSpacing.pageYCompact,
           minHeight: "calc(100vh - 72px)",
           background:
             "radial-gradient(circle at top center, rgba(214,229,246,0.84) 0%, rgba(244,248,251,0.97) 24%, #F9FBFD 64%, #F7FAFB 100%)",
@@ -86,23 +90,20 @@ export default function CalculatorResultsPage() {
             <Box>
               <Typography
                 variant="h1"
-                sx={{
-                  fontSize: { xs: "2rem", md: "2.55rem" },
-                  lineHeight: 1.04,
-                  letterSpacing: "-0.05em",
-                  color: "#18253A",
-                }}
+              sx={{
+                ...publicTypography.pageTitle,
+                color: "#18253A",
+              }}
               >
                 Your Solar Potential
               </Typography>
               <Typography
-                sx={{
-                  mt: 0.8,
-                  maxWidth: 500,
-                  color: "#697790",
-                  fontSize: { xs: "0.92rem", md: "0.96rem" },
-                  lineHeight: 1.6,
-                }}
+              sx={{
+                mt: 0.8,
+                maxWidth: 500,
+                color: "#697790",
+                ...publicTypography.body,
+              }}
               >
                 Based on your energy profile, we’ve optimized a system designed
                 for maximum ROI and energy independence.

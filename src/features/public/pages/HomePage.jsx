@@ -28,6 +28,10 @@ import TrendingUpRoundedIcon from "@mui/icons-material/TrendingUpRounded";
 import VerifiedOutlinedIcon from "@mui/icons-material/VerifiedOutlined";
 import { Link as RouterLink } from "react-router-dom";
 import styles from "@/features/public/pages/HomePage.module.css";
+import {
+  publicPageSpacing,
+  publicTypography,
+} from "@/features/public/pages/publicPageStyles";
 import heroBackgroundImage from "@/shared/assets/images/public/home/hero-background-placeholder.png";
 import animeshAvatarPlaceholder from "@/shared/assets/images/public/home/avatar-animesh-placeholder.svg";
 import priyaAvatarPlaceholder from "@/shared/assets/images/public/home/avatar-priya-placeholder.svg";
@@ -207,15 +211,14 @@ const faqs = [
 function SectionTitle({ title, highlight, subtitle, centered = true }) {
   return (
     <Stack
-      spacing={1.6}
+      spacing={{ xs: 1.8, md: 2.1 }}
       alignItems={centered ? "center" : "flex-start"}
       textAlign={centered ? "center" : "left"}
     >
       <Typography
         variant="h2"
         sx={{
-          fontSize: { xs: "1.95rem", md: "2.7rem" },
-          lineHeight: 1.12,
+          ...publicTypography.sectionTitle,
           maxWidth: 720,
         }}
       >
@@ -231,7 +234,7 @@ function SectionTitle({ title, highlight, subtitle, centered = true }) {
         <Typography
           variant="body1"
           color="text.secondary"
-          sx={{ maxWidth: 620, fontSize: { xs: "0.95rem", md: "1rem" } }}
+          sx={{ maxWidth: 620, ...publicTypography.sectionBody }}
         >
           {subtitle}
         </Typography>
@@ -899,9 +902,17 @@ function HomePage() {
             sx={{ mt: { xs: 6.5, md: 8 } }}
           >
             {steps.map((step) => (
-              <Grid key={step.number} size={{ xs: 12, md: 4 }}>
+              <Grid
+                key={step.number}
+                size={{ xs: 12, md: 4 }}
+                sx={{ display: "flex" }}
+              >
                 <Box
                   sx={{
+                    width: "100%",
+                    height: "100%",
+                    display: "flex",
+                    flexDirection: "column",
                     borderRadius: "2rem",
                     p: { xs: 2.5, md: 2.75 },
                     minHeight: 258,
@@ -964,8 +975,11 @@ function HomePage() {
                     color={
                       step.dark ? "rgba(255,255,255,0.72)" : "text.secondary"
                     }
-                    lineHeight={1.72}
-                    fontSize="0.84rem"
+                    sx={{
+                      lineHeight: 1.72,
+                      fontSize: "0.84rem",
+                      mt: "auto",
+                    }}
                   >
                     {step.description}
                   </Typography>
@@ -1898,9 +1912,17 @@ function HomePage() {
           </Stack>
           <Grid container spacing={{ xs: 2.25, md: 3 }} sx={{ mt: 4 }}>
             {promiseCards.map((card, index) => (
-              <Grid key={card.title} size={{ xs: 12, sm: 6, md: 3 }}>
+              <Grid
+                key={card.title}
+                size={{ xs: 12, sm: 6, md: 3 }}
+                sx={{ display: "flex" }}
+              >
                 <Box
                   sx={{
+                    width: "100%",
+                    height: "100%",
+                    display: "flex",
+                    flexDirection: "column",
                     p: { xs: 2.5, md: 3 },
                     minHeight: 348,
                     borderRadius: "2rem",
@@ -1951,6 +1973,7 @@ function HomePage() {
                       maxWidth: 210,
                       fontSize: "0.95rem",
                       lineHeight: 1.75,
+                      flex: 1,
                     }}
                   >
                     {card.text}
@@ -1991,9 +2014,17 @@ function HomePage() {
             </Stack>
             <Grid container spacing={{ xs: 2.25, md: 3 }} sx={{ mt: 4 }}>
               {offers.map((offer) => (
-                <Grid key={offer.title} size={{ xs: 12, md: 4 }}>
+                <Grid
+                  key={offer.title}
+                  size={{ xs: 12, md: 4 }}
+                  sx={{ display: "flex" }}
+                >
                   <Box
                     sx={{
+                      width: "100%",
+                      height: "100%",
+                      display: "flex",
+                      flexDirection: "column",
                       p: { xs: 2.5, md: 2.7 },
                       minHeight: 288,
                       borderRadius: "2rem",
@@ -2073,6 +2104,7 @@ function HomePage() {
                         maxWidth: 250,
                         lineHeight: 1.75,
                         fontSize: "0.95rem",
+                        flex: 1,
                       }}
                     >
                       {offer.text}
@@ -2135,10 +2167,16 @@ function HomePage() {
 
           <Grid container spacing={{ xs: 2.5, md: 3 }} sx={{ mt: 5.25 }}>
             {serviceCards.map((card) => (
-              <Grid key={card.title} size={{ xs: 12, md: 4 }}>
+              <Grid
+                key={card.title}
+                size={{ xs: 12, md: 4 }}
+                sx={{ display: "flex" }}
+              >
                 <Box
                   sx={{
                     position: "relative",
+                    width: "100%",
+                    height: "100%",
                     borderRadius: "2.25rem",
                     overflow: "hidden",
                     minHeight: 438,
@@ -2260,9 +2298,17 @@ function HomePage() {
             </Stack>
             <Grid container spacing={{ xs: 2.25, md: 3 }} sx={{ mt: 5 }}>
               {testimonials.map((item) => (
-                <Grid key={item.name} size={{ xs: 12, md: 4 }}>
+                <Grid
+                  key={item.name}
+                  size={{ xs: 12, md: 4 }}
+                  sx={{ display: "flex" }}
+                >
                   <Box
                     sx={{
+                      width: "100%",
+                      height: "100%",
+                      display: "flex",
+                      flexDirection: "column",
                       p: { xs: 2.5, md: 2.7 },
                       minHeight: 286,
                       borderRadius: "2rem",
@@ -2295,7 +2341,7 @@ function HomePage() {
                       direction="row"
                       spacing={1.5}
                       alignItems="center"
-                      sx={{ mt: 3.2 }}
+                      sx={{ mt: "auto", pt: 3.2 }}
                     >
                       <Box
                         component="img"

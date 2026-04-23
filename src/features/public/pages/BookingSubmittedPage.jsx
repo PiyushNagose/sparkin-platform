@@ -13,6 +13,10 @@ import RadioButtonUncheckedRoundedIcon from "@mui/icons-material/RadioButtonUnch
 import { useEffect } from "react";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
 import styles from "@/features/public/pages/CalculatorPage.module.css";
+import {
+  publicPageSpacing,
+  publicTypography,
+} from "@/features/public/pages/publicPageStyles";
 
 const nextSteps = [
   {
@@ -91,7 +95,7 @@ export default function BookingSubmittedPage() {
     <Box className={styles.pageShell}>
       <Box
         sx={{
-          py: { xs: 8, md: 9.5 },
+          py: publicPageSpacing.pageYCompact,
           minHeight: "calc(100vh - 72px)",
           background:
             "radial-gradient(circle at top center, rgba(214,229,246,0.78) 0%, rgba(244,248,251,0.97) 24%, #F9FBFD 64%, #F7FAFB 100%)",
@@ -140,9 +144,7 @@ export default function BookingSubmittedPage() {
                   sx={{
                     maxWidth: 280,
                     color: "#20242B",
-                    fontSize: { xs: "1.95rem", md: "2.15rem" },
-                    lineHeight: 1.06,
-                    letterSpacing: "-0.05em",
+                    ...publicTypography.pageTitle,
                   }}
                 >
                   Your request has been submitted!

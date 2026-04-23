@@ -16,6 +16,10 @@ import ShieldOutlinedIcon from "@mui/icons-material/ShieldOutlined";
 import SolarPowerRoundedIcon from "@mui/icons-material/SolarPowerRounded";
 import TaskAltRoundedIcon from "@mui/icons-material/TaskAltRounded";
 import styles from "@/features/public/pages/CalculatorPage.module.css";
+import {
+  publicPageSpacing,
+  publicTypography,
+} from "@/features/public/pages/publicPageStyles";
 
 const journeySteps = [
   { title: "Site Visit", status: "Completed", active: false, done: true },
@@ -99,7 +103,7 @@ export default function SolarInstallationProjectPage() {
     <Box className={styles.pageShell}>
       <Box
         sx={{
-          py: { xs: 6.75, md: 7.75 },
+          py: publicPageSpacing.pageYCompact,
           minHeight: "calc(100vh - 72px)",
           background:
             "radial-gradient(circle at top center, rgba(214,229,246,0.72) 0%, rgba(247,250,252,0.98) 24%, #F9FBFD 68%, #F7FAFB 100%)",
@@ -118,9 +122,7 @@ export default function SolarInstallationProjectPage() {
                   variant="h1"
                   sx={{
                     color: "#20242B",
-                    fontSize: { xs: "2.15rem", md: "3.15rem" },
-                    lineHeight: 1.05,
-                    letterSpacing: "-0.055em",
+                    ...publicTypography.heroTitle,
                   }}
                 >
                   Your Solar Installation Project

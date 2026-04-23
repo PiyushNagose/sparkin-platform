@@ -191,7 +191,7 @@ export function PublicLayout() {
               {
                 title: "Company",
                 items: [
-                  { label: "About Us", href: "/about-us" },
+                  { label: "About Us", href: "/about" },
                   { label: "Why Choose Us", href: "/why-choose-us" },
                   { label: "Articles", href: "/articles" },
                   { label: "Blog", href: "/blog" },
@@ -200,8 +200,8 @@ export function PublicLayout() {
               {
                 title: "Support",
                 items: [
-                  { label: "Contact Us", href: "/contact-us" },
-                  { label: "FAQs", href: "/faqs" },
+                  { label: "Contact Us", href: "/contact" },
+                  { label: "FAQs", href: "/faq" },
                   { label: "Terms", href: "/terms" },
                   { label: "Privacy", href: "/privacy" },
                 ],
@@ -272,7 +272,7 @@ export function PublicLayout() {
               variant="body2"
               sx={{ opacity: 0.5, fontSize: "0.95rem" }}
             >
-              Â© 2026 Sparkin Inc. All rights reserved..
+              © 2026 Sparkin Inc. All rights reserved.
             </Typography>
           </Box>
         </Container>
@@ -280,3 +280,4 @@ export function PublicLayout() {
     </Box>
   );
 }
+

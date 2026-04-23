@@ -10,6 +10,10 @@ import { Link as RouterLink } from "react-router-dom";
 import liveBiddingHeroPlaceholder from "@/shared/assets/images/public/bidding/live-bidding-hero-placeholder.png";
 import liveBiddingAdvantagePlaceholder from "@/shared/assets/images/public/bidding/live-bidding-advantage-placeholder.png";
 import styles from "@/features/public/pages/CalculatorPage.module.css";
+import {
+  publicPageSpacing,
+  publicTypography,
+} from "@/features/public/pages/publicPageStyles";
 
 const workflowCards = [
   {
@@ -156,7 +160,7 @@ export default function LiveBiddingPage() {
     <Box className={styles.pageShell}>
       <Box
         sx={{
-          pt: { xs: 7.5, md: 8.75 },
+          pt: publicPageSpacing.pageYCompact,
           pb: 0,
           background:
             "radial-gradient(circle at top center, rgba(214,229,246,0.38) 0%, rgba(247,250,252,0.95) 22%, #F9FBFD 66%, #F7FAFB 100%)",
@@ -167,7 +171,7 @@ export default function LiveBiddingPage() {
           disableGutters
           className={styles.contentContainer}
         >
-          <Stack spacing={{ xs: 11.5, md: 15.5 }} sx={{ width: "100%" }}>
+          <Stack spacing={{ xs: 12.5, md: 16.5 }} sx={{ width: "100%" }}>
             {/* SECTION 1 */}
             <Grid container spacing={{ xs: 4.8, md: 6.6 }} alignItems="center">
               <Grid size={{ xs: 12, md: 6 }}>
@@ -202,9 +206,10 @@ export default function LiveBiddingPage() {
                     variant="h1"
                     sx={{
                       color: "#20242B",
-                      fontSize: { xs: "3rem", md: "4.3rem" },
-                      lineHeight: 0.97,
-                      letterSpacing: "-0.075em",
+                      ...publicTypography.heroTitle,
+                      fontSize: { xs: "2.9rem", md: "4.1rem" },
+                      lineHeight: { xs: 1, md: 0.97 },
+                      letterSpacing: "-0.07em",
                       maxWidth: 500,
                     }}
                   >

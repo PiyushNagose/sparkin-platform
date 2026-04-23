@@ -17,6 +17,14 @@ import ServiceSupportPage from "@/features/public/pages/ServiceSupportPage";
 import CreateServiceRequestPage from "@/features/public/pages/CreateServiceRequestPage";
 import ServiceRequestSubmittedPage from "@/features/public/pages/ServiceRequestSubmittedPage";
 import TrackServiceRequestPage from "@/features/public/pages/TrackServiceRequestPage";
+import ContactPage from "@/features/public/pages/ContactPage";
+import FaqPage from "@/features/public/pages/FaqPage";
+import TermsPage from "@/features/public/pages/TermsPage";
+import PrivacyPage from "@/features/public/pages/PrivacyPage";
+import AboutPage from "@/features/public/pages/AboutPage";
+import TrustedPartnersPage from "@/features/public/pages/TrustedPartnersPage";
+import VendorDiscoveryPage from "@/features/public/pages/VendorDiscoveryPage";
+import SolarLoanPage from "@/features/public/pages/SolarLoanPage";
 import HomePage from "@/features/public/pages/HomePage";
 
 export const publicRoutes = [
@@ -26,14 +34,11 @@ export const publicRoutes = [
   },
   {
     path: "about",
-    element: (
-      <ScreenPlaceholder
-        eyebrow="About"
-        title="About Sparkin Solar"
-        description="Brand story, mission, measurable impact, and trust-building company narrative."
-        sections={["Vision and mission", "Impact metrics", "Brand story", "Join-us CTA"]}
-      />
-    ),
+    element: <AboutPage />,
+  },
+  {
+    path: "about-us",
+    element: <AboutPage />,
   },
   {
     path: "how-it-works",
@@ -43,6 +48,17 @@ export const publicRoutes = [
         title="Quote Journey Overview"
         description="Explain how the lead, bidding, selection, project, and service flow works for customers."
         sections={["Broadcast phase", "Competitive bidding", "Selection process", "Bottom CTA"]}
+      />
+    ),
+  },
+  {
+    path: "why-choose-us",
+    element: (
+      <ScreenPlaceholder
+        eyebrow="Why Sparkin"
+        title="Why Choose Sparkin Solar"
+        description="Value proposition screen focused on transparency, verified vendors, and savings confidence."
+        sections={["Why Sparkin", "Proof points", "Service promise", "CTA"]}
       />
     ),
   },
@@ -64,67 +80,81 @@ export const publicRoutes = [
   },
   {
     path: "vendors",
+    element: <VendorDiscoveryPage />,
+  },
+  {
+    path: "vendors/partners",
+    element: <TrustedPartnersPage />,
+  },
+  {
+    path: "resources",
     element: (
       <ScreenPlaceholder
-        eyebrow="Vendors"
-        title="Vendor Discovery"
-        description="Vendor listing and partner overview screens for browsing, filtering, and comparing solar providers."
-        sections={["Hero banner", "Filters", "Vendor cards", "Consultation CTA"]}
+        eyebrow="Resources"
+        title="Learning Resources"
+        description="A public resource hub for articles, guides, FAQs, and educational solar content."
+        sections={["Featured resources", "Articles", "Guides", "Help CTA"]}
       />
     ),
   },
   {
     path: "loan-financing",
-    element: (
-      <ScreenPlaceholder
-        eyebrow="Financing"
-        title="Solar Financing"
-        description="Loan comparison, rates, estimated EMI, and financing CTAs."
-        sections={["Rate calculator", "Bank table", "Eligibility CTA", "Expert consultation card"]}
-      />
-    ),
+    element: <SolarLoanPage />,
   },
   {
     path: "contact",
-    element: (
-      <ScreenPlaceholder
-        eyebrow="Contact"
-        title="Contact Sparkin"
-        description="Structured support contact page with message form, office, map, and enterprise CTA."
-        sections={["Contact cards", "Message form", "Office media blocks", "Final CTA"]}
-      />
-    ),
+    element: <ContactPage />,
+  },
+  {
+    path: "contact-us",
+    element: <ContactPage />,
   },
   {
     path: "faq",
-    element: (
-      <ScreenPlaceholder
-        eyebrow="FAQ"
-        title="Frequently Asked Questions"
-        description="Searchable FAQ page with category tabs, expanded answers, and support CTA."
-        sections={["Search and filters", "Accordion list", "Featured support answer", "Support CTA"]}
-      />
-    ),
+    element: <FaqPage />,
+  },
+  {
+    path: "faqs",
+    element: <FaqPage />,
   },
   {
     path: "terms",
+    element: <TermsPage />,
+  },
+  {
+    path: "privacy",
+    element: <PrivacyPage />,
+  },
+  {
+    path: "refer-earn",
     element: (
       <ScreenPlaceholder
-        eyebrow="Legal"
-        title="Terms and Conditions"
-        description="Structured legal content page with grouped policy cards and strong readability."
-        sections={["Intro", "User responsibilities", "Vendor terms", "Liability section"]}
+        eyebrow="Referrals"
+        title="Refer and Earn"
+        description="A public referral experience for inviting contacts and tracking solar referral rewards."
+        sections={["Referral code", "Rewards summary", "Sharing methods", "History"]}
       />
     ),
   },
   {
-    path: "privacy",
+    path: "articles",
     element: (
       <ScreenPlaceholder
-        eyebrow="Privacy"
-        title="Privacy Policy"
-        description="Clear legal structure covering data collection, usage, sharing, security, and user rights."
-        sections={["Information collected", "Data usage", "Security measures", "User rights"]}
+        eyebrow="Articles"
+        title="Solar Articles"
+        description="Editorial and educational article listing for buyers exploring solar decisions."
+        sections={["Featured article", "Category filters", "Article list", "Newsletter CTA"]}
+      />
+    ),
+  },
+  {
+    path: "blog",
+    element: (
+      <ScreenPlaceholder
+        eyebrow="Blog"
+        title="Sparkin Blog"
+        description="Company stories, product updates, and educational thought leadership."
+        sections={["Latest post", "Blog grid", "Topics", "Subscribe CTA"]}
       />
     ),
   },

@@ -1,7 +1,7 @@
-import { createTheme } from "@mui/material/styles";
+import { createTheme, responsiveFontSizes } from "@mui/material/styles";
 import { colors, radius, shadows } from "@/app/theme/tokens";
 
-export const appTheme = createTheme({
+let appTheme = createTheme({
   palette: {
     mode: "light",
     primary: {
@@ -96,3 +96,6 @@ export const appTheme = createTheme({
   },
 });
 
+appTheme = responsiveFontSizes(appTheme);
+
+export { appTheme };

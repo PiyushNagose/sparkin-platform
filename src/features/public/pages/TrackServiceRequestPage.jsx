@@ -9,6 +9,10 @@ import QueryBuilderRoundedIcon from "@mui/icons-material/QueryBuilderRounded";
 import StarRoundedIcon from "@mui/icons-material/StarRounded";
 import serviceNetworkPlaceholder from "@/shared/assets/images/public/support/service-track-placeholder.png";
 import styles from "@/features/public/pages/CalculatorPage.module.css";
+import {
+  publicPageSpacing,
+  publicTypography,
+} from "@/features/public/pages/publicPageStyles";
 
 const statusSteps = [
   { label: "Request Submitted", status: "Completed", complete: true },
@@ -58,7 +62,7 @@ export default function TrackServiceRequestPage() {
     <Box className={styles.pageShell}>
       <Box
         sx={{
-          py: { xs: 6.75, md: 7.5 },
+          py: publicPageSpacing.pageYCompact,
           minHeight: "calc(100vh - 72px)",
           background:
             "radial-gradient(circle at top center, rgba(214,229,246,0.72) 0%, rgba(247,250,252,0.98) 24%, #F9FBFD 68%, #F7FAFB 100%)",
@@ -75,9 +79,7 @@ export default function TrackServiceRequestPage() {
                 variant="h1"
                 sx={{
                   color: "#20242B",
-                  fontSize: { xs: "2rem", md: "2.45rem" },
-                  lineHeight: 1.08,
-                  letterSpacing: "-0.05em",
+                  ...publicTypography.pageTitle,
                 }}
               >
                 Track Your Service Request

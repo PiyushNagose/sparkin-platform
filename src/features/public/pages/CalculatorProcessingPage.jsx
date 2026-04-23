@@ -15,6 +15,10 @@ import TrendingUpRoundedIcon from "@mui/icons-material/TrendingUpRounded";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "@/features/public/pages/CalculatorPage.module.css";
+import {
+  publicPageSpacing,
+  publicTypography,
+} from "@/features/public/pages/publicPageStyles";
 
 const processingSteps = [
   {
@@ -52,7 +56,7 @@ export default function CalculatorProcessingPage() {
     <Box className={styles.pageShell}>
       <Box
         sx={{
-          py: { xs: 8, md: 9.5 },
+          py: publicPageSpacing.pageYCompact,
           minHeight: "calc(100vh - 72px)",
           background:
             "radial-gradient(circle at top center, rgba(214,229,246,0.86) 0%, rgba(244,248,251,0.97) 25%, #F9FBFD 62%, #F7FAFB 100%)",
@@ -106,12 +110,10 @@ export default function CalculatorProcessingPage() {
 
               <Typography
                 variant="h1"
-                sx={{
-                  fontSize: { xs: "2rem", md: "2.35rem" },
-                  lineHeight: 1.08,
-                  letterSpacing: "-0.05em",
-                  color: "#18253A",
-                }}
+              sx={{
+                ...publicTypography.pageTitle,
+                color: "#18253A",
+              }}
               >
                 Calculating your solar potential...
                 <Box component="span" sx={{ ml: 0.45 }}>
@@ -120,13 +122,12 @@ export default function CalculatorProcessingPage() {
               </Typography>
 
               <Typography
-                sx={{
-                  mt: 1.15,
-                  maxWidth: 440,
-                  color: "#66758A",
-                  fontSize: { xs: "0.96rem", md: "1rem" },
-                  lineHeight: 1.65,
-                }}
+              sx={{
+                mt: 1.15,
+                maxWidth: 440,
+                color: "#66758A",
+                ...publicTypography.body,
+              }}
               >
                 Analyzing your electricity usage and location
               </Typography>
@@ -279,8 +280,8 @@ export default function CalculatorProcessingPage() {
                 <LockOutlinedIcon sx={{ fontSize: "0.82rem" }} />
                 <Typography
                   sx={{
-                    fontSize: "0.72rem",
-                    lineHeight: 1.45,
+                    fontSize: "0.74rem",
+                    lineHeight: 1.55,
                   }}
                 >
                   Securely processing your data via Sparkin Cloud

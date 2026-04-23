@@ -16,6 +16,10 @@ import PersonOutlineRoundedIcon from "@mui/icons-material/PersonOutlineRounded";
 import ReorderRoundedIcon from "@mui/icons-material/ReorderRounded";
 import { Link as RouterLink } from "react-router-dom";
 import styles from "@/features/public/pages/CalculatorPage.module.css";
+import {
+  publicPageSpacing,
+  publicTypography,
+} from "@/features/public/pages/publicPageStyles";
 
 const stepItems = [
   { label: "Step 1", status: "In Progress", active: true },
@@ -108,7 +112,7 @@ export default function BookingStepOnePage() {
     <Box className={styles.pageShell}>
       <Box
         sx={{
-          py: { xs: 7.5, md: 8.75 },
+          py: publicPageSpacing.pageYCompact,
           minHeight: "calc(100vh - 72px)",
           background:
             "radial-gradient(circle at top center, rgba(214,229,246,0.78) 0%, rgba(244,248,251,0.97) 24%, #F9FBFD 64%, #F7FAFB 100%)",
@@ -233,9 +237,7 @@ export default function BookingStepOnePage() {
                 <Typography
                   variant="h1"
                   sx={{
-                    fontSize: { xs: "2rem", md: "2.4rem" },
-                    lineHeight: 1.06,
-                    letterSpacing: "-0.05em",
+                    ...publicTypography.pageTitle,
                     color: "#18253A",
                   }}
                 >

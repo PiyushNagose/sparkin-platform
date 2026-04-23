@@ -18,6 +18,10 @@ import ShieldOutlinedIcon from "@mui/icons-material/ShieldOutlined";
 import TaskAltRoundedIcon from "@mui/icons-material/TaskAltRounded";
 import serviceNetworkPlaceholder from "@/shared/assets/images/public/support/service-network-placeholder.png";
 import styles from "@/features/public/pages/CalculatorPage.module.css";
+import {
+  publicPageSpacing,
+  publicTypography,
+} from "@/features/public/pages/publicPageStyles";
 
 const requestTypes = [
   {
@@ -106,7 +110,7 @@ export default function CreateServiceRequestPage() {
     <Box className={styles.pageShell}>
       <Box
         sx={{
-          py: { xs: 6.5, md: 7.4 },
+          py: publicPageSpacing.pageYCompact,
           minHeight: "calc(100vh - 72px)",
           background:
             "radial-gradient(circle at top center, rgba(214,229,246,0.72) 0%, rgba(247,250,252,0.98) 24%, #F9FBFD 68%, #F7FAFB 100%)",
@@ -123,9 +127,7 @@ export default function CreateServiceRequestPage() {
                 variant="h1"
                 sx={{
                   color: "#20242B",
-                  fontSize: { xs: "2.05rem", md: "2.75rem" },
-                  lineHeight: 1.06,
-                  letterSpacing: "-0.05em",
+                  ...publicTypography.heroTitle,
                 }}
               >
                 Create Service Request

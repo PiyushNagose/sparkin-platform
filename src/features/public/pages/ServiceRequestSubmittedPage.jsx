@@ -6,6 +6,10 @@ import DashboardCustomizeOutlinedIcon from "@mui/icons-material/DashboardCustomi
 import FiberManualRecordRoundedIcon from "@mui/icons-material/FiberManualRecordRounded";
 import QueryBuilderRoundedIcon from "@mui/icons-material/QueryBuilderRounded";
 import styles from "@/features/public/pages/CalculatorPage.module.css";
+import {
+  publicPageSpacing,
+  publicTypography,
+} from "@/features/public/pages/publicPageStyles";
 
 const requestFacts = [
   ["Request Type", "Maintenance"],
@@ -62,7 +66,7 @@ export default function ServiceRequestSubmittedPage() {
     <Box className={styles.pageShell}>
       <Box
         sx={{
-          py: { xs: 6.5, md: 7.7 },
+          py: publicPageSpacing.pageYCompact,
           minHeight: "calc(100vh - 72px)",
           background:
             "radial-gradient(circle at center, rgba(207,245,214,0.42) 0%, rgba(237,248,240,0.2) 18%, rgba(247,250,252,0.98) 44%, #F8FBFD 100%)",
@@ -114,9 +118,7 @@ export default function ServiceRequestSubmittedPage() {
                     variant="h1"
                     sx={{
                       color: "#20242B",
-                      fontSize: { xs: "1.95rem", md: "2.35rem" },
-                      lineHeight: 1.08,
-                      letterSpacing: "-0.05em",
+                      ...publicTypography.pageTitle,
                     }}
                   >
                     Request submitted successfully

@@ -13,8 +13,12 @@ import InsightsRoundedIcon from "@mui/icons-material/InsightsRounded";
 import LocationOnRoundedIcon from "@mui/icons-material/LocationOnRounded";
 import SupportAgentRoundedIcon from "@mui/icons-material/SupportAgentRounded";
 import { Link as RouterLink } from "react-router-dom";
-import regionPlaceholder from "@/shared/assets/images/public/calculator/calculator-region-placeholder.svg";
+import regionPlaceholder from "@/shared/assets/images/public/calculator/calculator-region-placeholder.png";
 import styles from "@/features/public/pages/CalculatorPage.module.css";
+import {
+  publicPageSpacing,
+  publicTypography,
+} from "@/features/public/pages/publicPageStyles";
 
 const insightCards = [
   {
@@ -39,7 +43,7 @@ export default function CalculatorUnavailablePage() {
     <Box className={styles.pageShell}>
       <Box
         sx={{
-          py: { xs: 8, md: 9.25 },
+          py: publicPageSpacing.pageYCompact,
           minHeight: "calc(100vh - 72px)",
           background:
             "radial-gradient(circle at top center, rgba(214,229,246,0.84) 0%, rgba(244,248,251,0.97) 24%, #F9FBFD 64%, #F7FAFB 100%)",
@@ -55,7 +59,7 @@ export default function CalculatorUnavailablePage() {
             sx={{
               maxWidth: 720,
               mx: "auto",
-              mt: { xs: 3, md: 4.25 },
+              mt: { xs: 4, md: 5 },
               borderRadius: "1.3rem",
               overflow: "hidden",
               bgcolor: "rgba(255,255,255,0.92)",
@@ -68,13 +72,44 @@ export default function CalculatorUnavailablePage() {
               <Grid size={{ xs: 12, md: 5.1 }}>
                 <Box
                   sx={{
+                    position: "relative",
                     minHeight: { xs: 320, md: 340 },
                     height: "100%",
                     backgroundImage: `url(${regionPlaceholder})`,
                     backgroundSize: "cover",
                     backgroundPosition: "center",
                   }}
-                />
+                >
+                  <Box
+                    sx={{
+                      position: "absolute",
+                      left: "50%",
+                      top: "50%",
+                      transform: "translate(-50%, -50%)",
+                      width: 86,
+                      height: 86,
+                      borderRadius: "50%",
+                      bgcolor: "rgba(255,255,255,0.94)",
+                      boxShadow: "0 16px 30px rgba(18,32,54,0.18)",
+                      display: "grid",
+                      placeItems: "center",
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        width: 42,
+                        height: 42,
+                        borderRadius: "50%",
+                        bgcolor: "#0E56C8",
+                        color: "#FFFFFF",
+                        display: "grid",
+                        placeItems: "center",
+                      }}
+                    >
+                      <LocationOnRoundedIcon sx={{ fontSize: "1.4rem" }} />
+                    </Box>
+                  </Box>
+                </Box>
               </Grid>
 
               <Grid size={{ xs: 12, md: 6.9 }}>
@@ -108,9 +143,7 @@ export default function CalculatorUnavailablePage() {
                     variant="h1"
                     sx={{
                       mt: 1.55,
-                      fontSize: { xs: "2rem", md: "2.35rem" },
-                      lineHeight: 1.04,
-                      letterSpacing: "-0.05em",
+                      ...publicTypography.pageTitle,
                       color: "#202938",
                     }}
                   >
@@ -124,8 +157,7 @@ export default function CalculatorUnavailablePage() {
                       mt: 1.55,
                       maxWidth: 360,
                       color: "#606F84",
-                      fontSize: "0.98rem",
-                      lineHeight: 1.78,
+                      ...publicTypography.sectionBody,
                     }}
                   >
                     Sparkin is currently expanding across India. While we
@@ -228,7 +260,7 @@ export default function CalculatorUnavailablePage() {
             container
             spacing={{ xs: 2.25, md: 4 }}
             justifyContent="center"
-            sx={{ mt: { xs: 4.2, md: 4.8 } }}
+            sx={{ mt: publicPageSpacing.sectionTop }}
           >
             {insightCards.map((item) => (
               <Grid key={item.title} size={{ xs: 12, sm: 6, md: 4 }}>

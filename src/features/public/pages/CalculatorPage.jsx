@@ -6,6 +6,10 @@ import PlaceOutlinedIcon from "@mui/icons-material/PlaceOutlined";
 import TrendingUpRoundedIcon from "@mui/icons-material/TrendingUpRounded";
 import { Link as RouterLink } from "react-router-dom";
 import styles from "@/features/public/pages/CalculatorPage.module.css";
+import {
+  publicPageSpacing,
+  publicTypography,
+} from "@/features/public/pages/publicPageStyles";
 
 const insightCards = [
   {
@@ -33,7 +37,7 @@ export default function CalculatorPage() {
     <Box className={styles.pageShell}>
       <Box
         sx={{
-          py: { xs: 7, md: 9 },
+          py: publicPageSpacing.pageYCompact,
           minHeight: "calc(100vh - 72px)",
           background:
             "radial-gradient(circle at top center, rgba(214,229,246,0.8) 0%, rgba(245,248,251,0.96) 24%, #F9FBFD 62%, #F7FAFB 100%)",
@@ -53,9 +57,7 @@ export default function CalculatorPage() {
             <Typography
               variant="h1"
               sx={{
-                fontSize: { xs: "2.35rem", md: "3.55rem" },
-                lineHeight: 1.04,
-                letterSpacing: "-0.05em",
+                ...publicTypography.heroTitle,
                 color: "#18253A",
               }}
             >
@@ -68,8 +70,7 @@ export default function CalculatorPage() {
               sx={{
                 maxWidth: 560,
                 color: "#7A889D",
-                fontSize: { xs: "1rem", md: "1.03rem" },
-                lineHeight: 1.65,
+                ...publicTypography.sectionBody,
               }}
             >
               Instantly estimate your potential energy savings and
@@ -79,7 +80,7 @@ export default function CalculatorPage() {
 
           <Box
             sx={{
-              mt: { xs: 4.5, md: 5.5 },
+              mt: publicPageSpacing.heroBottom,
               mx: "auto",
               maxWidth: 620,
               p: { xs: 2.25, md: 3.25 },
@@ -232,7 +233,7 @@ export default function CalculatorPage() {
           maxWidth={false}
           disableGutters
           className={styles.contentContainer}
-          sx={{ mt: { xs: 5.5, md: 6.5 } }}
+          sx={{ mt: publicPageSpacing.sectionTop }}
         >
           <Grid container spacing={{ xs: 2.5, md: 4 }} justifyContent="center">
             {insightCards.map((item) => (

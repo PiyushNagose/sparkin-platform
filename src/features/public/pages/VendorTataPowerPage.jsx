@@ -10,6 +10,10 @@ import { Link as RouterLink } from "react-router-dom";
 import styles from "@/features/public/pages/CalculatorPage.module.css";
 import tataPowerHeroPlaceholder from "@/shared/assets/images/public/vendors/tata-power-hero-placeholder.png";
 import tataPowerSpecPlaceholder from "@/shared/assets/images/public/vendors/tata-power-spec-placeholder.png";
+import {
+  publicPageSpacing,
+  publicTypography,
+} from "@/features/public/pages/publicPageStyles";
 
 const quickFacts = [
   {
@@ -120,7 +124,7 @@ export default function VendorTataPowerPage() {
     <Box className={styles.pageShell}>
       <Box
         sx={{
-          py: { xs: 6.5, md: 7.75 },
+          py: publicPageSpacing.pageYCompact,
           minHeight: "calc(100vh - 72px)",
           background:
             "radial-gradient(circle at top center, rgba(214,229,246,0.72) 0%, rgba(247,250,252,0.98) 24%, #F9FBFD 68%, #F7FAFB 100%)",
@@ -160,9 +164,7 @@ export default function VendorTataPowerPage() {
                         variant="h1"
                         sx={{
                           color: "#20242B",
-                          fontSize: { xs: "2rem", md: "2.45rem" },
-                          lineHeight: 1.04,
-                          letterSpacing: "-0.05em",
+                          ...publicTypography.pageTitle,
                         }}
                       >
                         Tata Power Solar
