@@ -45,10 +45,10 @@
 
 .footerContainer {
   width: 100%;
-  max-width: 1280px;
-  padding-inline: 40px;
+  max-width: none;
+  padding-inline: 56px;
   box-sizing: border-box;
-  margin: 0 auto;
+  margin: 0;
 }
 
 .footerTop {

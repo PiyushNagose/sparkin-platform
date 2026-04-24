@@ -1,56 +1,34 @@
 import { ScreenPlaceholder } from "@/shared/ui/placeholder/ScreenPlaceholder";
+import CustomerDashboardPage from "@/features/customer/pages/CustomerDashboardPage";
+import CustomerBookingsPage from "@/features/customer/pages/CustomerBookingsPage";
+import CustomerTendersPage from "@/features/customer/pages/CustomerTendersPage";
+import CustomerProjectsPage from "@/features/customer/pages/CustomerProjectsPage";
+import CustomerServicesPage from "@/features/customer/pages/CustomerServicesPage";
+import CustomerProfilePage from "@/features/customer/pages/CustomerProfilePage";
+import CustomerReferralsPage from "@/features/customer/pages/CustomerReferralsPage";
+import CustomerShareEarnPage from "@/features/customer/pages/CustomerShareEarnPage";
+import CustomerReferralEarningsPage from "@/features/customer/pages/CustomerReferralEarningsPage";
 
 export const customerRoutes = [
   {
     index: true,
-    element: (
-      <ScreenPlaceholder
-        eyebrow="Customer Portal"
-        title="Customer Dashboard"
-        description="Overview dashboard with savings, active tenders, service status, milestones, and smart utility guidance."
-        sections={["Savings hero", "Tender and service cards", "Project milestone strip", "Insight card"]}
-      />
-    ),
+    element: <CustomerDashboardPage />,
   },
   {
     path: "bookings",
-    element: (
-      <ScreenPlaceholder
-        title="My Bookings"
-        description="Booking cards with request status, bids received, project report, and lifecycle summaries."
-        sections={["Summary stats", "Booking list", "Status badges", "Pagination"]}
-      />
-    ),
+    element: <CustomerBookingsPage />,
   },
   {
     path: "tenders",
-    element: (
-      <ScreenPlaceholder
-        title="My Tenders"
-        description="Live and closed bid competitions with best prices and countdown urgency."
-        sections={["Tender cards", "Active and closed tabs", "Price highlights", "Load more CTA"]}
-      />
-    ),
+    element: <CustomerTendersPage />,
   },
   {
     path: "projects",
-    element: (
-      <ScreenPlaceholder
-        title="My Projects"
-        description="Project cards, milestone timelines, assigned vendor details, and support or referral cross-sells."
-        sections={["Project status cards", "Milestone tracker", "Assigned vendor block", "Support and referral CTAs"]}
-      />
-    ),
+    element: <CustomerProjectsPage />,
   },
   {
     path: "services",
-    element: (
-      <ScreenPlaceholder
-        title="My Services"
-        description="Service request list with active and history tabs, service cards, and performance education CTA."
-        sections={["Service cards", "Tabs", "Track-service actions", "Educational promo section"]}
-      />
-    ),
+    element: <CustomerServicesPage />,
   },
   {
     path: "savings",
@@ -64,23 +42,18 @@ export const customerRoutes = [
   },
   {
     path: "referrals",
-    element: (
-      <ScreenPlaceholder
-        title="Refer and Earn"
-        description="Referral code management, quick-share actions, earnings tracking, and referral history."
-        sections={["Referral code block", "Share methods", "Earnings summary", "Activity list"]}
-      />
-    ),
+    element: <CustomerReferralsPage />,
+  },
+  {
+    path: "referrals/share",
+    element: <CustomerShareEarnPage />,
+  },
+  {
+    path: "referrals/earnings",
+    element: <CustomerReferralEarningsPage />,
   },
   {
     path: "profile",
-    element: (
-      <ScreenPlaceholder
-        title="Customer Profile"
-        description="Personal information, preferences, notifications, and household energy profile settings."
-        sections={["Profile header", "Personal details form", "Preferences panel", "Save actions"]}
-      />
-    ),
+    element: <CustomerProfilePage />,
   },
 ];
-
