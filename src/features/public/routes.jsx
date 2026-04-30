@@ -24,6 +24,7 @@ import PrivacyPage from "@/features/public/pages/PrivacyPage";
 import AboutPage from "@/features/public/pages/AboutPage";
 import ArticlesPage from "@/features/public/pages/ArticlesPage";
 import BlogPage from "@/features/public/pages/BlogPage";
+import ReferEarnPage from "@/features/public/pages/ReferEarnPage";
 import TrustedPartnersPage from "@/features/public/pages/TrustedPartnersPage";
 import VendorDiscoveryPage from "@/features/public/pages/VendorDiscoveryPage";
 import SolarLoanPage from "@/features/public/pages/SolarLoanPage";
@@ -128,14 +129,7 @@ export const publicRoutes = [
   },
   {
     path: "refer-earn",
-    element: (
-      <ScreenPlaceholder
-        eyebrow="Referrals"
-        title="Refer and Earn"
-        description="A public referral experience for inviting contacts and tracking solar referral rewards."
-        sections={["Referral code", "Rewards summary", "Sharing methods", "History"]}
-      />
-    ),
+    element: <ReferEarnPage />,
   },
   {
     path: "articles",

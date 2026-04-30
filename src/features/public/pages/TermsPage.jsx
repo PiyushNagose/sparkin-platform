@@ -50,8 +50,9 @@ export default function TermsPage() {
         <Stack
           direction={{ xs: "column", md: "row" }}
           justifyContent="space-between"
-          spacing={{ xs: 2.5, md: 4 }}
-          sx={{ mb: publicPageSpacing.sectionBottom }}
+          spacing={{ xs: 2.2, md: 3.2 }}
+          sx={{ mb: { xs: 5.6, md: 6.6 } }}
+          className={layoutStyles.revealUp}
         >
           <Box sx={{ maxWidth: 620 }}>
             <Box
@@ -108,8 +109,9 @@ export default function TermsPage() {
           </Stack>
         </Stack>
 
-        <Stack spacing={{ xs: 3.8, md: 5.25 }}>
+        <Stack spacing={{ xs: 3.2, md: 4.2 }}>
           <Box
+            className={layoutStyles.interactiveSurface}
             sx={{
               p: { xs: 2.2, md: 3.1 },
               borderRadius: "1.65rem",
@@ -162,6 +164,7 @@ export default function TermsPage() {
           </Box>
 
           <Box
+            className={layoutStyles.interactiveSurface}
             sx={{
               p: { xs: 2.2, md: 3.1 },
               borderRadius: "1.65rem",
@@ -208,6 +211,7 @@ export default function TermsPage() {
           </Box>
 
           <Box
+            className={layoutStyles.interactiveSurface}
             sx={{
               p: { xs: 2.2, md: 3.1 },
               borderRadius: "1.65rem",
@@ -269,6 +273,7 @@ export default function TermsPage() {
           </Box>
 
           <Box
+            className={layoutStyles.interactiveSurface}
             sx={{
               p: { xs: 2.2, md: 3.1 },
               borderRadius: "1.65rem",
@@ -333,6 +338,7 @@ export default function TermsPage() {
           </Box>
 
           <Box
+            className={layoutStyles.interactiveSurface}
             sx={{
               p: { xs: 2.35, md: 3.3 },
               borderRadius: "1.65rem",

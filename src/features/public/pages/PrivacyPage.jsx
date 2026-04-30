@@ -45,8 +45,9 @@ export default function PrivacyPage() {
         <Stack
           direction={{ xs: "column", md: "row" }}
           justifyContent="space-between"
-          spacing={{ xs: 2.5, md: 4 }}
-          sx={{ mb: publicPageSpacing.sectionBottom }}
+          spacing={{ xs: 2.2, md: 3.2 }}
+          sx={{ mb: { xs: 5.6, md: 6.6 } }}
+          className={layoutStyles.revealUp}
         >
           <Box sx={{ maxWidth: 660 }}>
             <Box
@@ -104,7 +105,7 @@ export default function PrivacyPage() {
           </Typography>
         </Stack>
 
-        <Stack spacing={{ xs: 5.75, md: 7.25 }}>
+        <Stack spacing={{ xs: 4.6, md: 5.8 }}>
           <Box>
             <Typography sx={{ color: "#18253A", fontSize: { xs: "1.35rem", md: "1.55rem" }, fontWeight: 800 }}>
               Information Collected
@@ -175,6 +176,7 @@ export default function PrivacyPage() {
               {dataUsageCards.map((card) => (
                 <Grid key={card.title} size={{ xs: 12, md: 6 }}>
                   <Box
+                    className={layoutStyles.interactiveSurface}
                     sx={{
                       p: { xs: 1.7, md: 2 },
                       borderRadius: "1rem",
@@ -257,7 +259,7 @@ export default function PrivacyPage() {
             <Grid container spacing={{ xs: 2.2, md: 2.7 }} sx={{ mt: 1.9 }}>
               {securityItems.map((item) => (
                 <Grid key={item.title} size={{ xs: 12, md: 4 }}>
-                  <Box sx={{ textAlign: "center", py: { xs: 0.5, md: 1 } }}>
+                  <Box className={layoutStyles.interactiveSurface} sx={{ textAlign: "center", py: { xs: 0.5, md: 1 }, borderRadius: "1rem" }}>
                     <Box
                       sx={{
                         width: 38,
@@ -303,6 +305,7 @@ export default function PrivacyPage() {
               {rightsCards.map((card) => (
                 <Grid key={card.title} size={{ xs: 12, md: 6 }}>
                   <Box
+                    className={layoutStyles.interactiveSurface}
                     sx={{
                       p: { xs: 1.6, md: 1.9 },
                       borderRadius: "1rem",

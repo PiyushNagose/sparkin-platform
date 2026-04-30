@@ -61,9 +61,10 @@ export default function WhyChooseUsPage() {
       <Container maxWidth={false} disableGutters className={layoutStyles.publicContentContainer}>
         <Grid
           container
-          spacing={{ xs: 4, md: 5 }}
+          spacing={{ xs: 3.2, md: 4.2 }}
           alignItems="center"
-          sx={{ mb: publicPageSpacing.sectionBottom }}
+          sx={{ mb: { xs: 5.8, md: 6.8 } }}
+          className={layoutStyles.revealUp}
         >
           <Grid size={{ xs: 12, md: 6.4 }}>
             <Chip
@@ -82,7 +83,7 @@ export default function WhyChooseUsPage() {
             <Typography
               variant="h1"
               sx={{
-                mt: 1.4,
+                mt: 1.25,
                 ...publicTypography.heroTitle,
                 color: "#18253A",
                 maxWidth: 720,
@@ -96,7 +97,7 @@ export default function WhyChooseUsPage() {
             </Typography>
             <Typography
               sx={{
-                mt: 1.55,
+                mt: 1.25,
                 maxWidth: 540,
                 color: "#6E7B8E",
                 ...publicTypography.sectionBody,
@@ -106,7 +107,7 @@ export default function WhyChooseUsPage() {
               support, and lifetime service into one clean workflow for homes and
               businesses.
             </Typography>
-            <Stack direction={{ xs: "column", sm: "row" }} spacing={1.4} sx={{ mt: 2.9 }}>
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={1.25} sx={{ mt: 2.5 }}>
               <Button
                 component={RouterLink}
                 to="/calculator"
@@ -149,6 +150,7 @@ export default function WhyChooseUsPage() {
 
           <Grid size={{ xs: 12, md: 5.6 }}>
             <Box
+              className={layoutStyles.interactiveSurface}
               sx={{
                 ml: { md: "auto" },
                 maxWidth: 470,
@@ -202,10 +204,11 @@ export default function WhyChooseUsPage() {
           </Grid>
         </Grid>
 
-        <Grid container spacing={{ xs: 1.5, md: 2 }} sx={{ mb: publicPageSpacing.sectionBottom }}>
+        <Grid container spacing={{ xs: 1.5, md: 2 }} sx={{ mb: { xs: 5.8, md: 6.8 } }}>
           {proofStats.map((stat) => (
             <Grid key={stat.label} size={{ xs: 6, md: 3 }}>
               <Box
+                className={layoutStyles.interactiveSurface}
                 sx={{
                   p: { xs: 1.5, md: 1.8 },
                   borderRadius: "1.15rem",
@@ -225,10 +228,11 @@ export default function WhyChooseUsPage() {
           ))}
         </Grid>
 
-        <Grid container spacing={{ xs: 2.2, md: 2.8 }} sx={{ mb: publicPageSpacing.sectionBottom }}>
+        <Grid container spacing={{ xs: 2, md: 2.4 }} sx={{ mb: { xs: 5.8, md: 6.8 } }}>
           {reasons.map((reason) => (
             <Grid key={reason.title} size={{ xs: 12, md: 4 }}>
               <Box
+                className={`${layoutStyles.interactiveSurface} ${layoutStyles.revealUpSlow}`}
                 sx={{
                   height: "100%",
                   p: { xs: 2.2, md: 2.6 },
@@ -253,9 +257,10 @@ export default function WhyChooseUsPage() {
           ))}
         </Grid>
 
-        <Grid container spacing={{ xs: 3, md: 4 }} alignItems="stretch">
+        <Grid container spacing={{ xs: 2.5, md: 3.5 }} alignItems="stretch">
           <Grid size={{ xs: 12, md: 5 }}>
             <Box
+              className={layoutStyles.interactiveSurface}
               sx={{
                 height: "100%",
                 p: { xs: 2.5, md: 3.2 },
@@ -277,6 +282,7 @@ export default function WhyChooseUsPage() {
           </Grid>
           <Grid size={{ xs: 12, md: 7 }}>
             <Box
+              className={layoutStyles.interactiveSurface}
               sx={{
                 height: "100%",
                 p: { xs: 2.4, md: 3.2 },
