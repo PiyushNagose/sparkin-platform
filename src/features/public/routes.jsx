@@ -26,6 +26,7 @@ import AboutPage from "@/features/public/pages/AboutPage";
 import ArticlesPage from "@/features/public/pages/ArticlesPage";
 import BlogPage from "@/features/public/pages/BlogPage";
 import ReferEarnPage from "@/features/public/pages/ReferEarnPage";
+import ResourcesPage from "@/features/public/pages/ResourcesPage";
 import TrustedPartnersPage from "@/features/public/pages/TrustedPartnersPage";
 import VendorDiscoveryPage from "@/features/public/pages/VendorDiscoveryPage";
 import SolarLoanPage from "@/features/public/pages/SolarLoanPage";
@@ -91,14 +92,7 @@ export const publicRoutes = [
   },
   {
     path: "resources",
-    element: (
-      <ScreenPlaceholder
-        eyebrow="Resources"
-        title="Learning Resources"
-        description="A public resource hub for articles, guides, FAQs, and educational solar content."
-        sections={["Featured resources", "Articles", "Guides", "Help CTA"]}
-      />
-    ),
+    element: <ResourcesPage />,
   },
   {
     path: "loan-financing",

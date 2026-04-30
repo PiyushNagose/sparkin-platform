@@ -7,11 +7,11 @@ import BoltRoundedIcon from "@mui/icons-material/BoltRounded";
 import Groups2OutlinedIcon from "@mui/icons-material/Groups2Outlined";
 import aboutHeroPlaceholder from "@/shared/assets/images/public/about/about-hero-placeholder.png";
 import aboutStoryPlaceholder from "@/shared/assets/images/public/about/about-story-placeholder.png";
-import styles from "@/features/public/pages/HomePage.module.css";
 import {
   publicPageSpacing,
   publicTypography,
 } from "@/features/public/pages/publicPageStyles";
+import layoutStyles from "@/app/layouts/PublicLayout.module.css";
 
 const values = [
   {
@@ -71,13 +71,14 @@ export default function AboutPage() {
       <Container
         maxWidth={false}
         disableGutters
-        className={styles.contentContainer}
+        className={layoutStyles.publicContentContainer}
       >
         <Grid
           container
-          spacing={{ xs: 4.5, md: 5 }}
+          spacing={{ xs: 3.2, md: 4.2 }}
           alignItems="center"
-          sx={{ mb: publicPageSpacing.sectionBottom }}
+          sx={{ mb: { xs: 5.8, md: 6.8 } }}
+          className={layoutStyles.revealUp}
         >
           <Grid size={{ xs: 12, md: 6.4 }}>
             <Box
@@ -114,7 +115,7 @@ export default function AboutPage() {
 
             <Typography
               sx={{
-                mt: 1.55,
+                mt: 1.25,
                 maxWidth: 510,
                 color: "#6E7B8E",
                 ...publicTypography.sectionBody,
@@ -130,7 +131,7 @@ export default function AboutPage() {
               to="/booking"
               variant="contained"
               sx={{
-                mt: 2.6,
+                mt: 2.35,
                 minHeight: 42,
                 px: 2.1,
                 borderRadius: "0.72rem",
@@ -147,6 +148,7 @@ export default function AboutPage() {
 
           <Grid size={{ xs: 12, md: 5.6 }}>
             <Box
+              className={layoutStyles.interactiveSurface}
               sx={{
                 ml: { md: "auto" },
                 maxWidth: 390,
@@ -205,12 +207,13 @@ export default function AboutPage() {
 
         <Grid
           container
-          spacing={{ xs: 2.2, md: 2.5 }}
-          sx={{ mb: publicPageSpacing.sectionBottom }}
+          spacing={{ xs: 2, md: 2.4 }}
+          sx={{ mb: { xs: 5.8, md: 6.8 } }}
         >
           {values.map((value) => (
             <Grid key={value.title} size={{ xs: 12, md: 6 }}>
               <Box
+                className={`${layoutStyles.interactiveSurface} ${layoutStyles.revealUpSlow}`}
                 sx={{
                   p: { xs: 2.2, md: 2.6 },
                   minHeight: 180,
@@ -259,7 +262,7 @@ export default function AboutPage() {
           ))}
         </Grid>
 
-        <Box sx={{ textAlign: "center", mb: { xs: 5.75, md: 7 } }}>
+        <Box sx={{ textAlign: "center", mb: { xs: 4.8, md: 5.8 } }}>
           <Typography
             sx={{
               color: "#18253A",
@@ -285,12 +288,13 @@ export default function AboutPage() {
 
         <Grid
           container
-          spacing={{ xs: 2, md: 2.2 }}
-          sx={{ mb: { xs: 9, md: 11 } }}
+          spacing={{ xs: 1.8, md: 2.2 }}
+          sx={{ mb: { xs: 6.6, md: 8 } }}
         >
           {targets.map((target) => (
             <Grid key={target.title} size={{ xs: 12, md: 4 }}>
               <Box
+                className={layoutStyles.interactiveSurface}
                 sx={{
                   p: { xs: 2, md: 2.2 },
                   minHeight: 184,
@@ -350,12 +354,13 @@ export default function AboutPage() {
 
         <Grid
           container
-          spacing={{ xs: 3.5, md: 4.5 }}
+          spacing={{ xs: 3, md: 4 }}
           alignItems="center"
-          sx={{ mb: { xs: 8.5, md: 10 } }}
+          sx={{ mb: { xs: 6.6, md: 8 } }}
         >
           <Grid size={{ xs: 12, md: 5.3 }}>
             <Box
+              className={layoutStyles.interactiveSurface}
               sx={{
                 minHeight: { xs: 250, md: 300 },
                 borderRadius: "1.55rem",
@@ -411,11 +416,12 @@ export default function AboutPage() {
         <Grid
           container
           spacing={{ xs: 1.5, md: 2 }}
-          sx={{ mb: { xs: 8.5, md: 10.5 } }}
+          sx={{ mb: { xs: 6.6, md: 8 } }}
         >
           {statPills.map((item) => (
             <Grid key={item.label} size={{ xs: 6, md: 3 }}>
               <Box
+                className={layoutStyles.interactiveSurface}
                 sx={{
                   p: { xs: 1.4, md: 1.6 },
                   borderRadius: "1rem",
@@ -451,6 +457,7 @@ export default function AboutPage() {
         </Grid>
 
         <Box
+          className={layoutStyles.interactiveSurface}
           sx={{
             p: { xs: 3.2, md: 4.6 },
             borderRadius: "2rem",
