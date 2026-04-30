@@ -136,9 +136,9 @@ export default function CalculatorProcessingPage() {
                 sx={{
                   mt: { xs: 4, md: 4.5 },
                   width: "100%",
-                  maxWidth: 510,
-                  p: { xs: 2.1, md: 2.35 },
-                  borderRadius: "1rem",
+                  maxWidth: 590,
+                  p: { xs: 2.35, md: 2.75 },
+                  borderRadius: "1.2rem",
                   bgcolor: "rgba(255,255,255,0.92)",
                   border: "1px solid rgba(221,229,239,0.98)",
                   boxShadow: "0 18px 46px rgba(20,34,56,0.08)",
