@@ -82,8 +82,8 @@ export default function CalculatorPage() {
             sx={{
               mt: { xs: 4.8, md: 5.8 },
               mx: "auto",
-              maxWidth: 620,
-              p: { xs: 2.15, md: 2.8 },
+              maxWidth: 720,
+              p: { xs: 2.55, md: 3.35 },
               borderRadius: "1.45rem",
               bgcolor: "rgba(255,255,255,0.92)",
               border: "1px solid rgba(218,228,240,0.95)",
@@ -91,7 +91,7 @@ export default function CalculatorPage() {
               backdropFilter: "blur(10px)",
             }}
           >
-            <Stack spacing={2.45}>
+            <Stack spacing={2.8}>
               <Box>
                 <Typography
                   sx={{
@@ -167,7 +167,7 @@ export default function CalculatorPage() {
                       </Typography>
                     ),
                     sx: {
-                      height: 52,
+                      height: 58,
                       borderRadius: "0.75rem",
                       bgcolor: "#F2F5F9",
                       color: "#18253A",
@@ -199,7 +199,7 @@ export default function CalculatorPage() {
                       />
                     ),
                     sx: {
-                      height: 52,
+                      height: 58,
                       borderRadius: "0.75rem",
                       bgcolor: "#F2F5F9",
                       color: "#18253A",
@@ -215,7 +215,7 @@ export default function CalculatorPage() {
                 endIcon={<ArrowForwardRoundedIcon />}
                 sx={{
                   mt: 0.5,
-                  minHeight: 54,
+                  minHeight: 60,
                   borderRadius: "0.75rem",
                   fontSize: "1rem",
                   fontWeight: 700,

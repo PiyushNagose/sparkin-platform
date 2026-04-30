@@ -429,11 +429,12 @@ function HomePage() {
                   className={styles.heroContentColumn}
                   sx={{
                     minHeight: { xs: "auto", lg: 430 },
+                    maxWidth: { lg: 760 },
                   }}
                 >
                   <Stack
                     className={`${styles.heroCopyStack} ${styles.heroRevealPrimary}`}
-                    spacing={{ xs: 1.9, md: 2.35 }}
+                    spacing={{ xs: 2.05, md: 2.45 }}
                     alignItems="flex-start"
                   >
                     <Chip
@@ -444,7 +445,7 @@ function HomePage() {
                         fontWeight: 800,
                         letterSpacing: 1.1,
                         textTransform: "uppercase",
-                        mb: 1.35,
+                        mb: 1.55,
                         height: 30,
                         borderRadius: 999,
                         fontSize: "0.75rem",
@@ -455,10 +456,10 @@ function HomePage() {
                     <Typography
                       variant="h1"
                       sx={{
-                        fontSize: { xs: "2.05rem", md: "3.35rem" },
+                        fontSize: { xs: "2rem", md: "3.18rem" },
                         lineHeight: { xs: 1.08, md: 1.08 },
                         letterSpacing: "-0.03em",
-                        maxWidth: 720,
+                        maxWidth: 690,
                         fontWeight: 900,
                       }}
                     >
@@ -474,8 +475,8 @@ function HomePage() {
                     <Typography
                       variant="h5"
                       sx={{
-                        maxWidth: 560,
-                        lineHeight: 1.55,
+                        maxWidth: 650,
+                        lineHeight: 1.52,
                         fontWeight: 600,
                         color: "rgba(255,255,255,0.88)",
                         fontSize: { xs: "0.92rem", md: "1rem" },
@@ -488,8 +489,8 @@ function HomePage() {
 
                     <Stack
                       direction={{ xs: "column", sm: "row" }}
-                      spacing={1.5}
-                      sx={{ pt: 0.85 }}
+                      spacing={1.15}
+                      sx={{ pt: 1.05 }}
                     >
                       <Button
                         component={RouterLink}
@@ -500,7 +501,7 @@ function HomePage() {
                         className={styles.blueCta}
                         sx={{
                           minWidth: 230,
-                          minHeight: 56,
+                          minHeight: 54,
                           fontSize: "0.98rem",
                           borderRadius: "0.8rem",
                           background:
@@ -519,7 +520,7 @@ function HomePage() {
                         endIcon={<ArrowForwardRoundedIcon />}
                         sx={{
                           minWidth: 220,
-                          minHeight: 56,
+                          minHeight: 54,
                           fontSize: "0.98rem",
                           borderRadius: "0.8rem",
                           bgcolor: "white",
@@ -537,7 +538,7 @@ function HomePage() {
                     direction={{ xs: "column", md: "row" }}
                     spacing={{ xs: 2.3, md: 4.8 }}
                     sx={{
-                      mt: { xs: 4, md: 4.8 },
+                      mt: { xs: 3.6, md: 4.2 },
                       pt: 0,
                       width: "100%",
                     }}

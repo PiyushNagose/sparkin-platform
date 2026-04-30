@@ -114,9 +114,9 @@ export default function CalculatorResultsPage() {
               <Grid size={{ xs: 12, md: 8.2 }}>
                 <Box
                   sx={{
-                    minHeight: 180,
-                    p: { xs: 2.15, md: 2.35 },
-                    borderRadius: "1rem",
+                    minHeight: 210,
+                    p: { xs: 2.35, md: 2.75 },
+                    borderRadius: "1.2rem",
                     bgcolor: "rgba(255,255,255,0.95)",
                     border: "1px solid rgba(220,228,239,0.96)",
                     boxShadow: "0 18px 46px rgba(20,34,56,0.08)",
@@ -279,9 +279,9 @@ export default function CalculatorResultsPage() {
               <Grid size={{ xs: 12, md: 3.8 }}>
                 <Box
                   sx={{
-                    minHeight: 180,
-                    p: { xs: 2.1, md: 2.2 },
-                    borderRadius: "1rem",
+                    minHeight: 210,
+                    p: { xs: 2.3, md: 2.6 },
+                    borderRadius: "1.2rem",
                     background:
                       "linear-gradient(180deg, #0F58C7 0%, #123C9C 100%)",
                     color: "white",
@@ -395,8 +395,8 @@ export default function CalculatorResultsPage() {
                   <Box
                     sx={{
                       p: { xs: 1.95, md: 2.05 },
-                      minHeight: 126,
-                      borderRadius: "1rem",
+                      minHeight: 148,
+                      borderRadius: "1.15rem",
                       bgcolor: "rgba(255,255,255,0.95)",
                       border: card.highlight
                         ? "1px solid rgba(120,170,135,0.48)"
