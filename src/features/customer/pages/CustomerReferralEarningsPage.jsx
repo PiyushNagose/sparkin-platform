@@ -1,4 +1,5 @@
-import { Avatar, Box, Button, Stack, Typography } from "@mui/material";
+import { useEffect, useMemo, useState } from "react";
+import { Alert, Avatar, Box, Button, CircularProgress, Stack, Typography } from "@mui/material";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import TuneRoundedIcon from "@mui/icons-material/TuneRounded";
 import DownloadRoundedIcon from "@mui/icons-material/DownloadRounded";
@@ -7,6 +8,7 @@ import GroupOutlinedIcon from "@mui/icons-material/GroupOutlined";
 import ContentCopyRoundedIcon from "@mui/icons-material/ContentCopyRounded";
 import StarsRoundedIcon from "@mui/icons-material/StarsRounded";
 import { NavLink } from "react-router-dom";
+import { referralsApi } from "@/features/customer/api/referralsApi";
 
 const summaryCards = [
   {
@@ -34,6 +36,78 @@ const referrals = [
   { name: "Sneha Reddy", initials: "r R", status: "Installed", statusBg: "#E8FAEF", statusTone: "#177D45", reward: "\u20B95,000", date: "Oct 15, 2023" },
   { name: "Vikram Rao", initials: "VR", status: "Signed Up", statusBg: "#EEF4FF", statusTone: "#0E56C8", reward: "-", date: "Oct 10, 2023" },
 ];
+
+function formatPrice(value) {
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(value || 0);
+}
+
+function formatDate(value) {
+  return new Intl.DateTimeFormat("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(value));
+}
+
+function getInitials(name) {
+  return name
+    .split(" ")
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+}
+
+function getStatusStyle(status) {
+  if (status === "installed" || status === "rewarded") {
+    return { label: status.replaceAll("_", " "), bg: "#E8FAEF", tone: "#177D45" };
+  }
+
+  if (status === "signed_up") {
+    return { label: "signed up", bg: "#EEF4FF", tone: "#0E56C8" };
+  }
+
+  return { label: "invited", bg: "#F2F5F8", tone: "#677487" };
+}
+
+function toReferralRow(referral) {
+  const status = getStatusStyle(referral.status);
+
+  return {
+    name: referral.friend.fullName,
+    initials: getInitials(referral.friend.fullName),
+    status: status.label,
+    statusBg: status.bg,
+    statusTone: status.tone,
+    reward: referral.rewardStatus === "pending" ? "-" : formatPrice(referral.rewardAmount),
+    date: formatDate(referral.createdAt),
+  };
+}
+
+function getSummaryCards(summary) {
+  return [
+    {
+      title: "Total Earnings",
+      value: formatPrice(summary?.totalEarnings),
+      meta: `${formatPrice(summary?.availableEarnings)} available`,
+      icon: <SavingsOutlinedIcon sx={{ fontSize: "1.7rem" }} />,
+      iconTone: "#E8EEF9",
+      metaTone: "#177D45",
+    },
+    {
+      title: "Total Referrals",
+      value: String(summary?.invitesSent ?? 0),
+      meta: `${summary?.successfulReferrals ?? 0} successful referrals`,
+      icon: <GroupOutlinedIcon sx={{ fontSize: "1.7rem" }} />,
+      iconTone: "#E8EEF9",
+      metaTone: "#647387",
+    },
+  ];
+}
 
 function SummaryCard({ item }) {
   return (
@@ -70,6 +144,37 @@ function SummaryCard({ item }) {
 }
 
 export default function CustomerReferralEarningsPage() {
+  const [dashboard, setDashboard] = useState({ summary: null, referrals: [] });
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadEarnings() {
+      setIsLoading(true);
+      setError("");
+
+      try {
+        const result = await referralsApi.getDashboard();
+        if (active) setDashboard(result);
+      } catch (apiError) {
+        if (active) setError(apiError?.response?.data?.message || "Could not load referral earnings.");
+      } finally {
+        if (active) setIsLoading(false);
+      }
+    }
+
+    loadEarnings();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const displaySummaryCards = useMemo(() => getSummaryCards(dashboard.summary), [dashboard.summary]);
+  const displayReferrals = useMemo(() => dashboard.referrals.map(toReferralRow), [dashboard.referrals]);
+
   return (
     <Box sx={{ width: "100%" }}>
       <Stack
@@ -124,6 +229,20 @@ export default function CustomerReferralEarningsPage() {
         </Button>
       </Stack>
 
+      {isLoading ? (
+        <Box sx={{ py: 5, display: "grid", placeItems: "center" }}>
+          <CircularProgress />
+        </Box>
+      ) : null}
+
+      {!isLoading && error ? (
+        <Alert severity="error" sx={{ mt: 1.5, borderRadius: "0.9rem" }}>
+          {error}
+        </Alert>
+      ) : null}
+
+      {!isLoading && !error ? (
+      <>
       <Box
         sx={{
           mt: 1.8,
@@ -132,7 +251,7 @@ export default function CustomerReferralEarningsPage() {
           gap: 1.35,
         }}
       >
-        {summaryCards.map((item) => (
+        {displaySummaryCards.map((item) => (
           <SummaryCard key={item.title} item={item} />
         ))}
       </Box>
@@ -177,7 +296,15 @@ export default function CustomerReferralEarningsPage() {
             <Box>Date</Box>
           </Box>
 
-          {referrals.map((item) => (
+          {displayReferrals.length === 0 ? (
+            <Box sx={{ px: 1.45, py: 1.4, borderTop: "1px solid rgba(232,237,244,0.9)" }}>
+              <Typography sx={{ color: "#647387", fontSize: "0.82rem" }}>
+                No referrals yet. Create your first referral invite to start tracking rewards.
+              </Typography>
+            </Box>
+          ) : null}
+
+          {displayReferrals.map((item) => (
             <Box
               key={`${item.name}-${item.date}`}
               sx={{
@@ -219,7 +346,7 @@ export default function CustomerReferralEarningsPage() {
         </Box>
 
         <Stack spacing={1} sx={{ display: { xs: "flex", md: "none" }, px: 1.15, pb: 1.2 }}>
-          {referrals.map((item) => (
+          {displayReferrals.map((item) => (
             <Box
               key={`mobile-${item.name}-${item.date}`}
               sx={{
@@ -377,6 +504,8 @@ export default function CustomerReferralEarningsPage() {
           </Typography>
         </Box>
       </Box>
+      </>
+      ) : null}
     </Box>
   );
 }

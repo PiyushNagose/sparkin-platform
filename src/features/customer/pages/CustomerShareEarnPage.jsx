@@ -1,4 +1,5 @@
-import { Box, Button, Stack, Typography } from "@mui/material";
+import { useEffect, useState } from "react";
+import { Alert, Box, Button, CircularProgress, Stack, TextField, Typography } from "@mui/material";
 import ContentCopyRoundedIcon from "@mui/icons-material/ContentCopyRounded";
 import WhatsAppIcon from "@mui/icons-material/WhatsApp";
 import CampaignRoundedIcon from "@mui/icons-material/CampaignRounded";
@@ -6,6 +7,7 @@ import SolarPowerRoundedIcon from "@mui/icons-material/SolarPowerRounded";
 import AccountBalanceWalletOutlinedIcon from "@mui/icons-material/AccountBalanceWalletOutlined";
 import EditNoteRoundedIcon from "@mui/icons-material/EditNoteRounded";
 import { NavLink } from "react-router-dom";
+import { referralsApi } from "@/features/customer/api/referralsApi";
 import customerShareEarnHeroPlaceholder from "@/shared/assets/images/customer/referrals/customer-share-earn-hero-placeholder.png";
 
 const steps = [
@@ -67,6 +69,74 @@ function StepCard({ item }) {
 }
 
 export default function CustomerShareEarnPage() {
+  const [summary, setSummary] = useState(null);
+  const [form, setForm] = useState({ fullName: "", email: "", phoneNumber: "" });
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadSummary() {
+      setIsLoading(true);
+      setError("");
+
+      try {
+        const result = await referralsApi.getDashboard();
+        if (active) setSummary(result.summary);
+      } catch (apiError) {
+        if (active) setError(apiError?.response?.data?.message || "Could not load referral details.");
+      } finally {
+        if (active) setIsLoading(false);
+      }
+    }
+
+    loadSummary();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  function updateField(field, value) {
+    setForm((current) => ({ ...current, [field]: value }));
+  }
+
+  async function copyReferralLink() {
+    if (!summary?.referralLink) return;
+    await navigator.clipboard.writeText(summary.referralLink);
+    setSuccess("Referral link copied.");
+  }
+
+  function shareOnWhatsApp() {
+    if (!summary?.referralLink) return;
+    const message = `Go solar with Sparkin and use my referral link for a discount: ${summary.referralLink}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer");
+  }
+
+  async function submitReferral() {
+    setIsSubmitting(true);
+    setError("");
+    setSuccess("");
+
+    try {
+      const result = await referralsApi.createReferral({
+        fullName: form.fullName,
+        email: form.email,
+        phoneNumber: form.phoneNumber || null,
+      });
+      setSummary(result.summary);
+      setForm({ fullName: "", email: "", phoneNumber: "" });
+      setSuccess(`Referral invite created for ${result.referral.friend.fullName}.`);
+    } catch (apiError) {
+      setError(apiError?.response?.data?.message || "Could not create referral invite.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
   return (
     <Box sx={{ width: "100%" }}>
       <Box
@@ -122,6 +192,26 @@ export default function CustomerShareEarnPage() {
         />
       </Box>
 
+      {isLoading ? (
+        <Box sx={{ py: 5, display: "grid", placeItems: "center" }}>
+          <CircularProgress />
+        </Box>
+      ) : null}
+
+      {!isLoading && error ? (
+        <Alert severity="error" sx={{ mt: 1.5, borderRadius: "0.9rem" }}>
+          {error}
+        </Alert>
+      ) : null}
+
+      {!isLoading && success ? (
+        <Alert severity="success" sx={{ mt: 1.5, borderRadius: "0.9rem" }} onClose={() => setSuccess("")}>
+          {success}
+        </Alert>
+      ) : null}
+
+      {!isLoading ? (
+      <>
       <Box
         sx={{
           mt: 2,
@@ -167,12 +257,13 @@ export default function CustomerShareEarnPage() {
                 wordBreak: "break-all",
               }}
             >
-              sparkin.in/ref/user123
+              {summary?.referralLink?.replace("https://", "") || "Referral link unavailable"}
             </Typography>
 
             <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
               <Button
                 startIcon={<ContentCopyRoundedIcon />}
+                onClick={copyReferralLink}
                 sx={{
                   minHeight: 38,
                   px: 1.35,
@@ -189,6 +280,7 @@ export default function CustomerShareEarnPage() {
               <Button
                 variant="contained"
                 startIcon={<WhatsAppIcon />}
+                onClick={shareOnWhatsApp}
                 sx={{
                   minHeight: 38,
                   px: 1.35,
@@ -205,6 +297,61 @@ export default function CustomerShareEarnPage() {
             </Stack>
           </Stack>
         </Box>
+      </Box>
+
+      <Box
+        sx={{
+          mt: 1.55,
+          p: 1.45,
+          borderRadius: "1.3rem",
+          bgcolor: "#FFFFFF",
+          border: "1px solid rgba(225,232,241,0.96)",
+          boxShadow: "0 14px 28px rgba(16,29,51,0.04)",
+        }}
+      >
+        <Typography sx={{ color: "#223146", fontSize: "1rem", fontWeight: 800 }}>
+          Create Referral Invite
+        </Typography>
+        <Stack direction={{ xs: "column", md: "row" }} spacing={1} sx={{ mt: 1.1 }}>
+          <TextField
+            label="Friend name"
+            value={form.fullName}
+            onChange={(event) => updateField("fullName", event.target.value)}
+            size="small"
+            fullWidth
+          />
+          <TextField
+            label="Friend email"
+            value={form.email}
+            onChange={(event) => updateField("email", event.target.value)}
+            size="small"
+            fullWidth
+          />
+          <TextField
+            label="Phone optional"
+            value={form.phoneNumber}
+            onChange={(event) => updateField("phoneNumber", event.target.value)}
+            size="small"
+            fullWidth
+          />
+          <Button
+            variant="contained"
+            disabled={isSubmitting || !form.fullName.trim() || !form.email.trim()}
+            onClick={submitReferral}
+            sx={{
+              minHeight: 40,
+              px: 1.55,
+              borderRadius: "0.9rem",
+              bgcolor: "#0E56C8",
+              fontSize: "0.76rem",
+              fontWeight: 700,
+              textTransform: "none",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {isSubmitting ? "Creating..." : "Create Invite"}
+          </Button>
+        </Stack>
       </Box>
 
       <Box
@@ -293,7 +440,7 @@ export default function CustomerShareEarnPage() {
             }}
           >
             {
-              "Earn \u20B95,000 for every successful solar installation referred by you."
+              `Earn ${new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(summary?.rewardAmount || 5000)} for every successful solar installation referred by you.`
             }
           </Typography>
 
@@ -332,7 +479,7 @@ export default function CustomerShareEarnPage() {
                   lineHeight: 1.02,
                 }}
               >
-                {"\u20B925,000"}
+                {new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(summary?.totalEarnings || 0)}
               </Typography>
             </Box>
             <Box
@@ -349,7 +496,7 @@ export default function CustomerShareEarnPage() {
                 lineHeight: 1,
               }}
             >
-              5 Referrals
+              {summary?.successfulReferrals || 0} Referrals
             </Box>
           </Stack>
           <Button
@@ -402,6 +549,8 @@ export default function CustomerShareEarnPage() {
           Referral Terms & Conditions
         </Box>
       </Typography>
+      </>
+      ) : null}
     </Box>
   );
 }

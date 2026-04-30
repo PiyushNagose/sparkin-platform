@@ -7,6 +7,7 @@ import BoltRoundedIcon from "@mui/icons-material/BoltRounded";
 import Groups2OutlinedIcon from "@mui/icons-material/Groups2Outlined";
 import aboutHeroPlaceholder from "@/shared/assets/images/public/about/about-hero-placeholder.png";
 import aboutStoryPlaceholder from "@/shared/assets/images/public/about/about-story-placeholder.png";
+import styles from "@/features/public/pages/HomePage.module.css";
 import {
   publicPageSpacing,
   publicTypography,
@@ -67,7 +68,11 @@ export default function AboutPage() {
           "radial-gradient(circle at top center, rgba(214,229,246,0.82) 0%, rgba(245,248,251,0.96) 22%, #F9FBFD 60%, #F7FAFB 100%)",
       }}
     >
-      <Container maxWidth="lg">
+      <Container
+        maxWidth={false}
+        disableGutters
+        className={styles.contentContainer}
+      >
         <Grid
           container
           spacing={{ xs: 4.5, md: 5 }}

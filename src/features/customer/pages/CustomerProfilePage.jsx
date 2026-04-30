@@ -1,10 +1,25 @@
-import { Avatar, Box, Button, MenuItem, Stack, Switch, TextField, Typography } from "@mui/material";
+import { useRef, useEffect, useMemo, useState } from "react";
+import { Alert, Box, Button, MenuItem, Stack, Switch, TextField, Typography } from "@mui/material";
 import PersonOutlineRoundedIcon from "@mui/icons-material/PersonOutlineRounded";
 import SettingsSuggestOutlinedIcon from "@mui/icons-material/SettingsSuggestOutlined";
 import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
 import CameraAltOutlinedIcon from "@mui/icons-material/CameraAltOutlined";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
+import { useAuth } from "@/features/auth/AuthProvider";
+import { projectsApi } from "@/features/public/api/projectsApi";
 import customerProfileAvatarPlaceholder from "@/shared/assets/images/customer/profile/customer-profile-avatar-placeholder.svg";
+
+const preferencesKey = "sparkin.customer.preferences";
+const identityApiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:4001/api/v1";
+const identityOrigin = identityApiBaseUrl.replace(/\/api\/v1\/?$/, "");
+
+function getStoredPreferences() {
+  try {
+    return JSON.parse(window.localStorage.getItem(preferencesKey) || "{}");
+  } catch {
+    return {};
+  }
+}
 
 function SectionCard({ title, icon, children, sx }) {
   return (
@@ -26,7 +41,7 @@ function SectionCard({ title, icon, children, sx }) {
   );
 }
 
-function LabeledField({ label, value, fullWidth = false, select = false, children }) {
+function LabeledField({ label, value, onChange, fullWidth = false, readOnly = false }) {
   return (
     <Box sx={{ minWidth: 0, gridColumn: fullWidth ? "1 / -1" : "auto" }}>
       <Typography
@@ -45,26 +60,22 @@ function LabeledField({ label, value, fullWidth = false, select = false, childre
         fullWidth
         size="small"
         value={value}
-        select={select}
-        InputProps={{
-          readOnly: !select,
-        }}
+        onChange={(event) => onChange?.(event.target.value)}
+        InputProps={{ readOnly }}
         sx={{
           "& .MuiOutlinedInput-root": {
-            height: 40,
+            minHeight: 40,
             borderRadius: "0.82rem",
-            bgcolor: "#FFFFFF",
+            bgcolor: readOnly ? "#F4F7FB" : "#FFFFFF",
             fontSize: "0.84rem",
           },
         }}
-      >
-        {children}
-      </TextField>
+      />
     </Box>
   );
 }
 
-function PreferenceToggle({ title, subtitle, checked }) {
+function PreferenceToggle({ title, subtitle, checked, onChange }) {
   return (
     <Box
       sx={{
@@ -81,13 +92,175 @@ function PreferenceToggle({ title, subtitle, checked }) {
             {subtitle}
           </Typography>
         </Box>
-        <Switch checked={checked} />
+        <Switch checked={checked} onChange={(event) => onChange(event.target.checked)} />
       </Stack>
     </Box>
   );
 }
 
+function formatAddress(address) {
+  if (!address) return null;
+
+  return {
+    line: [address.street, address.landmark].filter(Boolean).join(", "),
+    city: address.city || "",
+    state: address.state || "",
+    pincode: address.pincode || "",
+  };
+}
+
 export default function CustomerProfilePage() {
+  const { user, updateUserAvatar, updateUserProfile } = useAuth();
+  const fileInputRef = useRef(null);
+  const [form, setForm] = useState({
+    fullName: user?.fullName || "",
+    phoneNumber: user?.phoneNumber || "",
+  });
+  const [preferences, setPreferences] = useState(() => ({
+    language: "English (India)",
+    notifications: true,
+    darkMode: false,
+    ...getStoredPreferences(),
+  }));
+  const [projects, setProjects] = useState([]);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [photoNotice, setPhotoNotice] = useState("");
+
+  useEffect(() => {
+    setForm({
+      fullName: user?.fullName || "",
+      phoneNumber: user?.phoneNumber || "",
+    });
+  }, [user]);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadProjects() {
+      try {
+        const result = await projectsApi.listProjects();
+        if (active) setProjects(result);
+      } catch {
+        if (active) setProjects([]);
+      }
+    }
+
+    loadProjects();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const activeProject = projects[0] ?? null;
+  const projectAddress = useMemo(() => formatAddress(activeProject?.installationAddress), [activeProject]);
+  const installedCapacity = projects.reduce((sum, project) => sum + (Number(project.system?.sizeKw) || 0), 0);
+  const statusLabel = installedCapacity > 0 ? `${installedCapacity}kW connected` : "Profile active";
+
+  function updateField(field, value) {
+    setForm((current) => ({ ...current, [field]: value }));
+  }
+
+  function updatePreference(field, value) {
+    setPreferences((current) => {
+      const next = { ...current, [field]: value };
+      window.localStorage.setItem(preferencesKey, JSON.stringify(next));
+      return next;
+    });
+  }
+
+  async function saveProfile() {
+    setIsSaving(true);
+    setError("");
+    setSuccess("");
+
+    try {
+      await updateUserProfile({
+        fullName: form.fullName.trim(),
+        phoneNumber: form.phoneNumber.trim() || null,
+      });
+      setSuccess("Profile updated.");
+    } catch (apiError) {
+      setError(apiError?.response?.data?.message || "Could not update profile.");
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  function resetForm() {
+    setForm({
+      fullName: user?.fullName || "",
+      phoneNumber: user?.phoneNumber || "",
+    });
+    setError("");
+    setSuccess("");
+  }
+
+  function getAvatarSource() {
+    if (!user?.avatarUrl) {
+      return customerProfileAvatarPlaceholder;
+    }
+
+    if (user.avatarUrl.startsWith("http")) {
+      return user.avatarUrl;
+    }
+
+    return `${identityOrigin}${user.avatarUrl}`;
+  }
+
+  function handlePhotoAction() {
+    fileInputRef.current?.click();
+  }
+
+  function readFileAsDataUrl(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function handleAvatarSelected(event) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+
+    if (!file) return;
+
+    setError("");
+    setSuccess("");
+    setPhotoNotice("");
+
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      setPhotoNotice("Please upload a JPG, PNG, or WEBP image.");
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      setPhotoNotice("Please upload an image smaller than 2MB.");
+      return;
+    }
+
+    setIsUploadingAvatar(true);
+
+    try {
+      const data = await readFileAsDataUrl(file);
+      await updateUserAvatar({
+        fileName: file.name,
+        contentType: file.type,
+        data,
+      });
+      setSuccess("Profile photo updated.");
+    } catch (apiError) {
+      setError(apiError?.response?.data?.message || "Could not upload profile photo.");
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  }
+
   return (
     <Box sx={{ width: "100%" }}>
       <Box
@@ -99,6 +272,13 @@ export default function CustomerProfilePage() {
           boxShadow: "0 14px 28px rgba(16,29,51,0.04)",
         }}
       >
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/png,image/jpeg,image/webp"
+          hidden
+          onChange={handleAvatarSelected}
+        />
         <Stack
           direction={{ xs: "column", lg: "row" }}
           justifyContent="space-between"
@@ -109,7 +289,7 @@ export default function CustomerProfilePage() {
             <Box sx={{ position: "relative" }}>
               <Box
                 component="img"
-                src={customerProfileAvatarPlaceholder}
+                src={getAvatarSource()}
                 alt="Customer profile placeholder"
                 sx={{
                   width: 84,
@@ -120,6 +300,8 @@ export default function CustomerProfilePage() {
                 }}
               />
               <Button
+                onClick={handlePhotoAction}
+                disabled={isUploadingAvatar}
                 sx={{
                   minWidth: 0,
                   width: 26,
@@ -148,12 +330,17 @@ export default function CustomerProfilePage() {
                   lineHeight: 1.08,
                 }}
               >
-                Arjun Sharma
+                {user?.fullName || "Sparkin User"}
               </Typography>
               <Typography sx={{ mt: 0.35, color: "#647387", fontSize: "0.86rem" }}>
-                arjun.sharma@example.com
+                {user?.email || "Email not available"}
+              </Typography>
+              <Typography sx={{ mt: 0.55, color: "#0E56C8", fontSize: "0.72rem", fontWeight: 800, textTransform: "uppercase" }}>
+                {user?.role || "customer"}
               </Typography>
               <Button
+                onClick={handlePhotoAction}
+                disabled={isUploadingAvatar}
                 sx={{
                   mt: 1.1,
                   minHeight: 32,
@@ -166,7 +353,7 @@ export default function CustomerProfilePage() {
                   textTransform: "none",
                 }}
               >
-                Change Photo
+                {isUploadingAvatar ? "Uploading..." : "Change Photo"}
               </Button>
             </Box>
           </Stack>
@@ -192,7 +379,7 @@ export default function CustomerProfilePage() {
               Energy Saving Status
             </Typography>
             <Typography sx={{ mt: 0.22, color: "#5C6400", fontSize: "1.1rem", fontWeight: 800 }}>
-              Top 5% Household
+              {statusLabel}
             </Typography>
           </Box>
         </Stack>
@@ -215,25 +402,31 @@ export default function CustomerProfilePage() {
                 gap: 1.15,
               }}
             >
-              <LabeledField label="Full Name" value="Arjun Sharma" />
-              <LabeledField label="Phone Number" value="+91 98765 43210" />
-              <LabeledField label="Email Address" value="arjun.sharma@example.com" fullWidth />
+              <LabeledField label="Full Name" value={form.fullName} onChange={(value) => updateField("fullName", value)} />
+              <LabeledField label="Phone Number" value={form.phoneNumber} onChange={(value) => updateField("phoneNumber", value)} />
+              <LabeledField label="Email Address" value={user?.email || ""} fullWidth readOnly />
             </Box>
           </SectionCard>
 
-          <SectionCard title="Address" icon={<LocationOnOutlinedIcon sx={{ fontSize: "1rem" }} />}>
-            <Box
-              sx={{
-                display: "grid",
-                gridTemplateColumns: { xs: "1fr", md: "repeat(2, minmax(0, 1fr))" },
-                gap: 1.15,
-              }}
-            >
-              <LabeledField label="Address" value="42, Green Valley Estate, Phase II" fullWidth />
-              <LabeledField label="City" value="Bangalore" />
-              <LabeledField label="State" value="Karnataka" />
-              <LabeledField label="Pincode" value="560001" />
-            </Box>
+          <SectionCard title="Primary Project Address" icon={<LocationOnOutlinedIcon sx={{ fontSize: "1rem" }} />}>
+            {projectAddress ? (
+              <Box
+                sx={{
+                  display: "grid",
+                  gridTemplateColumns: { xs: "1fr", md: "repeat(2, minmax(0, 1fr))" },
+                  gap: 1.15,
+                }}
+              >
+                <LabeledField label="Address" value={projectAddress.line} fullWidth readOnly />
+                <LabeledField label="City" value={projectAddress.city} readOnly />
+                <LabeledField label="State" value={projectAddress.state} readOnly />
+                <LabeledField label="Pincode" value={projectAddress.pincode} readOnly />
+              </Box>
+            ) : (
+              <Alert severity="info" sx={{ borderRadius: "0.9rem" }}>
+                Your installation address will appear here after your first project is created.
+              </Alert>
+            )}
           </SectionCard>
         </Stack>
 
@@ -255,7 +448,8 @@ export default function CustomerProfilePage() {
               select
               fullWidth
               size="small"
-              value="English (US)"
+              value={preferences.language}
+              onChange={(event) => updatePreference("language", event.target.value)}
               sx={{
                 mb: 1.15,
                 "& .MuiOutlinedInput-root": {
@@ -266,12 +460,23 @@ export default function CustomerProfilePage() {
                 },
               }}
             >
-              <MenuItem value="English (US)">English (US)</MenuItem>
+              <MenuItem value="English (India)">English (India)</MenuItem>
+              <MenuItem value="Hindi">Hindi</MenuItem>
             </TextField>
 
             <Stack spacing={1.05}>
-              <PreferenceToggle title="Notifications" subtitle="Email & Push Alerts" checked />
-              <PreferenceToggle title="Dark Mode" subtitle="System default" checked={false} />
+              <PreferenceToggle
+                title="Notifications"
+                subtitle="Email and portal alerts"
+                checked={preferences.notifications}
+                onChange={(value) => updatePreference("notifications", value)}
+              />
+              <PreferenceToggle
+                title="Dark Mode"
+                subtitle="Stored locally until theme service is added"
+                checked={preferences.darkMode}
+                onChange={(value) => updatePreference("darkMode", value)}
+              />
             </Stack>
           </SectionCard>
 
@@ -287,12 +492,28 @@ export default function CustomerProfilePage() {
             <Stack direction="row" spacing={0.55} alignItems="flex-start">
               <InfoOutlinedIcon sx={{ color: "#0E56C8", fontSize: "0.95rem", mt: 0.12 }} />
               <Typography sx={{ color: "#0E56C8", fontSize: "0.76rem", fontWeight: 600, lineHeight: 1.7 }}>
-                Updating your primary email will require a new verification link to be sent to your inbox.
+                Email is used for login and cannot be changed here yet. Name and phone update directly in identity service.
               </Typography>
             </Stack>
           </Box>
         </Stack>
       </Box>
+
+      {error ? (
+        <Alert severity="error" sx={{ mt: 1.5, borderRadius: "0.9rem" }}>
+          {error}
+        </Alert>
+      ) : null}
+      {success ? (
+        <Alert severity="success" sx={{ mt: 1.5, borderRadius: "0.9rem" }} onClose={() => setSuccess("")}>
+          {success}
+        </Alert>
+      ) : null}
+      {photoNotice ? (
+        <Alert severity="info" sx={{ mt: 1.5, borderRadius: "0.9rem" }} onClose={() => setPhotoNotice("")}>
+          {photoNotice}
+        </Alert>
+      ) : null}
 
       <Stack
         direction="row"
@@ -306,6 +527,7 @@ export default function CustomerProfilePage() {
         }}
       >
         <Button
+          onClick={resetForm}
           sx={{
             minHeight: 36,
             px: 1.25,
@@ -319,6 +541,8 @@ export default function CustomerProfilePage() {
         </Button>
         <Button
           variant="contained"
+          disabled={isSaving || form.fullName.trim().length < 2}
+          onClick={saveProfile}
           sx={{
             minHeight: 38,
             px: 1.6,
@@ -330,7 +554,7 @@ export default function CustomerProfilePage() {
             textTransform: "none",
           }}
         >
-          Save Changes
+          {isSaving ? "Saving..." : "Save Changes"}
         </Button>
       </Stack>
     </Box>

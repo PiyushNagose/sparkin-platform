@@ -29,4 +29,19 @@ export const authApi = {
     const { data } = await httpClient.get("/auth/me");
     return data.user;
   },
+
+  async updateCurrentUser(payload) {
+    const { data } = await httpClient.patch("/users/me", payload);
+    return data.user;
+  },
+
+  async updateAvatar(payload) {
+    const { data } = await httpClient.patch("/users/me/avatar", payload);
+    return data.user;
+  },
+
+  async changePassword(payload) {
+    const { data } = await httpClient.patch("/users/me/password", payload);
+    return data;
+  },
 };

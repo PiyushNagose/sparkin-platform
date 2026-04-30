@@ -49,7 +49,7 @@ export function PublicLayout() {
 
             <Stack
               direction="row"
-              spacing={1.8}
+              spacing={2.4}
               className={styles.navLinks}
               sx={{ display: { xs: "none", md: "flex" } }}
             >

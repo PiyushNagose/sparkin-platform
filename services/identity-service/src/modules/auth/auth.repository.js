@@ -60,6 +60,7 @@ export const authRepository = {
       passwordHash: nextUser.passwordHash,
       role: nextUser.role,
       phoneNumber: nextUser.phoneNumber ?? null,
+      avatarUrl: nextUser.avatarUrl ?? null,
     });
 
     const saved = await user.save();
