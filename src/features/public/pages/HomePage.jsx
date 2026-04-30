@@ -359,13 +359,13 @@ function HomePage() {
       <Box
         sx={{
           bgcolor: "#143556",
-          backgroundImage: `linear-gradient(90deg, rgba(16,39,63,0.84) 0%, rgba(16,39,63,0.56) 34%, rgba(16,39,63,0.22) 70%), linear-gradient(180deg, rgba(19,52,82,0.75) 0%, rgba(17,44,70,0.42) 100%), url(${heroBackgroundImage})`,
-          backgroundPosition: { xs: "center", md: "center 63%" },
+          backgroundImage: `linear-gradient(90deg, rgba(10,28,45,0.74) 0%, rgba(10,28,45,0.54) 42%, rgba(10,28,45,0.24) 78%), linear-gradient(180deg, rgba(8,26,42,0.42) 0%, rgba(8,26,42,0.38) 100%), url(${heroBackgroundImage})`,
+          backgroundPosition: { xs: "center", md: "center 57%" },
           backgroundRepeat: "no-repeat",
-          backgroundSize: { xs: "cover", md: "108% auto" },
+          backgroundSize: { xs: "cover", md: "100% auto" },
           color: "white",
-          pb: { xs: 3, md: 4 },
-          minHeight: { xs: 620, md: 710 },
+          pb: { xs: 2, md: 2 },
+          minHeight: { xs: 620, md: "calc(100vh - 72px)" },
           position: "relative",
           display: "flex",
           alignItems: "center",
@@ -376,7 +376,7 @@ function HomePage() {
             position: "absolute",
             inset: 0,
             background:
-              "linear-gradient(180deg, rgba(255,255,255,0.02), transparent 20%), radial-gradient(circle at top right, rgba(255,255,255,0.07), transparent 26%)",
+              "linear-gradient(180deg, rgba(255,255,255,0.02), transparent 18%)",
           }}
         />
         <Container
@@ -384,11 +384,11 @@ function HomePage() {
           disableGutters
           className={styles.heroContainer}
           sx={{
-            pt: { xs: 3.5, md: 0 },
-            pb: { xs: 3.5, md: 0 },
+            pt: { xs: 2.5, md: 0 },
+            pb: { xs: 2.5, md: 0 },
             position: "relative",
             zIndex: 1,
-            minHeight: { xs: 620, md: 710 },
+            minHeight: { xs: 620, md: "calc(100vh - 72px)" },
             display: "flex",
             alignItems: "center",
           }}
@@ -396,9 +396,9 @@ function HomePage() {
           <Box
             sx={{
               px: 0,
-              py: { xs: 3, md: 3 },
+              py: { xs: 2.5, md: 2 },
               position: "relative",
-              minHeight: { xs: 520, md: 550 },
+              minHeight: { xs: 540, md: 570 },
               width: "100%",
               display: "flex",
               flexDirection: "column",
@@ -410,7 +410,7 @@ function HomePage() {
                 position: "absolute",
                 inset: 0,
                 background:
-                  "linear-gradient(90deg, rgba(0,0,0,0.06), transparent 40%)",
+                  "linear-gradient(90deg, rgba(0,0,0,0.03), transparent 40%)",
               }}
             />
 
@@ -421,7 +421,7 @@ function HomePage() {
                 position: "relative",
                 zIndex: 1,
                 alignItems: "center",
-                mt: { xs: 1.5, md: 1 },
+                mt: { xs: 1.5, md: 0.5 },
               }}
             >
               <Grid size={{ xs: 12, lg: 7 }}>
@@ -433,7 +433,7 @@ function HomePage() {
                 >
                   <Stack
                     className={`${styles.heroCopyStack} ${styles.heroRevealPrimary}`}
-                    spacing={{ xs: 2.1, md: 2.7 }}
+                    spacing={{ xs: 1.55, md: 1.8 }}
                     alignItems="flex-start"
                   >
                     <Chip
@@ -444,27 +444,29 @@ function HomePage() {
                         fontWeight: 800,
                         letterSpacing: 1.1,
                         textTransform: "uppercase",
-                        mb: 2.25,
-                        height: 32,
-                        borderRadius: "0.5rem",
+                        mb: 1.15,
+                        height: 30,
+                        borderRadius: 999,
                         fontSize: "0.75rem",
+                        px: 1.25,
                       }}
                     />
 
                     <Typography
                       variant="h1"
                       sx={{
-                        fontSize: { xs: "1.9rem", md: "3rem" },
-                        lineHeight: { xs: 1.08, md: 1.06 },
-                        letterSpacing: "-0.04em",
+                        fontSize: { xs: "2.05rem", md: "3.35rem" },
+                        lineHeight: { xs: 1.08, md: 1.08 },
+                        letterSpacing: "-0.03em",
                         maxWidth: 720,
+                        fontWeight: 900,
                       }}
                     >
-                      <Box component="span" sx={{ color: "#2392FF" }}>
+                      <Box component="span" sx={{ color: "#2299FF" }}>
                         Switch to Solar Save More,
                       </Box>
                       <br />
-                      <Box component="span" sx={{ color: "#27D28F" }}>
+                      <Box component="span" sx={{ color: "#32E0A0" }}>
                         Live Smarter.
                       </Box>
                     </Typography>
@@ -472,9 +474,9 @@ function HomePage() {
                     <Typography
                       variant="h5"
                       sx={{
-                        maxWidth: 540,
-                        lineHeight: 1.7,
-                        fontWeight: 500,
+                        maxWidth: 560,
+                        lineHeight: 1.55,
+                        fontWeight: 600,
                         color: "rgba(255,255,255,0.88)",
                         fontSize: { xs: "0.92rem", md: "1rem" },
                       }}
@@ -487,6 +489,7 @@ function HomePage() {
                     <Stack
                       direction={{ xs: "column", sm: "row" }}
                       spacing={1.5}
+                      sx={{ pt: 0.5 }}
                     >
                       <Button
                         component={RouterLink}
@@ -496,12 +499,13 @@ function HomePage() {
                         startIcon={<BoltRoundedIcon />}
                         className={styles.blueCta}
                         sx={{
-                          minWidth: 190,
-                          minHeight: 50,
-                          fontSize: "0.95rem",
-                          borderRadius: "0.5rem",
-                          background: primaryBlueGradient,
-                          boxShadow: "0 10px 22px rgba(14,86,200,0.18)",
+                          minWidth: 230,
+                          minHeight: 56,
+                          fontSize: "0.98rem",
+                          borderRadius: "0.8rem",
+                          background:
+                            "linear-gradient(90deg, #1798FF 0%, #08C76F 100%)",
+                          boxShadow: "0 16px 34px rgba(8,151,255,0.26)",
                         }}
                       >
                         Calculate Savings
@@ -514,10 +518,10 @@ function HomePage() {
                         size="large"
                         endIcon={<ArrowForwardRoundedIcon />}
                         sx={{
-                          minWidth: 190,
-                          minHeight: 50,
-                          fontSize: "0.95rem",
-                          borderRadius: "0.5rem",
+                          minWidth: 220,
+                          minHeight: 56,
+                          fontSize: "0.98rem",
+                          borderRadius: "0.8rem",
                           bgcolor: "white",
                           color: "#10192F",
                           "&:hover": { bgcolor: "#F8FBFF" },
@@ -531,11 +535,10 @@ function HomePage() {
                   <Stack
                     className={`${styles.heroStatsRow} ${styles.heroRevealStats}`}
                     direction={{ xs: "column", md: "row" }}
-                    spacing={4}
+                    spacing={{ xs: 2.3, md: 4.8 }}
                     sx={{
-                      mt: { xs: 4, md: 4.8 },
-                      pt: 2,
-                      borderTop: "1px solid rgba(255,255,255,0.1)",
+                      mt: { xs: 3.5, md: 4 },
+                      pt: 0,
                       width: "100%",
                     }}
                   >
@@ -548,8 +551,8 @@ function HomePage() {
                       >
                         <Box
                           sx={{
-                            width: 46,
-                            height: 46,
+                            width: 50,
+                            height: 50,
                             borderRadius: "50%",
                             bgcolor: "white",
                             display: "grid",
@@ -562,7 +565,7 @@ function HomePage() {
                         <Box>
                           <Typography
                             sx={{
-                              fontSize: "1.35rem",
+                              fontSize: "1.42rem",
                               lineHeight: 1,
                               fontWeight: 800,
                             }}
@@ -575,7 +578,8 @@ function HomePage() {
                               textTransform: "uppercase",
                               opacity: 0.76,
                               letterSpacing: 0.5,
-                              fontSize: "0.66rem",
+                              fontSize: "0.7rem",
+                              fontWeight: 800,
                             }}
                           >
                             {stat.label}
@@ -592,20 +596,20 @@ function HomePage() {
                   className={styles.heroRevealCard}
                   sx={{
                     ml: { lg: "auto" },
-                    mt: { xs: 2.8, lg: 5.4 },
-                    maxWidth: 350,
-                    borderRadius: "2rem",
-                    p: 1.5,
-                    bgcolor: "rgba(255,255,255,0.7)",
-                    backdropFilter: "blur(18px)",
-                    border: "1px solid rgba(255,255,255,0.22)",
-                    boxShadow: "0 20px 50px rgba(8, 20, 40, 0.18)",
+                    mt: { xs: 2.4, lg: 2.6 },
+                    maxWidth: 374,
+                    borderRadius: "1.55rem",
+                    p: 1.65,
+                    bgcolor: "rgba(255,255,255,0.68)",
+                    backdropFilter: "blur(20px)",
+                    border: "1px solid rgba(255,255,255,0.34)",
+                    boxShadow: "0 22px 58px rgba(8, 20, 40, 0.22)",
                   }}
                 >
                   <Stack
                     direction="row"
                     justifyContent="space-between"
-                    sx={{ px: 1, py: 0.5 }}
+                    sx={{ px: 0.6, py: 0.45, mb: 1 }}
                   >
                     <Typography
                       variant="caption"
@@ -643,9 +647,10 @@ function HomePage() {
                           display: "flex",
                           alignItems: "center",
                           gap: 1.5,
-                          p: 1.5,
+                          p: 1.45,
                           borderRadius: "1rem",
-                          bgcolor: "rgba(255,255,255,0.78)",
+                          bgcolor: "rgba(255,255,255,0.74)",
+                          border: "1px solid rgba(255,255,255,0.64)",
                         }}
                       >
                         <Box
@@ -668,14 +673,14 @@ function HomePage() {
                             sx={{
                               color: "#10192F",
                               fontWeight: 800,
-                              fontSize: "0.9rem",
+                            fontSize: "0.92rem",
                             }}
                           >
                             {bid.name}
                           </Typography>
                           <Typography
                             variant="body2"
-                            sx={{ color: "#96A4B8", fontSize: "0.78rem" }}
+                            sx={{ color: "#F5B400", fontSize: "0.78rem" }}
                           >
                             {"★★★★★"} 4.8
                           </Typography>
@@ -711,11 +716,12 @@ function HomePage() {
                   sx={{
                     mt: 2,
                     ml: { lg: "auto" },
-                    maxWidth: 350,
+                    maxWidth: 374,
                     borderRadius: "1rem",
                     px: 2.2,
                     py: 1.2,
-                    bgcolor: "rgba(255,255,255,0.86)",
+                    bgcolor: "rgba(255,255,255,0.76)",
+                    backdropFilter: "blur(16px)",
                     display: "flex",
                     justifyContent: "space-between",
                     color: "#5B677A",
