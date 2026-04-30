@@ -22,6 +22,7 @@ import {
   publicPageSpacing,
   publicTypography,
 } from "@/features/public/pages/publicPageStyles";
+import layoutStyles from "@/app/layouts/PublicLayout.module.css";
 
 const categories = [
   { label: "General", icon: <ElectricBoltRoundedIcon sx={{ fontSize: "0.85rem" }} /> },
@@ -66,12 +67,13 @@ export default function FaqPage() {
           "radial-gradient(circle at top center, rgba(214,229,246,0.82) 0%, rgba(245,248,251,0.96) 22%, #F9FBFD 60%, #F7FAFB 100%)",
       }}
     >
-      <Container maxWidth="lg">
+      <Container maxWidth={false} disableGutters className={layoutStyles.publicContentContainer}>
         <Stack
           direction={{ xs: "column", md: "row" }}
           justifyContent="space-between"
           alignItems={{ xs: "flex-start", md: "flex-start" }}
-          spacing={{ xs: 2.5, md: 4 }}
+          spacing={{ xs: 2.2, md: 3.2 }}
+          className={layoutStyles.revealUp}
         >
           <Box sx={{ maxWidth: 560 }}>
             <Typography
@@ -115,7 +117,7 @@ export default function FaqPage() {
 
         <Box
           sx={{
-            mt: publicPageSpacing.heroBottom,
+            mt: { xs: 4.8, md: 5.8 },
             p: 0.9,
             borderRadius: "1.15rem",
             bgcolor: "rgba(255,255,255,0.88)",
@@ -158,7 +160,7 @@ export default function FaqPage() {
         <Stack
           direction="row"
           spacing={1.2}
-          sx={{ mt: { xs: 4.25, md: 4.8 }, flexWrap: "wrap", rowGap: 1.2 }}
+          sx={{ mt: { xs: 3.6, md: 4.1 }, flexWrap: "wrap", rowGap: 1.2 }}
         >
           {categories.map((category, index) => {
             const active = index === 0;
@@ -187,7 +189,7 @@ export default function FaqPage() {
           })}
         </Stack>
 
-        <Stack spacing={{ xs: 1.5, md: 1.65 }} sx={{ mt: { xs: 4.8, md: 5.7 } }}>
+        <Stack spacing={{ xs: 1.35, md: 1.5 }} sx={{ mt: { xs: 4.2, md: 5 } }}>
           {faqs.map((item, index) => {
             const isOpen = expanded === item.question;
 
@@ -209,6 +211,12 @@ export default function FaqPage() {
                     ? "0 16px 34px rgba(16,29,51,0.08)"
                     : "0 10px 24px rgba(16,29,51,0.04)",
                   "&::before": { display: "none" },
+                  transition: "transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease",
+                  "&:hover": {
+                    transform: "translateY(-2px)",
+                    borderColor: "rgba(14,86,200,0.22)",
+                    boxShadow: "0 16px 34px rgba(16,29,51,0.08)",
+                  },
                 }}
               >
                 <AccordionSummary
@@ -320,7 +328,7 @@ export default function FaqPage() {
 
         <Box
           sx={{
-            mt: { xs: 9, md: 11.5 },
+            mt: { xs: 7.5, md: 9.5 },
             p: { xs: 3.3, md: 5 },
             borderRadius: "2rem",
             background: "linear-gradient(180deg, #0E56C8 0%, #114CB2 100%)",

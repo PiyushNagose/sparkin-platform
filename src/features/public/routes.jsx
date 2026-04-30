@@ -23,10 +23,14 @@ import FaqPage from "@/features/public/pages/FaqPage";
 import TermsPage from "@/features/public/pages/TermsPage";
 import PrivacyPage from "@/features/public/pages/PrivacyPage";
 import AboutPage from "@/features/public/pages/AboutPage";
+import ArticlesPage from "@/features/public/pages/ArticlesPage";
+import BlogPage from "@/features/public/pages/BlogPage";
+import ReferEarnPage from "@/features/public/pages/ReferEarnPage";
 import TrustedPartnersPage from "@/features/public/pages/TrustedPartnersPage";
 import VendorDiscoveryPage from "@/features/public/pages/VendorDiscoveryPage";
 import SolarLoanPage from "@/features/public/pages/SolarLoanPage";
 import HomePage from "@/features/public/pages/HomePage";
+import WhyChooseUsPage from "@/features/public/pages/WhyChooseUsPage";
 import { RequireAuth } from "@/features/auth/RequireAuth";
 
 function protectedCustomerPage(element) {
@@ -59,14 +63,7 @@ export const publicRoutes = [
   },
   {
     path: "why-choose-us",
-    element: (
-      <ScreenPlaceholder
-        eyebrow="Why Sparkin"
-        title="Why Choose Sparkin Solar"
-        description="Value proposition screen focused on transparency, verified vendors, and savings confidence."
-        sections={["Why Sparkin", "Proof points", "Service promise", "CTA"]}
-      />
-    ),
+    element: <WhyChooseUsPage />,
   },
   {
     path: "calculator",
@@ -133,36 +130,15 @@ export const publicRoutes = [
   },
   {
     path: "refer-earn",
-    element: (
-      <ScreenPlaceholder
-        eyebrow="Referrals"
-        title="Refer and Earn"
-        description="A public referral experience for inviting contacts and tracking solar referral rewards."
-        sections={["Referral code", "Rewards summary", "Sharing methods", "History"]}
-      />
-    ),
+    element: <ReferEarnPage />,
   },
   {
     path: "articles",
-    element: (
-      <ScreenPlaceholder
-        eyebrow="Articles"
-        title="Solar Articles"
-        description="Editorial and educational article listing for buyers exploring solar decisions."
-        sections={["Featured article", "Category filters", "Article list", "Newsletter CTA"]}
-      />
-    ),
+    element: <ArticlesPage />,
   },
   {
     path: "blog",
-    element: (
-      <ScreenPlaceholder
-        eyebrow="Blog"
-        title="Sparkin Blog"
-        description="Company stories, product updates, and educational thought leadership."
-        sections={["Latest post", "Blog grid", "Topics", "Subscribe CTA"]}
-      />
-    ),
+    element: <BlogPage />,
   },
   {
     path: "booking",

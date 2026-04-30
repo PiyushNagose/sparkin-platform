@@ -7,6 +7,7 @@ import {
   publicPageSpacing,
   publicTypography,
 } from "@/features/public/pages/publicPageStyles";
+import layoutStyles from "@/app/layouts/PublicLayout.module.css";
 
 const responsibilityCards = [
   {
@@ -45,12 +46,13 @@ export default function TermsPage() {
           "radial-gradient(circle at top center, rgba(214,229,246,0.82) 0%, rgba(245,248,251,0.96) 22%, #F9FBFD 60%, #F7FAFB 100%)",
       }}
     >
-      <Container maxWidth="lg">
+      <Container maxWidth={false} disableGutters className={layoutStyles.publicContentContainer}>
         <Stack
           direction={{ xs: "column", md: "row" }}
           justifyContent="space-between"
-          spacing={{ xs: 2.5, md: 4 }}
-          sx={{ mb: publicPageSpacing.sectionBottom }}
+          spacing={{ xs: 2.2, md: 3.2 }}
+          sx={{ mb: { xs: 5.6, md: 6.6 } }}
+          className={layoutStyles.revealUp}
         >
           <Box sx={{ maxWidth: 620 }}>
             <Box
@@ -107,8 +109,9 @@ export default function TermsPage() {
           </Stack>
         </Stack>
 
-        <Stack spacing={{ xs: 3.8, md: 5.25 }}>
+        <Stack spacing={{ xs: 3.2, md: 4.2 }}>
           <Box
+            className={layoutStyles.interactiveSurface}
             sx={{
               p: { xs: 2.2, md: 3.1 },
               borderRadius: "1.65rem",
@@ -161,6 +164,7 @@ export default function TermsPage() {
           </Box>
 
           <Box
+            className={layoutStyles.interactiveSurface}
             sx={{
               p: { xs: 2.2, md: 3.1 },
               borderRadius: "1.65rem",
@@ -207,6 +211,7 @@ export default function TermsPage() {
           </Box>
 
           <Box
+            className={layoutStyles.interactiveSurface}
             sx={{
               p: { xs: 2.2, md: 3.1 },
               borderRadius: "1.65rem",
@@ -268,6 +273,7 @@ export default function TermsPage() {
           </Box>
 
           <Box
+            className={layoutStyles.interactiveSurface}
             sx={{
               p: { xs: 2.2, md: 3.1 },
               borderRadius: "1.65rem",
@@ -332,6 +338,7 @@ export default function TermsPage() {
           </Box>
 
           <Box
+            className={layoutStyles.interactiveSurface}
             sx={{
               p: { xs: 2.35, md: 3.3 },
               borderRadius: "1.65rem",
