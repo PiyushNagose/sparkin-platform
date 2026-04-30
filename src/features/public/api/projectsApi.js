@@ -26,4 +26,12 @@ export const projectsApi = {
     );
     return data.project;
   },
+
+  async submitOnboarding(projectId, payload) {
+    const { data } = await fulfillmentClient.patch(
+      `/projects/${requireId(projectId, "Project id")}/onboarding`,
+      payload,
+    );
+    return data.project;
+  },
 };

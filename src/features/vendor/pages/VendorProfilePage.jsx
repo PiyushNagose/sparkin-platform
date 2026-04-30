@@ -22,6 +22,7 @@ import WorkspacePremiumOutlinedIcon from "@mui/icons-material/WorkspacePremiumOu
 import CheckBoxRoundedIcon from "@mui/icons-material/CheckBoxRounded";
 import CloudUploadOutlinedIcon from "@mui/icons-material/CloudUploadOutlined";
 import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
+import { useLocation } from "react-router-dom";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { authApi } from "@/features/auth/authApi";
 import { vendorsApi } from "@/features/vendor/api/vendorsApi";
@@ -146,6 +147,7 @@ function readFileAsDataUrl(file) {
 }
 
 export default function VendorProfilePage() {
+  const location = useLocation();
   const { user, updateUserAvatar, updateUserProfile } = useAuth();
   const avatarInputRef = useRef(null);
   const companyDocumentRef = useRef(null);
@@ -430,6 +432,11 @@ export default function VendorProfilePage() {
       </Stack>
 
       {error ? <Alert severity="error" sx={{ mt: 1.4, borderRadius: "0.9rem" }}>{error}</Alert> : null}
+      {location.state?.needsBusinessProfile ? (
+        <Alert severity="info" sx={{ mt: 1.4, borderRadius: "0.9rem" }}>
+          Complete your business details and upload at least one compliance document before accessing vendor tools.
+        </Alert>
+      ) : null}
       {success ? (
         <Alert severity="success" sx={{ mt: 1.4, borderRadius: "0.9rem" }} onClose={() => setSuccess("")}>
           {success}

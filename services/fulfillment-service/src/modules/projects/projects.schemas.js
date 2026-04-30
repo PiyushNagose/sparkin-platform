@@ -44,3 +44,10 @@ export const updateProjectMilestoneSchema = z.object({
   milestoneKey: z.enum(["site_visit", "design_approval", "installation", "inspection", "activation"]),
   status: z.enum(["pending", "in_progress", "completed"]),
 });
+
+export const submitProjectOnboardingSchema = z.object({
+  contactName: z.string().trim().min(2).max(120),
+  contactPhone: z.string().trim().min(6).max(20),
+  siteAccessNotes: z.string().trim().max(500).optional().nullable(),
+  preferredVisitWindow: z.enum(["morning", "afternoon", "evening"]).nullable().optional(),
+});
