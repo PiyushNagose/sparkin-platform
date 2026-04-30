@@ -68,24 +68,24 @@
 
 .heroContainer {
   width: 100%;
-  max-width: 1440px;
-  padding-inline: 28px;
+  max-width: 1360px;
+  padding-inline: 40px;
   box-sizing: border-box;
   margin: 0 auto;
 }
 
 .contentContainer {
   width: 100%;
-  max-width: 1440px;
-  padding-inline: 28px;
+  max-width: 1360px;
+  padding-inline: 40px;
   box-sizing: border-box;
   margin: 0 auto;
 }
 
 .compactContainer {
   width: 100%;
-  max-width: 1360px;
-  padding-inline: 28px;
+  max-width: 1320px;
+  padding-inline: 40px;
   box-sizing: border-box;
   margin: 0 auto;
 }
@@ -117,7 +117,8 @@
   .heroContainer,
   .contentContainer,
   .compactContainer {
-    padding-inline: 22px;
+    max-width: 100%;
+    padding-inline: 28px;
   }
 
   .heroContentColumn {
@@ -143,6 +144,6 @@
   .heroContainer,
   .contentContainer,
   .compactContainer {
-    padding-inline: 16px;
+    padding-inline: 20px;
   }
 }
