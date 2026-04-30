@@ -80,18 +80,18 @@ export default function CalculatorPage() {
 
           <Box
             sx={{
-              mt: publicPageSpacing.heroBottom,
+              mt: { xs: 4.8, md: 5.8 },
               mx: "auto",
               maxWidth: 620,
-              p: { xs: 2.25, md: 3.25 },
-              borderRadius: "1.75rem",
+              p: { xs: 2.15, md: 2.8 },
+              borderRadius: "1.45rem",
               bgcolor: "rgba(255,255,255,0.92)",
               border: "1px solid rgba(218,228,240,0.95)",
               boxShadow: "0 18px 50px rgba(22,36,58,0.08)",
               backdropFilter: "blur(10px)",
             }}
           >
-            <Stack spacing={3}>
+            <Stack spacing={2.45}>
               <Box>
                 <Typography
                   sx={{
@@ -107,8 +107,8 @@ export default function CalculatorPage() {
                 </Typography>
                 <Box
                   sx={{
-                    p: 0.55,
-                    borderRadius: "1rem",
+                    p: 0.45,
+                    borderRadius: "0.85rem",
                     bgcolor: "#EFF2F7",
                     display: "grid",
                     gridTemplateColumns: "1fr 1fr",
@@ -119,7 +119,7 @@ export default function CalculatorPage() {
                     label="Residential"
                     sx={{
                       height: 38,
-                      borderRadius: "0.75rem",
+                      borderRadius: "0.65rem",
                       bgcolor: "white",
                       color: "#0E56C8",
                       fontWeight: 700,
@@ -129,7 +129,7 @@ export default function CalculatorPage() {
                     label="Commercial"
                     sx={{
                       height: 38,
-                      borderRadius: "0.75rem",
+                      borderRadius: "0.65rem",
                       bgcolor: "transparent",
                       color: "#4C586C",
                       fontWeight: 700,
@@ -168,7 +168,7 @@ export default function CalculatorPage() {
                     ),
                     sx: {
                       height: 52,
-                      borderRadius: "0.9rem",
+                      borderRadius: "0.75rem",
                       bgcolor: "#F2F5F9",
                       color: "#18253A",
                     },
@@ -200,7 +200,7 @@ export default function CalculatorPage() {
                     ),
                     sx: {
                       height: 52,
-                      borderRadius: "0.9rem",
+                      borderRadius: "0.75rem",
                       bgcolor: "#F2F5F9",
                       color: "#18253A",
                     },
@@ -233,12 +233,27 @@ export default function CalculatorPage() {
           maxWidth={false}
           disableGutters
           className={styles.contentContainer}
-          sx={{ mt: publicPageSpacing.sectionTop }}
+          sx={{ mt: { xs: 5.8, md: 7 } }}
         >
           <Grid container spacing={{ xs: 2.5, md: 4 }} justifyContent="center">
             {insightCards.map((item) => (
               <Grid key={item.title} size={{ xs: 12, sm: 6, md: 3.3 }}>
-                <Box sx={{ maxWidth: 280, mx: "auto" }}>
+                <Box
+                  sx={{
+                    maxWidth: 300,
+                    mx: "auto",
+                    p: { xs: 1.8, md: 2 },
+                    height: "100%",
+                    borderRadius: "1.15rem",
+                    bgcolor: "rgba(255,255,255,0.7)",
+                    border: "1px solid rgba(223,231,241,0.8)",
+                    transition: "transform 200ms ease, box-shadow 200ms ease",
+                    "&:hover": {
+                      transform: "translateY(-3px)",
+                      boxShadow: "0 14px 30px rgba(16,29,51,0.08)",
+                    },
+                  }}
+                >
                   <Box
                     sx={{
                       width: 34,

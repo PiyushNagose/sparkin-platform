@@ -143,6 +143,11 @@ export default function CalculatorProcessingPage() {
                   border: "1px solid rgba(221,229,239,0.98)",
                   boxShadow: "0 18px 46px rgba(20,34,56,0.08)",
                   backdropFilter: "blur(10px)",
+                  transition: "transform 200ms ease, box-shadow 200ms ease",
+                  "&:hover": {
+                    transform: "translateY(-3px)",
+                    boxShadow: "0 22px 52px rgba(20,34,56,0.1)",
+                  },
                 }}
               >
                 <Stack spacing={2}>

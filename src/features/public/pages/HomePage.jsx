@@ -433,7 +433,7 @@ function HomePage() {
                 >
                   <Stack
                     className={`${styles.heroCopyStack} ${styles.heroRevealPrimary}`}
-                    spacing={{ xs: 1.55, md: 1.8 }}
+                    spacing={{ xs: 1.9, md: 2.35 }}
                     alignItems="flex-start"
                   >
                     <Chip
@@ -444,7 +444,7 @@ function HomePage() {
                         fontWeight: 800,
                         letterSpacing: 1.1,
                         textTransform: "uppercase",
-                        mb: 1.15,
+                        mb: 1.35,
                         height: 30,
                         borderRadius: 999,
                         fontSize: "0.75rem",
@@ -489,7 +489,7 @@ function HomePage() {
                     <Stack
                       direction={{ xs: "column", sm: "row" }}
                       spacing={1.5}
-                      sx={{ pt: 0.5 }}
+                      sx={{ pt: 0.85 }}
                     >
                       <Button
                         component={RouterLink}
@@ -537,7 +537,7 @@ function HomePage() {
                     direction={{ xs: "column", md: "row" }}
                     spacing={{ xs: 2.3, md: 4.8 }}
                     sx={{
-                      mt: { xs: 3.5, md: 4 },
+                      mt: { xs: 4, md: 4.8 },
                       pt: 0,
                       width: "100%",
                     }}
@@ -2338,12 +2338,12 @@ function HomePage() {
                   <Box
                     sx={{
                       position: "absolute",
-                      left: 22,
-                      right: 22,
-                      bottom: 22,
-                      p: 2.25,
-                      minHeight: 212,
-                      borderRadius: "2rem",
+                      left: { xs: 18, md: 28 },
+                      right: { xs: 18, md: 28 },
+                      bottom: { xs: 18, md: 28 },
+                      p: { xs: 1.85, md: 2 },
+                      minHeight: { xs: 182, md: 178 },
+                      borderRadius: "1.45rem",
                       color: "white",
                       bgcolor: "rgba(255,255,255,0.12)",
                       border: "1px solid rgba(255,255,255,0.18)",
@@ -2356,31 +2356,31 @@ function HomePage() {
                     <Box>
                       <Box
                         sx={{
-                          width: 50,
-                          height: 50,
+                          width: 42,
+                          height: 42,
                           borderRadius: "50%",
                           bgcolor: "rgba(255,255,255,0.16)",
                           border: "1px solid rgba(255,255,255,0.28)",
                           display: "grid",
                           placeItems: "center",
-                          mb: 2.25,
+                          mb: 1.55,
                         }}
                       >
                         {card.icon}
                       </Box>
                       <Typography
                         variant="h4"
-                        sx={{ fontSize: "1.15rem", mb: 1.1, maxWidth: 220 }}
+                        sx={{ fontSize: "1.08rem", mb: 0.8, maxWidth: 220 }}
                       >
                         {card.title}
                       </Typography>
                       <Typography
                         sx={{
                           color: "rgba(255,255,255,0.76)",
-                          lineHeight: 1.7,
-                          fontSize: "0.88rem",
+                          lineHeight: 1.55,
+                          fontSize: "0.82rem",
                           maxWidth: 235,
-                          minHeight: 88,
+                          minHeight: 62,
                         }}
                       >
                         {card.text}
@@ -2391,7 +2391,7 @@ function HomePage() {
                       to={card.href}
                       endIcon={<ArrowForwardRoundedIcon />}
                       sx={{
-                        mt: 2.2,
+                        mt: 1.55,
                         px: 0,
                         color: "white",
                         fontWeight: 800,
