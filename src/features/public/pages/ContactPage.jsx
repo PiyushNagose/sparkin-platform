@@ -18,6 +18,7 @@ import {
   publicPageSpacing,
   publicTypography,
 } from "@/features/public/pages/publicPageStyles";
+import layoutStyles from "@/app/layouts/PublicLayout.module.css";
 
 const contactCards = [
   {
@@ -52,7 +53,7 @@ export default function ContactPage() {
           "radial-gradient(circle at top center, rgba(214,229,246,0.82) 0%, rgba(245,248,251,0.96) 22%, #F9FBFD 60%, #F7FAFB 100%)",
       }}
     >
-      <Container maxWidth="lg">
+      <Container maxWidth={false} disableGutters className={layoutStyles.publicContentContainer}>
         <Grid
           container
           spacing={{ xs: 2.5, md: 4 }}
@@ -75,7 +76,7 @@ export default function ContactPage() {
               sx={{
                 color: "#6E7B8E",
                 ...publicTypography.sectionBody,
-                maxWidth: 360,
+                maxWidth: 520,
               }}
             >
               We&apos;re here to help you accelerate your transition to clean

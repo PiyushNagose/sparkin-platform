@@ -22,6 +22,7 @@ import {
   publicPageSpacing,
   publicTypography,
 } from "@/features/public/pages/publicPageStyles";
+import layoutStyles from "@/app/layouts/PublicLayout.module.css";
 
 const categories = [
   { label: "General", icon: <ElectricBoltRoundedIcon sx={{ fontSize: "0.85rem" }} /> },
@@ -66,7 +67,7 @@ export default function FaqPage() {
           "radial-gradient(circle at top center, rgba(214,229,246,0.82) 0%, rgba(245,248,251,0.96) 22%, #F9FBFD 60%, #F7FAFB 100%)",
       }}
     >
-      <Container maxWidth="lg">
+      <Container maxWidth={false} disableGutters className={layoutStyles.publicContentContainer}>
         <Stack
           direction={{ xs: "column", md: "row" }}
           justifyContent="space-between"
