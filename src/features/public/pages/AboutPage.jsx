@@ -15,7 +15,7 @@ import {
 const values = [
   {
     title: "Our Vision",
-    text: "To empower every Indian household with energy independence. We envision a future where energy is decentralized, clean, and accessible to all.",
+    text: "To empower every Indian household with energy independence. We envision a future where energy is decentralized, clean.",
     icon: <VerifiedOutlinedIcon sx={{ fontSize: "0.95rem" }} />,
     tone: { bg: "#EAF1FF", fg: "#285DDE" },
   },
