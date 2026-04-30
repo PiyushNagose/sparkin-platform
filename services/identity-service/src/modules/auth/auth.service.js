@@ -11,6 +11,7 @@ function toPublicUser(user) {
     email: user.email,
     role: user.role,
     phoneNumber: user.phoneNumber ?? null,
+    avatarUrl: user.avatarUrl ?? null,
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
   };

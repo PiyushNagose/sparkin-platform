@@ -1,23 +1,26 @@
-import { useState } from "react";
-import { Link as RouterLink, useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { Link as RouterLink, useNavigate, useSearchParams } from "react-router-dom";
 import {
   Alert,
   Box,
   Button,
   Container,
+  CircularProgress,
   Grid,
+  MenuItem,
   Stack,
   TextField,
   Typography,
 } from "@mui/material";
 import BuildRoundedIcon from "@mui/icons-material/BuildRounded";
 import CalendarMonthRoundedIcon from "@mui/icons-material/CalendarMonthRounded";
-import CloudUploadOutlinedIcon from "@mui/icons-material/CloudUploadOutlined";
 import ConstructionRoundedIcon from "@mui/icons-material/ConstructionRounded";
 import HeadsetMicRoundedIcon from "@mui/icons-material/HeadsetMicRounded";
 import ScheduleRoundedIcon from "@mui/icons-material/ScheduleRounded";
 import ShieldOutlinedIcon from "@mui/icons-material/ShieldOutlined";
 import TaskAltRoundedIcon from "@mui/icons-material/TaskAltRounded";
+import { useAuth } from "@/features/auth/AuthProvider";
+import { projectsApi } from "@/features/public/api/projectsApi";
 import { serviceRequestsApi } from "@/features/public/api/serviceRequestsApi";
 import serviceNetworkPlaceholder from "@/shared/assets/images/public/support/service-network-placeholder.png";
 import styles from "@/features/public/pages/CalculatorPage.module.css";
@@ -91,6 +94,20 @@ function SectionLabel({ children }) {
   );
 }
 
+function formatProjectAddress(address) {
+  if (!address) return "Address pending";
+
+  return [address.street, address.city, address.state, address.pincode]
+    .filter(Boolean)
+    .join(", ");
+}
+
+function getProjectLabel(project) {
+  if (!project) return "Select project";
+
+  return `${project.system.sizeKw}kW ${project.system.panelType} - ${project.installationAddress.city}, ${project.installationAddress.state}`;
+}
+
 const fieldStyles = {
   "& .MuiOutlinedInput-root": {
     minHeight: 48,
@@ -113,25 +130,90 @@ const fieldStyles = {
 
 export default function CreateServiceRequestPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const requestedProjectId = searchParams.get("projectId") || "";
+  const { user } = useAuth();
   const [form, setForm] = useState({
+    projectId: requestedProjectId,
     type: "repair",
     description: "",
     preferredDate: "",
     preferredTime: "",
   });
+  const [projects, setProjects] = useState([]);
+  const [isLoadingProjects, setIsLoadingProjects] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadProjects() {
+      setIsLoadingProjects(true);
+
+      try {
+        const result = await projectsApi.listProjects();
+
+        if (!active) return;
+
+        setProjects(result);
+
+        const queryProjectExists = result.some((project) => project.id === requestedProjectId);
+
+        if (queryProjectExists) {
+          setForm((current) => ({ ...current, projectId: requestedProjectId }));
+        } else if (!requestedProjectId && result.length === 1) {
+          setForm((current) => ({ ...current, projectId: result[0].id }));
+        }
+      } catch (apiError) {
+        if (active) {
+          setError(apiError?.response?.data?.message || "Could not load your projects.");
+        }
+      } finally {
+        if (active) {
+          setIsLoadingProjects(false);
+        }
+      }
+    }
+
+    loadProjects();
+
+    return () => {
+      active = false;
+    };
+  }, [requestedProjectId]);
+
+  const selectedProject = useMemo(
+    () => projects.find((project) => project.id === form.projectId) ?? null,
+    [form.projectId, projects],
+  );
 
   function updateField(field, value) {
     setForm((current) => ({ ...current, [field]: value }));
   }
 
   async function handleSubmit() {
+    if (projects.length > 0 && !form.projectId) {
+      setError("Please select the project that needs service.");
+      return;
+    }
+
+    if (form.description.trim().length < 10) {
+      setError("Please describe the issue in at least 10 characters.");
+      return;
+    }
+
     setIsSubmitting(true);
     setError("");
 
     try {
-      const request = await serviceRequestsApi.createRequest(form);
+      const request = await serviceRequestsApi.createRequest({
+        ...form,
+        projectId: form.projectId || null,
+        description: form.description.trim(),
+        preferredDate: form.preferredDate || null,
+        preferredTime: form.preferredTime || null,
+      });
       navigate(`/service-support/request/submitted?requestId=${request.id}`, { replace: true });
     } catch (apiError) {
       setError(apiError?.response?.data?.message || "Could not submit service request.");
@@ -211,7 +293,58 @@ export default function CreateServiceRequestPage() {
                     </Box>
 
                     <Stack spacing={1.05}>
-                      <SectionLabel>Section 1: Request Details</SectionLabel>
+                      <SectionLabel>Section 1: Select Project</SectionLabel>
+                      {isLoadingProjects ? (
+                        <Box sx={{ py: 1.2, display: "flex", alignItems: "center", gap: 1 }}>
+                          <CircularProgress size={18} />
+                          <Typography sx={{ color: "#667084", fontSize: "0.78rem" }}>
+                            Loading your projects...
+                          </Typography>
+                        </Box>
+                      ) : null}
+
+                      {!isLoadingProjects && projects.length === 0 ? (
+                        <Alert severity="info" sx={{ borderRadius: "0.9rem" }}>
+                          No active installation project was found. You can still raise a general support request.
+                        </Alert>
+                      ) : null}
+
+                      {!isLoadingProjects && projects.length > 0 ? (
+                        <TextField
+                          select
+                          value={form.projectId}
+                          onChange={(event) => updateField("projectId", event.target.value)}
+                          sx={fieldStyles}
+                        >
+                          {projects.map((project) => (
+                            <MenuItem key={project.id} value={project.id}>
+                              {getProjectLabel(project)}
+                            </MenuItem>
+                          ))}
+                        </TextField>
+                      ) : null}
+
+                      {selectedProject ? (
+                        <Box
+                          sx={{
+                            p: 1.05,
+                            borderRadius: "0.95rem",
+                            bgcolor: "#F5F7FB",
+                            border: "1px solid #E8EDF5",
+                          }}
+                        >
+                          <Typography sx={{ color: "#202938", fontSize: "0.78rem", fontWeight: 800 }}>
+                            {getProjectLabel(selectedProject)}
+                          </Typography>
+                          <Typography sx={{ mt: 0.22, color: "#667084", fontSize: "0.68rem", lineHeight: 1.5 }}>
+                            {formatProjectAddress(selectedProject.installationAddress)}
+                          </Typography>
+                        </Box>
+                      ) : null}
+                    </Stack>
+
+                    <Stack spacing={1.05}>
+                      <SectionLabel>Section 2: Request Details</SectionLabel>
                       <Grid container spacing={1.2}>
                         {requestTypes.map((item) => (
                           <Grid key={item.title} size={{ xs: 12, sm: 4 }}>
@@ -272,7 +405,7 @@ export default function CreateServiceRequestPage() {
 
                     <Stack spacing={1.05}>
                       <SectionLabel>
-                        Section 2: Problem Description
+                        Section 3: Problem Description
                       </SectionLabel>
                       <TextField
                         value={form.description}
@@ -292,65 +425,13 @@ export default function CreateServiceRequestPage() {
                     </Stack>
 
                     <Stack spacing={1.05}>
-                      <SectionLabel>Section 3: Attachment</SectionLabel>
-                      <Box
-                        sx={{
-                          minHeight: 112,
-                          borderRadius: "1rem",
-                          border: "1.5px dashed #D8E2F0",
-                          bgcolor: "#FCFDFE",
-                          display: "grid",
-                          placeItems: "center",
-                          textAlign: "center",
-                          px: 2,
-                        }}
-                      >
-                        <Stack spacing={0.35} alignItems="center">
-                          <Box
-                            sx={{
-                              width: 34,
-                              height: 34,
-                              borderRadius: "0.85rem",
-                              bgcolor: "#EEF4FF",
-                              color: "#0E56C8",
-                              display: "grid",
-                              placeItems: "center",
-                            }}
-                          >
-                            <CloudUploadOutlinedIcon
-                              sx={{ fontSize: "1.08rem" }}
-                            />
-                          </Box>
-                          <Typography
-                            sx={{
-                              color: "#202938",
-                              fontSize: "0.9rem",
-                              fontWeight: 700,
-                            }}
-                          >
-                            Upload photo/video
-                          </Typography>
-                          <Typography
-                            sx={{
-                              color: "#7A8596",
-                              fontSize: "0.64rem",
-                              lineHeight: 1.44,
-                            }}
-                          >
-                            Drag and drop or click to browse (Max 50MB)
-                          </Typography>
-                        </Stack>
-                      </Box>
-                    </Stack>
-
-                    <Stack spacing={1.05}>
                       <SectionLabel>Section 4: Preferred Schedule</SectionLabel>
                       <Grid container spacing={1.2}>
                         <Grid size={{ xs: 12, sm: 6 }}>
                           <TextField
+                            type="date"
                             value={form.preferredDate}
                             onChange={(event) => updateField("preferredDate", event.target.value)}
-                            placeholder="mm/dd/yyyy"
                             InputProps={{
                               startAdornment: (
                                 <CalendarMonthRoundedIcon
@@ -367,9 +448,9 @@ export default function CreateServiceRequestPage() {
                         </Grid>
                         <Grid size={{ xs: 12, sm: 6 }}>
                           <TextField
+                            type="time"
                             value={form.preferredTime}
                             onChange={(event) => updateField("preferredTime", event.target.value)}
-                            placeholder="--:-- --"
                             InputProps={{
                               startAdornment: (
                                 <ScheduleRoundedIcon
@@ -426,7 +507,7 @@ export default function CreateServiceRequestPage() {
                                 fontWeight: 700,
                               }}
                             >
-                              Primary Contact: Alex Rivers
+                              Primary Contact: {user?.fullName || "Sparkin Customer"}
                             </Typography>
                             <Typography
                               sx={{
@@ -435,21 +516,8 @@ export default function CreateServiceRequestPage() {
                                 mt: 0.12,
                               }}
                             >
-                              alex.rivers@sparkin-solar.com • +1 (555) 012-3456
+                              {user?.email || "Email not available"}
                             </Typography>
-                            <Button
-                              sx={{
-                                px: 0,
-                                mt: 0.36,
-                                minHeight: 18,
-                                color: "#0E56C8",
-                                fontSize: "0.64rem",
-                                fontWeight: 700,
-                                textTransform: "none",
-                              }}
-                            >
-                              Change contact info
-                            </Button>
                           </Box>
                         </Stack>
                       </Box>
@@ -465,7 +533,7 @@ export default function CreateServiceRequestPage() {
                       <Button
                         variant="contained"
                         onClick={handleSubmit}
-                        disabled={isSubmitting}
+                        disabled={isSubmitting || isLoadingProjects}
                         sx={{
                           width: { xs: "100%", sm: "auto" },
                           minWidth: 132,
@@ -572,7 +640,7 @@ export default function CreateServiceRequestPage() {
                             fontWeight: 800,
                           }}
                         >
-                          Live Network Status
+                          Service Context
                         </Typography>
                         <Box
                           sx={{
@@ -587,7 +655,7 @@ export default function CreateServiceRequestPage() {
                             textTransform: "uppercase",
                           }}
                         >
-                          Optimal
+                          {selectedProject ? "Project Linked" : "General"}
                         </Box>
                       </Stack>
 
@@ -609,13 +677,14 @@ export default function CreateServiceRequestPage() {
                           lineHeight: 1.55,
                         }}
                       >
-                        Currently 12 technicians active in your metropolitan
-                        area. Average response time:
+                        {selectedProject
+                          ? `This request will be linked to ${getProjectLabel(selectedProject)} and routed to the assigned project vendor.`
+                          : "This request will be handled by Sparkin support until it can be linked to an installation project."}
                         <Box
                           component="span"
                           sx={{ color: "#0E56C8", fontWeight: 700, ml: 0.2 }}
                         >
-                          3.2 hours
+                          {projects.length ? `${projects.length} project${projects.length === 1 ? "" : "s"} on file.` : ""}
                         </Box>
                       </Typography>
                     </Stack>

@@ -112,6 +112,20 @@ export function AuthProvider({ children }) {
     return { success: true };
   }, []);
 
+  const updateUserProfile = React.useCallback(async (payload) => {
+    const updatedUser = await authApi.updateCurrentUser(payload);
+    authStorage.updateUser(updatedUser);
+    setUser(updatedUser);
+    return updatedUser;
+  }, []);
+
+  const updateUserAvatar = React.useCallback(async (payload) => {
+    const updatedUser = await authApi.updateAvatar(payload);
+    authStorage.updateUser(updatedUser);
+    setUser(updatedUser);
+    return updatedUser;
+  }, []);
+
   const value = React.useMemo(
     () => ({
       user,
@@ -120,9 +134,11 @@ export function AuthProvider({ children }) {
       register,
       login,
       logout,
+      updateUserProfile,
+      updateUserAvatar,
       getRoleHome,
     }),
-    [isBootstrapping, login, logout, register, user],
+    [isBootstrapping, login, logout, register, updateUserAvatar, updateUserProfile, user],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

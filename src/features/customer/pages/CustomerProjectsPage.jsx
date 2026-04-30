@@ -103,6 +103,7 @@ function toProjectCard(project) {
     action: "Track Project",
     actionPrimary: true,
     to: `/project/installation?projectId=${project.id}`,
+    serviceTo: `/service-support/request?projectId=${project.id}`,
     steps: project.milestones.map(toProjectStep),
   };
 }
@@ -335,6 +336,7 @@ function ProjectCard({ item }) {
         </Box>
 
         <Box sx={{ display: "flex", justifyContent: { xs: "stretch", xl: "flex-end" } }}>
+          <Stack spacing={0.7} sx={{ width: { xs: "100%", sm: "auto" } }}>
           <Button
             component={RouterLink}
             to={item.to}
@@ -356,6 +358,28 @@ function ProjectCard({ item }) {
           >
             {item.action}
           </Button>
+          <Button
+            component={RouterLink}
+            to={item.serviceTo}
+            variant="outlined"
+            startIcon={<SupportAgentRoundedIcon sx={{ fontSize: "0.92rem" }} />}
+            sx={{
+              minHeight: 36,
+              px: 1.5,
+              width: { xs: "100%", sm: "auto" },
+              borderRadius: "0.95rem",
+              bgcolor: "#FFFFFF",
+              color: "#0E56C8",
+              borderColor: "#CFE0F8",
+              boxShadow: "none",
+              fontSize: "0.74rem",
+              fontWeight: 700,
+              textTransform: "none",
+            }}
+          >
+            Request Service
+          </Button>
+          </Stack>
         </Box>
       </Stack>
     </Box>

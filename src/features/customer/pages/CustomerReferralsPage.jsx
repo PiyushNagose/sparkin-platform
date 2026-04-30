@@ -1,4 +1,5 @@
-import { Avatar, Box, Button, Stack, Typography } from "@mui/material";
+import { useEffect, useMemo, useState } from "react";
+import { Alert, Avatar, Box, Button, CircularProgress, Stack, Typography } from "@mui/material";
 import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
 import ContentCopyRoundedIcon from "@mui/icons-material/ContentCopyRounded";
 import WalletOutlinedIcon from "@mui/icons-material/AccountBalanceWalletOutlined";
@@ -9,72 +10,86 @@ import WhatsAppIcon from "@mui/icons-material/WhatsApp";
 import LinkRoundedIcon from "@mui/icons-material/LinkRounded";
 import QrCode2RoundedIcon from "@mui/icons-material/QrCode2Rounded";
 import ChevronRightRoundedIcon from "@mui/icons-material/ChevronRightRounded";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
+import { referralsApi } from "@/features/customer/api/referralsApi";
 
-const stats = [
+function formatPrice(value) {
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(value || 0);
+}
+
+function getStats(summary) {
+  return [
   {
     icon: <MarkEmailReadOutlinedIcon sx={{ fontSize: "1rem" }} />,
     iconBg: "#E8F0FF",
     iconTone: "#4F89FF",
-    value: "45",
+    value: String(summary?.invitesSent ?? 0),
     label: "Invites sent",
   },
   {
     icon: <VerifiedRoundedIcon sx={{ fontSize: "1rem" }} />,
     iconBg: "#E8FAEF",
     iconTone: "#177D45",
-    value: "12",
+    value: String(summary?.successfulReferrals ?? 0),
     label: "Successful referrals",
   },
   {
     icon: <PendingActionsRoundedIcon sx={{ fontSize: "1rem" }} />,
     iconBg: "#F4F1C9",
     iconTone: "#8B8600",
-    value: "8",
+    value: String(summary?.pendingReferrals ?? 0),
     label: "Pending referrals",
   },
-];
+  ];
+}
 
-const quickShareItems = [
+function getQuickShareItems(summary) {
+  const link = summary?.referralLink || "";
+
+  return [
   {
     label: "WhatsApp",
-    description: "Send directly to contacts",
+    description: "Open Share & Earn page",
     icon: <WhatsAppIcon sx={{ fontSize: "0.95rem" }} />,
     iconBg: "#DDF7E8",
     iconTone: "#177D45",
   },
   {
     label: "Copy Link",
-    description: "sparkin.in/ref/user123",
+    description: link.replace("https://", "") || "Referral link unavailable",
     icon: <LinkRoundedIcon sx={{ fontSize: "0.95rem" }} />,
     iconBg: "#EEF4FF",
     iconTone: "#0E56C8",
   },
   {
     label: "QR Code",
-    description: "Download for print",
+    description: "Coming after file service",
     icon: <QrCode2RoundedIcon sx={{ fontSize: "0.95rem" }} />,
     iconBg: "#F2F5F8",
     iconTone: "#647387",
   },
-];
+  ];
+}
 
-const activityItems = [
-  {
-    name: "Priya Sharma",
-    detail: "Installation completed yesterday",
-    amount: "+\u20B9500.00",
-    status: "Rewarded",
-    statusTone: "#239654",
-  },
-  {
-    name: "Rahul Verma",
-    detail: "Assessment scheduled",
-    amount: "Pending",
-    status: "In Progress",
-    statusTone: "#0E56C8",
-  },
-];
+function getStatusTone(referral) {
+  if (referral.rewardStatus === "paid" || referral.rewardStatus === "earned") return "#239654";
+  if (referral.status === "signed_up" || referral.status === "installed") return "#0E56C8";
+  return "#677487";
+}
+
+function toActivityItem(referral) {
+  return {
+    name: referral.friend.fullName,
+    detail: referral.status.replaceAll("_", " "),
+    amount: referral.rewardStatus === "pending" ? "Pending" : `+${formatPrice(referral.rewardAmount)}`,
+    status: referral.rewardStatus === "pending" ? "In Progress" : referral.rewardStatus,
+    statusTone: getStatusTone(referral),
+  };
+}
 
 function StatCard({ item }) {
   return (
@@ -109,15 +124,17 @@ function StatCard({ item }) {
   );
 }
 
-function QuickShareCard({ item }) {
+function QuickShareCard({ item, onClick }) {
   return (
     <Box
+      onClick={onClick}
       sx={{
         p: 1.15,
         borderRadius: "1rem",
         bgcolor: "#FFFFFF",
         border: "1px solid rgba(225,232,241,0.96)",
         boxShadow: "0 10px 20px rgba(16,29,51,0.04)",
+        cursor: item.disabled ? "default" : "pointer",
       }}
     >
       <Stack direction="row" justifyContent="space-between" alignItems="center">
@@ -147,6 +164,74 @@ function QuickShareCard({ item }) {
 }
 
 export default function CustomerReferralsPage() {
+  const navigate = useNavigate();
+  const [dashboard, setDashboard] = useState({ summary: null, referrals: [] });
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadReferrals() {
+      setIsLoading(true);
+      setError("");
+
+      try {
+        const result = await referralsApi.getDashboard();
+        if (active) setDashboard(result);
+      } catch (apiError) {
+        if (active) setError(apiError?.response?.data?.message || "Could not load referrals.");
+      } finally {
+        if (active) setIsLoading(false);
+      }
+    }
+
+    loadReferrals();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const summary = dashboard.summary;
+  const stats = useMemo(() => getStats(summary), [summary]);
+  const quickShareItems = useMemo(() => getQuickShareItems(summary), [summary]);
+  const activityItems = useMemo(() => dashboard.referrals.slice(0, 5).map(toActivityItem), [dashboard.referrals]);
+
+  async function copyReferralLink() {
+    if (!summary?.referralLink) return;
+    await navigator.clipboard.writeText(summary.referralLink);
+    setNotice("Referral link copied.");
+  }
+
+  async function shareReferral() {
+    if (!summary?.referralLink) return;
+
+    const sharePayload = {
+      title: "Sparkin Solar referral",
+      text: "Go solar with Sparkin and use my referral link for a discount.",
+      url: summary.referralLink,
+    };
+
+    if (navigator.share) {
+      await navigator.share(sharePayload);
+      return;
+    }
+
+    await copyReferralLink();
+  }
+
+  function handleQuickShare(item) {
+    if (item.label === "Copy Link") {
+      copyReferralLink();
+    }
+
+    if (item.label === "WhatsApp") {
+      navigate("/customer/referrals/share");
+    }
+  }
+
   return (
     <Box sx={{ width: "100%" }}>
       <Stack
@@ -199,6 +284,26 @@ export default function CustomerReferralsPage() {
         </Box>
       </Stack>
 
+      {isLoading ? (
+        <Box sx={{ py: 5, display: "grid", placeItems: "center" }}>
+          <CircularProgress />
+        </Box>
+      ) : null}
+
+      {!isLoading && error ? (
+        <Alert severity="error" sx={{ mt: 1.5, borderRadius: "0.9rem" }}>
+          {error}
+        </Alert>
+      ) : null}
+
+      {!isLoading && notice ? (
+        <Alert severity="success" sx={{ mt: 1.5, borderRadius: "0.9rem" }} onClose={() => setNotice("")}>
+          {notice}
+        </Alert>
+      ) : null}
+
+      {!isLoading && !error ? (
+      <>
       <Box
         sx={{
           mt: 1.85,
@@ -266,15 +371,14 @@ export default function CustomerReferralsPage() {
                   lineHeight: 1,
                 }}
               >
-                SPARKIN-2026
+                {summary?.referralCode || "SPARKIN"}
               </Typography>
-              <ContentCopyRoundedIcon sx={{ color: "#7F8A9B", fontSize: "1rem" }} />
+              <ContentCopyRoundedIcon onClick={copyReferralLink} sx={{ color: "#7F8A9B", fontSize: "1rem", cursor: "pointer" }} />
             </Box>
 
             <Button
-              component={NavLink}
-              to="/customer/referrals/share"
               variant="contained"
+              onClick={shareReferral}
               sx={{
                 minHeight: 42,
                 px: 1.75,
@@ -318,7 +422,7 @@ export default function CustomerReferralsPage() {
             Total Earnings
           </Typography>
           <Typography sx={{ mt: 0.45, fontSize: "2.2rem", fontWeight: 800, lineHeight: 1.02 }}>
-            {"\u20B95,000"}
+            {formatPrice(summary?.totalEarnings)}
           </Typography>
 
           <Box sx={{ mt: 1.2, mb: 1.15, height: 1, bgcolor: "rgba(255,255,255,0.16)" }} />
@@ -336,7 +440,7 @@ export default function CustomerReferralsPage() {
               >
                 Available
               </Typography>
-              <Typography sx={{ mt: 0.3, fontSize: "1.2rem", fontWeight: 800 }}>{"\u20B91,250"}</Typography>
+              <Typography sx={{ mt: 0.3, fontSize: "1.2rem", fontWeight: 800 }}>{formatPrice(summary?.availableEarnings)}</Typography>
             </Box>
             <Button
               component={NavLink}
@@ -385,7 +489,7 @@ export default function CustomerReferralsPage() {
           }}
         >
           {quickShareItems.map((item) => (
-            <QuickShareCard key={item.label} item={item} />
+            <QuickShareCard key={item.label} item={item} onClick={() => handleQuickShare(item)} />
           ))}
         </Box>
       </Box>
@@ -418,6 +522,14 @@ export default function CustomerReferralsPage() {
             overflow: "hidden",
           }}
         >
+          {activityItems.length === 0 ? (
+            <Box sx={{ px: 1.35, py: 1.4 }}>
+              <Typography sx={{ color: "#647387", fontSize: "0.82rem" }}>
+                No referral activity yet. Share your code to invite your first friend.
+              </Typography>
+            </Box>
+          ) : null}
+
           {activityItems.map((item, index) => (
             <Stack
               key={item.name}
@@ -460,6 +572,8 @@ export default function CustomerReferralsPage() {
           ))}
         </Box>
       </Box>
+      </>
+      ) : null}
     </Box>
   );
 }

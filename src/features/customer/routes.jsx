@@ -1,9 +1,9 @@
-import { ScreenPlaceholder } from "@/shared/ui/placeholder/ScreenPlaceholder";
 import CustomerDashboardPage from "@/features/customer/pages/CustomerDashboardPage";
 import CustomerBookingsPage from "@/features/customer/pages/CustomerBookingsPage";
 import CustomerTendersPage from "@/features/customer/pages/CustomerTendersPage";
 import CustomerProjectsPage from "@/features/customer/pages/CustomerProjectsPage";
 import CustomerServicesPage from "@/features/customer/pages/CustomerServicesPage";
+import CustomerSavingsPage from "@/features/customer/pages/CustomerSavingsPage";
 import CustomerProfilePage from "@/features/customer/pages/CustomerProfilePage";
 import CustomerReferralsPage from "@/features/customer/pages/CustomerReferralsPage";
 import CustomerShareEarnPage from "@/features/customer/pages/CustomerShareEarnPage";
@@ -32,13 +32,7 @@ export const customerRoutes = [
   },
   {
     path: "savings",
-    element: (
-      <ScreenPlaceholder
-        title="Savings"
-        description="Savings analytics with performance chart, impact metrics, and referral callout."
-        sections={["Savings hero", "Forecast chart", "Impact metrics", "Referral banner"]}
-      />
-    ),
+    element: <CustomerSavingsPage />,
   },
   {
     path: "referrals",

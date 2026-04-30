@@ -9,16 +9,14 @@ import {
   Typography,
 } from "@mui/material";
 import BoltRoundedIcon from "@mui/icons-material/BoltRounded";
-import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
-import DownloadRoundedIcon from "@mui/icons-material/DownloadRounded";
 import HelpOutlineRoundedIcon from "@mui/icons-material/HelpOutlineRounded";
 import HomeWorkOutlinedIcon from "@mui/icons-material/HomeWorkOutlined";
-import ShareRoundedIcon from "@mui/icons-material/ShareRounded";
-import ShieldOutlinedIcon from "@mui/icons-material/ShieldOutlined";
+import PaymentsOutlinedIcon from "@mui/icons-material/PaymentsOutlined";
 import SolarPowerRoundedIcon from "@mui/icons-material/SolarPowerRounded";
 import TaskAltRoundedIcon from "@mui/icons-material/TaskAltRounded";
 import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link as RouterLink, useSearchParams } from "react-router-dom";
+import { paymentsApi } from "@/features/public/api/paymentsApi";
 import { projectsApi } from "@/features/public/api/projectsApi";
 import styles from "@/features/public/pages/CalculatorPage.module.css";
 import {
@@ -56,42 +54,24 @@ const projectMeta = [
   },
 ];
 
-const recentActivity = [
-  {
-    title: "Installation Team Dispatched",
-    text: "Engineers have arrived at your location with the solar panels and mounting structure.",
-    tag: "Today, 09:30 AM",
-    tone: "#0E56C8",
-    icon: <BoltRoundedIcon sx={{ fontSize: "0.82rem" }} />,
-  },
-  {
-    title: "Technical Design Approved",
-    text: "The final layout for the 12 Monocrystalline PERC panels has been verified by the engineering team.",
-    tag: "24 Mar, 2026",
-    tone: "#12824C",
-    icon: <TaskAltRoundedIcon sx={{ fontSize: "0.82rem" }} />,
-  },
-  {
-    title: "Site Survey Completed",
-    text: "Shadow analysis and roof load capacity assessment completed successfully.",
-    tag: "20 Mar, 2026",
-    tone: "#12824C",
-    icon: <TaskAltRoundedIcon sx={{ fontSize: "0.82rem" }} />,
-  },
-];
-
-const documents = [
-  { icon: <DescriptionOutlinedIcon sx={{ fontSize: "1rem" }} />, label: "Tax Invoice" },
-  { icon: <DescriptionOutlinedIcon sx={{ fontSize: "1rem" }} />, label: "Service Agreement" },
-  { icon: <ShieldOutlinedIcon sx={{ fontSize: "1rem" }} />, label: "Warranty Certificate" },
-];
-
 function formatPrice(value) {
   return new Intl.NumberFormat("en-IN", {
     style: "currency",
     currency: "INR",
     maximumFractionDigits: 0,
   }).format(value);
+}
+
+function formatDate(value) {
+  if (!value) {
+    return "Pending";
+  }
+
+  return new Intl.DateTimeFormat("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(value));
 }
 
 function formatAddress(address) {
@@ -126,6 +106,56 @@ function buildJourneySteps(project) {
   }));
 }
 
+function buildRecentActivity(project) {
+  const milestones = project?.milestones ?? [];
+  const activities = milestones
+    .filter((milestone) => milestone.status !== "pending")
+    .map((milestone) => ({
+      title:
+        milestone.status === "completed"
+          ? `${milestone.title} completed`
+          : `${milestone.title} in progress`,
+      text:
+        milestone.status === "completed"
+          ? `${milestone.title} has been completed by the assigned vendor.`
+          : `Your assigned vendor is currently working on ${milestone.title.toLowerCase()}.`,
+      tag: milestone.status === "completed" ? formatDate(milestone.completedAt) : "Active now",
+      tone: milestone.status === "completed" ? "#12824C" : "#0E56C8",
+      icon:
+        milestone.status === "completed" ? (
+          <TaskAltRoundedIcon sx={{ fontSize: "0.82rem" }} />
+        ) : (
+          <BoltRoundedIcon sx={{ fontSize: "0.82rem" }} />
+        ),
+    }));
+
+  if (activities.length > 0) {
+    return activities.reverse();
+  }
+
+  return [
+    {
+      title: "Project created",
+      text: "Your accepted quote has been converted into an installation project.",
+      tag: formatDate(project?.createdAt),
+      tone: "#0E56C8",
+      icon: <TaskAltRoundedIcon sx={{ fontSize: "0.82rem" }} />,
+    },
+  ];
+}
+
+function getPaymentStatusMeta(status) {
+  if (status === "paid") {
+    return { label: "Paid", bg: "#DDF8E7", tone: "#12824C" };
+  }
+
+  if (status === "overdue") {
+    return { label: "Overdue", bg: "#FFE9E6", tone: "#B42318" };
+  }
+
+  return { label: "Pending", bg: "#F2F5F8", tone: "#677487" };
+}
+
 function CardShell({ children, sx = {} }) {
   return (
     <Box
@@ -146,8 +176,11 @@ function CardShell({ children, sx = {} }) {
 export default function SolarInstallationProjectPage() {
   const [searchParams] = useSearchParams();
   const [project, setProject] = useState(null);
+  const [payments, setPayments] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingPayments, setIsLoadingPayments] = useState(false);
   const [error, setError] = useState("");
+  const [paymentsError, setPaymentsError] = useState("");
 
   useEffect(() => {
     let active = true;
@@ -177,8 +210,52 @@ export default function SolarInstallationProjectPage() {
     };
   }, [searchParams]);
 
+  useEffect(() => {
+    let active = true;
+
+    async function loadPayments() {
+      if (!project?.id) {
+        setPayments([]);
+        return;
+      }
+
+      setIsLoadingPayments(true);
+      setPaymentsError("");
+
+      try {
+        const result = await paymentsApi.listPayments();
+        const projectPayments = result.filter((payment) => payment.projectId === project.id);
+
+        if (active) {
+          setPayments(projectPayments);
+        }
+      } catch (apiError) {
+        if (active) {
+          setPaymentsError(apiError?.response?.data?.message || "Could not load payment schedule.");
+        }
+      } finally {
+        if (active) {
+          setIsLoadingPayments(false);
+        }
+      }
+    }
+
+    loadPayments();
+
+    return () => {
+      active = false;
+    };
+  }, [project?.id]);
+
   const vendorName = getVendorName(project);
   const dynamicJourneySteps = useMemo(() => buildJourneySteps(project), [project]);
+  const dynamicRecentActivity = useMemo(() => buildRecentActivity(project), [project]);
+  const paidAmount = payments
+    .filter((payment) => payment.status === "paid")
+    .reduce((sum, payment) => sum + payment.amount, 0);
+  const pendingAmount = payments
+    .filter((payment) => payment.status !== "paid")
+    .reduce((sum, payment) => sum + payment.amount, 0);
   const activeStep = dynamicJourneySteps.find((step) => step.active) ?? dynamicJourneySteps[0];
   const completedSteps = dynamicJourneySteps.filter((step) => step.done).length;
   const progressPercent = Math.max(12, Math.round((completedSteps / dynamicJourneySteps.length) * 100));
@@ -257,7 +334,9 @@ export default function SolarInstallationProjectPage() {
                 sx={{ width: { xs: "100%", md: "auto" } }}
               >
                 <Button
-                  startIcon={<ShareRoundedIcon />}
+                  component={RouterLink}
+                  to={project ? `/service-support/request?projectId=${project.id}` : "/service-support/request"}
+                  startIcon={<HelpOutlineRoundedIcon />}
                   sx={{
                     width: { xs: "100%", sm: "auto" },
                     minHeight: 40,
@@ -270,11 +349,13 @@ export default function SolarInstallationProjectPage() {
                     textTransform: "none",
                   }}
                 >
-                  Share Status
+                  Request Service
                 </Button>
                 <Button
+                  component={RouterLink}
+                  to="/customer/projects"
                   variant="contained"
-                  startIcon={<DownloadRoundedIcon />}
+                  startIcon={<SolarPowerRoundedIcon />}
                   sx={{
                     width: { xs: "100%", sm: "auto" },
                     minHeight: 40,
@@ -287,7 +368,7 @@ export default function SolarInstallationProjectPage() {
                     boxShadow: "0 12px 22px rgba(14,86,200,0.18)",
                   }}
                 >
-                  Download Report
+                  My Projects
                 </Button>
               </Stack>
             </Stack>
@@ -451,7 +532,7 @@ export default function SolarInstallationProjectPage() {
                         Recent Activity
                       </Typography>
                       <Stack spacing={1.35}>
-                        {recentActivity.map((item, index) => (
+                        {dynamicRecentActivity.map((item, index) => (
                           <Stack key={item.title} direction="row" spacing={1.15} alignItems="flex-start">
                             <Stack alignItems="center" sx={{ pt: 0.1 }}>
                               <Box
@@ -467,7 +548,7 @@ export default function SolarInstallationProjectPage() {
                               >
                                 {item.icon}
                               </Box>
-                              {index < recentActivity.length - 1 ? (
+                              {index < dynamicRecentActivity.length - 1 ? (
                                 <Box sx={{ width: 2, minHeight: 40, bgcolor: "#E0E6EF", mt: 0.45 }} />
                               ) : null}
                             </Stack>
@@ -573,40 +654,117 @@ export default function SolarInstallationProjectPage() {
                           ))}
                         </Stack>
                         <Typography sx={{ fontSize: "0.72rem", fontWeight: 700, color: "rgba(255,255,255,0.92)" }}>
-                          Team of 3 on site
+                          Assigned vendor: {vendorName}
                         </Typography>
                       </Stack>
                     </Stack>
                   </Box>
 
                   <CardShell>
-                    <Stack spacing={1.15}>
-                      <Typography sx={{ color: "#202938", fontSize: "0.98rem", fontWeight: 800 }}>
-                        Project Documents
-                      </Typography>
-                      {documents.map((doc) => (
-                        <Stack key={doc.label} direction="row" justifyContent="space-between" alignItems="center">
-                          <Stack direction="row" spacing={0.8} alignItems="center">
-                            <Box
-                              sx={{
-                                width: 32,
-                                height: 32,
-                                borderRadius: "0.8rem",
-                                bgcolor: "#F2F6FC",
-                                color: "#0E56C8",
-                                display: "grid",
-                                placeItems: "center",
-                              }}
-                            >
-                              {doc.icon}
-                            </Box>
-                            <Typography sx={{ color: "#243142", fontSize: "0.78rem", fontWeight: 700 }}>
-                              {doc.label}
-                            </Typography>
-                          </Stack>
-                          <DownloadRoundedIcon sx={{ fontSize: "1rem", color: "#798496" }} />
+                    <Stack spacing={1.25}>
+                      <Stack direction="row" justifyContent="space-between" alignItems="center">
+                        <Typography sx={{ color: "#202938", fontSize: "0.98rem", fontWeight: 800 }}>
+                          Payment Schedule
+                        </Typography>
+                        <PaymentsOutlinedIcon sx={{ fontSize: "1.05rem", color: "#0E56C8" }} />
+                      </Stack>
+
+                      {isLoadingPayments ? (
+                        <Box sx={{ py: 2, display: "grid", placeItems: "center" }}>
+                          <CircularProgress size={22} />
+                        </Box>
+                      ) : null}
+
+                      {!isLoadingPayments && paymentsError ? (
+                        <Alert severity="error" sx={{ borderRadius: "0.85rem" }}>
+                          {paymentsError}
+                        </Alert>
+                      ) : null}
+
+                      {!isLoadingPayments && !paymentsError && payments.length === 0 ? (
+                        <Alert severity="info" sx={{ borderRadius: "0.85rem" }}>
+                          Payment schedule is being prepared.
+                        </Alert>
+                      ) : null}
+
+                      {!isLoadingPayments && !paymentsError && payments.length > 0 ? (
+                        <Stack spacing={0.9}>
+                          <Box
+                            sx={{
+                              p: 1,
+                              borderRadius: "0.95rem",
+                              bgcolor: "#F5F7FB",
+                              border: "1px solid #E8EDF5",
+                            }}
+                          >
+                            <Stack direction="row" justifyContent="space-between" spacing={1}>
+                              <Box>
+                                <Typography sx={{ color: "#7D8797", fontSize: "0.62rem", fontWeight: 800 }}>
+                                  Paid
+                                </Typography>
+                                <Typography sx={{ color: "#12824C", fontSize: "0.92rem", fontWeight: 800 }}>
+                                  {formatPrice(paidAmount)}
+                                </Typography>
+                              </Box>
+                              <Box sx={{ textAlign: "right" }}>
+                                <Typography sx={{ color: "#7D8797", fontSize: "0.62rem", fontWeight: 800 }}>
+                                  Pending
+                                </Typography>
+                                <Typography sx={{ color: "#202938", fontSize: "0.92rem", fontWeight: 800 }}>
+                                  {formatPrice(pendingAmount)}
+                                </Typography>
+                              </Box>
+                            </Stack>
+                          </Box>
+
+                          {payments.map((payment) => {
+                            const status = getPaymentStatusMeta(payment.status);
+
+                            return (
+                              <Box
+                                key={payment.id}
+                                sx={{
+                                  p: 1,
+                                  borderRadius: "0.95rem",
+                                  bgcolor: "#FFFFFF",
+                                  border: "1px solid #E8EDF5",
+                                }}
+                              >
+                                <Stack direction="row" justifyContent="space-between" spacing={1.2}>
+                                  <Box>
+                                    <Typography sx={{ color: "#243142", fontSize: "0.78rem", fontWeight: 800 }}>
+                                      {payment.milestone.title}
+                                    </Typography>
+                                    <Typography sx={{ mt: 0.18, color: "#7D8797", fontSize: "0.64rem" }}>
+                                      Due {formatDate(payment.dueAt)}
+                                    </Typography>
+                                  </Box>
+                                  <Box sx={{ textAlign: "right" }}>
+                                    <Typography sx={{ color: "#202938", fontSize: "0.78rem", fontWeight: 800 }}>
+                                      {formatPrice(payment.amount)}
+                                    </Typography>
+                                    <Box
+                                      sx={{
+                                        mt: 0.28,
+                                        px: 0.62,
+                                        py: 0.2,
+                                        borderRadius: 999,
+                                        bgcolor: status.bg,
+                                        color: status.tone,
+                                        fontSize: "0.52rem",
+                                        fontWeight: 800,
+                                        textTransform: "uppercase",
+                                      }}
+                                    >
+                                      {status.label}
+                                    </Box>
+                                  </Box>
+                                </Stack>
+                              </Box>
+                            );
+                          })}
                         </Stack>
-                      ))}
+                      ) : null}
                     </Stack>
                   </CardShell>
 
@@ -619,6 +777,8 @@ export default function SolarInstallationProjectPage() {
                         Our support team is available 24/7 to help with your project queries.
                       </Typography>
                       <Button
+                        component={RouterLink}
+                        to={project ? `/service-support/request?projectId=${project.id}` : "/service-support/request"}
                         sx={{
                           minHeight: 42,
                           borderRadius: "0.9rem",
@@ -630,9 +790,11 @@ export default function SolarInstallationProjectPage() {
                           border: "1px solid #E4EAF3",
                         }}
                       >
-                        Chat with Vendor
+                        Raise Service Request
                       </Button>
                       <Button
+                        component={RouterLink}
+                        to="/service-support"
                         startIcon={<HelpOutlineRoundedIcon />}
                         sx={{
                           minHeight: 42,

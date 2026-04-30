@@ -34,7 +34,7 @@
   width: 100%;
   display: flex;
   justify-content: flex-start;
-  gap: 28px;
+  gap: 34px;
   margin-left: 36px;
 }
 
@@ -100,7 +100,7 @@
 
   .navLinks {
     max-width: 520px;
-    gap: 18px;
+    gap: 24px;
     margin-left: 18px;
   }
 
