@@ -13,7 +13,6 @@ import {
 import layoutStyles from "@/app/layouts/PublicLayout.module.css";
 import liveBiddingImage from "@/shared/assets/images/public/bidding/live-bidding-hero-placeholder.png";
 import partnerHeroImage from "@/shared/assets/images/public/partners/trusted-partners-hero-placeholder.png";
-import serviceNetworkImage from "@/shared/assets/images/public/support/service-network-placeholder.png";
 
 const posts = [
   {
@@ -52,7 +51,13 @@ export default function BlogPage() {
       }}
     >
       <Container maxWidth={false} disableGutters className={layoutStyles.publicContentContainer}>
-        <Grid container spacing={{ xs: 3.5, md: 5 }} alignItems="center" sx={{ mb: publicPageSpacing.sectionBottom }}>
+        <Grid
+          container
+          spacing={{ xs: 3.2, md: 4.2 }}
+          alignItems="center"
+          sx={{ mb: { xs: 5.8, md: 6.8 } }}
+          className={layoutStyles.revealUp}
+        >
           <Grid size={{ xs: 12, md: 6.2 }}>
             <Chip
               label="Sparkin Blog"
@@ -67,10 +72,10 @@ export default function BlogPage() {
                 textTransform: "uppercase",
               }}
             />
-            <Typography variant="h1" sx={{ mt: 1.35, ...publicTypography.heroTitle, color: "#18253A", maxWidth: 690 }}>
+            <Typography variant="h1" sx={{ mt: 1.25, ...publicTypography.heroTitle, color: "#18253A", maxWidth: 690 }}>
               Stories from the teams building India&apos;s solar marketplace.
             </Typography>
-            <Typography sx={{ mt: 1.45, color: "#6E7B8E", maxWidth: 540, ...publicTypography.sectionBody }}>
+            <Typography sx={{ mt: 1.25, color: "#6E7B8E", maxWidth: 540, ...publicTypography.sectionBody }}>
               Follow product updates, partner stories, operations notes, and
               behind-the-scenes thinking from Sparkin.
             </Typography>
@@ -80,7 +85,7 @@ export default function BlogPage() {
               variant="contained"
               endIcon={<ArrowForwardRoundedIcon />}
               sx={{
-                mt: 2.7,
+                mt: 2.5,
                 minHeight: 46,
                 px: 2.3,
                 borderRadius: "0.72rem",
@@ -96,6 +101,7 @@ export default function BlogPage() {
           </Grid>
           <Grid size={{ xs: 12, md: 5.8 }}>
             <Box
+              className={layoutStyles.interactiveSurface}
               sx={{
                 minHeight: { xs: 330, md: 390 },
                 borderRadius: "2rem",
@@ -122,10 +128,11 @@ export default function BlogPage() {
           </Grid>
         </Grid>
 
-        <Grid container spacing={{ xs: 1.5, md: 2 }} sx={{ mb: publicPageSpacing.sectionBottom }}>
+        <Grid container spacing={{ xs: 1.5, md: 2 }} sx={{ mb: { xs: 5.8, md: 6.8 } }}>
           {updates.map((item) => (
             <Grid key={item.label} size={{ xs: 12, md: 4 }}>
               <Box
+                className={layoutStyles.interactiveSurface}
                 sx={{
                   p: { xs: 1.8, md: 2.2 },
                   borderRadius: "1.25rem",
@@ -152,10 +159,11 @@ export default function BlogPage() {
           ))}
         </Grid>
 
-        <Grid container spacing={{ xs: 2.2, md: 2.8 }} sx={{ mb: publicPageSpacing.sectionBottom }}>
+        <Grid container spacing={{ xs: 2, md: 2.4 }} sx={{ mb: { xs: 5.8, md: 6.8 } }}>
           {posts.map((post) => (
             <Grid key={post.title} size={{ xs: 12, md: 4 }}>
               <Box
+                className={`${layoutStyles.interactiveSurface} ${layoutStyles.revealUpSlow}`}
                 sx={{
                   height: "100%",
                   minHeight: 250,
@@ -183,12 +191,12 @@ export default function BlogPage() {
           ))}
         </Grid>
 
-        <Grid container spacing={{ xs: 3, md: 4 }} alignItems="stretch">
+        <Grid container spacing={{ xs: 2.5, md: 3.5 }} alignItems="stretch">
           <Grid size={{ xs: 12, md: 7 }}>
-            <Box sx={{ height: "100%", minHeight: 330, borderRadius: "1.8rem", backgroundImage: `linear-gradient(180deg, rgba(7,22,55,0.04) 0%, rgba(7,22,55,0.34) 100%), url(${liveBiddingImage})`, backgroundSize: "cover", backgroundPosition: "center", boxShadow: "0 18px 40px rgba(16,29,51,0.1)" }} />
+            <Box className={layoutStyles.interactiveSurface} sx={{ height: "100%", minHeight: 330, borderRadius: "1.8rem", backgroundImage: `linear-gradient(180deg, rgba(7,22,55,0.04) 0%, rgba(7,22,55,0.34) 100%), url(${liveBiddingImage})`, backgroundSize: "cover", backgroundPosition: "center", boxShadow: "0 18px 40px rgba(16,29,51,0.1)" }} />
           </Grid>
           <Grid size={{ xs: 12, md: 5 }}>
-            <Box sx={{ height: "100%", p: { xs: 2.5, md: 3.2 }, borderRadius: "1.8rem", background: "linear-gradient(180deg, #121C32 0%, #182641 100%)", color: "white" }}>
+            <Box className={layoutStyles.interactiveSurface} sx={{ height: "100%", p: { xs: 2.5, md: 3 }, borderRadius: "1.8rem", background: "linear-gradient(180deg, #121C32 0%, #182641 100%)", color: "white" }}>
               <NewspaperRoundedIcon sx={{ color: "#DDF509", fontSize: "2rem" }} />
               <Typography sx={{ mt: 1.7, fontSize: { xs: "1.55rem", md: "2rem" }, fontWeight: 800, letterSpacing: "-0.04em", lineHeight: 1.08 }}>
                 Subscribe for solar market notes.

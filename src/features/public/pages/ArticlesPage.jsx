@@ -61,7 +61,13 @@ export default function ArticlesPage() {
       }}
     >
       <Container maxWidth={false} disableGutters className={layoutStyles.publicContentContainer}>
-        <Grid container spacing={{ xs: 3.5, md: 5 }} alignItems="center" sx={{ mb: publicPageSpacing.sectionBottom }}>
+        <Grid
+          container
+          spacing={{ xs: 3.2, md: 4.2 }}
+          alignItems="center"
+          sx={{ mb: { xs: 5.8, md: 6.8 } }}
+          className={layoutStyles.revealUp}
+        >
           <Grid size={{ xs: 12, md: 6.3 }}>
             <Chip
               label="Solar Articles"
@@ -76,16 +82,17 @@ export default function ArticlesPage() {
                 textTransform: "uppercase",
               }}
             />
-            <Typography variant="h1" sx={{ mt: 1.35, ...publicTypography.heroTitle, color: "#18253A", maxWidth: 700 }}>
+            <Typography variant="h1" sx={{ mt: 1.25, ...publicTypography.heroTitle, color: "#18253A", maxWidth: 700 }}>
               Clear solar knowledge for smarter buying decisions.
             </Typography>
-            <Typography sx={{ mt: 1.45, color: "#6E7B8E", maxWidth: 540, ...publicTypography.sectionBody }}>
+            <Typography sx={{ mt: 1.25, color: "#6E7B8E", maxWidth: 540, ...publicTypography.sectionBody }}>
               Browse practical explainers, buyer checklists, and savings guides
               written for homeowners comparing solar for the first time.
             </Typography>
           </Grid>
           <Grid size={{ xs: 12, md: 5.7 }}>
             <Box
+              className={layoutStyles.interactiveSurface}
               sx={{
                 minHeight: { xs: 300, md: 360 },
                 borderRadius: "2rem",
@@ -112,12 +119,13 @@ export default function ArticlesPage() {
         <Box
           sx={{
             p: { xs: 2.2, md: 2.8 },
-            mb: publicPageSpacing.sectionBottom,
+            mb: { xs: 5.8, md: 6.8 },
             borderRadius: "1.8rem",
             bgcolor: "rgba(255,255,255,0.94)",
             border: "1px solid rgba(223,231,241,0.92)",
             boxShadow: "0 18px 40px rgba(16,29,51,0.07)",
           }}
+          className={layoutStyles.interactiveSurface}
         >
           <Grid container spacing={{ xs: 2.5, md: 3 }} alignItems="center">
             <Grid size={{ xs: 12, md: 4.3 }}>
@@ -146,10 +154,11 @@ export default function ArticlesPage() {
           </Grid>
         </Box>
 
-        <Grid container spacing={{ xs: 2.2, md: 2.8 }} sx={{ mb: publicPageSpacing.sectionBottom }}>
+        <Grid container spacing={{ xs: 2, md: 2.4 }} sx={{ mb: { xs: 5.8, md: 6.8 } }}>
           {articles.map((article) => (
             <Grid key={article.title} size={{ xs: 12, md: 4 }}>
               <Box
+                className={`${layoutStyles.interactiveSurface} ${layoutStyles.revealUpSlow}`}
                 sx={{
                   height: "100%",
                   minHeight: 250,
@@ -177,12 +186,12 @@ export default function ArticlesPage() {
           ))}
         </Grid>
 
-        <Grid container spacing={{ xs: 3, md: 4 }} alignItems="stretch">
+        <Grid container spacing={{ xs: 2.5, md: 3.5 }} alignItems="stretch">
           <Grid size={{ xs: 12, md: 6 }}>
-            <Box sx={{ height: "100%", minHeight: 300, borderRadius: "1.8rem", backgroundImage: `linear-gradient(180deg, rgba(7,22,55,0.08) 0%, rgba(7,22,55,0.36) 100%), url(${loanHeroImage})`, backgroundSize: "cover", backgroundPosition: "center", boxShadow: "0 18px 40px rgba(16,29,51,0.1)" }} />
+            <Box className={layoutStyles.interactiveSurface} sx={{ height: "100%", minHeight: 300, borderRadius: "1.8rem", backgroundImage: `linear-gradient(180deg, rgba(7,22,55,0.08) 0%, rgba(7,22,55,0.36) 100%), url(${loanHeroImage})`, backgroundSize: "cover", backgroundPosition: "center", boxShadow: "0 18px 40px rgba(16,29,51,0.1)" }} />
           </Grid>
           <Grid size={{ xs: 12, md: 6 }}>
-            <Box sx={{ height: "100%", p: { xs: 2.5, md: 3.2 }, borderRadius: "1.8rem", background: "linear-gradient(180deg, #121C32 0%, #182641 100%)", color: "white" }}>
+            <Box className={layoutStyles.interactiveSurface} sx={{ height: "100%", p: { xs: 2.5, md: 3 }, borderRadius: "1.8rem", background: "linear-gradient(180deg, #121C32 0%, #182641 100%)", color: "white" }}>
               <LightbulbOutlinedIcon sx={{ color: "#DDF509", fontSize: "2rem" }} />
               <Typography sx={{ mt: 1.7, fontSize: { xs: "1.55rem", md: "2rem" }, fontWeight: 800, letterSpacing: "-0.04em", lineHeight: 1.08 }}>
                 Downloadable buyer guides

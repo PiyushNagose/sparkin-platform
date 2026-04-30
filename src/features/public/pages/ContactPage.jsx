@@ -56,9 +56,10 @@ export default function ContactPage() {
       <Container maxWidth={false} disableGutters className={layoutStyles.publicContentContainer}>
         <Grid
           container
-          spacing={{ xs: 2.5, md: 4 }}
+          spacing={{ xs: 2.2, md: 3.2 }}
           alignItems="start"
-          sx={{ mb: publicPageSpacing.sectionBottom }}
+          sx={{ mb: { xs: 5.6, md: 6.6 } }}
+          className={layoutStyles.revealUp}
         >
           <Grid size={{ xs: 12, md: 6.5 }}>
             <Typography
@@ -89,6 +90,7 @@ export default function ContactPage() {
           {contactCards.map((card) => (
             <Grid key={card.title} size={{ xs: 12, md: 4 }}>
               <Box
+                className={layoutStyles.interactiveSurface}
                 sx={{
                   p: { xs: 2.2, md: 2.5 },
                   minHeight: 156,
@@ -150,11 +152,12 @@ export default function ContactPage() {
         <Grid
           container
           spacing={{ xs: 2.5, md: 2.5 }}
-          sx={{ mt: publicPageSpacing.sectionTop }}
+          sx={{ mt: { xs: 5.4, md: 6.4 } }}
           alignItems="stretch"
         >
           <Grid size={{ xs: 12, md: 4.4 }}>
             <Box
+              className={layoutStyles.interactiveSurface}
               sx={{
                 height: "100%",
                 p: { xs: 2.4, md: 2.7 },
@@ -293,6 +296,7 @@ export default function ContactPage() {
           <Grid size={{ xs: 12, md: 7.6 }}>
             <Stack spacing={{ xs: 2.35, md: 2.8 }} sx={{ height: "100%" }}>
               <Box
+                className={layoutStyles.interactiveSurface}
                 sx={{
                   position: "relative",
                   overflow: "hidden",
@@ -341,6 +345,7 @@ export default function ContactPage() {
               </Box>
 
               <Box
+                className={layoutStyles.interactiveSurface}
                 sx={{
                   position: "relative",
                   overflow: "hidden",
