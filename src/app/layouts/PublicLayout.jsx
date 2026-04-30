@@ -49,7 +49,7 @@ export function PublicLayout() {
 
             <Stack
               direction="row"
-              spacing={2.5}
+              spacing={1.8}
               className={styles.navLinks}
               sx={{ display: { xs: "none", md: "flex" } }}
             >
@@ -75,7 +75,7 @@ export function PublicLayout() {
 
             <Stack
               direction="row"
-              spacing={1.5}
+              spacing={1.9}
               className={styles.navActions}
               sx={{ display: { xs: "none", sm: "flex" } }}
             >
@@ -85,9 +85,9 @@ export function PublicLayout() {
                 variant="outlined"
                 color="inherit"
                 sx={{
-                  minWidth: 98,
+                  minWidth: 136,
                   minHeight: 36,
-                  px: 2.1,
+                  px: 3.7,
                   py: 0.25,
                   borderRadius: "0.35rem",
                   borderColor: "#0E56C8",
@@ -104,9 +104,9 @@ export function PublicLayout() {
                 to="/booking"
                 variant="contained"
                 sx={{
-                  minWidth: 112,
+                  minWidth: 136,
                   minHeight: 36,
-                  px: 2.1,
+                  px: 3.7,
                   py: 0.25,
                   borderRadius: "0.35rem",
                   background:
