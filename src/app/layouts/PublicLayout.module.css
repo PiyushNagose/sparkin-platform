@@ -53,6 +53,14 @@
   margin: 0 auto;
 }
 
+.publicContentContainer {
+  width: 100%;
+  max-width: 1360px;
+  padding-inline: 40px;
+  box-sizing: border-box;
+  margin: 0 auto;
+}
+
 .footerTop {
   display: grid;
   grid-template-columns: 1.3fr 1fr 1fr 1fr;
@@ -85,6 +93,11 @@
   }
 
   .footerContainer {
+    max-width: 100%;
+    padding-inline: 28px;
+  }
+
+  .publicContentContainer {
     max-width: 100%;
     padding-inline: 28px;
   }
@@ -127,6 +140,10 @@
   }
 
   .footerContainer {
+    padding-inline: 20px;
+  }
+
+  .publicContentContainer {
     padding-inline: 20px;
   }
 }

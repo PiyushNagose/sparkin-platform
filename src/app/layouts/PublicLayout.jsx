@@ -7,13 +7,20 @@ import {
   Toolbar,
   Typography,
 } from "@mui/material";
-import { Link as RouterLink, Outlet } from "react-router-dom";
+import { useEffect } from "react";
+import { Link as RouterLink, Outlet, useLocation } from "react-router-dom";
 import { publicPrimaryNav } from "@/shared/config/navigation";
 import logoPlaceholder from "@/shared/assets/logo-placeholder.png";
 import styles from "@/app/layouts/PublicLayout.module.css";
 import { AppFooter } from "@/shared/components/AppFooter";
 
 export function PublicLayout() {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [pathname]);
+
   return (
     <Box className={styles.shell} sx={{ bgcolor: "background.default" }}>
       <AppBar
