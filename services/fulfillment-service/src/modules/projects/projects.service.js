@@ -183,4 +183,22 @@ export const projectsService = {
       status,
     });
   },
+
+  async submitOnboarding(user, projectId, input) {
+    const project = await this.getProject(user, projectId);
+
+    if (user.role !== "admin" && project.customerId !== user.userId) {
+      throw new AppError(403, "Only the customer can submit project onboarding");
+    }
+
+    return projectsRepository.updateProject(projectId, {
+      onboarding: {
+        contactName: input.contactName,
+        contactPhone: input.contactPhone,
+        siteAccessNotes: input.siteAccessNotes || null,
+        preferredVisitWindow: input.preferredVisitWindow || null,
+        completedAt: new Date(),
+      },
+    });
+  },
 };

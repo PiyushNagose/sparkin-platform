@@ -66,6 +66,17 @@ const projectSchema = new mongoose.Schema(
         completedAt: { type: Date, default: null },
       },
     ],
+    onboarding: {
+      contactName: { type: String, trim: true, default: null },
+      contactPhone: { type: String, trim: true, default: null },
+      siteAccessNotes: { type: String, trim: true, default: null },
+      preferredVisitWindow: {
+        type: String,
+        enum: ["morning", "afternoon", "evening", null],
+        default: null,
+      },
+      completedAt: { type: Date, default: null },
+    },
     createdFromQuoteAt: { type: Date, default: Date.now },
   },
   {
