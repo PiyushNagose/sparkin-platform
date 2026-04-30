@@ -4,15 +4,16 @@
 
 .contentContainer {
   width: 100%;
-  max-width: 1280px;
-  padding-inline: 48px;
+  max-width: 1360px;
+  padding-inline: 40px;
   box-sizing: border-box;
+  margin: 0 auto;
 }
 
 .compactContainer {
   width: 100%;
-  max-width: 980px;
-  padding-inline: 48px;
+  max-width: 1360px;
+  padding-inline: 40px;
   box-sizing: border-box;
   margin: 0 auto;
 }
@@ -20,13 +21,14 @@
 @media (max-width: 899px) {
   .contentContainer,
   .compactContainer {
-    padding-inline: 24px;
+    max-width: 100%;
+    padding-inline: 28px;
   }
 }
 
 @media (max-width: 767px) {
   .contentContainer,
   .compactContainer {
-    padding-inline: 16px;
+    padding-inline: 20px;
   }
 }

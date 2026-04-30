@@ -53,19 +53,23 @@ export default function CalculatorUnavailablePage() {
           maxWidth={false}
           disableGutters
           className={styles.compactContainer}
-          sx={{ maxWidth: "1120px !important" }}
         >
           <Box
             sx={{
               maxWidth: 720,
               mx: "auto",
-              mt: { xs: 4, md: 5 },
+              mt: { xs: 3.5, md: 4.5 },
               borderRadius: "1.3rem",
               overflow: "hidden",
               bgcolor: "rgba(255,255,255,0.92)",
               border: "1px solid rgba(220,228,239,0.96)",
               boxShadow: "0 22px 54px rgba(20,34,56,0.08)",
               backdropFilter: "blur(10px)",
+              transition: "transform 200ms ease, box-shadow 200ms ease",
+              "&:hover": {
+                transform: "translateY(-3px)",
+                boxShadow: "0 26px 58px rgba(20,34,56,0.1)",
+              },
             }}
           >
             <Grid container>
@@ -264,7 +268,19 @@ export default function CalculatorUnavailablePage() {
           >
             {insightCards.map((item) => (
               <Grid key={item.title} size={{ xs: 12, sm: 6, md: 4 }}>
-                <Box sx={{ maxWidth: 200, mx: "auto" }}>
+                <Box
+                  sx={{
+                    maxWidth: 240,
+                    mx: "auto",
+                    p: { xs: 1.5, md: 1.7 },
+                    borderRadius: "1rem",
+                    transition: "transform 200ms ease, box-shadow 200ms ease",
+                    "&:hover": {
+                      transform: "translateY(-3px)",
+                      boxShadow: "0 14px 30px rgba(16,29,51,0.07)",
+                    },
+                  }}
+                >
                   <Box
                     sx={{
                       width: 24,

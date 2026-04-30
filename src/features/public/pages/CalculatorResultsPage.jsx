@@ -84,7 +84,6 @@ export default function CalculatorResultsPage() {
           maxWidth={false}
           disableGutters
           className={styles.compactContainer}
-          sx={{ maxWidth: "1140px !important" }}
         >
           <Stack spacing={{ xs: 2.6, md: 3.15 }}>
             <Box>
@@ -123,6 +122,11 @@ export default function CalculatorResultsPage() {
                     boxShadow: "0 18px 46px rgba(20,34,56,0.08)",
                     position: "relative",
                     overflow: "hidden",
+                    transition: "transform 200ms ease, box-shadow 200ms ease",
+                    "&:hover": {
+                      transform: "translateY(-3px)",
+                      boxShadow: "0 22px 52px rgba(20,34,56,0.1)",
+                    },
                   }}
                 >
                   <Box
@@ -287,6 +291,11 @@ export default function CalculatorResultsPage() {
                     display: "flex",
                     flexDirection: "column",
                     justifyContent: "space-between",
+                    transition: "transform 200ms ease, box-shadow 200ms ease",
+                    "&:hover": {
+                      transform: "translateY(-3px)",
+                      boxShadow: "0 22px 52px rgba(20,34,56,0.14)",
+                    },
                   }}
                 >
                   <Box
@@ -393,6 +402,11 @@ export default function CalculatorResultsPage() {
                         ? "1px solid rgba(120,170,135,0.48)"
                         : "1px solid rgba(220,228,239,0.96)",
                       boxShadow: "0 18px 46px rgba(20,34,56,0.06)",
+                      transition: "transform 200ms ease, box-shadow 200ms ease",
+                      "&:hover": {
+                        transform: "translateY(-3px)",
+                        boxShadow: "0 20px 48px rgba(20,34,56,0.09)",
+                      },
                     }}
                   >
                     <Stack direction="row" spacing={0.78} alignItems="center">

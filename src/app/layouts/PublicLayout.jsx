@@ -41,10 +41,13 @@ export function PublicLayout() {
             className={styles.navContainer}
           >
             <Stack
+              component={RouterLink}
+              to="/"
               direction="row"
               spacing={1.5}
               alignItems="center"
               className={styles.brandSlot}
+              sx={{ textDecoration: "none" }}
             >
               <Box
                 component="img"
