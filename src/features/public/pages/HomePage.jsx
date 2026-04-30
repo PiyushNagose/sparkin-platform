@@ -1,3 +1,4 @@
+import { useMemo, useState } from "react";
 import {
   Accordion,
   AccordionDetails,
@@ -8,6 +9,7 @@ import {
   Container,
   Divider,
   Grid,
+  MenuItem,
   Slider,
   Stack,
   TextField,
@@ -127,18 +129,21 @@ const offers = [
     title: "PM Surya Ghar Subsidy",
     text: "Get up to \u20B978,000 direct benefit transfer from the Central Government.",
     action: "Claim Subsidy",
+    href: "/booking",
   },
   {
     badge: "Limited Time",
     title: "Monsoon Flash Discount",
     text: "Get an additional \u20B915,000 off on all 5kW+ installations booked this month.",
     action: "View Details",
+    href: "/calculator/results",
   },
   {
     badge: "Financing",
     title: "Zero-Cost EMI Offer",
     text: "0% interest financing for up to 24 months through our banking partners.",
     action: "Apply Now",
+    href: "/loan-financing",
   },
 ];
 
@@ -149,6 +154,7 @@ const serviceCards = [
     image: servicePanelCleaningPlaceholder,
     icon: <HomeWorkOutlinedIcon />,
     action: "Schedule Service",
+    href: "/service-support/request",
   },
   {
     title: "System Maintenance",
@@ -156,6 +162,7 @@ const serviceCards = [
     image: serviceMaintenancePlaceholder,
     icon: <SettingsSuggestRoundedIcon />,
     action: "Book Maintenance",
+    href: "/service-support/request",
   },
   {
     title: "Repairs & Support",
@@ -163,6 +170,7 @@ const serviceCards = [
     image: serviceRepairsPlaceholder,
     icon: <MiscellaneousServicesRoundedIcon />,
     action: "Get Support",
+    href: "/service-support",
   },
 ];
 
@@ -207,6 +215,21 @@ const faqs = [
       "Your system still generates power during cloudy weather, just at a lower efficiency. Grid-connected homes continue to draw from the grid whenever needed.",
   },
 ];
+
+const systemTypes = [
+  "On-Grid (Hybrid)",
+  "On-Grid",
+  "Off-Grid",
+  "Battery Ready",
+];
+
+function formatInr(value) {
+  return `\u20B9${Math.round(value).toLocaleString("en-IN")}`;
+}
+
+function clamp(value, min, max) {
+  return Math.min(Math.max(value, min), max);
+}
 
 function SectionTitle({ title, highlight, subtitle, centered = true }) {
   return (
@@ -280,6 +303,57 @@ function ImagePlaceholder({
 }
 
 function HomePage() {
+  const primaryBlueGradient =
+    "linear-gradient(180deg, #1A66E8 0%, #0E56C8 100%)";
+  const [monthlyBill, setMonthlyBill] = useState(5000);
+  const [roofArea, setRoofArea] = useState(800);
+  const [pinCode, setPinCode] = useState("560001");
+  const [systemType, setSystemType] = useState(systemTypes[0]);
+
+  const estimate = useMemo(() => {
+    const monthlySavings = monthlyBill * 0.68;
+    const annualSavings = monthlySavings * 12;
+    const roofDrivenKw = roofArea / 110;
+    const billDrivenKw = monthlyBill / 1150;
+    const recommendedKw = clamp(
+      Number(((roofDrivenKw + billDrivenKw) / 2).toFixed(1)),
+      2.5,
+      12,
+    );
+    const paybackYears = clamp(5.8 - recommendedKw * 0.18, 3.2, 6.5);
+    const co2Reduced = clamp(recommendedKw * 0.84, 2.1, 8.8);
+
+    return {
+      monthlySavings,
+      annualSavings,
+      recommendedKw,
+      paybackYears,
+      co2Reduced,
+    };
+  }, [monthlyBill, roofArea]);
+
+  const shareMessage =
+    "I found Sparkin Solar helpful for comparing verified solar vendors and savings. Check it out: https://sparkin.in";
+
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: "Sparkin Solar",
+          text: shareMessage,
+          url: "https://sparkin.in",
+        });
+        return;
+      } catch {
+        return;
+      }
+    }
+
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(shareMessage);
+    }
+  };
+
   return (
     <Box className={styles.pageShell}>
       <Box
@@ -352,13 +426,16 @@ function HomePage() {
             >
               <Grid size={{ xs: 12, lg: 7 }}>
                 <Stack
+                  className={styles.heroContentColumn}
                   sx={{
                     minHeight: { xs: "auto", lg: 430 },
-                    justifyContent: "space-between",
-                    alignItems: "flex-start",
                   }}
                 >
-                  <Box>
+                  <Stack
+                    className={`${styles.heroCopyStack} ${styles.heroRevealPrimary}`}
+                    spacing={{ xs: 2.1, md: 2.7 }}
+                    alignItems="flex-start"
+                  >
                     <Chip
                       label="Trusted by 50,000+ Homeowners"
                       sx={{
@@ -395,7 +472,6 @@ function HomePage() {
                     <Typography
                       variant="h5"
                       sx={{
-                        mt: 1.75,
                         maxWidth: 540,
                         lineHeight: 1.7,
                         fontWeight: 500,
@@ -411,7 +487,6 @@ function HomePage() {
                     <Stack
                       direction={{ xs: "column", sm: "row" }}
                       spacing={1.5}
-                      sx={{ mt: 2.75 }}
                     >
                       <Button
                         component={RouterLink}
@@ -419,13 +494,14 @@ function HomePage() {
                         variant="contained"
                         size="large"
                         startIcon={<BoltRoundedIcon />}
+                        className={styles.blueCta}
                         sx={{
                           minWidth: 190,
                           minHeight: 50,
                           fontSize: "0.95rem",
                           borderRadius: "0.5rem",
-                          background:
-                            "linear-gradient(90deg, #0E56C8 0%, #13C784 100%)",
+                          background: primaryBlueGradient,
+                          boxShadow: "0 10px 22px rgba(14,86,200,0.18)",
                         }}
                       >
                         Calculate Savings
@@ -450,13 +526,14 @@ function HomePage() {
                         Get Free Quotes
                       </Button>
                     </Stack>
-                  </Box>
+                  </Stack>
 
                   <Stack
+                    className={`${styles.heroStatsRow} ${styles.heroRevealStats}`}
                     direction={{ xs: "column", md: "row" }}
                     spacing={4}
                     sx={{
-                      mt: { xs: 3.75, md: 4.5 },
+                      mt: { xs: 4, md: 4.8 },
                       pt: 2,
                       borderTop: "1px solid rgba(255,255,255,0.1)",
                       width: "100%",
@@ -512,9 +589,10 @@ function HomePage() {
 
               <Grid size={{ xs: 12, lg: 5 }}>
                 <Box
+                  className={styles.heroRevealCard}
                   sx={{
                     ml: { lg: "auto" },
-                    mt: { xs: 2.5, lg: 7.5 },
+                    mt: { xs: 2.8, lg: 5.4 },
                     maxWidth: 350,
                     borderRadius: "2rem",
                     p: 1.5,
@@ -539,18 +617,28 @@ function HomePage() {
                     >
                       LIVE VENDOR BIDS
                     </Typography>
-                    <Typography
-                      variant="body2"
-                      sx={{ color: "primary.main", fontWeight: 700 }}
+                    <Button
+                      component={RouterLink}
+                      to="/quotes/compare"
+                      variant="text"
+                      sx={{
+                        minWidth: 0,
+                        px: 0,
+                        color: "primary.main",
+                        fontWeight: 700,
+                        fontSize: "0.78rem",
+                        textTransform: "none",
+                      }}
                     >
                       View All
-                    </Typography>
+                    </Button>
                   </Stack>
 
                   <Stack spacing={1.5}>
                     {bidCards.map((bid) => (
                       <Box
                         key={bid.name}
+                        className={styles.animatedSurface}
                         sx={{
                           display: "flex",
                           alignItems: "center",
@@ -705,10 +793,19 @@ function HomePage() {
                         Avg. Monthly Bill
                       </Typography>
                       <Typography sx={{ fontSize: "1.45rem", fontWeight: 800 }}>
-                        {"\u20B95,000"}
+                        {formatInr(monthlyBill)}
                       </Typography>
                     </Stack>
-                    <Slider value={24} sx={{ color: "#19C98B" }} />
+                    <Slider
+                      value={monthlyBill}
+                      min={2000}
+                      max={15000}
+                      step={250}
+                      onChange={(_, value) =>
+                        setMonthlyBill(Array.isArray(value) ? value[0] : value)
+                      }
+                      sx={{ color: "#19C98B" }}
+                    />
                   </Box>
                   <Box>
                     <Stack
@@ -726,16 +823,26 @@ function HomePage() {
                         Roof Area (sq ft)
                       </Typography>
                       <Typography sx={{ fontSize: "1.45rem", fontWeight: 800 }}>
-                        800
+                        {roofArea}
                       </Typography>
                     </Stack>
-                    <Slider value={18} sx={{ color: "#19C98B" }} />
+                    <Slider
+                      value={roofArea}
+                      min={400}
+                      max={2200}
+                      step={50}
+                      onChange={(_, value) =>
+                        setRoofArea(Array.isArray(value) ? value[0] : value)
+                      }
+                      sx={{ color: "#19C98B" }}
+                    />
                   </Box>
                   <Grid container spacing={2}>
                     <Grid size={{ xs: 12, sm: 6 }}>
                       <TextField
                         fullWidth
-                        defaultValue="560001"
+                        value={pinCode}
+                        onChange={(event) => setPinCode(event.target.value)}
                         label="Pin Code"
                         InputProps={{
                           sx: {
@@ -753,7 +860,9 @@ function HomePage() {
                     <Grid size={{ xs: 12, sm: 6 }}>
                       <TextField
                         fullWidth
-                        defaultValue="On-Grid (Hybrid)"
+                        select
+                        value={systemType}
+                        onChange={(event) => setSystemType(event.target.value)}
                         label="System Type"
                         InputProps={{
                           sx: {
@@ -766,7 +875,13 @@ function HomePage() {
                         InputLabelProps={{
                           sx: { color: "rgba(255,255,255,0.54)" },
                         }}
-                      />
+                      >
+                        {systemTypes.map((type) => (
+                          <MenuItem key={type} value={type}>
+                            {type}
+                          </MenuItem>
+                        ))}
+                      </TextField>
                     </Grid>
                   </Grid>
                 </Stack>
@@ -793,12 +908,13 @@ function HomePage() {
                     lineHeight: 1,
                   }}
                 >
-                  {"\u20B940,800"}
+                  {formatInr(estimate.annualSavings)}
                 </Typography>
                 <Stack spacing={1.2} sx={{ mt: 2 }}>
                   {[
-                    ["Payback Period", "3.4 Years"],
-                    ["CO2 Reduced", "4.2 Tons/yr"],
+                    ["Recommended System", `${estimate.recommendedKw} kW`],
+                    ["Payback Period", `${estimate.paybackYears.toFixed(1)} Years`],
+                    ["CO2 Reduced", `${estimate.co2Reduced.toFixed(1)} Tons/yr`],
                   ].map(([label, value]) => (
                     <Box
                       key={label}
@@ -819,16 +935,19 @@ function HomePage() {
                   ))}
                 </Stack>
                 <Button
+                  component={RouterLink}
+                  to="/calculator/results"
                   variant="contained"
                   fullWidth
                   endIcon={<ArrowForwardRoundedIcon />}
+                  className={styles.blueCta}
                   sx={{
                     mt: 2.5,
                     minHeight: 52,
                     fontSize: "0.98rem",
                     borderRadius: "0.5rem",
-                    background:
-                      "linear-gradient(90deg, #0E56C8 0%, #13C784 100%)",
+                    background: primaryBlueGradient,
+                    boxShadow: "0 10px 22px rgba(14,86,200,0.18)",
                   }}
                 >
                   See Full Report
@@ -841,7 +960,7 @@ function HomePage() {
                     color: "rgba(255,255,255,0.34)",
                   }}
                 >
-                  Detailed analysis by Sparkin Intel
+                  Preview built from monthly bill, roof area, pincode, and {systemType.toLowerCase()}
                 </Typography>
               </Grid>
             </Grid>
@@ -908,6 +1027,7 @@ function HomePage() {
                 sx={{ display: "flex" }}
               >
                 <Box
+                  className={styles.animatedSurface}
                   sx={{
                     width: "100%",
                     height: "100%",
@@ -1068,20 +1188,24 @@ function HomePage() {
                 </Typography>
                 <Stack spacing={1.55} sx={{ mt: 4.25, maxWidth: 255 }}>
                   <Button
+                    component={RouterLink}
+                    to="/booking"
                     variant="contained"
                     endIcon={<LocalOfferOutlinedIcon />}
+                    className={styles.blueCta}
                     sx={{
                       minHeight: 58,
                       borderRadius: "0.5rem",
                       fontSize: "1rem",
                       fontWeight: 700,
-                      background: "#1568E6",
+                      background: primaryBlueGradient,
                       boxShadow: "0 14px 30px rgba(21,104,230,0.28)",
                     }}
                   >
                     Claim Your Discount
                   </Button>
                   <Button
+                    onClick={handleShare}
                     variant="contained"
                     startIcon={<IosShareRoundedIcon />}
                     sx={{
@@ -1104,6 +1228,7 @@ function HomePage() {
                 spacing={2.5}
               >
                 <Box
+                  className={styles.animatedSurface}
                   sx={{
                     width: "100%",
                     maxWidth: 396,
@@ -1257,6 +1382,7 @@ function HomePage() {
                   "Payback in 3-4 years",
                 ].map((item) => (
                   <Box
+                    className={styles.animatedSurface}
                     key={item}
                     sx={{
                       px: 1.3,
@@ -1341,6 +1467,7 @@ function HomePage() {
 
             <Grid size={{ xs: 12, md: 7 }}>
               <Box
+                className={styles.animatedSurface}
                 sx={{
                   p: { xs: 2, md: 2.35 },
                   borderRadius: "2rem",
@@ -1530,6 +1657,7 @@ function HomePage() {
             ].map(([label, value, subtitle, dark]) => (
               <Grid key={label} size={{ xs: 12, md: 4 }}>
                 <Box
+                  className={styles.animatedSurface}
                   sx={{
                     p: { xs: 2.5, md: 2.7 },
                     minHeight: 212,
@@ -1744,7 +1872,10 @@ function HomePage() {
                 successful installation.
               </Typography>
               <Button
+                component={RouterLink}
+                to="/auth/signup"
                 variant="contained"
+                className={styles.blueCta}
                 sx={{
                   mt: 3,
                   minWidth: 228,
@@ -1752,9 +1883,8 @@ function HomePage() {
                   borderRadius: "0.75rem",
                   fontSize: "0.98rem",
                   fontWeight: 700,
-                  background:
-                    "linear-gradient(90deg, #0E56C8 0%, #13C784 100%)",
-                  boxShadow: "0 14px 30px rgba(19,199,132,0.14)",
+                  background: primaryBlueGradient,
+                  boxShadow: "0 14px 30px rgba(14,86,200,0.18)",
                 }}
               >
                 Start Referring Now
@@ -1918,6 +2048,7 @@ function HomePage() {
                 sx={{ display: "flex" }}
               >
                 <Box
+                  className={styles.animatedSurface}
                   sx={{
                     width: "100%",
                     height: "100%",
@@ -2019,20 +2150,21 @@ function HomePage() {
                   size={{ xs: 12, md: 4 }}
                   sx={{ display: "flex" }}
                 >
-                  <Box
-                    sx={{
-                      width: "100%",
-                      height: "100%",
-                      display: "flex",
-                      flexDirection: "column",
-                      p: { xs: 2.5, md: 2.7 },
-                      minHeight: 288,
-                      borderRadius: "2rem",
-                      bgcolor: "white",
-                      border: "1px solid #E7EDF4",
-                      boxShadow: "0 8px 24px rgba(16,25,47,0.03)",
-                    }}
-                  >
+                <Box
+                  className={styles.animatedSurface}
+                  sx={{
+                    width: "100%",
+                    height: "100%",
+                    display: "flex",
+                    flexDirection: "column",
+                    p: { xs: 2.5, md: 2.7 },
+                    minHeight: 288,
+                    borderRadius: "2rem",
+                    bgcolor: "white",
+                    border: "1px solid #E7EDF4",
+                    boxShadow: "0 8px 24px rgba(16,25,47,0.03)",
+                  }}
+                >
                     <Stack
                       direction="row"
                       justifyContent="space-between"
@@ -2111,6 +2243,8 @@ function HomePage() {
                     </Typography>
                     <Divider sx={{ mt: 3.4, borderColor: "#E8EDF4" }} />
                     <Button
+                      component={RouterLink}
+                      to={offer.href}
                       endIcon={<ArrowForwardRoundedIcon />}
                       sx={{
                         mt: 2.2,
@@ -2173,6 +2307,7 @@ function HomePage() {
                 sx={{ display: "flex" }}
               >
                 <Box
+                  className={styles.animatedSurface}
                   sx={{
                     position: "relative",
                     width: "100%",
@@ -2246,6 +2381,8 @@ function HomePage() {
                       </Typography>
                     </Box>
                     <Button
+                      component={RouterLink}
+                      to={card.href}
                       endIcon={<ArrowForwardRoundedIcon />}
                       sx={{
                         mt: 2.2,
@@ -2470,8 +2607,11 @@ function HomePage() {
             Harness the sun&apos;s brilliance for a legacy of sustainability.
           </Typography>
           <Button
+            component={RouterLink}
+            to="/booking"
             variant="contained"
             endIcon={<ArrowForwardRoundedIcon />}
+            className={styles.blueCta}
             sx={{
               mt: 3.25,
               minWidth: 224,
@@ -2479,7 +2619,8 @@ function HomePage() {
               borderRadius: "0.5rem",
               fontSize: "1rem",
               fontWeight: 700,
-              background: "linear-gradient(90deg, #0E56C8 0%, #13C784 100%)",
+              background: primaryBlueGradient,
+              boxShadow: "0 10px 22px rgba(14,86,200,0.18)",
             }}
           >
             Get My Free Quote

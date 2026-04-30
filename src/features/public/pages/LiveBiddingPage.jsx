@@ -6,7 +6,9 @@ import GppGoodRoundedIcon from "@mui/icons-material/GppGoodRounded";
 import InsightsRoundedIcon from "@mui/icons-material/InsightsRounded";
 import PriceChangeRoundedIcon from "@mui/icons-material/PriceChangeRounded";
 import ShieldOutlinedIcon from "@mui/icons-material/ShieldOutlined";
-import { Link as RouterLink } from "react-router-dom";
+import { useEffect } from "react";
+import { Link as RouterLink, useNavigate } from "react-router-dom";
+import { quotesApi } from "@/features/public/api/leadsApi";
 import liveBiddingHeroPlaceholder from "@/shared/assets/images/public/bidding/live-bidding-hero-placeholder.png";
 import liveBiddingAdvantagePlaceholder from "@/shared/assets/images/public/bidding/live-bidding-advantage-placeholder.png";
 import styles from "@/features/public/pages/CalculatorPage.module.css";
@@ -156,6 +158,36 @@ function WorkflowCard({ title, description, step, icon, accent, tone }) {
 }
 
 export default function LiveBiddingPage() {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    let active = true;
+    let timerId;
+
+    async function redirectWhenQuotesArrive() {
+      try {
+        const quotes = await quotesApi.listQuotes();
+        if (active && quotes.length > 0) {
+          navigate("/quotes/compare", { replace: true });
+          return;
+        }
+      } catch {
+        // Keep the tender waiting page visible if the user is offline or the API is still starting.
+      }
+
+      if (active) {
+        timerId = window.setTimeout(redirectWhenQuotesArrive, 15000);
+      }
+    }
+
+    redirectWhenQuotesArrive();
+
+    return () => {
+      active = false;
+      if (timerId) window.clearTimeout(timerId);
+    };
+  }, [navigate]);
+
   return (
     <Box className={styles.pageShell}>
       <Box

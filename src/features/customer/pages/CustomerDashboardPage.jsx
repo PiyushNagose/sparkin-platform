@@ -1,8 +1,13 @@
-import { Box, Button, Stack, Typography } from "@mui/material";
+import { Alert, Box, Button, CircularProgress, Stack, Typography } from "@mui/material";
 import CardGiftcardRoundedIcon from "@mui/icons-material/CardGiftcardRounded";
 import GavelRoundedIcon from "@mui/icons-material/GavelRounded";
 import BuildCircleOutlinedIcon from "@mui/icons-material/BuildCircleOutlined";
 import ApartmentRoundedIcon from "@mui/icons-material/ApartmentRounded";
+import { useEffect, useMemo, useState } from "react";
+import { Link as RouterLink } from "react-router-dom";
+import { useAuth } from "@/features/auth/AuthProvider";
+import { leadsApi, quotesApi } from "@/features/public/api/leadsApi";
+import { projectsApi } from "@/features/public/api/projectsApi";
 import customerSolarTipPlaceholder from "@/shared/assets/images/customer/dashboard/customer-solar-tip-placeholder.png";
 
 const milestones = [
@@ -11,6 +16,29 @@ const milestones = [
   { label: "Inspection", meta: "Pending", state: "upcoming" },
   { label: "Activation", meta: "Estimated Nov 03", state: "upcoming" },
 ];
+
+function formatPrice(value) {
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(value);
+}
+
+function toDashboardMilestone(milestone) {
+  const completed = milestone.status === "completed";
+  const active = milestone.status === "in_progress";
+
+  return {
+    label: milestone.title,
+    meta: completed ? "Completed" : active ? "In Progress" : "Pending",
+    state: completed ? "completed" : active ? "active" : "upcoming",
+  };
+}
+
+function getFirstName(user) {
+  return user?.fullName?.split(" ")?.[0] || "there";
+}
 
 function DashboardStep({ item, isFirst, isLast }) {
   const completed = item.state === "completed";
@@ -90,6 +118,65 @@ function DashboardStep({ item, isFirst, isLast }) {
 }
 
 export default function CustomerDashboardPage() {
+  const { user } = useAuth();
+  const [leads, setLeads] = useState([]);
+  const [quotes, setQuotes] = useState([]);
+  const [projects, setProjects] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadDashboard() {
+      setIsLoading(true);
+      setError("");
+
+      try {
+        const [leadResult, quoteResult, projectResult] = await Promise.all([
+          leadsApi.listLeads(),
+          quotesApi.listQuotes(),
+          projectsApi.listProjects(),
+        ]);
+
+        if (active) {
+          setLeads(leadResult);
+          setQuotes(quoteResult);
+          setProjects(projectResult);
+        }
+      } catch (apiError) {
+        if (active) setError(apiError?.response?.data?.message || "Could not load dashboard.");
+      } finally {
+        if (active) setIsLoading(false);
+      }
+    }
+
+    loadDashboard();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const activeLead = leads.find((lead) => lead.status === "open_for_quotes") ?? leads[0];
+  const activeProject = projects[0] ?? null;
+  const leadQuotes = activeLead
+    ? quotes.filter((quote) => String(quote.leadId) === String(activeLead.id))
+    : [];
+  const bestQuote = leadQuotes.length
+    ? Math.min(...leadQuotes.map((quote) => Number(quote.pricing.totalPrice)))
+    : null;
+  const selectedSystemSize = projects.reduce((sum, project) => sum + (Number(project.system?.sizeKw) || 0), 0);
+  const monthlySavings = selectedSystemSize > 0 ? Math.round(selectedSystemSize * 1500) : 0;
+  const lifetimeSavings = monthlySavings * 12 * 5;
+  const projectMilestones = useMemo(
+    () => activeProject?.milestones?.map(toDashboardMilestone) ?? milestones,
+    [activeProject],
+  );
+  const activeProjectLocation = activeProject
+    ? `${activeProject.installationAddress.city}, ${activeProject.installationAddress.state}`
+    : "No active project yet";
+
   return (
     <Box sx={{ width: "100%" }}>
       <Box>
@@ -102,7 +189,7 @@ export default function CustomerDashboardPage() {
             letterSpacing: "-0.04em",
           }}
         >
-          Good morning, Arjun
+          Good morning, {getFirstName(user)}
         </Typography>
         <Typography
           sx={{
@@ -112,9 +199,23 @@ export default function CustomerDashboardPage() {
             lineHeight: 1.6,
           }}
         >
-          Your solar ecosystem is performing at peak efficiency today.
+          {projects.length > 0
+            ? "Your solar project is now connected to live progress tracking."
+            : "Your booking and quote activity will appear here as vendors respond."}
         </Typography>
       </Box>
+
+      {isLoading ? (
+        <Box sx={{ mt: 1.5, py: 3, display: "grid", placeItems: "center" }}>
+          <CircularProgress />
+        </Box>
+      ) : null}
+
+      {!isLoading && error ? (
+        <Alert severity="error" sx={{ mt: 1.5, borderRadius: "0.9rem" }}>
+          {error}
+        </Alert>
+      ) : null}
 
       <Box
         sx={{
@@ -219,12 +320,12 @@ export default function CustomerDashboardPage() {
                   lineHeight: 1.02,
                 }}
               >
-                ₹4.2
+                {formatPrice(lifetimeSavings)}
                 <Box
                   component="span"
                   sx={{ ml: 0.45, fontSize: "1.25rem", fontWeight: 700 }}
                 >
-                  Lakhs
+                  projected
                 </Box>
               </Typography>
               <Typography
@@ -235,7 +336,7 @@ export default function CustomerDashboardPage() {
                   fontWeight: 800,
                 }}
               >
-                ↗ 12% growth vs last year
+                Based on {selectedSystemSize || 0}kW selected capacity
               </Typography>
             </Box>
 
@@ -259,7 +360,7 @@ export default function CustomerDashboardPage() {
                 <Typography
                   sx={{ mt: 0.45, fontSize: "1.4rem", fontWeight: 800 }}
                 >
-                  ₹8,200
+                  {formatPrice(monthlySavings)}
                 </Typography>
               </Box>
               <Box
@@ -281,7 +382,7 @@ export default function CustomerDashboardPage() {
                 <Typography
                   sx={{ mt: 0.45, fontSize: "1.3rem", fontWeight: 800 }}
                 >
-                  2.5 Tons
+                  {(selectedSystemSize * 0.5).toFixed(1)} Tons
                   <Box
                     component="span"
                     sx={{ ml: 0.35, fontSize: "0.72rem", fontWeight: 700 }}
@@ -388,7 +489,7 @@ export default function CustomerDashboardPage() {
                       fontWeight: 800,
                     }}
                   >
-                    3
+                    {leadQuotes.length}
                   </Typography>
                 </Stack>
               </Box>
@@ -404,13 +505,15 @@ export default function CustomerDashboardPage() {
                       fontWeight: 800,
                     }}
                   >
-                    ₹2,85,000
+                    {bestQuote ? formatPrice(bestQuote) : "Waiting"}
                   </Typography>
                 </Stack>
               </Box>
             </Stack>
             <Button
               variant="contained"
+              component={RouterLink}
+              to={leadQuotes.length > 0 ? "/quotes/compare" : "/tenders/live"}
               fullWidth
               sx={{
                 mt: 1.05,
@@ -423,7 +526,7 @@ export default function CustomerDashboardPage() {
                 textTransform: "none",
               }}
             >
-              View All Bids →
+              {leadQuotes.length > 0 ? "View All Bids" : "Track Tender"}
             </Button>
           </Box>
 
@@ -566,18 +669,24 @@ export default function CustomerDashboardPage() {
               <Typography
                 sx={{ color: "#223146", fontSize: "1.02rem", fontWeight: 800 }}
               >
-                Active Project: 5kW Rooftop
+                {activeProject
+                  ? `Active Project: ${activeProject.system.sizeKw}kW Rooftop`
+                  : "No active project yet"}
               </Typography>
               <Typography
                 sx={{ mt: 0.12, color: "#7A8799", fontSize: "0.74rem" }}
               >
-                Residential Installation • Gurgaon Sector 45
+                {activeProject
+                  ? `Residential Installation - ${activeProjectLocation}`
+                  : "Select a quote to start installation tracking"}
               </Typography>
             </Box>
           </Stack>
 
           <Button
             variant="contained"
+            component={RouterLink}
+            to={activeProject ? `/project/installation?projectId=${activeProject.id}` : "/customer/bookings"}
             sx={{
               minHeight: 36,
               px: 1.45,
@@ -589,7 +698,7 @@ export default function CustomerDashboardPage() {
               textTransform: "none",
             }}
           >
-            Track Installation
+            {activeProject ? "Track Installation" : "View Bookings"}
           </Button>
         </Stack>
 
@@ -598,12 +707,12 @@ export default function CustomerDashboardPage() {
           spacing={{ xs: 2, md: 0 }}
           sx={{ mt: 1.8 }}
         >
-          {milestones.map((item, index) => (
+          {projectMilestones.map((item, index) => (
             <DashboardStep
               key={item.label}
               item={item}
               isFirst={index === 0}
-              isLast={index === milestones.length - 1}
+              isLast={index === projectMilestones.length - 1}
             />
           ))}
         </Stack>

@@ -1,7 +1,9 @@
 import {
+  Alert,
   Avatar,
   Box,
   Button,
+  CircularProgress,
   LinearProgress,
   Stack,
   Typography,
@@ -13,6 +15,8 @@ import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import TuneRoundedIcon from "@mui/icons-material/TuneRounded";
 import SortRoundedIcon from "@mui/icons-material/SortRounded";
 import { Link as RouterLink } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { projectsApi } from "@/features/public/api/projectsApi";
 
 const kpiCards = [
   {
@@ -96,6 +100,54 @@ const columns = [
   "Stage Progression",
   "Actions",
 ];
+
+function getInitials(name) {
+  return name
+    .split(" ")
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+}
+
+function getStatusMeta(status) {
+  if (["activated", "completed"].includes(status)) {
+    return { label: "Completed", tone: "#239654", bg: "#DDF8E7", progress: 100 };
+  }
+
+  if (["installation_scheduled", "installation_in_progress", "inspection_pending"].includes(status)) {
+    return { label: "In Progress", tone: "#239654", bg: "#DDF8E7", progress: 65 };
+  }
+
+  return { label: "Pending", tone: "#6F7D8F", bg: "#EDF1F5", progress: 20 };
+}
+
+function formatLocation(address) {
+  if (!address) {
+    return "Location pending";
+  }
+
+  return [address.city, address.state].filter(Boolean).join(", ");
+}
+
+function toVendorProject(project) {
+  const statusMeta = getStatusMeta(project.status);
+  const activeMilestone = project.milestones?.find((milestone) => milestone.status === "in_progress");
+
+  return {
+    initials: getInitials(project.customer.fullName),
+    id: project.id,
+    name: project.customer.fullName,
+    location: formatLocation(project.installationAddress),
+    systemSize: `${project.system.sizeKw} kW`,
+    systemType: project.system.panelType,
+    status: statusMeta.label,
+    statusTone: statusMeta.tone,
+    statusBg: statusMeta.bg,
+    stage: activeMilestone?.title || "Project Started",
+    progress: statusMeta.progress,
+  };
+}
 
 function KpiIcon({ tone, bg, icon }) {
   return (
@@ -338,6 +390,54 @@ function ProjectRow({ project, mobile = false }) {
 }
 
 export default function VendorProjectsPage() {
+  const [projectRecords, setProjectRecords] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadProjects() {
+      setIsLoading(true);
+      setError("");
+
+      try {
+        const result = await projectsApi.listProjects();
+        if (active) setProjectRecords(result);
+      } catch (apiError) {
+        if (active) setError(apiError?.response?.data?.message || "Could not load projects.");
+      } finally {
+        if (active) setIsLoading(false);
+      }
+    }
+
+    loadProjects();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const projects = useMemo(() => projectRecords.map(toVendorProject), [projectRecords]);
+  const dashboardKpis = useMemo(
+    () => [
+      { ...kpiCards[0], value: String(projectRecords.length) },
+      {
+        ...kpiCards[1],
+        value: String(projectRecords.filter((project) => project.status === "installation_in_progress").length),
+      },
+      {
+        ...kpiCards[2],
+        value: String(projectRecords.filter((project) => project.status === "site_audit_pending").length),
+      },
+      {
+        ...kpiCards[3],
+        value: String(projectRecords.filter((project) => ["activated", "completed"].includes(project.status)).length),
+      },
+    ],
+    [projectRecords],
+  );
+
   return (
     <Box sx={{ width: "100%" }}>
       <Stack
@@ -397,7 +497,7 @@ export default function VendorProjectsPage() {
           mb: { xs: 2.35, md: 2.7 },
         }}
       >
-        {kpiCards.map((card) => (
+        {dashboardKpis.map((card) => (
           <Box
             key={card.label}
             sx={{
@@ -526,6 +626,28 @@ export default function VendorProjectsPage() {
           </Box>
         </Box>
 
+        {isLoading ? (
+          <Box sx={{ py: 5, display: "grid", placeItems: "center" }}>
+            <CircularProgress />
+          </Box>
+        ) : null}
+
+        {!isLoading && error ? (
+          <Box sx={{ px: { xs: 1.2, md: 1.7 }, py: 1.4 }}>
+            <Alert severity="error" sx={{ borderRadius: "0.9rem" }}>
+              {error}
+            </Alert>
+          </Box>
+        ) : null}
+
+        {!isLoading && !error && projects.length === 0 ? (
+          <Box sx={{ px: { xs: 1.2, md: 1.7 }, py: 4 }}>
+            <Alert severity="info" sx={{ borderRadius: "0.9rem" }}>
+              No assigned projects yet. Projects will appear here when customers accept your quotes.
+            </Alert>
+          </Box>
+        ) : null}
+
         <Stack spacing={0} sx={{ px: { xs: 1.2, md: 1.7 }, pb: 1.1 }}>
           {projects.map((project, index) => (
             <Box
@@ -557,7 +679,7 @@ export default function VendorProjectsPage() {
           }}
         >
           <Typography sx={{ color: "#738094", fontSize: "0.72rem", fontWeight: 500 }}>
-            Showing 1-3 of 24 active projects
+            Showing {projects.length === 0 ? "0" : `1-${projects.length}`} of {projects.length} active projects
           </Typography>
 
           <Stack direction="row" spacing={0.45} alignItems="center">

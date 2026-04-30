@@ -1,4 +1,4 @@
-import { Box, Button, Stack, Typography } from "@mui/material";
+import { Alert, Box, Button, CircularProgress, Stack, Typography } from "@mui/material";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import ShareOutlinedIcon from "@mui/icons-material/ShareOutlined";
 import PrintOutlinedIcon from "@mui/icons-material/PrintOutlined";
@@ -7,7 +7,9 @@ import PersonOutlineRoundedIcon from "@mui/icons-material/PersonOutlineRounded";
 import PaymentsOutlinedIcon from "@mui/icons-material/PaymentsOutlined";
 import ConstructionOutlinedIcon from "@mui/icons-material/ConstructionOutlined";
 import ReceiptLongOutlinedIcon from "@mui/icons-material/ReceiptLongOutlined";
-import { Link as RouterLink } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { Link as RouterLink, useParams } from "react-router-dom";
+import { paymentsApi } from "@/features/vendor/api/paymentsApi";
 import invoiceBannerPlaceholder from "@/shared/assets/images/vendor/payments/invoice-banner-placeholder.png";
 
 const summaryStats = [
@@ -39,6 +41,65 @@ const invoiceRows = [
   ["Installation & Labor", "\u20B945,000"],
   ["GST (18%)", "\u20B920,000"],
 ];
+
+function formatPrice(value) {
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(value);
+}
+
+function formatDate(value) {
+  if (!value) {
+    return "Pending";
+  }
+
+  return new Intl.DateTimeFormat("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(value));
+}
+
+function getPaymentView(payment) {
+  if (!payment) {
+    return null;
+  }
+
+  const amount = formatPrice(payment.amount);
+  const gstEstimate = Math.round(payment.amount * 0.18);
+  const baseEstimate = payment.amount - gstEstimate;
+
+  return {
+    summaryStats: [
+      ["Invoice ID", payment.invoiceNumber],
+      ["Issued Date", formatDate(payment.createdAt)],
+      ["Status", payment.status.replaceAll("_", " ")],
+    ],
+    customerRows: [
+      ["Full Name", payment.customer.fullName],
+      ["Email", payment.customer.email || "Email not provided"],
+      ["Customer ID", payment.customerId],
+    ],
+    paymentRows: [
+      ["Method", payment.status === "paid" ? "Recorded payment" : "Pending collection"],
+      ["Transaction ID", payment.id],
+      ["Date", formatDate(payment.paidAt || payment.dueAt)],
+    ],
+    projectRows: [
+      ["Project ID", payment.projectId],
+      ["Milestone", payment.milestone.title],
+      ["Quote ID", payment.quoteId],
+    ],
+    invoiceRows: [
+      ["Milestone Amount", formatPrice(baseEstimate)],
+      ["GST Estimate (18%)", formatPrice(gstEstimate)],
+      ["Invoice Total", amount],
+    ],
+    totalAmount: amount,
+  };
+}
 
 function InfoCard({ icon, title, rows, dark }) {
   return (
@@ -112,6 +173,42 @@ function InfoCard({ icon, title, rows, dark }) {
 }
 
 export default function VendorInvoiceDetailPage() {
+  const { invoiceId } = useParams();
+  const [payment, setPayment] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
+  const paymentView = useMemo(() => getPaymentView(payment), [payment]);
+  const displaySummaryStats = paymentView?.summaryStats ?? summaryStats;
+  const displayCustomerRows = paymentView?.customerRows ?? customerRows;
+  const displayPaymentRows = paymentView?.paymentRows ?? paymentRows;
+  const displayProjectRows = paymentView?.projectRows ?? projectRows;
+  const displayInvoiceRows = paymentView?.invoiceRows ?? invoiceRows;
+  const displayTotalAmount = paymentView?.totalAmount ?? "₹2,45,000";
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadPayment() {
+      setIsLoading(true);
+      setError("");
+
+      try {
+        const result = await paymentsApi.getPayment(invoiceId);
+        if (active) setPayment(result);
+      } catch (apiError) {
+        if (active) setError(apiError?.response?.data?.message || "Could not load invoice.");
+      } finally {
+        if (active) setIsLoading(false);
+      }
+    }
+
+    loadPayment();
+
+    return () => {
+      active = false;
+    };
+  }, [invoiceId]);
+
   return (
     <Box sx={{ width: "100%" }}>
       <Button
@@ -130,6 +227,18 @@ export default function VendorInvoiceDetailPage() {
       >
         Back to Transactions
       </Button>
+
+      {isLoading ? (
+        <Box sx={{ py: 4, display: "grid", placeItems: "center" }}>
+          <CircularProgress />
+        </Box>
+      ) : null}
+
+      {error ? (
+        <Alert severity="error" sx={{ mb: 2, borderRadius: "0.9rem" }}>
+          {error}
+        </Alert>
+      ) : null}
 
       <Stack
         direction={{ xs: "column", lg: "row" }}
@@ -234,7 +343,7 @@ export default function VendorInvoiceDetailPage() {
             gap: 1.5,
           }}
         >
-          {summaryStats.map(([label, value]) => (
+          {displaySummaryStats.map(([label, value]) => (
             <Box key={label}>
               <Typography
                 sx={{
@@ -302,7 +411,7 @@ export default function VendorInvoiceDetailPage() {
               lineHeight: 1.05,
             }}
           >
-            \u20B92,45,000
+            {displayTotalAmount}
           </Typography>
         </Box>
       </Box>
@@ -318,18 +427,18 @@ export default function VendorInvoiceDetailPage() {
         <InfoCard
           icon={<PersonOutlineRoundedIcon sx={{ fontSize: "0.95rem" }} />}
           title="Customer Information"
-          rows={customerRows}
+          rows={displayCustomerRows}
         />
         <InfoCard
           icon={<PaymentsOutlinedIcon sx={{ fontSize: "0.95rem" }} />}
           title="Payment Summary"
-          rows={paymentRows}
+          rows={displayPaymentRows}
           dark
         />
         <InfoCard
           icon={<ConstructionOutlinedIcon sx={{ fontSize: "0.95rem" }} />}
           title="Project Details"
-          rows={projectRows}
+          rows={displayProjectRows}
         />
 
         <Box
@@ -368,7 +477,7 @@ export default function VendorInvoiceDetailPage() {
           </Stack>
 
           <Stack spacing={1.05}>
-            {invoiceRows.map(([label, value]) => (
+            {displayInvoiceRows.map(([label, value]) => (
               <Stack
                 key={label}
                 direction="row"
@@ -412,7 +521,7 @@ export default function VendorInvoiceDetailPage() {
                   lineHeight: 1.05,
                 }}
               >
-                \u20B92,45,000
+                {displayTotalAmount}
               </Typography>
             </Stack>
           </Box>

@@ -1,6 +1,8 @@
 import {
+  Alert,
   Box,
   Button,
+  CircularProgress,
   MenuItem,
   Stack,
   TextField,
@@ -8,22 +10,16 @@ import {
 } from "@mui/material";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import BoltRoundedIcon from "@mui/icons-material/BoltRounded";
-import CloudUploadOutlinedIcon from "@mui/icons-material/CloudUploadOutlined";
-import RadioButtonUncheckedRoundedIcon from "@mui/icons-material/RadioButtonUncheckedRounded";
 import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
-import { Link as RouterLink } from "react-router-dom";
-
-const summaryItems = [
-  ["Customer Name", "Amit Kulkarni"],
-  ["Location", "Pune, MH"],
-  ["System Size", "5.5 kW"],
-  ["Budget", "\u20B93,20,000"],
-];
+import RadioButtonUncheckedRoundedIcon from "@mui/icons-material/RadioButtonUncheckedRounded";
+import { Link as RouterLink, useNavigate, useParams } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { leadsApi, quotesApi } from "@/features/public/api/leadsApi";
 
 const timelineOptions = [
-  { title: "2-4 weeks", subtitle: "Fast Track" },
-  { title: "4-6 weeks", subtitle: "Standard", active: true },
-  { title: "6-8 weeks", subtitle: "Flexible" },
+  { title: "2-4 weeks", subtitle: "Fast Track", value: "2_4_weeks" },
+  { title: "4-6 weeks", subtitle: "Standard", value: "4_6_weeks" },
+  { title: "6-8 weeks", subtitle: "Flexible", value: "6_8_weeks" },
 ];
 
 const sectionLabelSx = {
@@ -58,12 +54,154 @@ const inputSx = {
   },
 };
 
+function numberOrNull(value) {
+  return value === "" ? null : Number(value);
+}
+
 export default function VendorQuoteProposalPage() {
+  const navigate = useNavigate();
+  const { leadId } = useParams();
+  const [lead, setLead] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState("");
+  const [existingQuote, setExistingQuote] = useState(null);
+  const [form, setForm] = useState({
+    totalPrice: "",
+    equipmentCost: "",
+    laborCost: "",
+    permittingCost: "",
+    sizeKw: "",
+    panelType: "monocrystalline",
+    inverterType: "",
+    installationWindow: "4_6_weeks",
+    proposalNotes: "",
+  });
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadLead() {
+      if (!leadId || leadId === "undefined") {
+        setError("Select a lead before submitting a quote.");
+        setIsLoading(false);
+        return;
+      }
+
+      setIsLoading(true);
+      setError("");
+
+      try {
+        const [result, quote] = await Promise.all([
+          leadsApi.getLead(leadId),
+          quotesApi.getMyQuoteForLead(leadId),
+        ]);
+
+        if (!active) return;
+
+        setLead(result);
+        setExistingQuote(quote);
+        setForm((current) => ({
+          ...current,
+          totalPrice: quote?.pricing?.totalPrice ? String(quote.pricing.totalPrice) : current.totalPrice,
+          equipmentCost: quote?.pricing?.equipmentCost ? String(quote.pricing.equipmentCost) : current.equipmentCost,
+          laborCost: quote?.pricing?.laborCost ? String(quote.pricing.laborCost) : current.laborCost,
+          permittingCost: quote?.pricing?.permittingCost ? String(quote.pricing.permittingCost) : current.permittingCost,
+          sizeKw: quote?.system?.sizeKw
+            ? String(quote.system.sizeKw)
+            : result.property?.sanctionedLoadKw
+              ? String(result.property.sanctionedLoadKw)
+              : current.sizeKw,
+          panelType: quote?.system?.panelType || current.panelType,
+          inverterType: quote?.system?.inverterType || current.inverterType,
+          installationWindow: quote?.timeline?.installationWindow || current.installationWindow,
+          proposalNotes: quote?.proposalNotes || current.proposalNotes,
+        }));
+      } catch (apiError) {
+        if (active) {
+          setError(apiError?.response?.data?.message || "Could not load lead.");
+        }
+      } finally {
+        if (active) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    loadLead();
+
+    return () => {
+      active = false;
+    };
+  }, [leadId]);
+
+  const summaryItems = useMemo(() => {
+    if (!lead) return [];
+
+    return [
+      ["Customer Name", lead.contact?.fullName || "Customer"],
+      ["Location", [lead.installationAddress?.city, lead.installationAddress?.state].filter(Boolean).join(", ")],
+      ["System Size", lead.property?.sanctionedLoadKw ? `${lead.property.sanctionedLoadKw} kW` : "Assessment pending"],
+      ["Budget", "Pending quote"],
+    ];
+  }, [lead]);
+
+  function updateField(field, value) {
+    setForm((current) => ({ ...current, [field]: value }));
+  }
+
+  async function handleSubmit() {
+    setError("");
+    setIsSubmitting(true);
+
+    try {
+      await quotesApi.createQuote(leadId, {
+        pricing: {
+          totalPrice: Number(form.totalPrice),
+          equipmentCost: numberOrNull(form.equipmentCost),
+          laborCost: numberOrNull(form.laborCost),
+          permittingCost: numberOrNull(form.permittingCost),
+        },
+        system: {
+          sizeKw: Number(form.sizeKw),
+          panelType: form.panelType,
+          inverterType: form.inverterType,
+        },
+        timeline: {
+          installationWindow: form.installationWindow,
+        },
+        proposalNotes: form.proposalNotes,
+      });
+
+      navigate("/vendor/quotes", { replace: true });
+    } catch (apiError) {
+      setError(apiError?.response?.data?.message || "Could not submit quote. Please check the details.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <Box sx={{ py: 8, display: "grid", placeItems: "center" }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (!leadId || leadId === "undefined" || !lead) {
+    return (
+      <Alert severity="info" sx={{ borderRadius: "0.9rem" }}>
+        Select a lead from the leads page before submitting a quote.
+      </Alert>
+    );
+  }
+
   return (
     <Box sx={{ width: "100%" }}>
       <Button
         component={RouterLink}
-        to="/vendor/leads/ak"
+        to={`/vendor/leads/${leadId}`}
         startIcon={<ArrowBackRoundedIcon />}
         sx={{
           px: 0,
@@ -106,9 +244,9 @@ export default function VendorQuoteProposalPage() {
               lineHeight: 1.62,
             }}
           >
-            Prepare a comprehensive solar solution proposal for the following
-            lead requirements. Precision in pricing ensures better conversion
-            rates.
+            {existingQuote
+              ? "Review and update your submitted proposal for this customer requirement."
+              : "Prepare a real solar proposal for this customer requirement."}
           </Typography>
         </Box>
 
@@ -124,9 +262,15 @@ export default function VendorQuoteProposalPage() {
             lineHeight: 1,
           }}
         >
-          Active Lead Status
+          {existingQuote ? "Quote Submitted" : "Active Lead"}
         </Box>
       </Stack>
+
+      {error ? (
+        <Alert severity="error" sx={{ borderRadius: "0.9rem", mb: 2 }}>
+          {error}
+        </Alert>
+      ) : null}
 
       <Box
         sx={{
@@ -158,15 +302,8 @@ export default function VendorQuoteProposalPage() {
               >
                 {label}
               </Typography>
-              <Typography
-                sx={{
-                  mt: 0.42,
-                  color: "#18253A",
-                  fontSize: "0.96rem",
-                  fontWeight: 800,
-                }}
-              >
-                {value}
+              <Typography sx={{ mt: 0.42, color: "#18253A", fontSize: "0.96rem", fontWeight: 800 }}>
+                {value || "Pending"}
               </Typography>
             </Box>
           ))}
@@ -174,72 +311,46 @@ export default function VendorQuoteProposalPage() {
       </Box>
 
       <Stack spacing={3}>
-        <Box
-          sx={{
-            display: "grid",
-            gridTemplateColumns: { xs: "1fr", lg: "180px 1fr" },
-            gap: { xs: 1.2, lg: 2.2 },
-          }}
-        >
+        <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: "180px 1fr" }, gap: { xs: 1.2, lg: 2.2 } }}>
           <Box>
             <Typography sx={sectionLabelSx}>01 Pricing</Typography>
-            <Typography sx={sectionBodySx}>
-              Define the total project cost and clear breakdown for the
-              customer.
-            </Typography>
+            <Typography sx={sectionBodySx}>Define the total project cost and clear breakdown.</Typography>
           </Box>
 
           <Box>
-            <Typography sx={fieldLabelSx}>Total Proposal Price (₹)</Typography>
-            <TextField fullWidth placeholder="e.g. 3,10,000" sx={inputSx} />
+            <Typography sx={fieldLabelSx}>Total Proposal Price</Typography>
+            <TextField fullWidth type="number" value={form.totalPrice} onChange={(event) => updateField("totalPrice", event.target.value)} placeholder="310000" sx={inputSx} />
 
-            <Box
-              sx={{
-                display: "grid",
-                gridTemplateColumns: { xs: "1fr", md: "repeat(3, 1fr)" },
-                gap: 1.2,
-                mt: 1.2,
-              }}
-            >
-              {["Equipment", "Labor", "Permitting"].map((label) => (
+            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "repeat(3, 1fr)" }, gap: 1.2, mt: 1.2 }}>
+              {[
+                ["Equipment", "equipmentCost"],
+                ["Labor", "laborCost"],
+                ["Permitting", "permittingCost"],
+              ].map(([label, field]) => (
                 <Box key={label}>
                   <Typography sx={fieldLabelSx}>{label}</Typography>
-                  <TextField fullWidth placeholder="₹ Amount" sx={inputSx} />
+                  <TextField fullWidth type="number" value={form[field]} onChange={(event) => updateField(field, event.target.value)} placeholder="Amount" sx={inputSx} />
                 </Box>
               ))}
             </Box>
           </Box>
         </Box>
 
-        <Box
-          sx={{
-            display: "grid",
-            gridTemplateColumns: { xs: "1fr", lg: "180px 1fr" },
-            gap: { xs: 1.2, lg: 2.2 },
-          }}
-        >
+        <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: "180px 1fr" }, gap: { xs: 1.2, lg: 2.2 } }}>
           <Box>
             <Typography sx={sectionLabelSx}>02 Specifications</Typography>
-            <Typography sx={sectionBodySx}>
-              Technical details of the proposed hardware configuration.
-            </Typography>
+            <Typography sx={sectionBodySx}>Technical details of the proposed hardware configuration.</Typography>
           </Box>
 
           <Box>
-            <Box
-              sx={{
-                display: "grid",
-                gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
-                gap: 1.2,
-              }}
-            >
+            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" }, gap: 1.2 }}>
               <Box>
                 <Typography sx={fieldLabelSx}>System Size (kW)</Typography>
-                <TextField fullWidth defaultValue="5.5" sx={inputSx} />
+                <TextField fullWidth type="number" value={form.sizeKw} onChange={(event) => updateField("sizeKw", event.target.value)} sx={inputSx} />
               </Box>
               <Box>
                 <Typography sx={fieldLabelSx}>Panel Type</Typography>
-                <TextField fullWidth select defaultValue="monocrystalline" sx={inputSx}>
+                <TextField fullWidth select value={form.panelType} onChange={(event) => updateField("panelType", event.target.value)} sx={inputSx}>
                   <MenuItem value="monocrystalline">Monocrystalline</MenuItem>
                   <MenuItem value="polycrystalline">Polycrystalline</MenuItem>
                   <MenuItem value="bifacial">Bifacial</MenuItem>
@@ -249,90 +360,59 @@ export default function VendorQuoteProposalPage() {
 
             <Box sx={{ mt: 1.2 }}>
               <Typography sx={fieldLabelSx}>Inverter Type</Typography>
-              <TextField
-                fullWidth
-                placeholder="e.g. String Inverter, Microinverter"
-                sx={inputSx}
-              />
+              <TextField fullWidth value={form.inverterType} onChange={(event) => updateField("inverterType", event.target.value)} placeholder="String inverter" sx={inputSx} />
             </Box>
           </Box>
         </Box>
 
-        <Box
-          sx={{
-            display: "grid",
-            gridTemplateColumns: { xs: "1fr", lg: "180px 1fr" },
-            gap: { xs: 1.2, lg: 2.2 },
-          }}
-        >
+        <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: "180px 1fr" }, gap: { xs: 1.2, lg: 2.2 } }}>
           <Box>
             <Typography sx={sectionLabelSx}>03 Timeline</Typography>
-            <Typography sx={sectionBodySx}>
-              Estimated duration from agreement to full activation.
-            </Typography>
+            <Typography sx={sectionBodySx}>Estimated duration from agreement to activation.</Typography>
           </Box>
 
-          <Box>
-            <Typography sx={fieldLabelSx}>Expected Installation</Typography>
-            <Box
-              sx={{
-                display: "grid",
-                gridTemplateColumns: { xs: "1fr", md: "repeat(3, 1fr)" },
-                gap: 1.2,
-              }}
-            >
-              {timelineOptions.map((option) => (
-                <Box
-                  key={option.title}
-                  sx={{
-                    minHeight: 68,
-                    px: 1.2,
-                    py: 1.05,
-                    borderRadius: "0.95rem",
-                    bgcolor: "#FFFFFF",
-                    border: "1px solid rgba(225,232,241,0.96)",
-                    boxShadow: "0 8px 20px rgba(16,29,51,0.025)",
-                  }}
-                >
-                  <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-                    <Box>
-                      <Typography
-                        sx={{
-                          color: "#18253A",
-                          fontSize: "0.82rem",
-                          fontWeight: 800,
-                        }}
-                      >
-                        {option.title}
-                      </Typography>
-                      <Typography sx={{ mt: 0.22, color: "#8B97A8", fontSize: "0.68rem" }}>
-                        {option.subtitle}
-                      </Typography>
-                    </Box>
-                    {option.active ? (
-                      <CheckCircleRoundedIcon sx={{ color: "#0E56C8", fontSize: "1rem" }} />
-                    ) : (
-                      <RadioButtonUncheckedRoundedIcon sx={{ color: "#A4AEBD", fontSize: "1rem" }} />
-                    )}
-                  </Stack>
-                </Box>
-              ))}
-            </Box>
+          <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "repeat(3, 1fr)" }, gap: 1.2 }}>
+            {timelineOptions.map((option) => (
+              <Box
+                key={option.value}
+                role="button"
+                tabIndex={0}
+                onClick={() => updateField("installationWindow", option.value)}
+                sx={{
+                  minHeight: 68,
+                  px: 1.2,
+                  py: 1.05,
+                  borderRadius: "0.95rem",
+                  bgcolor: "#FFFFFF",
+                  border: form.installationWindow === option.value ? "2px solid #0E56C8" : "1px solid rgba(225,232,241,0.96)",
+                  boxShadow: "0 8px 20px rgba(16,29,51,0.025)",
+                  cursor: "pointer",
+                }}
+              >
+                <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
+                  <Box>
+                    <Typography sx={{ color: "#18253A", fontSize: "0.82rem", fontWeight: 800 }}>
+                      {option.title}
+                    </Typography>
+                    <Typography sx={{ mt: 0.22, color: "#8B97A8", fontSize: "0.68rem" }}>
+                      {option.subtitle}
+                    </Typography>
+                  </Box>
+                  {form.installationWindow === option.value ? (
+                    <CheckCircleRoundedIcon sx={{ color: "#0E56C8", fontSize: "1rem" }} />
+                  ) : (
+                    <RadioButtonUncheckedRoundedIcon sx={{ color: "#A4AEBD", fontSize: "1rem" }} />
+                  )}
+                </Stack>
+              </Box>
+            ))}
           </Box>
         </Box>
 
-        <Box
-          sx={{
-            display: "grid",
-            gridTemplateColumns: { xs: "1fr", lg: "180px 1fr" },
-            gap: { xs: 1.2, lg: 2.2 },
-          }}
-        >
+        <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: "180px 1fr" }, gap: { xs: 1.2, lg: 2.2 } }}>
           <Box>
             <Typography sx={sectionLabelSx}>04 Narrative</Typography>
-            <Typography sx={sectionBodySx}>
-              Detail your unique value proposition and additional services.
-            </Typography>
+            <Typography sx={sectionBodySx}>Add installation plan, warranties, and service inclusions.</Typography>
           </Box>
 
           <Box>
@@ -341,6 +421,8 @@ export default function VendorQuoteProposalPage() {
               fullWidth
               multiline
               minRows={5}
+              value={form.proposalNotes}
+              onChange={(event) => updateField("proposalNotes", event.target.value)}
               placeholder="Describe the installation plan, maintenance inclusions, and warranties..."
               sx={{
                 ...inputSx,
@@ -353,66 +435,9 @@ export default function VendorQuoteProposalPage() {
             />
           </Box>
         </Box>
-
-        <Box
-          sx={{
-            display: "grid",
-            gridTemplateColumns: { xs: "1fr", lg: "180px 1fr" },
-            gap: { xs: 1.2, lg: 2.2 },
-          }}
-        >
-          <Box>
-            <Typography sx={sectionLabelSx}>05 Assets</Typography>
-            <Typography sx={sectionBodySx}>
-              Upload format documentation and data sheets.
-            </Typography>
-          </Box>
-
-          <Box>
-            <Typography sx={fieldLabelSx}>Upload Detailed Quotation (PDF)</Typography>
-            <Box
-              sx={{
-                minHeight: 164,
-                borderRadius: "1rem",
-                border: "1px dashed #B8C7DD",
-                bgcolor: "#FFFFFF",
-                display: "grid",
-                placeItems: "center",
-                px: 2,
-              }}
-            >
-              <Stack spacing={0.9} alignItems="center" sx={{ textAlign: "center" }}>
-                <Box
-                  sx={{
-                    width: 42,
-                    height: 42,
-                    borderRadius: "50%",
-                    bgcolor: "#F2F6FD",
-                    color: "#0E56C8",
-                    display: "grid",
-                    placeItems: "center",
-                  }}
-                >
-                  <CloudUploadOutlinedIcon sx={{ fontSize: "1.05rem" }} />
-                </Box>
-                <Typography sx={{ color: "#223146", fontSize: "0.82rem", fontWeight: 700 }}>
-                  Click to upload or drag and drop
-                </Typography>
-                <Typography sx={{ color: "#98A3B2", fontSize: "0.68rem" }}>
-                  Max file size 10MB (PDF only)
-                </Typography>
-              </Stack>
-            </Box>
-          </Box>
-        </Box>
       </Stack>
 
-      <Stack
-        direction="row"
-        spacing={1.1}
-        justifyContent="flex-end"
-        sx={{ mt: { xs: 2.6, md: 3 } }}
-      >
+      <Stack direction="row" spacing={1.1} justifyContent="flex-end" sx={{ mt: { xs: 2.6, md: 3 } }}>
         <Button
           variant="outlined"
           sx={{
@@ -432,6 +457,8 @@ export default function VendorQuoteProposalPage() {
         <Button
           variant="contained"
           startIcon={<BoltRoundedIcon />}
+          onClick={handleSubmit}
+          disabled={isSubmitting}
           sx={{
             minHeight: 40,
             px: 2,
@@ -443,7 +470,7 @@ export default function VendorQuoteProposalPage() {
             textTransform: "none",
           }}
         >
-          Submit Quote
+          {isSubmitting ? "Saving..." : existingQuote ? "Update Quote" : "Submit Quote"}
         </Button>
       </Stack>
     </Box>

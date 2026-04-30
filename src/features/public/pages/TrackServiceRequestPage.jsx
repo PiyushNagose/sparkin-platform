@@ -1,4 +1,15 @@
-import { Box, Button, Container, Grid, Stack, Typography } from "@mui/material";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import {
+  Alert,
+  Box,
+  Button,
+  CircularProgress,
+  Container,
+  Grid,
+  Stack,
+  Typography,
+} from "@mui/material";
 import CallOutlinedIcon from "@mui/icons-material/CallOutlined";
 import ChatBubbleOutlineRoundedIcon from "@mui/icons-material/ChatBubbleOutlineRounded";
 import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
@@ -6,39 +17,107 @@ import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
 import EngineeringOutlinedIcon from "@mui/icons-material/EngineeringOutlined";
 import FiberManualRecordRoundedIcon from "@mui/icons-material/FiberManualRecordRounded";
 import QueryBuilderRoundedIcon from "@mui/icons-material/QueryBuilderRounded";
-import StarRoundedIcon from "@mui/icons-material/StarRounded";
 import serviceNetworkPlaceholder from "@/shared/assets/images/public/support/service-track-placeholder.png";
 import styles from "@/features/public/pages/CalculatorPage.module.css";
 import {
   publicPageSpacing,
   publicTypography,
 } from "@/features/public/pages/publicPageStyles";
+import { serviceRequestsApi } from "@/features/public/api/serviceRequestsApi";
 
-const statusSteps = [
-  { label: "Request Submitted", status: "Completed", complete: true },
-  { label: "Under Review", status: "Completed", complete: true },
-  { label: "Technician Assigned", status: "In Progress", active: true },
-  { label: "Issue Resolved", status: "Pending" },
+const serviceStatusSteps = [
+  { key: "requested", label: "Request Submitted" },
+  { key: "under_review", label: "Under Review" },
+  { key: "technician_assigned", label: "Technician Assigned" },
+  { key: "resolved", label: "Issue Resolved" },
 ];
 
-const activityItems = [
-  {
-    time: "10:30 AM",
-    text: "Technician Rajesh Kumar assigned to your request.",
-    subtext: "Resource allocation finalized.",
-    color: "#0E56C8",
+const statusContent = {
+  requested: {
+    title: "Request Submitted",
+    description: "Your service request has been received and is waiting for support review.",
   },
-  {
-    time: "09:15 AM",
-    text: "Request reviewed and approved by Sparkin support team.",
-    color: "#0B6B31",
+  under_review: {
+    title: "Under Review",
+    description: "The Sparkin support team is reviewing your request and project details.",
   },
-  {
-    time: "08:45 AM",
-    text: "Service request #SR-8821 successfully submitted.",
-    color: "#0B6B31",
+  technician_assigned: {
+    title: "Technician Assigned",
+    description: "A service engineer has been assigned. You will receive scheduling updates here.",
   },
-];
+  resolved: {
+    title: "Issue Resolved",
+    description: "This service request has been marked resolved by the support team.",
+  },
+  cancelled: {
+    title: "Request Cancelled",
+    description: "This service request is no longer active.",
+  },
+};
+
+const typeLabels = {
+  maintenance: "Maintenance",
+  repair: "Repair",
+  warranty: "Warranty",
+};
+
+function formatDate(value) {
+  if (!value) return "Not scheduled";
+
+  return new Intl.DateTimeFormat("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(value));
+}
+
+function formatTime(value) {
+  if (!value) return "";
+
+  return new Intl.DateTimeFormat("en-IN", {
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(value));
+}
+
+function buildStatusSteps(currentStatus) {
+  const activeIndex = serviceStatusSteps.findIndex((step) => step.key === currentStatus);
+
+  return serviceStatusSteps.map((step, index) => {
+    if (activeIndex === -1) {
+      return { ...step, status: "Pending" };
+    }
+
+    if (index < activeIndex || currentStatus === "resolved") {
+      return { ...step, status: "Completed", complete: true };
+    }
+
+    if (index === activeIndex) {
+      return { ...step, status: "In Progress", active: currentStatus !== "resolved" };
+    }
+
+    return { ...step, status: "Pending" };
+  });
+}
+
+function buildActivityItems(request) {
+  const activities = request?.activity?.length
+    ? [...request.activity].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    : [
+        {
+          title: `Service request #${request?.ticketNumber ?? ""} submitted`,
+          note: "Our support team will review your request shortly.",
+          createdAt: request?.createdAt,
+        },
+      ];
+
+  return activities.map((item, index) => ({
+    time: formatTime(item.createdAt),
+    text: item.title,
+    subtext: item.note,
+    color: index === 0 ? "#0E56C8" : "#0B6B31",
+  }));
+}
 
 function CardShell({ children, sx = {} }) {
   return (
@@ -58,6 +137,65 @@ function CardShell({ children, sx = {} }) {
 }
 
 export default function TrackServiceRequestPage() {
+  const [searchParams] = useSearchParams();
+  const requestId = searchParams.get("requestId");
+  const [serviceRequest, setServiceRequest] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+
+  useEffect(() => {
+    let ignore = false;
+
+    async function loadServiceRequest() {
+      setIsLoading(true);
+      setLoadError("");
+
+      try {
+        const result = requestId
+          ? await serviceRequestsApi.getRequest(requestId)
+          : (await serviceRequestsApi.listRequests())?.[0] ?? null;
+
+        if (!ignore) {
+          setServiceRequest(result);
+        }
+      } catch (error) {
+        if (!ignore) {
+          setLoadError(
+            error?.response?.data?.message ??
+              error?.message ??
+              "Unable to load this service request.",
+          );
+        }
+      } finally {
+        if (!ignore) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    loadServiceRequest();
+
+    return () => {
+      ignore = true;
+    };
+  }, [requestId]);
+
+  const statusSteps = useMemo(
+    () => buildStatusSteps(serviceRequest?.status),
+    [serviceRequest?.status],
+  );
+  const activityItems = useMemo(
+    () => buildActivityItems(serviceRequest),
+    [serviceRequest],
+  );
+  const currentStatus =
+    statusContent[serviceRequest?.status] ?? statusContent.requested;
+  const ticketNumber = serviceRequest?.ticketNumber
+    ? `#${serviceRequest.ticketNumber}`
+    : "Not assigned";
+  const requestType =
+    typeLabels[serviceRequest?.type] ?? serviceRequest?.type ?? "Service Request";
+
   return (
     <Box className={styles.pageShell}>
       <Box
@@ -103,6 +241,30 @@ export default function TrackServiceRequestPage() {
               </Typography>
             </Box>
 
+            {isLoading && (
+              <CardShell>
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <CircularProgress size={18} />
+                  <Typography sx={{ color: "#667084", fontSize: "0.82rem" }}>
+                    Loading your service request...
+                  </Typography>
+                </Stack>
+              </CardShell>
+            )}
+
+            {!isLoading && loadError && (
+              <Alert severity="error" sx={{ borderRadius: "1rem" }}>
+                {loadError}
+              </Alert>
+            )}
+
+            {!isLoading && !loadError && !serviceRequest && (
+              <Alert severity="info" sx={{ borderRadius: "1rem" }}>
+                No service requests found yet.
+              </Alert>
+            )}
+
+            {!isLoading && !loadError && serviceRequest && (
             <Box
               sx={{
                 display: "grid",
@@ -249,7 +411,7 @@ export default function TrackServiceRequestPage() {
                           letterSpacing: "-0.04em",
                         }}
                       >
-                        Technician Assigned
+                        {currentStatus.title}
                       </Typography>
                       <Typography
                         sx={{
@@ -260,8 +422,7 @@ export default function TrackServiceRequestPage() {
                           maxWidth: 210,
                         }}
                       >
-                        On the way to your location. Estimated arrival in 25
-                        mins.
+                        {currentStatus.description}
                       </Typography>
 
                       <Box
@@ -288,7 +449,7 @@ export default function TrackServiceRequestPage() {
                               fontSize: "0.82rem",
                             }}
                           >
-                            RK
+                            SP
                           </Box>
                           <Box>
                             <Typography
@@ -298,7 +459,7 @@ export default function TrackServiceRequestPage() {
                                 fontWeight: 800,
                               }}
                             >
-                              Rajesh Kumar
+                              Sparkin Support
                             </Typography>
                             <Typography
                               sx={{
@@ -307,32 +468,17 @@ export default function TrackServiceRequestPage() {
                                 mt: 0.05,
                               }}
                             >
-                              Lead Service Engineer
+                              Service Operations
                             </Typography>
-                            <Stack
-                              direction="row"
-                              spacing={0.2}
-                              alignItems="center"
-                              sx={{ mt: 0.18 }}
+                            <Typography
+                              sx={{
+                                color: "#7C8797",
+                                fontSize: "0.62rem",
+                                mt: 0.18,
+                              }}
                             >
-                              <StarRoundedIcon
-                                sx={{ fontSize: "0.72rem", color: "#F6C94A" }}
-                              />
-                              <Typography
-                                sx={{
-                                  color: "#202938",
-                                  fontSize: "0.64rem",
-                                  fontWeight: 700,
-                                }}
-                              >
-                                4.9
-                              </Typography>
-                              <Typography
-                                sx={{ color: "#7C8797", fontSize: "0.62rem" }}
-                              >
-                                (124 reviews)
-                              </Typography>
-                            </Stack>
+                              {ticketNumber}
+                            </Typography>
                           </Box>
                         </Stack>
                       </Box>
@@ -362,7 +508,7 @@ export default function TrackServiceRequestPage() {
                           boxShadow: "0 10px 20px rgba(17,31,54,0.12)",
                         }}
                       >
-                        Live Tracking: 1.2km away
+                        Ticket {ticketNumber}
                       </Box>
                     </Box>
                   </Box>
@@ -485,7 +631,7 @@ export default function TrackServiceRequestPage() {
                           fontWeight: 700,
                         }}
                       >
-                        Panel Cleaning
+                        {requestType}
                       </Typography>
                     </Box>
 
@@ -509,7 +655,33 @@ export default function TrackServiceRequestPage() {
                           fontWeight: 700,
                         }}
                       >
-                        Oct 24, 2026
+                        {formatDate(serviceRequest.createdAt)}
+                      </Typography>
+                    </Box>
+
+                    <Box>
+                      <Typography
+                        sx={{
+                          color: "#98A2B3",
+                          fontSize: "0.55rem",
+                          fontWeight: 800,
+                          letterSpacing: "0.14em",
+                          textTransform: "uppercase",
+                        }}
+                      >
+                        Preferred Slot
+                      </Typography>
+                      <Typography
+                        sx={{
+                          mt: 0.38,
+                          color: "#202938",
+                          fontSize: "0.96rem",
+                          fontWeight: 700,
+                        }}
+                      >
+                        {serviceRequest.preferredDate
+                          ? `${formatDate(serviceRequest.preferredDate)}${serviceRequest.preferredTime ? `, ${serviceRequest.preferredTime}` : ""}`
+                          : "Not selected"}
                       </Typography>
                     </Box>
 
@@ -533,7 +705,7 @@ export default function TrackServiceRequestPage() {
                           fontWeight: 800,
                         }}
                       >
-                        #SR-8821
+                        {ticketNumber}
                       </Typography>
                     </Box>
 
@@ -547,7 +719,7 @@ export default function TrackServiceRequestPage() {
                           textTransform: "uppercase",
                         }}
                       >
-                        Technician
+                        Issue Details
                       </Typography>
                       <Typography
                         sx={{
@@ -557,7 +729,7 @@ export default function TrackServiceRequestPage() {
                           fontWeight: 700,
                         }}
                       >
-                        Rajesh Kumar
+                        {serviceRequest.description}
                       </Typography>
                     </Box>
                   </Stack>
@@ -662,6 +834,7 @@ export default function TrackServiceRequestPage() {
                 </CardShell>
               </Stack>
             </Box>
+            )}
           </Stack>
         </Container>
       </Box>

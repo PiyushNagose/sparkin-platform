@@ -1,7 +1,9 @@
 import {
+  Alert,
   Avatar,
   Box,
   Button,
+  CircularProgress,
   InputBase,
   Stack,
   Typography,
@@ -15,6 +17,8 @@ import DownloadRoundedIcon from "@mui/icons-material/DownloadRounded";
 import KeyboardArrowLeftRoundedIcon from "@mui/icons-material/KeyboardArrowLeftRounded";
 import KeyboardArrowRightRoundedIcon from "@mui/icons-material/KeyboardArrowRightRounded";
 import { Link as RouterLink } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { paymentsApi } from "@/features/vendor/api/paymentsApi";
 
 const transactions = [
   {
@@ -82,6 +86,66 @@ const columns = [
   "Actions",
 ];
 
+function formatPrice(value) {
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(value);
+}
+
+function formatDate(value) {
+  if (!value) {
+    return "Pending";
+  }
+
+  return new Intl.DateTimeFormat("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(value));
+}
+
+function getInitials(name) {
+  return name
+    .split(" ")
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+}
+
+function getStatusStyle(status) {
+  if (status === "paid") {
+    return { label: "Paid", tone: "#239654", bg: "#DDF8E7" };
+  }
+
+  if (status === "failed") {
+    return { label: "Failed", tone: "#D74C4C", bg: "#FDECEC" };
+  }
+
+  return { label: "Pending", tone: "#726C00", bg: "#F2F08E" };
+}
+
+function toTransaction(payment) {
+  const status = getStatusStyle(payment.status);
+
+  return {
+    id: payment.id,
+    invoiceNumber: payment.invoiceNumber,
+    initials: getInitials(payment.customer.fullName),
+    name: payment.customer.fullName,
+    email: payment.customer.email || "Email not provided",
+    project: payment.milestone.title,
+    amount: formatPrice(payment.amount),
+    method: payment.status === "paid" ? "Recorded payment" : "Pending collection",
+    status: status.label,
+    statusTone: status.tone,
+    statusBg: status.bg,
+    date: formatDate(payment.paidAt || payment.dueAt),
+  };
+}
+
 function FilterField({ label, value, wide, search, calendar }) {
   return (
     <Box sx={{ minWidth: wide ? 0 : 170, flex: wide ? 1 : "unset" }}>
@@ -137,6 +201,36 @@ function FilterField({ label, value, wide, search, calendar }) {
 }
 
 export default function VendorTransactionsPage() {
+  const [payments, setPayments] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadPayments() {
+      setIsLoading(true);
+      setError("");
+
+      try {
+        const result = await paymentsApi.listPayments();
+        if (active) setPayments(result);
+      } catch (apiError) {
+        if (active) setError(apiError?.response?.data?.message || "Could not load transactions.");
+      } finally {
+        if (active) setIsLoading(false);
+      }
+    }
+
+    loadPayments();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const transactionRows = useMemo(() => payments.map(toTransaction), [payments]);
+
   return (
     <Box sx={{ width: "100%" }}>
       <Box>
@@ -236,7 +330,29 @@ export default function VendorTransactionsPage() {
         </Box>
 
         <Stack spacing={0} sx={{ px: { xs: 1.2, md: 1.7 }, pb: 1.1 }}>
-          {transactions.map((item, index) => (
+          {isLoading ? (
+            <Box sx={{ py: 5, display: "grid", placeItems: "center" }}>
+              <CircularProgress />
+            </Box>
+          ) : null}
+
+          {!isLoading && error ? (
+            <Box sx={{ py: 1.4 }}>
+              <Alert severity="error" sx={{ borderRadius: "0.9rem" }}>
+                {error}
+              </Alert>
+            </Box>
+          ) : null}
+
+          {!isLoading && !error && transactionRows.length === 0 ? (
+            <Box sx={{ py: 4 }}>
+              <Alert severity="info" sx={{ borderRadius: "0.9rem" }}>
+                No payment transactions are available yet.
+              </Alert>
+            </Box>
+          ) : null}
+
+          {transactionRows.map((item, index) => (
             <Box
               key={item.id}
               sx={{
@@ -253,7 +369,7 @@ export default function VendorTransactionsPage() {
                 }}
               >
                 <Typography sx={{ color: "#0E56C8", fontSize: "0.76rem", fontWeight: 800 }}>
-                  {item.id}
+                  {item.invoiceNumber}
                 </Typography>
 
                 <Stack direction="row" spacing={1} alignItems="center">
@@ -309,7 +425,7 @@ export default function VendorTransactionsPage() {
                 <Stack direction="row" spacing={0.2} alignItems="center">
                   <Button
                     component={RouterLink}
-                    to={`/vendor/payments/transactions/${item.id.replace("#TXN-", "").toLowerCase()}`}
+                    to={`/vendor/payments/transactions/${item.id}`}
                     sx={{
                       minWidth: 28,
                       width: 28,
@@ -323,7 +439,7 @@ export default function VendorTransactionsPage() {
                   </Button>
                   <Button
                     component={RouterLink}
-                    to={`/vendor/payments/transactions/${item.id.replace("#TXN-", "").toLowerCase()}`}
+                    to={`/vendor/payments/transactions/${item.id}`}
                     sx={{
                       minWidth: 28,
                       width: 28,
@@ -342,7 +458,7 @@ export default function VendorTransactionsPage() {
                 <Stack spacing={1.05}>
                   <Stack direction="row" justifyContent="space-between" spacing={1}>
                     <Typography sx={{ color: "#0E56C8", fontSize: "0.74rem", fontWeight: 800 }}>
-                      {item.id}
+                      {item.invoiceNumber}
                     </Typography>
                     <Box
                       sx={{
@@ -426,7 +542,7 @@ export default function VendorTransactionsPage() {
                   <Stack direction="row" spacing={0.35}>
                     <Button
                       component={RouterLink}
-                      to={`/vendor/payments/transactions/${item.id.replace("#TXN-", "").toLowerCase()}`}
+                      to={`/vendor/payments/transactions/${item.id}`}
                       sx={{
                         minWidth: 30,
                         width: 30,
@@ -440,7 +556,7 @@ export default function VendorTransactionsPage() {
                     </Button>
                     <Button
                       component={RouterLink}
-                      to={`/vendor/payments/transactions/${item.id.replace("#TXN-", "").toLowerCase()}`}
+                      to={`/vendor/payments/transactions/${item.id}`}
                       sx={{
                         minWidth: 30,
                         width: 30,
@@ -471,7 +587,7 @@ export default function VendorTransactionsPage() {
           }}
         >
           <Typography sx={{ color: "#738094", fontSize: "0.72rem", fontWeight: 500 }}>
-            Showing 1 to 4 of 128 transactions
+            Showing {transactionRows.length === 0 ? "0" : `1 to ${transactionRows.length}`} of {transactionRows.length} transactions
           </Typography>
 
           <Stack direction="row" spacing={0.45} alignItems="center">

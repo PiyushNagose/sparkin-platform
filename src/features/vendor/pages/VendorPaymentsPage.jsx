@@ -1,7 +1,9 @@
 import {
+  Alert,
   Avatar,
   Box,
   Button,
+  CircularProgress,
   Stack,
   Typography,
 } from "@mui/material";
@@ -12,6 +14,8 @@ import CheckCircleOutlineRoundedIcon from "@mui/icons-material/CheckCircleOutlin
 import CalendarTodayOutlinedIcon from "@mui/icons-material/CalendarTodayOutlined";
 import MoreVertRoundedIcon from "@mui/icons-material/MoreVertRounded";
 import { Link as RouterLink } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { paymentsApi } from "@/features/vendor/api/paymentsApi";
 
 const kpiCards = [
   {
@@ -102,6 +106,63 @@ const transactions = [
 
 const columns = ["Customer", "Project", "Amount", "Status", "Date", "Action"];
 
+function formatPrice(value) {
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(value);
+}
+
+function formatDate(value) {
+  if (!value) {
+    return "Pending";
+  }
+
+  return new Intl.DateTimeFormat("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(value));
+}
+
+function getInitials(name) {
+  return name
+    .split(" ")
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+}
+
+function getStatusStyle(status) {
+  if (status === "paid") {
+    return { label: "Paid", tone: "#239654", bg: "#DDF8E7" };
+  }
+
+  if (status === "failed") {
+    return { label: "Failed", tone: "#D74C4C", bg: "#FDECEC" };
+  }
+
+  return { label: "Pending", tone: "#6E6900", bg: "#F2F08E" };
+}
+
+function toTransaction(payment) {
+  const status = getStatusStyle(payment.status);
+
+  return {
+    id: payment.id,
+    initials: getInitials(payment.customer.fullName),
+    name: payment.customer.fullName,
+    project: payment.milestone.title,
+    amount: formatPrice(payment.amount),
+    status: status.label,
+    statusTone: status.tone,
+    statusBg: status.bg,
+    date: formatDate(payment.paidAt || payment.dueAt),
+  };
+}
+
 function KpiCard({ card }) {
   return (
     <Box
@@ -165,6 +226,56 @@ function KpiCard({ card }) {
 }
 
 export default function VendorPaymentsPage() {
+  const [payments, setPayments] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadPayments() {
+      setIsLoading(true);
+      setError("");
+
+      try {
+        const result = await paymentsApi.listPayments();
+        if (active) setPayments(result);
+      } catch (apiError) {
+        if (active) setError(apiError?.response?.data?.message || "Could not load payments.");
+      } finally {
+        if (active) setIsLoading(false);
+      }
+    }
+
+    loadPayments();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const transactions = useMemo(() => payments.map(toTransaction), [payments]);
+  const paidAmount = payments
+    .filter((payment) => payment.status === "paid")
+    .reduce((sum, payment) => sum + payment.amount, 0);
+  const pendingAmount = payments
+    .filter((payment) => payment.status === "pending")
+    .reduce((sum, payment) => sum + payment.amount, 0);
+  const totalAmount = payments.reduce((sum, payment) => sum + payment.amount, 0);
+  const dashboardKpis = useMemo(
+    () => [
+      { ...kpiCards[0], value: formatPrice(totalAmount), delta: payments.length ? "+live" : "" },
+      {
+        ...kpiCards[1],
+        value: formatPrice(pendingAmount),
+        note: `${payments.filter((payment) => payment.status === "pending").length} Active`,
+      },
+      { ...kpiCards[2], value: formatPrice(paidAmount), note: "Recorded" },
+      { ...kpiCards[3], value: formatPrice(paidAmount), delta: payments.length ? "+live" : "" },
+    ],
+    [paidAmount, payments, pendingAmount, totalAmount],
+  );
+
   return (
     <Box sx={{ width: "100%" }}>
       <Stack
@@ -242,7 +353,7 @@ export default function VendorPaymentsPage() {
           mb: { xs: 2.4, md: 2.7 },
         }}
       >
-        {kpiCards.map((card) => (
+        {dashboardKpis.map((card) => (
           <KpiCard key={card.label} card={card} />
         ))}
       </Box>
@@ -525,10 +636,32 @@ export default function VendorPaymentsPage() {
           </Box>
         </Box>
 
+        {isLoading ? (
+          <Box sx={{ py: 5, display: "grid", placeItems: "center" }}>
+            <CircularProgress />
+          </Box>
+        ) : null}
+
+        {!isLoading && error ? (
+          <Box sx={{ px: { xs: 1.2, md: 1.7 }, py: 1.4 }}>
+            <Alert severity="error" sx={{ borderRadius: "0.9rem" }}>
+              {error}
+            </Alert>
+          </Box>
+        ) : null}
+
+        {!isLoading && !error && transactions.length === 0 ? (
+          <Box sx={{ px: { xs: 1.2, md: 1.7 }, py: 4 }}>
+            <Alert severity="info" sx={{ borderRadius: "0.9rem" }}>
+              Payments will appear here after customers accept your quotes and projects are created.
+            </Alert>
+          </Box>
+        ) : null}
+
         <Stack spacing={0} sx={{ px: { xs: 1.2, md: 1.7 }, pb: 1.1 }}>
           {transactions.map((item, index) => (
             <Box
-              key={`${item.name}-${item.date}`}
+              key={item.id}
               sx={{
                 borderTop: index === 0 ? "none" : "1px solid rgba(234,239,245,0.95)",
                 py: { xs: 1.45, md: 1.55 },

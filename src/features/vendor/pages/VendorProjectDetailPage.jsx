@@ -1,5 +1,5 @@
-import { Avatar, Box, Button, Stack, Typography } from "@mui/material";
-import { useState } from "react";
+import { Alert, Avatar, Box, Button, CircularProgress, Stack, Typography } from "@mui/material";
+import { useEffect, useMemo, useState } from "react";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
 import PlaceOutlinedIcon from "@mui/icons-material/PlaceOutlined";
@@ -14,7 +14,8 @@ import FolderOpenOutlinedIcon from "@mui/icons-material/FolderOpenOutlined";
 import DownloadRoundedIcon from "@mui/icons-material/DownloadRounded";
 import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
 import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
-import { Link as RouterLink } from "react-router-dom";
+import { Link as RouterLink, useParams } from "react-router-dom";
+import { projectsApi } from "@/features/public/api/projectsApi";
 import projectMapPlaceholder from "@/shared/assets/images/vendor/project/vendor-project-map-placeholder.png";
 
 const statCards = [
@@ -123,6 +124,100 @@ const documentItems = [
   },
 ];
 
+function formatPrice(value) {
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(value);
+}
+
+function formatDate(value) {
+  if (!value) {
+    return "Pending";
+  }
+
+  return new Intl.DateTimeFormat("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(value));
+}
+
+function formatAddress(address) {
+  if (!address) {
+    return ["Location pending"];
+  }
+
+  return [
+    address.street,
+    address.landmark,
+    `${address.city}, ${address.state} ${address.pincode}`,
+  ].filter(Boolean);
+}
+
+function toMilestoneNode(milestone) {
+  return {
+    key: milestone.key,
+    label: milestone.title,
+    date:
+      milestone.status === "completed"
+        ? formatDate(milestone.completedAt)
+        : milestone.status === "in_progress"
+          ? "In Progress"
+          : "Pending",
+    state:
+      milestone.status === "completed"
+        ? "completed"
+        : milestone.status === "in_progress"
+          ? "active"
+          : "upcoming",
+  };
+}
+
+function getProjectView(project) {
+  if (!project) {
+    return null;
+  }
+
+  return {
+    title: `${project.customer.fullName} Solar Project`,
+    subtitle: `${project.installationAddress.city}, ${project.installationAddress.state} - Project ID: ${project.id}`,
+    statCards: [
+      { label: "System Size", value: `${project.system.sizeKw} kW` },
+      { label: "Total Price", value: formatPrice(project.pricing.totalPrice), highlight: true },
+      { label: "Start Date", value: formatDate(project.createdAt) },
+      { label: "Project Status", value: project.status.replaceAll("_", " ") },
+    ],
+    milestones: project.milestones.map(toMilestoneNode),
+    technicalSpecs: [
+      ["Panel Type", project.system.panelType],
+      ["Inverter", project.system.inverterType],
+      ["Install Window", project.timeline.installationWindow.replaceAll("_", "-")],
+      ["Total Cost", formatPrice(project.pricing.totalPrice)],
+    ],
+    customerInfoBlocks: [
+      {
+        title: "Primary Contact",
+        rows: [project.customer.fullName, project.customer.phoneNumber, project.customer.email || "Email not provided"],
+      },
+      {
+        title: "Installation Address",
+        rows: formatAddress(project.installationAddress),
+      },
+      {
+        title: "Project Ownership",
+        rows: [`Customer ID: ${project.customerId}`, `Quote ID: ${project.quoteId}`],
+      },
+      {
+        title: "Current Stage",
+        rows: [project.status.replaceAll("_", " ")],
+      },
+    ],
+    activeMilestone: project.milestones.find((milestone) => milestone.status === "in_progress"),
+  };
+}
+
 function MilestoneNode({ milestone, isFirst, isLast }) {
   const completed = milestone.state === "completed";
   const active = milestone.state === "active";
@@ -205,7 +300,64 @@ function MilestoneNode({ milestone, isFirst, isLast }) {
 }
 
 export default function VendorProjectDetailPage() {
+  const { projectId } = useParams();
   const [activeTab, setActiveTab] = useState("Installation Details");
+  const [project, setProject] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [error, setError] = useState("");
+  const projectView = useMemo(() => getProjectView(project), [project]);
+  const displayTitle = projectView?.title ?? "Project Details";
+  const displaySubtitle = projectView?.subtitle ?? "Loading project details";
+  const displayStatCards = projectView?.statCards ?? statCards;
+  const displayMilestones = projectView?.milestones ?? milestones;
+  const displayTechnicalSpecs = projectView?.technicalSpecs ?? technicalSpecs;
+  const displayCustomerInfoBlocks = projectView?.customerInfoBlocks ?? customerInfoBlocks;
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadProject() {
+      setIsLoading(true);
+      setError("");
+
+      try {
+        const result = await projectsApi.getProject(projectId);
+        if (active) setProject(result);
+      } catch (apiError) {
+        if (active) setError(apiError?.response?.data?.message || "Could not load this project.");
+      } finally {
+        if (active) setIsLoading(false);
+      }
+    }
+
+    loadProject();
+
+    return () => {
+      active = false;
+    };
+  }, [projectId]);
+
+  async function handleCompleteActiveStep() {
+    if (!projectView?.activeMilestone) {
+      return;
+    }
+
+    setIsUpdating(true);
+    setError("");
+
+    try {
+      const updatedProject = await projectsApi.updateProjectMilestone(projectId, {
+        milestoneKey: projectView.activeMilestone.key,
+        status: "completed",
+      });
+      setProject(updatedProject);
+    } catch (apiError) {
+      setError(apiError?.response?.data?.message || "Could not update project status.");
+    } finally {
+      setIsUpdating(false);
+    }
+  }
 
   const renderDocumentIcon = (item) => {
     if (item.icon === "zip") {
@@ -234,6 +386,18 @@ export default function VendorProjectDetailPage() {
         Back to Projects
       </Button>
 
+      {isLoading ? (
+        <Box sx={{ py: 4, display: "grid", placeItems: "center" }}>
+          <CircularProgress />
+        </Box>
+      ) : null}
+
+      {error ? (
+        <Alert severity="error" sx={{ mb: 2, borderRadius: "0.9rem" }}>
+          {error}
+        </Alert>
+      ) : null}
+
       <Box
         sx={{
           display: "grid",
@@ -252,7 +416,7 @@ export default function VendorProjectDetailPage() {
               letterSpacing: "-0.04em",
             }}
           >
-            Amit Sharma Residential
+            {displayTitle}
           </Typography>
 
           <Stack
@@ -264,7 +428,7 @@ export default function VendorProjectDetailPage() {
           >
             <LocationOnOutlinedIcon sx={{ fontSize: "0.95rem" }} />
             <Typography sx={{ fontSize: "0.88rem", lineHeight: 1.6 }}>
-              Pune, MH • Project ID: SPK-2023-9842
+              {displaySubtitle}
             </Typography>
           </Stack>
 
@@ -279,7 +443,7 @@ export default function VendorProjectDetailPage() {
               mt: 2.2,
             }}
           >
-            {statCards.map((item) => (
+            {displayStatCards.map((item) => (
               <Box
                 key={item.label}
                 sx={{
@@ -337,12 +501,12 @@ export default function VendorProjectDetailPage() {
               spacing={{ xs: 2, md: 0 }}
               sx={{ mt: 2.2 }}
             >
-              {milestones.map((milestone, index) => (
+              {displayMilestones.map((milestone, index) => (
                 <MilestoneNode
                   key={milestone.label}
                   milestone={milestone}
                   isFirst={index === 0}
-                  isLast={index === milestones.length - 1}
+                  isLast={index === displayMilestones.length - 1}
                 />
               ))}
             </Stack>
@@ -427,7 +591,7 @@ export default function VendorProjectDetailPage() {
                 </Stack>
 
                 <Stack spacing={1.15}>
-                  {technicalSpecs.map(([label, value]) => (
+                  {displayTechnicalSpecs.map(([label, value]) => (
                     <Stack
                       key={label}
                       direction="row"
@@ -611,7 +775,7 @@ export default function VendorProjectDetailPage() {
                   gap: 1.8,
                 }}
               >
-                {customerInfoBlocks.map((block, index) => (
+                {displayCustomerInfoBlocks.map((block, index) => (
                   <Box key={block.title}>
                     <Stack
                       direction="row"
@@ -988,6 +1152,8 @@ export default function VendorProjectDetailPage() {
 
           <Button
             variant="contained"
+            onClick={handleCompleteActiveStep}
+            disabled={isUpdating || isLoading || !projectView?.activeMilestone}
             sx={{
               minHeight: 40,
               px: 2.2,
@@ -999,7 +1165,7 @@ export default function VendorProjectDetailPage() {
               textTransform: "none",
             }}
           >
-            Mark Step Complete
+            {isUpdating ? "Updating..." : "Mark Step Complete"}
           </Button>
         </Stack>
       </Box>

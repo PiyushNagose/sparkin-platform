@@ -25,16 +25,18 @@ import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import NotificationsNoneRoundedIcon from "@mui/icons-material/NotificationsNoneRounded";
 import HelpOutlineRoundedIcon from "@mui/icons-material/HelpOutlineRounded";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { portalNavigation } from "@/shared/config/navigation";
 import logoPlaceholder from "@/shared/assets/logo-placeholder.png";
 import { AppFooter } from "@/shared/components/AppFooter";
+import { useAuth } from "@/features/auth/AuthProvider";
 
 const vendorNavIcons = {
   Dashboard: DashboardRoundedIcon,
   Leads: Groups2OutlinedIcon,
   Quotes: RequestQuoteOutlinedIcon,
   Projects: AssignmentOutlinedIcon,
+  Services: BoltOutlinedIcon,
   Payments: PaymentsOutlinedIcon,
   Settings: SettingsOutlinedIcon,
 };
@@ -51,13 +53,21 @@ const customerNavIcons = {
 };
 
 export function PortalLayout({ portal }) {
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
   const navItems = portalNavigation[portal];
   const sidebarWidth = 158;
   const navIconMap = portal === "customer" ? customerNavIcons : vendorNavIcons;
   const portalLabel = portal === "customer" ? "" : "Vendor Portal";
-  const profileName = portal === "customer" ? "Arjun Mehta" : "Rajesh Kumar";
-  const profileRole = portal === "customer" ? "Residential User" : "Solar Lead Partner";
-  const profileInitial = portal === "customer" ? "A" : "R";
+  const profileName = user?.fullName || "Sparkin User";
+  const profileRole =
+    user?.role === "vendor" ? "Solar Lead Partner" : user?.role === "admin" ? "Administrator" : "Residential User";
+  const profileInitial = profileName.trim().charAt(0).toUpperCase() || "S";
+
+  async function handleLogout() {
+    await logout();
+    navigate("/auth/login", { replace: true });
+  }
 
   return (
     <Box
@@ -152,27 +162,49 @@ export function PortalLayout({ portal }) {
 
           <Box sx={{ mt: "auto", pt: 2 }}>
             {portal === "vendor" ? (
-              <Button
-                variant="contained"
-                startIcon={<AddRoundedIcon />}
-                sx={{
-                  width: "100%",
-                  minHeight: 38,
-                  borderRadius: "0.8rem",
-                  textTransform: "none",
-                  fontSize: "0.74rem",
-                  fontWeight: 700,
-                  bgcolor: "#0E56C8",
-                  boxShadow: "none",
-                }}
-              >
-                New Project
-              </Button>
+              <Stack spacing={0.65}>
+                <Button
+                  variant="contained"
+                  startIcon={<AddRoundedIcon />}
+                  sx={{
+                    width: "100%",
+                    minHeight: 38,
+                    borderRadius: "0.8rem",
+                    textTransform: "none",
+                    fontSize: "0.74rem",
+                    fontWeight: 700,
+                    bgcolor: "#0E56C8",
+                    boxShadow: "none",
+                  }}
+                >
+                  New Project
+                </Button>
+                <Button
+                  variant="text"
+                  color="inherit"
+                  onClick={handleLogout}
+                  sx={{
+                    justifyContent: "flex-start",
+                    gap: 0.9,
+                    minHeight: 34,
+                    px: 1.05,
+                    borderRadius: "0.7rem",
+                    color: "#647387",
+                    fontSize: "0.72rem",
+                    fontWeight: 600,
+                    textTransform: "none",
+                  }}
+                >
+                  <LogoutOutlinedIcon sx={{ fontSize: "0.9rem" }} />
+                  Logout
+                </Button>
+              </Stack>
             ) : (
               <Stack spacing={0.65}>
                 <Button
                   variant="text"
                   color="inherit"
+                  onClick={handleLogout}
                   sx={{
                     justifyContent: "flex-start",
                     gap: 0.9,
@@ -332,13 +364,34 @@ export function PortalLayout({ portal }) {
             sx={{
               width: "100%",
               maxWidth: "none",
-              py: { xs: 3.2, md: 3.8 },
-              px: { xs: 2, md: 3.2, lg: 3.8 },
+              py: { xs: 3.8, md: 4.6 },
+              px: { xs: 2.2, md: 3.6, lg: 4.2 },
               ml: 0,
               mr: "auto",
             }}
           >
-            <Outlet />
+            <Box
+              sx={{
+                width: "100%",
+                "& > .MuiBox-root, & > .MuiStack-root": {
+                  "& > .MuiStack-root:first-of-type": {
+                    mb: { xs: 2.8, md: 3.4 },
+                  },
+                  "& > .MuiBox-root + .MuiBox-root, & > .MuiBox-root + .MuiStack-root, & > .MuiStack-root + .MuiBox-root, & > .MuiStack-root + .MuiStack-root":
+                    {
+                      mt: { xs: 2.3, md: 3 },
+                    },
+                  "& > .MuiTypography-root + .MuiTypography-root": {
+                    mt: 0.75,
+                  },
+                  "& .MuiTypography-body1, & .MuiTypography-body2": {
+                    lineHeight: 1.72,
+                  },
+                },
+              }}
+            >
+              <Outlet />
+            </Box>
           </Container>
         </Box>
       </Box>

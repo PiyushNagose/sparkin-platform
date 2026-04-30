@@ -2,6 +2,7 @@ import { createBrowserRouter, Outlet } from "react-router-dom";
 import { AuthLayout } from "@/app/layouts/AuthLayout";
 import { PortalLayout } from "@/app/layouts/PortalLayout";
 import { PublicLayout } from "@/app/layouts/PublicLayout";
+import { RequireAuth } from "@/features/auth/RequireAuth";
 import { authRoutes } from "@/features/auth/routes";
 import { customerRoutes } from "@/features/customer/routes";
 import { publicRoutes } from "@/features/public/routes";
@@ -25,15 +26,24 @@ export const appRouter = createBrowserRouter([
       },
       {
         path: "/customer",
-        element: <PortalLayout portal="customer" />,
-        children: customerRoutes,
+        element: <RequireAuth allowedRoles={["customer", "admin"]} />,
+        children: [
+          {
+            element: <PortalLayout portal="customer" />,
+            children: customerRoutes,
+          },
+        ],
       },
       {
         path: "/vendor",
-        element: <PortalLayout portal="vendor" />,
-        children: vendorRoutes,
+        element: <RequireAuth allowedRoles={["vendor", "admin"]} />,
+        children: [
+          {
+            element: <PortalLayout portal="vendor" />,
+            children: vendorRoutes,
+          },
+        ],
       },
     ],
   },
 ]);
-

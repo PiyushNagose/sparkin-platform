@@ -1,5 +1,7 @@
-import { Link as RouterLink } from "react-router-dom";
+import { useState } from "react";
+import { Link as RouterLink, useNavigate } from "react-router-dom";
 import {
+  Alert,
   Box,
   Button,
   Container,
@@ -16,6 +18,7 @@ import HeadsetMicRoundedIcon from "@mui/icons-material/HeadsetMicRounded";
 import ScheduleRoundedIcon from "@mui/icons-material/ScheduleRounded";
 import ShieldOutlinedIcon from "@mui/icons-material/ShieldOutlined";
 import TaskAltRoundedIcon from "@mui/icons-material/TaskAltRounded";
+import { serviceRequestsApi } from "@/features/public/api/serviceRequestsApi";
 import serviceNetworkPlaceholder from "@/shared/assets/images/public/support/service-network-placeholder.png";
 import styles from "@/features/public/pages/CalculatorPage.module.css";
 import {
@@ -25,6 +28,7 @@ import {
 
 const requestTypes = [
   {
+    value: "maintenance",
     title: "Maintenance",
     text: "Scheduled cleaning and check-ups",
     tone: "#EEF4FF",
@@ -32,6 +36,7 @@ const requestTypes = [
     icon: <ConstructionRoundedIcon sx={{ fontSize: "0.95rem" }} />,
   },
   {
+    value: "repair",
     title: "Repair",
     text: "Fixing specific component failures",
     tone: "#EEF4FF",
@@ -40,6 +45,7 @@ const requestTypes = [
     active: true,
   },
   {
+    value: "warranty",
     title: "Warranty",
     text: "In-warranty replacement or service",
     tone: "#F3F6FB",
@@ -106,6 +112,34 @@ const fieldStyles = {
 };
 
 export default function CreateServiceRequestPage() {
+  const navigate = useNavigate();
+  const [form, setForm] = useState({
+    type: "repair",
+    description: "",
+    preferredDate: "",
+    preferredTime: "",
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState("");
+
+  function updateField(field, value) {
+    setForm((current) => ({ ...current, [field]: value }));
+  }
+
+  async function handleSubmit() {
+    setIsSubmitting(true);
+    setError("");
+
+    try {
+      const request = await serviceRequestsApi.createRequest(form);
+      navigate(`/service-support/request/submitted?requestId=${request.id}`, { replace: true });
+    } catch (apiError) {
+      setError(apiError?.response?.data?.message || "Could not submit service request.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
   return (
     <Box className={styles.pageShell}>
       <Box
@@ -182,17 +216,19 @@ export default function CreateServiceRequestPage() {
                         {requestTypes.map((item) => (
                           <Grid key={item.title} size={{ xs: 12, sm: 4 }}>
                             <Box
+                              onClick={() => updateField("type", item.value)}
                               sx={{
                                 p: 1.2,
                                 minHeight: 88,
                                 borderRadius: "1rem",
-                                bgcolor: item.active ? "white" : "#F5F7FB",
-                                border: item.active
+                                bgcolor: form.type === item.value ? "white" : "#F5F7FB",
+                                border: form.type === item.value
                                   ? "2px solid #0E56C8"
                                   : "1px solid #E8EDF5",
-                                boxShadow: item.active
+                                boxShadow: form.type === item.value
                                   ? "0 10px 22px rgba(14,86,200,0.08)"
                                   : "none",
+                                cursor: "pointer",
                               }}
                             >
                               <Stack spacing={0.7}>
@@ -239,6 +275,8 @@ export default function CreateServiceRequestPage() {
                         Section 2: Problem Description
                       </SectionLabel>
                       <TextField
+                        value={form.description}
+                        onChange={(event) => updateField("description", event.target.value)}
                         multiline
                         minRows={4}
                         placeholder="Describe your issue..."
@@ -310,6 +348,8 @@ export default function CreateServiceRequestPage() {
                       <Grid container spacing={1.2}>
                         <Grid size={{ xs: 12, sm: 6 }}>
                           <TextField
+                            value={form.preferredDate}
+                            onChange={(event) => updateField("preferredDate", event.target.value)}
                             placeholder="mm/dd/yyyy"
                             InputProps={{
                               startAdornment: (
@@ -327,6 +367,8 @@ export default function CreateServiceRequestPage() {
                         </Grid>
                         <Grid size={{ xs: 12, sm: 6 }}>
                           <TextField
+                            value={form.preferredTime}
+                            onChange={(event) => updateField("preferredTime", event.target.value)}
                             placeholder="--:-- --"
                             InputProps={{
                               startAdornment: (
@@ -413,11 +455,17 @@ export default function CreateServiceRequestPage() {
                       </Box>
                     </Stack>
 
+                    {error ? (
+                      <Alert severity="error" sx={{ borderRadius: "0.9rem" }}>
+                        {error}
+                      </Alert>
+                    ) : null}
+
                     <Stack direction={{ xs: "column", sm: "row" }} spacing={1.2} sx={{ pt: 0.45 }}>
                       <Button
                         variant="contained"
-                        component={RouterLink}
-                        to="/service-support/request/submitted"
+                        onClick={handleSubmit}
+                        disabled={isSubmitting}
                         sx={{
                           width: { xs: "100%", sm: "auto" },
                           minWidth: 132,
@@ -431,7 +479,7 @@ export default function CreateServiceRequestPage() {
                           boxShadow: "0 14px 24px rgba(14,86,200,0.18)",
                         }}
                       >
-                        Submit Request
+                        {isSubmitting ? "Submitting..." : "Submit Request"}
                       </Button>
                       <Button
                         component={RouterLink}

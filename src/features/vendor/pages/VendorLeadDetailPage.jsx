@@ -1,4 +1,4 @@
-import { Box, Button, Stack, Typography } from "@mui/material";
+import { Alert, Box, Button, CircularProgress, Stack, Typography } from "@mui/material";
 import PlaceOutlinedIcon from "@mui/icons-material/PlaceOutlined";
 import AccessTimeRoundedIcon from "@mui/icons-material/AccessTimeRounded";
 import PhoneOutlinedIcon from "@mui/icons-material/PhoneOutlined";
@@ -12,52 +12,9 @@ import WbSunnyOutlinedIcon from "@mui/icons-material/WbSunnyOutlined";
 import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
 import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
 import OpenInNewRoundedIcon from "@mui/icons-material/OpenInNewRounded";
-import { Link as RouterLink } from "react-router-dom";
-
-const specCards = [
-  {
-    icon: BoltRoundedIcon,
-    label: "System Size",
-    value: "5.5 kW",
-    tone: "#2F73FF",
-    bg: "#EEF4FF",
-  },
-  {
-    icon: CurrencyRupeeRoundedIcon,
-    label: "Budget Range",
-    value: "\u20B93,20,000",
-    tone: "#239654",
-    bg: "#EAF7EF",
-  },
-  {
-    icon: CottageOutlinedIcon,
-    label: "Property Type",
-    value: "Independent House",
-    tone: "#8C9400",
-    bg: "#F7F6D7",
-  },
-  {
-    icon: StraightenRoundedIcon,
-    label: "Roof Size",
-    value: "1,200 sq ft",
-    tone: "#4F89FF",
-    bg: "#EEF4FF",
-  },
-  {
-    icon: WbSunnyOutlinedIcon,
-    label: "Shadow Availability",
-    value: "No Shadow",
-    tone: "#2A9656",
-    bg: "#EAF7EF",
-  },
-  {
-    icon: CalendarMonthOutlinedIcon,
-    label: "Installation Timeline",
-    value: "Immediate",
-    tone: "#2F73FF",
-    bg: "#EEF4FF",
-  },
-];
+import { Link as RouterLink, useParams } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { leadsApi } from "@/features/public/api/leadsApi";
 
 const verificationRows = [
   { label: "Ownership Status", value: "Owned", tone: "#2A9656", bg: "#E8F7EC" },
@@ -65,7 +22,151 @@ const verificationRows = [
   { label: "Location Accuracy", value: "High (98%)" },
 ];
 
+const labels = {
+  independent_house: "Independent House",
+  apartment: "Apartment",
+  commercial: "Commercial",
+  under_500: "< 500 sq ft",
+  "500_1000": "500-1000 sq ft",
+  over_1000: "1000+ sq ft",
+  none: "No Shadow",
+  partial: "Partial Shadow",
+  heavy: "Heavy Shadow",
+  owned: "Owned",
+  rented: "Rented",
+};
+
+function getInitials(name) {
+  return name
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("");
+}
+
+function formatTimeReceived(value) {
+  const createdAt = new Date(value);
+
+  if (Number.isNaN(createdAt.getTime())) {
+    return "Recently";
+  }
+
+  const diffHours = Math.max(0, Math.floor((Date.now() - createdAt.getTime()) / (1000 * 60 * 60)));
+
+  if (diffHours < 1) return "Just now";
+  if (diffHours < 24) return `${diffHours} hour${diffHours === 1 ? "" : "s"} ago`;
+
+  const diffDays = Math.floor(diffHours / 24);
+  return `${diffDays} day${diffDays === 1 ? "" : "s"} ago`;
+}
+
 export default function VendorLeadDetailPage() {
+  const { leadId } = useParams();
+  const [lead, setLead] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadLead() {
+      if (!leadId || leadId === "undefined") {
+        setError("Invalid lead id. Please open the lead from the leads page.");
+        setIsLoading(false);
+        return;
+      }
+
+      setIsLoading(true);
+      setError("");
+
+      try {
+        const result = await leadsApi.getLead(leadId);
+        if (active) setLead(result);
+      } catch (apiError) {
+        if (active) setError(apiError?.response?.data?.message || "Could not load lead details.");
+      } finally {
+        if (active) setIsLoading(false);
+      }
+    }
+
+    loadLead();
+
+    return () => {
+      active = false;
+    };
+  }, [leadId]);
+
+  const specCards = useMemo(() => {
+    if (!lead) return [];
+
+    return [
+      {
+        icon: BoltRoundedIcon,
+        label: "Sanctioned Load",
+        value: lead.property?.sanctionedLoadKw ? `${lead.property.sanctionedLoadKw} kW` : "Assessment pending",
+        tone: "#2F73FF",
+        bg: "#EEF4FF",
+      },
+      {
+        icon: CurrencyRupeeRoundedIcon,
+        label: "Budget Range",
+        value: "Pending quote",
+        tone: "#239654",
+        bg: "#EAF7EF",
+      },
+      {
+        icon: CottageOutlinedIcon,
+        label: "Property Type",
+        value: labels[lead.property?.type] || "Property",
+        tone: "#8C9400",
+        bg: "#F7F6D7",
+      },
+      {
+        icon: StraightenRoundedIcon,
+        label: "Roof Size",
+        value: labels[lead.roof?.sizeRange] || "Assessment pending",
+        tone: "#4F89FF",
+        bg: "#EEF4FF",
+      },
+      {
+        icon: WbSunnyOutlinedIcon,
+        label: "Shadow Availability",
+        value: labels[lead.roof?.shadow] || "Assessment pending",
+        tone: "#2A9656",
+        bg: "#EAF7EF",
+      },
+      {
+        icon: CalendarMonthOutlinedIcon,
+        label: "Inspection Slot",
+        value: lead.inspection?.preferredTimeSlot || "Flexible",
+        tone: "#2F73FF",
+        bg: "#EEF4FF",
+      },
+    ];
+  }, [lead]);
+
+  if (isLoading) {
+    return (
+      <Box sx={{ py: 8, display: "grid", placeItems: "center" }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error) {
+    return <Alert severity="error">{error}</Alert>;
+  }
+
+  if (!lead) {
+    return <Alert severity="info">Lead not found.</Alert>;
+  }
+
+  const customerName = lead.contact?.fullName || "Customer";
+  const location = [lead.installationAddress?.city, lead.installationAddress?.state].filter(Boolean).join(", ");
+  const initials = getInitials(customerName) || "CU";
+  const resolvedLeadId = lead.id || lead._id || leadId;
+
   return (
     <Box sx={{ width: "100%" }}>
       <Box
@@ -98,7 +199,7 @@ export default function VendorLeadDetailPage() {
                 flexShrink: 0,
               }}
             >
-              AK
+              {initials}
             </Box>
 
             <Box>
@@ -116,7 +217,7 @@ export default function VendorLeadDetailPage() {
                     letterSpacing: "-0.04em",
                   }}
                 >
-                  Amit Kulkarni
+                  {customerName}
                 </Typography>
                 <Box
                   sx={{
@@ -139,13 +240,13 @@ export default function VendorLeadDetailPage() {
                 <Stack direction="row" spacing={0.45} alignItems="center">
                   <PlaceOutlinedIcon sx={{ color: "#7D8797", fontSize: "0.95rem" }} />
                   <Typography sx={{ color: "#5E6A7D", fontSize: "0.88rem" }}>
-                    Pune, Maharashtra
+                    {location || "Location pending"}
                   </Typography>
                 </Stack>
                 <Stack direction="row" spacing={0.45} alignItems="center">
                   <AccessTimeRoundedIcon sx={{ color: "#7D8797", fontSize: "0.95rem" }} />
                   <Typography sx={{ color: "#5E6A7D", fontSize: "0.88rem" }}>
-                    2 hours ago
+                    {formatTimeReceived(lead.createdAt)}
                   </Typography>
                 </Stack>
               </Stack>
@@ -414,8 +515,7 @@ export default function VendorLeadDetailPage() {
             maxWidth: 560,
           }}
         >
-          Looking for high-efficiency bifacial panels to maximize yield on a
-          south-facing roof.
+          {lead.notes || lead.specialInstructions || "No special customer notes were added for this request."}
         </Typography>
         <Typography
           sx={{
@@ -461,10 +561,10 @@ export default function VendorLeadDetailPage() {
             </Typography>
             <Stack direction="row" spacing={0.6} alignItems="baseline" sx={{ mt: 0.35 }}>
               <Typography sx={{ color: "#118A44", fontSize: "1.8rem", fontWeight: 800 }}>
-                \u20B93.2 Lakhs
+                Pending
               </Typography>
               <Typography sx={{ color: "#5E6A7D", fontSize: "0.82rem" }}>
-                Project Revenue
+                Quote Value
               </Typography>
             </Stack>
           </Box>
@@ -488,7 +588,7 @@ export default function VendorLeadDetailPage() {
             </Button>
             <Button
               component={RouterLink}
-              to="/vendor/leads/ak/quote"
+              to={`/vendor/leads/${resolvedLeadId}/quote`}
               variant="contained"
               sx={{
                 minHeight: 40,

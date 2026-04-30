@@ -1,7 +1,10 @@
-import { Box, Button, Stack, Typography } from "@mui/material";
+import { Alert, Box, Button, CircularProgress, Stack, Typography } from "@mui/material";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
 import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
+import { useEffect, useMemo, useState } from "react";
+import { Link as RouterLink } from "react-router-dom";
+import { leadsApi, quotesApi } from "@/features/public/api/leadsApi";
 
 const tabs = [
   { label: "Active", count: 4, active: true },
@@ -54,6 +57,36 @@ const tenders = [
     timeTone: "#223146",
   },
 ];
+
+function formatPrice(value) {
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(value);
+}
+
+function toTenderCard(lead, quotes) {
+  const leadQuotes = quotes.filter((quote) => String(quote.leadId) === String(lead.id));
+  const bestPrice = leadQuotes.length
+    ? Math.min(...leadQuotes.map((quote) => Number(quote.pricing.totalPrice)))
+    : null;
+  const live = lead.status === "open_for_quotes";
+
+  return {
+    id: lead.id,
+    title: `${lead.property?.sanctionedLoadKw || "Solar"} kW Rooftop Solar System`,
+    meta: `${lead.installationAddress.city}, ${lead.installationAddress.state} - ${lead.contact.fullName}`,
+    bids: String(leadQuotes.length),
+    bestPrice: bestPrice ? formatPrice(bestPrice) : "Waiting",
+    timeRemaining: live ? "Live" : lead.status.replaceAll("_", " "),
+    status: live ? "Bidding Live" : lead.status === "quote_selected" ? "Vendor Selected" : "Request Active",
+    statusTone: live ? "#239654" : "#4F89FF",
+    statusBg: live ? "#E8FAEF" : "#EEF4FF",
+    timeTone: live ? "#223146" : "#4F89FF",
+    to: leadQuotes.length > 0 ? "/quotes/compare" : "/tenders/live",
+  };
+}
 
 function TenderSunBadge() {
   return (
@@ -117,6 +150,50 @@ function TenderMetric({ label, value, valueTone = "#223146" }) {
 }
 
 export default function CustomerTendersPage() {
+  const [leads, setLeads] = useState([]);
+  const [quotes, setQuotes] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadTenders() {
+      setIsLoading(true);
+      setError("");
+
+      try {
+        const [leadResult, quoteResult] = await Promise.all([
+          leadsApi.listLeads(),
+          quotesApi.listQuotes(),
+        ]);
+
+        if (active) {
+          setLeads(leadResult);
+          setQuotes(quoteResult);
+        }
+      } catch (apiError) {
+        if (active) setError(apiError?.response?.data?.message || "Could not load tenders.");
+      } finally {
+        if (active) setIsLoading(false);
+      }
+    }
+
+    loadTenders();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const tenderCards = useMemo(() => leads.map((lead) => toTenderCard(lead, quotes)), [leads, quotes]);
+  const activeCount = leads.filter((lead) => lead.status !== "closed").length;
+  const closedCount = leads.filter((lead) => lead.status === "closed").length;
+  const tabItems = [
+    { label: "Active", count: activeCount, active: true },
+    { label: "Closed", count: closedCount, active: false },
+  ];
+
   return (
     <Box sx={{ width: "100%" }}>
       <Stack
@@ -151,6 +228,8 @@ export default function CustomerTendersPage() {
 
         <Button
           variant="contained"
+          component={RouterLink}
+          to="/booking"
           startIcon={<AddRoundedIcon />}
           sx={{
             minHeight: 38,
@@ -169,7 +248,7 @@ export default function CustomerTendersPage() {
       </Stack>
 
       <Stack direction="row" spacing={2.9} sx={{ mt: 2.05, pb: 0.55 }}>
-        {tabs.map((tab) => (
+        {tabItems.map((tab) => (
           <Box
             key={tab.label}
             sx={{
@@ -211,9 +290,27 @@ export default function CustomerTendersPage() {
           gap: 1.55,
         }}
       >
-        {tenders.map((item) => (
+        {isLoading ? (
+          <Box sx={{ py: 5, display: "grid", placeItems: "center" }}>
+            <CircularProgress />
+          </Box>
+        ) : null}
+
+        {!isLoading && error ? (
+          <Alert severity="error" sx={{ borderRadius: "0.9rem" }}>
+            {error}
+          </Alert>
+        ) : null}
+
+        {!isLoading && !error && tenderCards.length === 0 ? (
+          <Alert severity="info" sx={{ borderRadius: "0.9rem" }}>
+            No tenders yet. Create a booking to broadcast your requirement to vendors.
+          </Alert>
+        ) : null}
+
+        {tenderCards.map((item) => (
           <Box
-            key={item.title}
+            key={item.id}
             sx={{
               p: 1.5,
               borderRadius: "1.35rem",
@@ -288,6 +385,8 @@ export default function CustomerTendersPage() {
             </Box>
 
             <Button
+              component={RouterLink}
+              to={item.to}
               fullWidth
               endIcon={<ArrowForwardRoundedIcon sx={{ fontSize: "0.95rem" }} />}
               sx={{

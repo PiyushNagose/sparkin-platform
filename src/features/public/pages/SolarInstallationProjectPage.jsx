@@ -1,7 +1,9 @@
 import {
+  Alert,
   Box,
   Button,
   Container,
+  CircularProgress,
   Grid,
   Stack,
   Typography,
@@ -15,6 +17,9 @@ import ShareRoundedIcon from "@mui/icons-material/ShareRounded";
 import ShieldOutlinedIcon from "@mui/icons-material/ShieldOutlined";
 import SolarPowerRoundedIcon from "@mui/icons-material/SolarPowerRounded";
 import TaskAltRoundedIcon from "@mui/icons-material/TaskAltRounded";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import { projectsApi } from "@/features/public/api/projectsApi";
 import styles from "@/features/public/pages/CalculatorPage.module.css";
 import {
   publicPageSpacing,
@@ -81,6 +86,46 @@ const documents = [
   { icon: <ShieldOutlinedIcon sx={{ fontSize: "1rem" }} />, label: "Warranty Certificate" },
 ];
 
+function formatPrice(value) {
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(value);
+}
+
+function formatAddress(address) {
+  if (!address) {
+    return "Location pending";
+  }
+
+  return [address.city, address.state].filter(Boolean).join(", ");
+}
+
+function getVendorName(project) {
+  return project?.vendorEmail ? project.vendorEmail.split("@")[0] : "Assigned Vendor";
+}
+
+function buildJourneySteps(project) {
+  const milestones = project?.milestones ?? [];
+
+  if (milestones.length === 0) {
+    return journeySteps;
+  }
+
+  return milestones.map((milestone) => ({
+    title: milestone.title,
+    status:
+      milestone.status === "completed"
+        ? "Completed"
+        : milestone.status === "in_progress"
+          ? "In Progress"
+          : "Pending",
+    active: milestone.status === "in_progress",
+    done: milestone.status === "completed",
+  }));
+}
+
 function CardShell({ children, sx = {} }) {
   return (
     <Box
@@ -99,6 +144,70 @@ function CardShell({ children, sx = {} }) {
 }
 
 export default function SolarInstallationProjectPage() {
+  const [searchParams] = useSearchParams();
+  const [project, setProject] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadProject() {
+      setIsLoading(true);
+      setError("");
+
+      try {
+        const projectId = searchParams.get("projectId");
+        const result = projectId
+          ? await projectsApi.getProject(projectId)
+          : (await projectsApi.listProjects())[0] ?? null;
+
+        if (active) setProject(result);
+      } catch (apiError) {
+        if (active) setError(apiError?.response?.data?.message || "Could not load project.");
+      } finally {
+        if (active) setIsLoading(false);
+      }
+    }
+
+    loadProject();
+
+    return () => {
+      active = false;
+    };
+  }, [searchParams]);
+
+  const vendorName = getVendorName(project);
+  const dynamicJourneySteps = useMemo(() => buildJourneySteps(project), [project]);
+  const activeStep = dynamicJourneySteps.find((step) => step.active) ?? dynamicJourneySteps[0];
+  const completedSteps = dynamicJourneySteps.filter((step) => step.done).length;
+  const progressPercent = Math.max(12, Math.round((completedSteps / dynamicJourneySteps.length) * 100));
+  const dynamicProjectMeta = useMemo(
+    () => [
+      {
+        label: "Vendor",
+        value: vendorName,
+        icon: <HomeWorkOutlinedIcon sx={{ fontSize: "0.95rem" }} />,
+      },
+      {
+        label: "System Size",
+        value: project ? `${project.system.sizeKw}kW ${project.system.panelType}` : "-",
+        icon: <SolarPowerRoundedIcon sx={{ fontSize: "0.95rem" }} />,
+      },
+      {
+        label: "Project Cost",
+        value: project ? formatPrice(project.pricing.totalPrice) : "-",
+        icon: <BoltRoundedIcon sx={{ fontSize: "0.95rem" }} />,
+      },
+      {
+        label: "Location",
+        value: formatAddress(project?.installationAddress),
+        icon: <TaskAltRoundedIcon sx={{ fontSize: "0.95rem" }} />,
+      },
+    ],
+    [project, vendorName],
+  );
+
   return (
     <Box className={styles.pageShell}>
       <Box
@@ -183,6 +292,25 @@ export default function SolarInstallationProjectPage() {
               </Stack>
             </Stack>
 
+            {isLoading ? (
+              <Box sx={{ py: 5, display: "grid", placeItems: "center" }}>
+                <CircularProgress />
+              </Box>
+            ) : null}
+
+            {!isLoading && error ? (
+              <Alert severity="error" sx={{ borderRadius: "0.9rem" }}>
+                {error}
+              </Alert>
+            ) : null}
+
+            {!isLoading && !error && !project ? (
+              <Alert severity="info" sx={{ borderRadius: "0.9rem" }}>
+                No installation project is active yet. Please select a vendor quote first.
+              </Alert>
+            ) : null}
+
+            {!isLoading && !error && project ? (
             <Grid container spacing={{ xs: 2.2, md: 2.4 }}>
               <Grid size={{ xs: 12, md: 8 }}>
                 <Stack spacing={{ xs: 2.2, md: 2.4 }}>
@@ -203,7 +331,7 @@ export default function SolarInstallationProjectPage() {
                             fontWeight: 800,
                           }}
                         >
-                          Phase 2 of 4
+                          Phase {Math.min(completedSteps + 1, dynamicJourneySteps.length)} of {dynamicJourneySteps.length}
                         </Box>
                       </Stack>
 
@@ -222,7 +350,7 @@ export default function SolarInstallationProjectPage() {
                           sx={{
                             position: "absolute",
                             left: 18,
-                            width: "43%",
+                            width: `${progressPercent}%`,
                             top: 20,
                             height: 2,
                             bgcolor: "#0E56C8",
@@ -234,7 +362,7 @@ export default function SolarInstallationProjectPage() {
                           columns={{ xs: 2, sm: 4 }}
                           rowSpacing={{ xs: 1.5, sm: 0 }}
                         >
-                          {journeySteps.map((step) => (
+                          {dynamicJourneySteps.map((step) => (
                             <Grid key={step.title} size={{ xs: 1, sm: 1 }}>
                               <Stack alignItems="center" spacing={0.7}>
                                 <Box
@@ -283,7 +411,7 @@ export default function SolarInstallationProjectPage() {
 
                   <CardShell sx={{ py: { xs: 1.7, md: 1.8 } }}>
                     <Grid container spacing={{ xs: 1.4, md: 1.8 }}>
-                      {projectMeta.map((item) => (
+                      {dynamicProjectMeta.map((item) => (
                         <Grid key={item.label} size={{ xs: 6, md: 3 }}>
                           <Stack spacing={0.52}>
                             <Typography
@@ -421,10 +549,12 @@ export default function SolarInstallationProjectPage() {
                       </Stack>
                       <Box>
                         <Typography sx={{ fontSize: "1.55rem", fontWeight: 800, lineHeight: 1.12 }}>
-                          Installing Now
+                          {activeStep?.title ?? "Project Started"}
                         </Typography>
                         <Typography sx={{ color: "rgba(255,255,255,0.78)", fontSize: "0.8rem", lineHeight: 1.65, mt: 0.7 }}>
-                          Mounting structure is being secured. Wiring and inverter placement will follow this afternoon.
+                          {project.status === "site_audit_pending"
+                            ? "Your selected vendor will coordinate the site audit and confirm the installation plan."
+                            : "Your project is moving through the installation workflow."}
                         </Typography>
                       </Box>
                       <Stack direction="row" spacing={0.8} alignItems="center">
@@ -522,6 +652,7 @@ export default function SolarInstallationProjectPage() {
                 </Stack>
               </Grid>
             </Grid>
+            ) : null}
           </Stack>
         </Container>
       </Box>

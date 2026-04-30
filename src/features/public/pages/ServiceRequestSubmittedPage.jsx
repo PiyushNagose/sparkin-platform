@@ -1,4 +1,5 @@
-import { Link as RouterLink } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link as RouterLink, useSearchParams } from "react-router-dom";
 import { Box, Button, Container, Stack, Typography } from "@mui/material";
 import AssignmentTurnedInOutlinedIcon from "@mui/icons-material/AssignmentTurnedInOutlined";
 import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
@@ -10,6 +11,7 @@ import {
   publicPageSpacing,
   publicTypography,
 } from "@/features/public/pages/publicPageStyles";
+import { serviceRequestsApi } from "@/features/public/api/serviceRequestsApi";
 
 const requestFacts = [
   ["Request Type", "Maintenance"],
@@ -62,6 +64,37 @@ function FactCard({ label, value, valueColor }) {
 }
 
 export default function ServiceRequestSubmittedPage() {
+  const [searchParams] = useSearchParams();
+  const requestId = searchParams.get("requestId");
+  const [request, setRequest] = useState(null);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadRequest() {
+      if (!requestId) return;
+
+      try {
+        const result = await serviceRequestsApi.getRequest(requestId);
+        if (active) setRequest(result);
+      } catch {
+        if (active) setRequest(null);
+      }
+    }
+
+    loadRequest();
+
+    return () => {
+      active = false;
+    };
+  }, [requestId]);
+
+  const requestFacts = [
+    ["Request Type", request?.type?.replaceAll("_", " ") || "Service"],
+    ["Date", request?.createdAt ? new Date(request.createdAt).toLocaleDateString("en-IN") : "Today"],
+    ["Reference ID", request?.ticketNumber ? `#${request.ticketNumber}` : "#Pending", "#0E56C8"],
+  ];
+
   return (
     <Box className={styles.pageShell}>
       <Box
@@ -252,7 +285,7 @@ export default function ServiceRequestSubmittedPage() {
                   <Button
                     variant="contained"
                     component={RouterLink}
-                    to="/service-support/track"
+                    to={requestId ? `/service-support/track?requestId=${requestId}` : "/service-support/track"}
                     startIcon={<AssignmentTurnedInOutlinedIcon sx={{ fontSize: "1rem" }} />}
                     sx={{
                       width: { xs: "100%", sm: "auto" },

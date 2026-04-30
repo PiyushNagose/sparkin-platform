@@ -110,10 +110,16 @@ export function PublicLayout() {
                   py: 0.25,
                   borderRadius: "0.35rem",
                   background:
-                    "linear-gradient(90deg, #0E56C8 0%, #13C784 100%)",
+                    "linear-gradient(180deg, #1A66E8 0%, #0E56C8 100%)",
                   fontSize: "0.8rem",
                   fontWeight: 700,
                   textTransform: "none",
+                  boxShadow: "0 10px 22px rgba(14,86,200,0.18)",
+                  "&:hover": {
+                    background:
+                      "linear-gradient(180deg, #2C76F0 0%, #145FCF 100%)",
+                    boxShadow: "0 16px 30px rgba(14,86,200,0.22)",
+                  },
                 }}
               >
                 Get a Quote

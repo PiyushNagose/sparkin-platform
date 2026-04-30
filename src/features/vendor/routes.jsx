@@ -6,6 +6,7 @@ import VendorQuoteProposalPage from "@/features/vendor/pages/VendorQuoteProposal
 import VendorQuotesPage from "@/features/vendor/pages/VendorQuotesPage";
 import VendorProjectsPage from "@/features/vendor/pages/VendorProjectsPage";
 import VendorProjectDetailPage from "@/features/vendor/pages/VendorProjectDetailPage";
+import VendorServiceRequestsPage from "@/features/vendor/pages/VendorServiceRequestsPage";
 import VendorPaymentsPage from "@/features/vendor/pages/VendorPaymentsPage";
 import VendorTransactionsPage from "@/features/vendor/pages/VendorTransactionsPage";
 import VendorInvoiceDetailPage from "@/features/vendor/pages/VendorInvoiceDetailPage";
@@ -34,7 +35,7 @@ export const vendorRoutes = [
   },
   {
     path: "quotes/new",
-    element: <VendorQuoteProposalPage />,
+    element: <VendorLeadsPage />,
   },
   {
     path: "leads/:leadId/quote",
@@ -47,6 +48,10 @@ export const vendorRoutes = [
   {
     path: "projects/:projectId",
     element: <VendorProjectDetailPage />,
+  },
+  {
+    path: "services",
+    element: <VendorServiceRequestsPage />,
   },
   {
     path: "payments",

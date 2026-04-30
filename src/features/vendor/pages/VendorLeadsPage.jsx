@@ -1,4 +1,4 @@
-import { Avatar, Box, Button, Stack, Typography } from "@mui/material";
+import { Alert, Avatar, Box, Button, CircularProgress, Stack, Typography } from "@mui/material";
 import KeyboardArrowDownRoundedIcon from "@mui/icons-material/KeyboardArrowDownRounded";
 import FileDownloadOutlinedIcon from "@mui/icons-material/FileDownloadOutlined";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
@@ -6,67 +6,13 @@ import TuneRoundedIcon from "@mui/icons-material/TuneRounded";
 import KeyboardArrowLeftRoundedIcon from "@mui/icons-material/KeyboardArrowLeftRounded";
 import KeyboardArrowRightRoundedIcon from "@mui/icons-material/KeyboardArrowRightRounded";
 import { Link as RouterLink } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { leadsApi } from "@/features/public/api/leadsApi";
 
 const filters = [
   { label: "Status", value: "All Statuses" },
   { label: "Location", value: "Maharashtra" },
   { label: "System", value: "Any Size" },
-];
-
-const leads = [
-  {
-    initials: "AK",
-    name: "Amit Kulkarni",
-    location: "Pune, Maharashtra",
-    systemSize: "5.5 kW",
-    budget: "\u20B93,20,000",
-    status: "New",
-    statusTone: "#4F89FF",
-    statusBg: "#EEF4FF",
-    timeReceived: "2 hours ago",
-    primaryAction: "Submit Quote",
-    detailAction: "View Details",
-  },
-  {
-    initials: "SP",
-    name: "Sunita Patil",
-    location: "Mumbai, Maharashtra",
-    systemSize: "3.0 kW",
-    budget: "\u20B91,85,000",
-    status: "In Review",
-    statusTone: "#7D7B00",
-    statusBg: "#F2F08E",
-    timeReceived: "5 hours ago",
-    primaryAction: "Submit Quote",
-    detailAction: "View Details",
-  },
-  {
-    initials: "RM",
-    name: "Rahul Mehta",
-    location: "Bangalore, Karnataka",
-    systemSize: "10.0 kW",
-    budget: "\u20B97,50,000",
-    status: "Quoted",
-    statusTone: "#239654",
-    statusBg: "#E4F7EA",
-    timeReceived: "Yesterday",
-    primaryAction: "Update Quote",
-    detailAction: "View Details",
-  },
-  {
-    initials: "OD",
-    name: "Oitesh Deshmukh",
-    location: "Nashik, Maharashtra",
-    systemSize: "4.2 kW",
-    budget: "\u20B92,40,000",
-    status: "Won",
-    statusTone: "#7D8798",
-    statusBg: "#EDF1F5",
-    timeReceived: "2 days ago",
-    primaryAction: "Won",
-    detailAction: "View Project",
-    actionDisabled: true,
-  },
 ];
 
 const columns = [
@@ -112,7 +58,127 @@ function FilterChip({ label, value }) {
   );
 }
 
+function getInitials(name) {
+  return name
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("");
+}
+
+function formatLeadStatus(status) {
+  const labels = {
+    submitted: "New",
+    reviewing: "In Review",
+    open_for_quotes: "Open",
+    quote_selected: "Selected",
+    closed: "Closed",
+  };
+
+  return labels[status] || status;
+}
+
+function getStatusStyle(status) {
+  if (status === "reviewing") {
+    return { statusTone: "#7D7B00", statusBg: "#F2F08E" };
+  }
+
+  if (status === "open_for_quotes") {
+    return { statusTone: "#239654", statusBg: "#E4F7EA" };
+  }
+
+  if (status === "closed" || status === "quote_selected") {
+    return { statusTone: "#7D8798", statusBg: "#EDF1F5" };
+  }
+
+  return { statusTone: "#4F89FF", statusBg: "#EEF4FF" };
+}
+
+function formatTimeReceived(value) {
+  const createdAt = new Date(value);
+
+  if (Number.isNaN(createdAt.getTime())) {
+    return "Recently";
+  }
+
+  const diffMs = Date.now() - createdAt.getTime();
+  const diffHours = Math.max(0, Math.floor(diffMs / (1000 * 60 * 60)));
+
+  if (diffHours < 1) {
+    return "Just now";
+  }
+
+  if (diffHours < 24) {
+    return `${diffHours} hour${diffHours === 1 ? "" : "s"} ago`;
+  }
+
+  const diffDays = Math.floor(diffHours / 24);
+  return `${diffDays} day${diffDays === 1 ? "" : "s"} ago`;
+}
+
+function toLeadRow(lead) {
+  const { statusTone, statusBg } = getStatusStyle(lead.status);
+  const name = lead.contact?.fullName || "Customer";
+  const load = lead.property?.sanctionedLoadKw;
+  const id = lead.id || lead._id;
+
+  return {
+    id,
+    initials: getInitials(name) || "CU",
+    name,
+    location: [lead.installationAddress?.city, lead.installationAddress?.state].filter(Boolean).join(", "),
+    systemSize: load ? `${load} kW` : "Assessment pending",
+    budget: "Pending quote",
+    status: formatLeadStatus(lead.status),
+    statusTone,
+    statusBg,
+    timeReceived: formatTimeReceived(lead.createdAt),
+    primaryAction: "Submit Quote",
+    detailAction: "View Details",
+    quotePath: id ? `/vendor/leads/${id}/quote` : "/vendor/leads",
+    detailPath: id ? `/vendor/leads/${id}` : "/vendor/leads",
+  };
+}
+
 export default function VendorLeadsPage() {
+  const [leads, setLeads] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadLeads() {
+      setIsLoading(true);
+      setError("");
+
+      try {
+        const result = await leadsApi.listLeads();
+
+        if (active) {
+          setLeads(result);
+        }
+      } catch (apiError) {
+        if (active) {
+          setError(apiError?.response?.data?.message || "Could not load leads.");
+        }
+      } finally {
+        if (active) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    loadLeads();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const leadRows = useMemo(() => leads.map(toLeadRow), [leads]);
+
   return (
     <Box sx={{ width: "100%" }}>
       <Stack
@@ -251,9 +317,32 @@ export default function VendorLeadsPage() {
         </Box>
 
         <Stack spacing={0} sx={{ px: { xs: 1.2, md: 2.4 }, pb: 1.25 }}>
-          {leads.map((lead, index) => (
+          {isLoading ? (
+            <Box sx={{ py: 5, display: "grid", placeItems: "center" }}>
+              <CircularProgress size={28} />
+            </Box>
+          ) : null}
+
+          {error ? (
+            <Alert severity="error" sx={{ my: 2, borderRadius: "0.9rem" }}>
+              {error}
+            </Alert>
+          ) : null}
+
+          {!isLoading && !error && leadRows.length === 0 ? (
+            <Box sx={{ py: 5, textAlign: "center" }}>
+              <Typography sx={{ color: "#223146", fontSize: "0.95rem", fontWeight: 700 }}>
+                No leads available yet
+              </Typography>
+              <Typography sx={{ mt: 0.45, color: "#738094", fontSize: "0.78rem" }}>
+                New customer booking requests will appear here.
+              </Typography>
+            </Box>
+          ) : null}
+
+          {leadRows.map((lead, index) => (
             <Box
-              key={lead.name}
+              key={lead.id || `${lead.name}-${index}`}
               sx={{
                 borderTop: index === 0 ? "none" : "1px solid rgba(234,239,245,0.95)",
                 py: { xs: 1.45, md: 1.6 },
@@ -312,7 +401,7 @@ export default function VendorLeadsPage() {
                   <Typography sx={{ color: "#0E56C8", fontSize: "0.73rem", fontWeight: 700 }}>
                     <Box
                       component={RouterLink}
-                      to={`/vendor/leads/${lead.initials.toLowerCase()}`}
+                      to={lead.detailPath}
                       sx={{ color: "inherit", textDecoration: "none" }}
                     >
                       {lead.detailAction}
@@ -320,7 +409,7 @@ export default function VendorLeadsPage() {
                   </Typography>
                   <Button
                     component={lead.actionDisabled ? "button" : RouterLink}
-                    to={lead.actionDisabled ? undefined : `/vendor/leads/${lead.initials.toLowerCase()}`}
+                    to={lead.actionDisabled ? undefined : lead.quotePath}
                     variant={lead.actionDisabled ? "outlined" : "contained"}
                     disabled={lead.actionDisabled}
                     sx={{
@@ -401,7 +490,7 @@ export default function VendorLeadsPage() {
                   <Stack direction="row" spacing={1} flexWrap="wrap">
                     <Button
                       component={RouterLink}
-                      to={`/vendor/leads/${lead.initials.toLowerCase()}`}
+                      to={lead.detailPath}
                       variant="text"
                       sx={{
                         px: 0,
@@ -416,7 +505,7 @@ export default function VendorLeadsPage() {
                     </Button>
                     <Button
                       component={lead.actionDisabled ? "button" : RouterLink}
-                      to={lead.actionDisabled ? undefined : `/vendor/leads/${lead.initials.toLowerCase()}`}
+                      to={lead.actionDisabled ? undefined : lead.quotePath}
                       variant={lead.actionDisabled ? "outlined" : "contained"}
                       disabled={lead.actionDisabled}
                       sx={{
@@ -453,12 +542,11 @@ export default function VendorLeadsPage() {
           }}
         >
           <Typography sx={{ color: "#738094", fontSize: "0.74rem", fontWeight: 500 }}>
-            Showing 1-4 of 128 leads
+            Showing {leadRows.length} lead{leadRows.length === 1 ? "" : "s"}
           </Typography>
 
           <Stack direction="row" spacing={0.55} alignItems="center">
             <Button
-              minWidth={32}
               sx={{
                 minWidth: 32,
                 width: 32,
@@ -489,7 +577,6 @@ export default function VendorLeadsPage() {
               </Button>
             ))}
             <Button
-              minWidth={32}
               sx={{
                 minWidth: 32,
                 width: 32,

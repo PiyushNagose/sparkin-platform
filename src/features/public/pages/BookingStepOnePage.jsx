@@ -20,6 +20,7 @@ import {
   publicPageSpacing,
   publicTypography,
 } from "@/features/public/pages/publicPageStyles";
+import { useBookingDraft } from "@/features/public/booking/BookingDraftProvider";
 
 const stepItems = [
   { label: "Step 1", status: "In Progress", active: true },
@@ -56,9 +57,12 @@ function SectionLabel({ icon, title }) {
 function InputField({
   label,
   placeholder,
+  value,
+  onChange,
   optional = false,
   multiline = false,
   minRows = 1,
+  type = "text",
 }) {
   return (
     <Box>
@@ -91,6 +95,9 @@ function InputField({
       </Stack>
       <TextField
         fullWidth
+        type={type}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
         multiline={multiline}
         minRows={minRows}
@@ -108,6 +115,20 @@ function InputField({
 }
 
 export default function BookingStepOnePage() {
+  const { draft, updateDraft, updateField } = useBookingDraft();
+
+  function updateContact(values) {
+    updateDraft("contact", values);
+  }
+
+  function updateAddress(values) {
+    updateDraft("installationAddress", values);
+  }
+
+  function updateInspection(values) {
+    updateDraft("inspection", values);
+  }
+
   return (
     <Box className={styles.pageShell}>
       <Box
@@ -278,14 +299,24 @@ export default function BookingStepOnePage() {
                     title="Personal Details"
                   />
                   <Stack spacing={2.1}>
-                    <InputField label="Full name" placeholder="John Doe" />
+                    <InputField
+                      label="Full name"
+                      placeholder="John Doe"
+                      value={draft.contact.fullName}
+                      onChange={(fullName) => updateContact({ fullName })}
+                    />
                     <InputField
                       label="Phone number"
                       placeholder="+1 (555) 000-0000"
+                      value={draft.contact.phoneNumber}
+                      onChange={(phoneNumber) => updateContact({ phoneNumber })}
                     />
                     <InputField
                       label="Email"
                       placeholder="name@example.com"
+                      type="email"
+                      value={draft.contact.email}
+                      onChange={(email) => updateContact({ email })}
                       optional
                     />
                   </Stack>
@@ -300,21 +331,40 @@ export default function BookingStepOnePage() {
                     <InputField
                       label="Street Address / House No."
                       placeholder="e.g. 123 Solar Street"
+                      value={draft.installationAddress.street}
+                      onChange={(street) => updateAddress({ street })}
                     />
                     <InputField
                       label="Landmark"
                       placeholder="e.g. Near Central Park"
+                      value={draft.installationAddress.landmark}
+                      onChange={(landmark) => updateAddress({ landmark })}
                       optional
                     />
                     <Grid container spacing={1.5}>
                       <Grid size={{ xs: 12, sm: 6 }}>
-                        <InputField label="City" placeholder="City" />
+                        <InputField
+                          label="City"
+                          placeholder="City"
+                          value={draft.installationAddress.city}
+                          onChange={(city) => updateAddress({ city })}
+                        />
                       </Grid>
                       <Grid size={{ xs: 12, sm: 6 }}>
-                        <InputField label="State" placeholder="State" />
+                        <InputField
+                          label="State"
+                          placeholder="State"
+                          value={draft.installationAddress.state}
+                          onChange={(state) => updateAddress({ state })}
+                        />
                       </Grid>
                     </Grid>
-                    <InputField label="Pincode" placeholder="000000" />
+                    <InputField
+                      label="Pincode"
+                      placeholder="000000"
+                      value={draft.installationAddress.pincode}
+                      onChange={(pincode) => updateAddress({ pincode })}
+                    />
                   </Stack>
                 </Grid>
               </Grid>
@@ -335,6 +385,9 @@ export default function BookingStepOnePage() {
                     <InputField
                       label="Preferred Date"
                       placeholder="mm/dd/yyyy"
+                      type="date"
+                      value={draft.inspection.preferredDate}
+                      onChange={(preferredDate) => updateInspection({ preferredDate })}
                     />
                     <Box>
                       <Typography
@@ -353,12 +406,26 @@ export default function BookingStepOnePage() {
                             <Button
                               fullWidth
                               variant="outlined"
+                              onClick={() =>
+                                updateInspection({
+                                  preferredTimeSlot: slot.title.toLowerCase(),
+                                })
+                              }
                               sx={{
                                 minHeight: 50,
                                 borderRadius: "0.9rem",
-                                borderColor: "#E5EAF0",
-                                bgcolor: "#F7F9FC",
-                                color: "#1D293B",
+                                borderColor:
+                                  draft.inspection.preferredTimeSlot === slot.title.toLowerCase()
+                                    ? "#0E56C8"
+                                    : "#E5EAF0",
+                                bgcolor:
+                                  draft.inspection.preferredTimeSlot === slot.title.toLowerCase()
+                                    ? "#F3F6FF"
+                                    : "#F7F9FC",
+                                color:
+                                  draft.inspection.preferredTimeSlot === slot.title.toLowerCase()
+                                    ? "#0E56C8"
+                                    : "#1D293B",
                                 display: "flex",
                                 flexDirection: "column",
                                 gap: 0.2,
@@ -395,6 +462,8 @@ export default function BookingStepOnePage() {
                   <InputField
                     label="Special Instructions"
                     placeholder="Any specific instructions (e.g., gate code, pets)"
+                    value={draft.specialInstructions}
+                    onChange={(specialInstructions) => updateField("specialInstructions", specialInstructions)}
                     multiline
                     minRows={5}
                   />

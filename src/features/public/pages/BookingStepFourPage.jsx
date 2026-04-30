@@ -3,6 +3,7 @@ import {
   Button,
   Container,
   Grid,
+  Alert,
   Stack,
   TextField,
   Typography,
@@ -21,13 +22,16 @@ import LightbulbOutlinedIcon from "@mui/icons-material/LightbulbOutlined";
 import SecurityRoundedIcon from "@mui/icons-material/SecurityRounded";
 import BlockRoundedIcon from "@mui/icons-material/BlockRounded";
 import VerifiedRoundedIcon from "@mui/icons-material/VerifiedRounded";
-import { Link as RouterLink } from "react-router-dom";
+import { Link as RouterLink, useNavigate } from "react-router-dom";
+import { useState } from "react";
 import uploadSummaryPlaceholder from "@/shared/assets/images/public/booking/upload-summary-placeholder.png";
 import styles from "@/features/public/pages/CalculatorPage.module.css";
 import {
   publicPageSpacing,
   publicTypography,
 } from "@/features/public/pages/publicPageStyles";
+import { useBookingDraft } from "@/features/public/booking/BookingDraftProvider";
+import { leadsApi } from "@/features/public/api/leadsApi";
 
 const steps = [
   { label: "Step 1", state: "complete" },
@@ -313,6 +317,58 @@ function UploadZone({ icon, title, description, buttonLabel, helper, compact = f
 }
 
 export default function BookingStepFourPage() {
+  const navigate = useNavigate();
+  const { draft, updateField, resetDraft } = useBookingDraft();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState("");
+
+  function buildLeadPayload() {
+    return {
+      ...draft,
+      contact: {
+        ...draft.contact,
+        email: draft.contact.email.trim() || null,
+      },
+      installationAddress: {
+        ...draft.installationAddress,
+        landmark: draft.installationAddress.landmark.trim() || null,
+      },
+      inspection: {
+        preferredDate: draft.inspection.preferredDate || null,
+        preferredTimeSlot: draft.inspection.preferredTimeSlot || null,
+      },
+      property: {
+        ...draft.property,
+        distributionCompany: draft.property.distributionCompany || null,
+        consumerNumber: draft.property.consumerNumber.trim() || null,
+        sanctionedLoadKw: draft.property.sanctionedLoadKw
+          ? Number(draft.property.sanctionedLoadKw)
+          : null,
+      },
+      notes: draft.notes.trim() || null,
+      specialInstructions: draft.specialInstructions.trim() || null,
+    };
+  }
+
+  function getErrorMessage(apiError) {
+    return apiError?.response?.data?.message || apiError?.message || "Could not submit your request. Please check the details and try again.";
+  }
+
+  async function handleSubmit() {
+    setError("");
+    setIsSubmitting(true);
+
+    try {
+      const lead = await leadsApi.createLead(buildLeadPayload());
+      resetDraft();
+      navigate("/booking/submitted", { replace: true, state: { leadId: lead.id } });
+    } catch (apiError) {
+      setError(getErrorMessage(apiError));
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
   return (
     <Box className={styles.pageShell}>
       <Box
@@ -346,6 +402,12 @@ export default function BookingStepFourPage() {
               }}
             >
               <Stack spacing={{ xs: 3, md: 3.5 }}>
+                {error ? (
+                  <Alert severity="error" sx={{ borderRadius: "0.9rem", fontSize: "0.82rem" }}>
+                    {error}
+                  </Alert>
+                ) : null}
+
                 <Box sx={{ width: "100%", maxWidth: 540, mx: "auto" }}>
                   <BookingStepper />
                 </Box>
@@ -455,6 +517,8 @@ export default function BookingStepFourPage() {
                     fullWidth
                     multiline
                     minRows={3}
+                    value={draft.notes}
+                    onChange={(event) => updateField("notes", event.target.value)}
                     placeholder="Any specific requirements or questions? (e.g. 'Considering an EV charger soon')"
                     InputProps={{
                       sx: {
@@ -745,8 +809,8 @@ export default function BookingStepFourPage() {
                     </Button>
 
                     <Button
-                      component={RouterLink}
-                      to="/booking/submitted"
+                      onClick={handleSubmit}
+                      disabled={isSubmitting}
                       endIcon={<ArrowForwardRoundedIcon />}
                       variant="contained"
                       sx={{
@@ -762,7 +826,7 @@ export default function BookingStepFourPage() {
                         boxShadow: "0 12px 24px rgba(14,86,200,0.24)",
                       }}
                     >
-                      Submit Request
+                      {isSubmitting ? "Submitting..." : "Submit Request"}
                     </Button>
                   </Stack>
                 </Stack>

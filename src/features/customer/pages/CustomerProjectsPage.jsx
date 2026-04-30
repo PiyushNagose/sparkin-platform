@@ -1,4 +1,4 @@
-import { Box, Button, Stack, Typography } from "@mui/material";
+import { Alert, Box, Button, CircularProgress, Stack, Typography } from "@mui/material";
 import HomeWorkOutlinedIcon from "@mui/icons-material/HomeWorkOutlined";
 import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
 import HandymanOutlinedIcon from "@mui/icons-material/HandymanOutlined";
@@ -8,6 +8,9 @@ import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import SupportAgentRoundedIcon from "@mui/icons-material/SupportAgentRounded";
 import RedeemRoundedIcon from "@mui/icons-material/RedeemRounded";
+import { useEffect, useMemo, useState } from "react";
+import { Link as RouterLink } from "react-router-dom";
+import { projectsApi } from "@/features/public/api/projectsApi";
 
 const projects = [
   {
@@ -47,6 +50,62 @@ const projects = [
     ],
   },
 ];
+
+function formatDate(value) {
+  if (!value) {
+    return "Pending";
+  }
+
+  return new Intl.DateTimeFormat("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(value));
+}
+
+function getInitials(value) {
+  return (value || "VN").slice(0, 2).toUpperCase();
+}
+
+function toProjectStep(milestone) {
+  const active = milestone.status === "in_progress";
+  const completed = milestone.status === "completed";
+
+  return {
+    label: milestone.title,
+    meta: completed ? formatDate(milestone.completedAt) : active ? "In Progress" : "Pending",
+    state: completed ? "completed" : active ? "active" : "upcoming",
+    icon: completed
+      ? "check"
+      : milestone.key === "site_visit"
+        ? "calendar"
+        : milestone.key === "installation"
+          ? "install"
+          : milestone.key === "inspection"
+            ? "inspect"
+            : "power",
+  };
+}
+
+function toProjectCard(project) {
+  const active = project.status !== "completed" && project.status !== "cancelled";
+  const vendorName = project.vendorEmail ? project.vendorEmail.split("@")[0] : "Assigned Vendor";
+
+  return {
+    status: active ? "Active" : "Completed",
+    statusTone: active ? "#6C7300" : "#239654",
+    statusBg: active ? "#E7F318" : "#E8FAEF",
+    id: project.id,
+    title: `${project.installationAddress.city}, ${project.installationAddress.state}`,
+    subtitle: `${project.system.sizeKw}kW ${project.system.panelType} Solar System`,
+    vendorInitials: getInitials(vendorName),
+    vendorName,
+    action: "Track Project",
+    actionPrimary: true,
+    to: `/project/installation?projectId=${project.id}`,
+    steps: project.milestones.map(toProjectStep),
+  };
+}
 
 function StepIcon({ step }) {
   const isActive = step.state === "active";
@@ -277,6 +336,8 @@ function ProjectCard({ item }) {
 
         <Box sx={{ display: "flex", justifyContent: { xs: "stretch", xl: "flex-end" } }}>
           <Button
+            component={RouterLink}
+            to={item.to}
             variant={item.actionPrimary ? "contained" : "outlined"}
             endIcon={item.actionPrimary ? <ArrowForwardRoundedIcon sx={{ fontSize: "0.95rem" }} /> : <EditOutlinedIcon sx={{ fontSize: "0.92rem" }} />}
             sx={{
@@ -379,6 +440,36 @@ function PromoCard({ title, description, buttonLabel, tone = "blue", icon }) {
 }
 
 export default function CustomerProjectsPage() {
+  const [projectRecords, setProjectRecords] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadProjects() {
+      setIsLoading(true);
+      setError("");
+
+      try {
+        const result = await projectsApi.listProjects();
+        if (active) setProjectRecords(result);
+      } catch (apiError) {
+        if (active) setError(apiError?.response?.data?.message || "Could not load projects.");
+      } finally {
+        if (active) setIsLoading(false);
+      }
+    }
+
+    loadProjects();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const projectCards = useMemo(() => projectRecords.map(toProjectCard), [projectRecords]);
+
   return (
     <Box sx={{ width: "100%" }}>
       <Box>
@@ -406,7 +497,25 @@ export default function CustomerProjectsPage() {
       </Box>
 
       <Stack spacing={1.6} sx={{ mt: 1.85 }}>
-        {projects.map((item) => (
+        {isLoading ? (
+          <Box sx={{ py: 5, display: "grid", placeItems: "center" }}>
+            <CircularProgress />
+          </Box>
+        ) : null}
+
+        {!isLoading && error ? (
+          <Alert severity="error" sx={{ borderRadius: "0.9rem" }}>
+            {error}
+          </Alert>
+        ) : null}
+
+        {!isLoading && !error && projectCards.length === 0 ? (
+          <Alert severity="info" sx={{ borderRadius: "0.9rem" }}>
+            No active projects yet. Select a vendor quote to create your installation project.
+          </Alert>
+        ) : null}
+
+        {projectCards.map((item) => (
           <ProjectCard key={item.id} item={item} />
         ))}
       </Stack>

@@ -10,8 +10,7 @@ import ImageSearchRoundedIcon from "@mui/icons-material/ImageSearchRounded";
 import LocalOfferOutlinedIcon from "@mui/icons-material/LocalOfferOutlined";
 import CompareArrowsRoundedIcon from "@mui/icons-material/CompareArrowsRounded";
 import RadioButtonUncheckedRoundedIcon from "@mui/icons-material/RadioButtonUncheckedRounded";
-import { useEffect } from "react";
-import { Link as RouterLink, useNavigate } from "react-router-dom";
+import { Link as RouterLink } from "react-router-dom";
 import styles from "@/features/public/pages/CalculatorPage.module.css";
 import {
   publicPageSpacing,
@@ -81,16 +80,6 @@ function NextStepItem({ icon, title, description }) {
 }
 
 export default function BookingSubmittedPage() {
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      navigate("/tenders/live");
-    }, 3000);
-
-    return () => window.clearTimeout(timer);
-  }, [navigate]);
-
   return (
     <Box className={styles.pageShell}>
       <Box
@@ -232,7 +221,7 @@ export default function BookingSubmittedPage() {
                       textTransform: "uppercase",
                     }}
                   >
-                    Redirecting you in 3 seconds...
+                    Your request is waiting for vendor quotes.
                   </Typography>
                 </Stack>
               </Stack>

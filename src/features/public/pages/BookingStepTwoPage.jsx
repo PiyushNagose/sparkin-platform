@@ -21,6 +21,7 @@ import {
   publicPageSpacing,
   publicTypography,
 } from "@/features/public/pages/publicPageStyles";
+import { useBookingDraft } from "@/features/public/booking/BookingDraftProvider";
 
 const steps = [
   { label: "Step 1", state: "complete" },
@@ -32,29 +33,29 @@ const steps = [
 const propertyTypes = [
   {
     title: "Independent House",
+    value: "independent_house",
     icon: <HomeRoundedIcon sx={{ fontSize: "1.1rem" }} />,
-    selected: true,
   },
   {
     title: "Apartment",
+    value: "apartment",
     icon: <ApartmentRoundedIcon sx={{ fontSize: "1.05rem" }} />,
-    selected: false,
   },
   {
     title: "Commercial",
+    value: "commercial",
     icon: <BusinessRoundedIcon sx={{ fontSize: "1.05rem" }} />,
-    selected: false,
   },
 ];
 
 const roofTypes = [
-  { title: "Flat", selected: true },
-  { title: "Sloped", selected: false },
+  { title: "Flat", value: "flat" },
+  { title: "Sloped", value: "sloped" },
 ];
 
 const ownershipTypes = [
-  { title: "Owned", selected: true },
-  { title: "Rented", selected: false },
+  { title: "Owned", value: "owned" },
+  { title: "Rented", value: "rented" },
 ];
 
 function BookingStepper() {
@@ -165,9 +166,12 @@ function BookingStepper() {
   );
 }
 
-function OptionCard({ icon, title, selected = false }) {
+function OptionCard({ icon, title, selected = false, onClick }) {
   return (
     <Box
+      role="button"
+      tabIndex={0}
+      onClick={onClick}
       sx={{
         position: "relative",
         minHeight: 108,
@@ -182,6 +186,7 @@ function OptionCard({ icon, title, selected = false }) {
         alignItems: "center",
         justifyContent: "center",
         textAlign: "center",
+        cursor: "pointer",
       }}
     >
       {selected ? (
@@ -223,7 +228,7 @@ function OptionCard({ icon, title, selected = false }) {
   );
 }
 
-function SegmentedChoice({ items }) {
+function SegmentedChoice({ items, value, onChange }) {
   return (
     <Box
       sx={{
@@ -238,18 +243,22 @@ function SegmentedChoice({ items }) {
       {items.map((item) => (
         <Box
           key={item.title}
+          role="button"
+          tabIndex={0}
+          onClick={() => onChange(item.value)}
           sx={{
             minHeight: 38,
             borderRadius: "0.72rem",
-            bgcolor: item.selected ? "white" : "transparent",
-            border: item.selected
+            bgcolor: item.value === value ? "white" : "transparent",
+            border: item.value === value
               ? "1px solid #E8EDF5"
               : "1px solid transparent",
-            color: item.selected ? "#0E56C8" : "#2D3A4C",
+            color: item.value === value ? "#0E56C8" : "#2D3A4C",
             fontWeight: 700,
             fontSize: "0.76rem",
             display: "grid",
             placeItems: "center",
+            cursor: "pointer",
           }}
         >
           {item.title}
@@ -277,6 +286,12 @@ function FieldLabel({ children }) {
 }
 
 export default function BookingStepTwoPage() {
+  const { draft, updateDraft } = useBookingDraft();
+
+  function updateProperty(values) {
+    updateDraft("property", values);
+  }
+
   return (
     <Box className={styles.pageShell}>
       <Box
@@ -343,7 +358,11 @@ export default function BookingStepTwoPage() {
                   <Grid container spacing={1.2}>
                     {propertyTypes.map((item) => (
                       <Grid key={item.title} size={{ xs: 12, sm: 4 }}>
-                        <OptionCard {...item} />
+                        <OptionCard
+                          {...item}
+                          selected={draft.property.type === item.value}
+                          onClick={() => updateProperty({ type: item.value })}
+                        />
                       </Grid>
                     ))}
                   </Grid>
@@ -353,12 +372,20 @@ export default function BookingStepTwoPage() {
                   <Stack spacing={2.2}>
                     <Box>
                       <FieldLabel>Roof Type</FieldLabel>
-                      <SegmentedChoice items={roofTypes} />
+                      <SegmentedChoice
+                        items={roofTypes}
+                        value={draft.property.roofType}
+                        onChange={(roofType) => updateProperty({ roofType })}
+                      />
                     </Box>
 
                     <Box>
                       <FieldLabel>Ownership Status</FieldLabel>
-                      <SegmentedChoice items={ownershipTypes} />
+                      <SegmentedChoice
+                        items={ownershipTypes}
+                        value={draft.property.ownership}
+                        onChange={(ownership) => updateProperty({ ownership })}
+                      />
                     </Box>
                   </Stack>
                 </Grid>
@@ -388,7 +415,10 @@ export default function BookingStepTwoPage() {
                     <TextField
                       select
                       fullWidth
-                      defaultValue=""
+                      value={draft.property.distributionCompany}
+                      onChange={(event) =>
+                        updateProperty({ distributionCompany: event.target.value })
+                      }
                       SelectProps={{
                         displayEmpty: true,
                         IconComponent: KeyboardArrowDownRoundedIcon,
@@ -412,7 +442,10 @@ export default function BookingStepTwoPage() {
                     <TextField
                       select
                       fullWidth
-                      defaultValue=""
+                      value={draft.property.connectionType}
+                      onChange={(event) =>
+                        updateProperty({ connectionType: event.target.value })
+                      }
                       SelectProps={{
                         displayEmpty: true,
                         IconComponent: KeyboardArrowDownRoundedIcon,
@@ -426,8 +459,8 @@ export default function BookingStepTwoPage() {
                       }}
                     >
                       <MenuItem value="">Select Type</MenuItem>
-                      <MenuItem value="single">Single Phase</MenuItem>
-                      <MenuItem value="three">Three Phase</MenuItem>
+                      <MenuItem value="single_phase">Single Phase</MenuItem>
+                      <MenuItem value="three_phase">Three Phase</MenuItem>
                     </TextField>
                   </Grid>
 
@@ -436,6 +469,10 @@ export default function BookingStepTwoPage() {
                     <TextField
                       fullWidth
                       placeholder="e.g. 1029384756"
+                      value={draft.property.consumerNumber}
+                      onChange={(event) =>
+                        updateProperty({ consumerNumber: event.target.value })
+                      }
                       InputProps={{
                         sx: {
                           borderRadius: "0.95rem",
@@ -451,6 +488,10 @@ export default function BookingStepTwoPage() {
                     <TextField
                       fullWidth
                       placeholder="e.g. 5"
+                      value={draft.property.sanctionedLoadKw}
+                      onChange={(event) =>
+                        updateProperty({ sanctionedLoadKw: event.target.value })
+                      }
                       InputProps={{
                         sx: {
                           borderRadius: "0.95rem",

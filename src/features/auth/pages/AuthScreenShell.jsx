@@ -1,13 +1,14 @@
 import * as React from "react";
-import { Box, Button, Checkbox, Divider, Stack, TextField, Typography } from "@mui/material";
-import { Link as RouterLink, useNavigate } from "react-router-dom";
+import { Alert, Box, Button, Checkbox, Divider, Stack, TextField, Typography } from "@mui/material";
+import { Link as RouterLink, useLocation, useNavigate } from "react-router-dom";
 import AlternateEmailRoundedIcon from "@mui/icons-material/AlternateEmailRounded";
 import BoltRoundedIcon from "@mui/icons-material/BoltRounded";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import PersonOutlineRoundedIcon from "@mui/icons-material/PersonOutlineRounded";
 import VisibilityOffOutlinedIcon from "@mui/icons-material/VisibilityOffOutlined";
+import { useAuth } from "@/features/auth/AuthProvider";
 
-const accountTypes = ["user", "vendor"];
+const accountTypes = ["customer", "vendor"];
 
 const fieldSx = {
   "& .MuiOutlinedInput-root": {
@@ -50,6 +51,7 @@ function AccountToggle({ value, onChange }) {
         return (
           <Button
             key={type}
+            type="button"
             onClick={() => onChange(type)}
             sx={{
               minHeight: 42,
@@ -65,7 +67,7 @@ function AccountToggle({ value, onChange }) {
               },
             }}
           >
-            {type === "user" ? "User" : "Vendor"}
+            {type === "customer" ? "User" : "Vendor"}
           </Button>
         );
       })}
@@ -77,6 +79,7 @@ function SocialButton({ children }) {
   return (
     <Button
       fullWidth
+      type="button"
       sx={{
         minHeight: 50,
         borderRadius: "0.9rem",
@@ -106,7 +109,14 @@ export function AuthScreenShell({
   heroBackground,
 }) {
   const navigate = useNavigate();
-  const [accountType, setAccountType] = React.useState("user");
+  const location = useLocation();
+  const { login, register, getRoleHome } = useAuth();
+  const [accountType, setAccountType] = React.useState("customer");
+  const [fullName, setFullName] = React.useState("");
+  const [email, setEmail] = React.useState("");
+  const [password, setPassword] = React.useState("");
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [error, setError] = React.useState("");
   const isSignup = mode === "signup";
 
   const heroOverlay =
@@ -123,13 +133,54 @@ export function AuthScreenShell({
           "radial-gradient(circle at 64% 82%, rgba(178,220,255,0.16) 0%, rgba(178,220,255,0) 38%)",
         ].join(", ");
 
-  function handlePrimaryAction() {
-    if (accountType === "vendor") {
-      navigate("/vendor");
-      return;
+  function getRedirectPath(user) {
+    const fromPath = location.state?.from?.pathname;
+
+    const isAuthPath = fromPath === "/auth/login" || fromPath === "/auth/signup";
+    const isVendorPath = fromPath?.startsWith("/vendor");
+    const canUseFromPath =
+      fromPath &&
+      !isAuthPath &&
+      ((user.role === "vendor" && isVendorPath) ||
+        (user.role === "customer" && !isVendorPath) ||
+        user.role === "admin");
+
+    if (canUseFromPath) {
+      return fromPath;
     }
 
-    navigate("/");
+    return getRoleHome(user.role);
+  }
+
+  function getErrorMessage(apiError) {
+    return apiError?.response?.data?.message || apiError?.message || "Something went wrong. Please try again.";
+  }
+
+  async function handleSubmit(event) {
+    event.preventDefault();
+    setError("");
+    setIsSubmitting(true);
+
+    try {
+      const normalizedEmail = email.trim().toLowerCase();
+      const user = isSignup
+        ? await register({
+            fullName: fullName.trim(),
+            email: normalizedEmail,
+            password,
+            role: accountType,
+          })
+        : await login({
+            email: normalizedEmail,
+            password,
+          });
+
+      navigate(getRedirectPath(user), { replace: true });
+    } catch (apiError) {
+      setError(getErrorMessage(apiError));
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -258,7 +309,7 @@ export function AuthScreenShell({
           overflow: "hidden",
         }}
       >
-        <Box sx={{ width: "100%", maxWidth: 430 }}>
+        <Box component="form" onSubmit={handleSubmit} sx={{ width: "100%", maxWidth: 430 }}>
           <Typography
             variant="h1"
             sx={{
@@ -276,6 +327,12 @@ export function AuthScreenShell({
           </Typography>
 
           <Stack spacing={1.55} sx={{ mt: 3.1 }}>
+            {error ? (
+              <Alert severity="error" sx={{ borderRadius: "0.9rem", fontSize: "0.82rem" }}>
+                {error}
+              </Alert>
+            ) : null}
+
             <Box>
               <Typography sx={{ mb: 0.7, color: "#344054", fontSize: "0.82rem", fontWeight: 700 }}>
                 Account Type
@@ -290,6 +347,9 @@ export function AuthScreenShell({
                 </Typography>
                 <TextField
                   fullWidth
+                  required
+                  value={fullName}
+                  onChange={(event) => setFullName(event.target.value)}
                   placeholder="John Doe"
                   sx={fieldSx}
                   InputProps={{
@@ -305,6 +365,10 @@ export function AuthScreenShell({
               </Typography>
               <TextField
                 fullWidth
+                required
+                type="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
                 placeholder={isSignup ? "hello@example.com" : "name@company.com"}
                 sx={fieldSx}
                 InputProps={{
@@ -336,6 +400,10 @@ export function AuthScreenShell({
 
               <TextField
                 fullWidth
+                required
+                type="password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
                 placeholder="........"
                 sx={fieldSx}
                 InputProps={{
@@ -362,7 +430,8 @@ export function AuthScreenShell({
 
             <Button
               variant="contained"
-              onClick={handlePrimaryAction}
+              type="submit"
+              disabled={isSubmitting}
               sx={{
                 mt: 0.4,
                 minHeight: 54,
@@ -374,7 +443,7 @@ export function AuthScreenShell({
                 boxShadow: "0 18px 28px rgba(14,86,200,0.18)",
               }}
             >
-              {isSignup ? "Create Account ->" : "Login"}
+              {isSubmitting ? "Please wait..." : isSignup ? "Create Account ->" : "Login"}
             </Button>
 
             <Typography sx={{ textAlign: "center", color: "#667084", fontSize: "0.94rem", pt: 0.5 }}>

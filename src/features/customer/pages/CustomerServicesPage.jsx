@@ -1,4 +1,4 @@
-import { Box, Button, Stack, Typography } from "@mui/material";
+import { Alert, Box, Button, CircularProgress, Stack, Typography } from "@mui/material";
 import HandymanOutlinedIcon from "@mui/icons-material/HandymanOutlined";
 import CleaningServicesOutlinedIcon from "@mui/icons-material/CleaningServicesOutlined";
 import SupportAgentRoundedIcon from "@mui/icons-material/SupportAgentRounded";
@@ -7,6 +7,9 @@ import ScheduleOutlinedIcon from "@mui/icons-material/ScheduleOutlined";
 import ReceiptLongOutlinedIcon from "@mui/icons-material/ReceiptLongOutlined";
 import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
 import LocalFloristOutlinedIcon from "@mui/icons-material/LocalFloristOutlined";
+import { useEffect, useMemo, useState } from "react";
+import { Link as RouterLink } from "react-router-dom";
+import { serviceRequestsApi } from "@/features/public/api/serviceRequestsApi";
 import customerServicesGuidePlaceholder from "@/shared/assets/images/customer/services/customer-services-guide-placeholder.png";
 
 const tabs = [
@@ -61,6 +64,59 @@ const services = [
     date: "Nov 05, 2023",
   },
 ];
+
+function formatDate(value) {
+  return new Intl.DateTimeFormat("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(value));
+}
+
+function getStatusMeta(status) {
+  if (status === "resolved") {
+    return { label: "Resolved", bg: "#E8FAEF", tone: "#239654" };
+  }
+
+  if (status === "technician_assigned" || status === "under_review") {
+    return { label: "In Progress", bg: "#E7F318", tone: "#6C7300" };
+  }
+
+  return { label: "Pending", bg: "#F2F5F8", tone: "#677487" };
+}
+
+function getTypeIcon(type) {
+  if (type === "maintenance") {
+    return <HandymanOutlinedIcon sx={{ fontSize: "1rem" }} />;
+  }
+
+  if (type === "warranty") {
+    return <SupportAgentRoundedIcon sx={{ fontSize: "1rem" }} />;
+  }
+
+  return <CleaningServicesOutlinedIcon sx={{ fontSize: "1rem" }} />;
+}
+
+function toServiceCard(request) {
+  const status = getStatusMeta(request.status);
+
+  return {
+    id: request.id,
+    icon: getTypeIcon(request.type),
+    iconBg: "#EEF4FF",
+    iconTone: "#0E56C8",
+    status: status.label,
+    statusBg: status.bg,
+    statusTone: status.tone,
+    ticket: `Ticket ID: #${request.ticketNumber}`,
+    title: request.type.replaceAll("_", " "),
+    description: request.description,
+    progressIcon: <ManageSearchRoundedIcon sx={{ fontSize: "0.95rem" }} />,
+    progressLabel: `Status: ${request.status.replaceAll("_", " ")}`,
+    date: formatDate(request.createdAt),
+    to: `/service-support/track?requestId=${request.id}`,
+  };
+}
 
 function ServiceCard({ item }) {
   return (
@@ -174,6 +230,8 @@ function ServiceCard({ item }) {
           {item.date}
         </Typography>
         <Button
+          component={RouterLink}
+          to={item.to}
           endIcon={<ArrowForwardRoundedIcon sx={{ fontSize: "0.95rem" }} />}
           sx={{
             minHeight: 28,
@@ -193,6 +251,36 @@ function ServiceCard({ item }) {
 }
 
 export default function CustomerServicesPage() {
+  const [requests, setRequests] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadRequests() {
+      setIsLoading(true);
+      setError("");
+
+      try {
+        const result = await serviceRequestsApi.listRequests();
+        if (active) setRequests(result);
+      } catch (apiError) {
+        if (active) setError(apiError?.response?.data?.message || "Could not load service requests.");
+      } finally {
+        if (active) setIsLoading(false);
+      }
+    }
+
+    loadRequests();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const serviceCards = useMemo(() => requests.map(toServiceCard), [requests]);
+
   return (
     <Box sx={{ width: "100%" }}>
       <Stack
@@ -272,13 +360,33 @@ export default function CustomerServicesPage() {
           gap: 1.5,
         }}
       >
-        {services.map((item) => (
-          <ServiceCard key={item.ticket} item={item} />
+        {isLoading ? (
+          <Box sx={{ py: 5, display: "grid", placeItems: "center" }}>
+            <CircularProgress />
+          </Box>
+        ) : null}
+
+        {!isLoading && error ? (
+          <Alert severity="error" sx={{ borderRadius: "0.9rem" }}>
+            {error}
+          </Alert>
+        ) : null}
+
+        {!isLoading && !error && serviceCards.length === 0 ? (
+          <Alert severity="info" sx={{ borderRadius: "0.9rem" }}>
+            No service requests yet. Raise a request when you need maintenance or support.
+          </Alert>
+        ) : null}
+
+        {serviceCards.map((item) => (
+          <ServiceCard key={item.id} item={item} />
         ))}
       </Box>
 
       <Button
         variant="contained"
+        component={RouterLink}
+        to="/service-support/request"
         endIcon={<ArrowForwardRoundedIcon sx={{ fontSize: "0.95rem" }} />}
         sx={{
           mt: 1.8,

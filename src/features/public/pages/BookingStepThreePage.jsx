@@ -20,6 +20,7 @@ import {
   publicPageSpacing,
   publicTypography,
 } from "@/features/public/pages/publicPageStyles";
+import { useBookingDraft } from "@/features/public/booking/BookingDraftProvider";
 
 const steps = [
   { label: "Step 1", state: "complete" },
@@ -29,33 +30,36 @@ const steps = [
 ];
 
 const roofSizes = [
-  { title: "< 500 sq ft", subtitle: "Compact roof space", selected: false },
-  { title: "500-1000 sq ft", subtitle: "Standard residential", selected: true },
-  { title: "1000+ sq ft", subtitle: "Expansive area", selected: false },
+  { title: "< 500 sq ft", subtitle: "Compact roof space", value: "under_500" },
+  { title: "500-1000 sq ft", subtitle: "Standard residential", value: "500_1000" },
+  { title: "1000+ sq ft", subtitle: "Expansive area", value: "over_1000" },
 ];
 
 const shadowItems = [
   {
     title: "No Shadow",
+    value: "none",
     icon: <WbSunnyOutlinedIcon sx={{ fontSize: "1.15rem" }} />,
     tone: "#A38C00",
   },
   {
     title: "Partial Shadow",
+    value: "partial",
     icon: <WbTwilightRoundedIcon sx={{ fontSize: "1.1rem" }} />,
     tone: "#6E788A",
   },
   {
     title: "Heavy Shadow",
+    value: "heavy",
     icon: <CloudQueueRoundedIcon sx={{ fontSize: "1.15rem" }} />,
     tone: "#475367",
   },
 ];
 
 const roofConditions = [
-  { title: "Excellent", selected: false },
-  { title: "Average", selected: true },
-  { title: "Needs Repair", selected: false },
+  { title: "Excellent", value: "excellent" },
+  { title: "Average", value: "average" },
+  { title: "Needs Repair", value: "needs_repair" },
 ];
 
 function BookingStepper() {
@@ -170,9 +174,12 @@ function BookingStepper() {
   );
 }
 
-function SelectCard({ title, subtitle, selected = false }) {
+function SelectCard({ title, subtitle, selected = false, onClick }) {
   return (
     <Box
+      role="button"
+      tabIndex={0}
+      onClick={onClick}
       sx={{
         minHeight: 84,
         borderRadius: "0.95rem",
@@ -184,6 +191,7 @@ function SelectCard({ title, subtitle, selected = false }) {
         display: "flex",
         flexDirection: "column",
         justifyContent: "center",
+        cursor: "pointer",
       }}
     >
       <Typography
@@ -209,21 +217,25 @@ function SelectCard({ title, subtitle, selected = false }) {
   );
 }
 
-function ShadowCard({ title, icon, tone }) {
+function ShadowCard({ title, icon, tone, selected = false, onClick }) {
   return (
     <Box
+      role="button"
+      tabIndex={0}
+      onClick={onClick}
       sx={{
         minHeight: 86,
         borderRadius: "0.95rem",
         px: 1.8,
         py: 1.35,
-        bgcolor: "#F5F7FB",
-        border: "1px solid #EEF2F7",
+        bgcolor: selected ? "#F3F6FF" : "#F5F7FB",
+        border: selected ? "2px solid #0E56C8" : "1px solid #EEF2F7",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
         textAlign: "center",
+        cursor: "pointer",
       }}
     >
       <Box
@@ -245,6 +257,12 @@ function ShadowCard({ title, icon, tone }) {
 }
 
 export default function BookingStepThreePage() {
+  const { draft, updateDraft } = useBookingDraft();
+
+  function updateRoof(values) {
+    updateDraft("roof", values);
+  }
+
   return (
     <Box className={styles.pageShell}>
       <Box
@@ -347,7 +365,11 @@ export default function BookingStepThreePage() {
                     <Grid container spacing={1.15}>
                       {roofSizes.map((item) => (
                         <Grid key={item.title} size={{ xs: 12, sm: 4 }}>
-                          <SelectCard {...item} />
+                          <SelectCard
+                            {...item}
+                            selected={draft.roof.sizeRange === item.value}
+                            onClick={() => updateRoof({ sizeRange: item.value })}
+                          />
                         </Grid>
                       ))}
                     </Grid>
@@ -369,7 +391,11 @@ export default function BookingStepThreePage() {
                     <Grid container spacing={1.15}>
                       {shadowItems.map((item) => (
                         <Grid key={item.title} size={{ xs: 12, sm: 4 }}>
-                          <ShadowCard {...item} />
+                          <ShadowCard
+                            {...item}
+                            selected={draft.roof.shadow === item.value}
+                            onClick={() => updateRoof({ shadow: item.value })}
+                          />
                         </Grid>
                       ))}
                     </Grid>
@@ -392,15 +418,19 @@ export default function BookingStepThreePage() {
                       {roofConditions.map((item) => (
                         <Box
                           key={item.title}
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => updateRoof({ condition: item.value })}
                           sx={{
                             px: 1.45,
                             py: 0.78,
                             borderRadius: 999,
-                            bgcolor: item.selected ? "#0E56C8" : "#F2F4F8",
-                            color: item.selected ? "white" : "#243143",
+                            bgcolor: draft.roof.condition === item.value ? "#0E56C8" : "#F2F4F8",
+                            color: draft.roof.condition === item.value ? "white" : "#243143",
                             fontSize: "0.76rem",
                             fontWeight: 700,
-                            boxShadow: item.selected
+                            cursor: "pointer",
+                            boxShadow: draft.roof.condition === item.value
                               ? "0 10px 20px rgba(14,86,200,0.18)"
                               : "none",
                           }}

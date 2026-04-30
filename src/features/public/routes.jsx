@@ -26,6 +26,11 @@ import TrustedPartnersPage from "@/features/public/pages/TrustedPartnersPage";
 import VendorDiscoveryPage from "@/features/public/pages/VendorDiscoveryPage";
 import SolarLoanPage from "@/features/public/pages/SolarLoanPage";
 import HomePage from "@/features/public/pages/HomePage";
+import { RequireAuth } from "@/features/auth/RequireAuth";
+
+function protectedCustomerPage(element) {
+  return <RequireAuth allowedRoles={["customer", "admin"]}>{element}</RequireAuth>;
+}
 
 export const publicRoutes = [
   {
@@ -160,31 +165,35 @@ export const publicRoutes = [
   },
   {
     path: "booking",
-    element: <BookingStepOnePage />,
+    element: protectedCustomerPage(<BookingStepOnePage />),
   },
   {
     path: "booking/property",
-    element: <BookingStepTwoPage />,
+    element: protectedCustomerPage(<BookingStepTwoPage />),
   },
   {
     path: "booking/roof",
-    element: <BookingStepThreePage />,
+    element: protectedCustomerPage(<BookingStepThreePage />),
   },
   {
     path: "booking/upload",
-    element: <BookingStepFourPage />,
+    element: protectedCustomerPage(<BookingStepFourPage />),
   },
   {
     path: "booking/submitted",
-    element: <BookingSubmittedPage />,
+    element: protectedCustomerPage(<BookingSubmittedPage />),
   },
   {
     path: "tenders/live",
-    element: <LiveBiddingPage />,
+    element: protectedCustomerPage(<LiveBiddingPage />),
   },
   {
     path: "quotes/compare",
-    element: <QuoteComparisonPage />,
+    element: protectedCustomerPage(<QuoteComparisonPage />),
+  },
+  {
+    path: "quotes/:quoteId/confirm",
+    element: protectedCustomerPage(<VendorConfirmSelectionPage />),
   },
   {
     path: "vendors/tata-power-solar",
@@ -192,11 +201,11 @@ export const publicRoutes = [
   },
   {
     path: "vendors/tata-power-solar/confirm",
-    element: <VendorConfirmSelectionPage />,
+    element: protectedCustomerPage(<VendorConfirmSelectionPage />),
   },
   {
     path: "project/installation",
-    element: <SolarInstallationProjectPage />,
+    element: protectedCustomerPage(<SolarInstallationProjectPage />),
   },
   {
     path: "service-support",
@@ -204,14 +213,14 @@ export const publicRoutes = [
   },
   {
     path: "service-support/request",
-    element: <CreateServiceRequestPage />,
+    element: protectedCustomerPage(<CreateServiceRequestPage />),
   },
   {
     path: "service-support/request/submitted",
-    element: <ServiceRequestSubmittedPage />,
+    element: protectedCustomerPage(<ServiceRequestSubmittedPage />),
   },
   {
     path: "service-support/track",
-    element: <TrackServiceRequestPage />,
+    element: protectedCustomerPage(<TrackServiceRequestPage />),
   },
 ];

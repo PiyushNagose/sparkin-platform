@@ -254,18 +254,42 @@ Must include:
 
 Architecture:
 
-* Microservices + API Gateway
+* Modular service architecture + API Gateway
+* Domain grouping is preferred over one microservice per entity
+* Services should be independently deployable, but broad enough to avoid unnecessary operational overhead
 
 Services:
 
-* Auth Service (existing)
-* User Service
-* Vendor Service
-* Lead Service
-* Quote Service
-* Project Service
-* Payment Service
+* Identity Service
+
+  * Auth
+  * User
+
+* Business Service
+
+  * Lead
+  * Quote
+  * Vendor
+
+* Fulfillment Service
+
+  * Project
+  * Payment
+
 * Notification Service
+
+  * Email
+  * SMS
+  * In-app notifications
+
+* API Gateway
+
+Notes:
+
+* Identity owns authentication, authorization, sessions, and customer account identity.
+* Business owns demand generation and marketplace interactions.
+* Fulfillment owns post-selection execution and commercial settlement.
+* Notification stays standalone so it can be reused by every other service.
 
 ---
 
@@ -353,8 +377,8 @@ Must support:
 * Admin panel already exists
 * Vendor panel being developed
 * UI consistency is a priority
-* Real backend APIs are used (no dummy data)
-* Microservice architecture already implemented
+* Frontend currently contains many reference-driven screens that will later be connected to real APIs
+* Backend service layout is being consolidated into grouped domain services
 
 ---
 
@@ -373,10 +397,10 @@ When implementing:
 
 If backend change is required:
 
-* First update service
-* Then API gateway
-* Then frontend API file
-* Then UI component
+* First update the owning grouped service
+* Then update API gateway routing if the public contract changes
+* Then update frontend API client / adapter
+* Then update the UI component
 
 ---
 

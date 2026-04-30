@@ -1,76 +1,64 @@
 import {
+  Alert,
   Box,
   Button,
   Container,
+  CircularProgress,
   Grid,
   Stack,
   Typography,
 } from "@mui/material";
 import { Link as RouterLink } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
 import BoltRoundedIcon from "@mui/icons-material/BoltRounded";
 import StarRoundedIcon from "@mui/icons-material/StarRounded";
 import quoteAnalysisPlaceholder from "@/shared/assets/images/public/quotes/quote-analysis-placeholder.png";
 import quoteBiddingBannerPlaceholder from "@/shared/assets/images/public/quotes/quote-bidding-banner-placeholder.png";
+import LiveBiddingPage from "@/features/public/pages/LiveBiddingPage";
 import styles from "@/features/public/pages/CalculatorPage.module.css";
 import {
   publicPageSpacing,
   publicTypography,
 } from "@/features/public/pages/publicPageStyles";
+import { quotesApi } from "@/features/public/api/leadsApi";
 
-const quotes = [
-  {
-    vendor: "Tata Power Solar",
-    rating: "4.8",
-    reviews: "481 reviews",
-    price: "\u20B92,85,000",
-    note: "Inclusive GST & overall subsidy",
-    badge: "Top Rated",
-    badgeTone: "#DDF6E8",
-    badgeColor: "#178146",
-    system: "5kW System",
-    warranty: "25-Year",
-    delivery: "15 Days",
-  },
-  {
-    vendor: "Adani Solar",
-    rating: "4.7",
-    reviews: "318 reviews",
-    price: "\u20B92,72,000",
-    note: "Best-value EPC for 5kW setup",
-    badge: "Best Price",
-    badgeTone: "#F5F86A",
-    badgeColor: "#6B6800",
-    system: "5.2kW System",
-    warranty: "20-Year",
-    delivery: "21 Days",
-  },
-  {
-    vendor: "Waaree Energies",
-    rating: "4.8",
-    reviews: "592 reviews",
-    price: "\u20B93,10,000",
-    note: "Includes smart monitoring kit",
-    badge: "Expert Install",
-    badgeTone: "#EEF3FF",
-    badgeColor: "#1A57C8",
-    system: "5kW Pro",
-    warranty: "30-Year",
-    delivery: "10 Days",
-  },
-  {
-    vendor: "Vikram Solar",
-    rating: "4.8",
-    reviews: "189 reviews",
-    price: "\u20B92,92,000",
-    note: "Premium bifacial-ready 2yr service",
-    badge: "Local Favorite",
-    badgeTone: "#F3F4F7",
-    badgeColor: "#6F7787",
-    system: "5kW Plus",
-    warranty: "25-Year",
-    delivery: "18 Days",
-  },
-];
+function formatPrice(value) {
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(value);
+}
+
+function formatWindow(value) {
+  const labels = {
+    "2_4_weeks": "2-4 Weeks",
+    "4_6_weeks": "4-6 Weeks",
+    "6_8_weeks": "6-8 Weeks",
+  };
+
+  return labels[value] || "Timeline shared";
+}
+
+function toQuoteCard(quote, index) {
+  const vendorName = quote.vendorEmail ? quote.vendorEmail.split("@")[0] : `Vendor ${index + 1}`;
+
+  return {
+    id: quote.id,
+    vendor: vendorName,
+    rating: "New",
+    reviews: "Verified vendor",
+    price: formatPrice(quote.pricing.totalPrice),
+    note: quote.proposalNotes || "Proposal submitted for your requirement",
+    badge: index === 0 ? "Latest" : "Proposal",
+    badgeTone: index === 0 ? "#DDF6E8" : "#EEF3FF",
+    badgeColor: index === 0 ? "#178146" : "#1A57C8",
+    system: `${quote.system.sizeKw}kW System`,
+    warranty: quote.system.panelType,
+    delivery: formatWindow(quote.timeline.installationWindow),
+    detailsTo: `/quotes/${quote.id}/confirm`,
+  };
+}
 
 function QuoteCard({
   vendor,
@@ -285,6 +273,40 @@ function QuoteCard({
 }
 
 export default function QuoteComparisonPage() {
+  const [submittedQuotes, setSubmittedQuotes] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadQuotes() {
+      setIsLoading(true);
+      setError("");
+
+      try {
+        const result = await quotesApi.listQuotes();
+        if (active) setSubmittedQuotes(result);
+      } catch (apiError) {
+        if (active) setError(apiError?.response?.data?.message || "Could not load quotes.");
+      } finally {
+        if (active) setIsLoading(false);
+      }
+    }
+
+    loadQuotes();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const quoteCards = useMemo(() => submittedQuotes.map(toQuoteCard), [submittedQuotes]);
+
+  if (!isLoading && !error && quoteCards.length === 0) {
+    return <LiveBiddingPage />;
+  }
+
   return (
     <Box className={styles.pageShell}>
       <Box
@@ -330,7 +352,7 @@ export default function QuoteComparisonPage() {
                     maxWidth: 360,
                   }}
                 >
-                  Multiple verified vendors have submitted their proposals for your residential project.
+                Verified vendors submit proposals here as soon as they quote your booking request.
                 </Typography>
               </Box>
 
@@ -348,7 +370,7 @@ export default function QuoteComparisonPage() {
                   textTransform: "uppercase",
                 }}
               >
-                verified 4 proposals received
+                verified {quoteCards.length} proposal{quoteCards.length === 1 ? "" : "s"} received
               </Box>
             </Stack>
 
@@ -412,17 +434,22 @@ export default function QuoteComparisonPage() {
               </Stack>
             </Box>
 
+            {isLoading ? (
+              <Box sx={{ py: 5, display: "grid", placeItems: "center" }}>
+                <CircularProgress />
+              </Box>
+            ) : null}
+
+            {error ? (
+              <Alert severity="error" sx={{ borderRadius: "0.9rem" }}>
+                {error} Please make sure you are logged in as the customer who created the booking.
+              </Alert>
+            ) : null}
+
             <Grid container spacing={{ xs: 2.2, md: 2.4 }}>
-              {quotes.map((quote) => (
-                <Grid key={quote.vendor} size={{ xs: 12, md: 6 }}>
-                  <QuoteCard
-                    {...quote}
-                    detailsTo={
-                      quote.vendor === "Tata Power Solar"
-                        ? "/vendors/tata-power-solar"
-                        : "/vendors/tata-power-solar"
-                    }
-                  />
+              {quoteCards.map((quote) => (
+                <Grid key={quote.id} size={{ xs: 12, md: 6 }}>
+                  <QuoteCard {...quote} />
                 </Grid>
               ))}
             </Grid>

@@ -1,4 +1,4 @@
-import { Box, Button, Stack, Typography } from "@mui/material";
+import { Alert, Box, Button, CircularProgress, Stack, Typography } from "@mui/material";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
 import TrackChangesRoundedIcon from "@mui/icons-material/TrackChangesRounded";
@@ -8,6 +8,10 @@ import KeyboardArrowLeftRoundedIcon from "@mui/icons-material/KeyboardArrowLeftR
 import KeyboardArrowRightRoundedIcon from "@mui/icons-material/KeyboardArrowRightRounded";
 import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
 import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
+import { useEffect, useMemo, useState } from "react";
+import { Link as RouterLink } from "react-router-dom";
+import { leadsApi, quotesApi } from "@/features/public/api/leadsApi";
+import { projectsApi } from "@/features/public/api/projectsApi";
 import bookingHouseModern from "@/shared/assets/images/customer/bookings/booking-house-modern-placeholder.png";
 import bookingHouseClassic from "@/shared/assets/images/customer/bookings/booking-house-classic-placeholder.png";
 import bookingSolarFacility from "@/shared/assets/images/customer/bookings/booking-solar-facility-placeholder.png";
@@ -104,6 +108,70 @@ const bookings = [
   },
 ];
 
+function formatDate(value) {
+  return new Intl.DateTimeFormat("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(value));
+}
+
+function getLeadStatusStyle(status) {
+  if (status === "quote_selected" || status === "closed") {
+    return {
+      status: "Project Created",
+      statusTone: "#239654",
+      statusBg: "#E8FAEF",
+      action: "Track Project",
+      actionPrimary: true,
+      to: "/project/installation",
+    };
+  }
+
+  if (status === "open_for_quotes") {
+    return {
+      status: "Bidding Live",
+      statusTone: "#6C7300",
+      statusBg: "#E7F318",
+      action: "View Quotes",
+      actionPrimary: true,
+      to: "/quotes/compare",
+    };
+  }
+
+  return {
+    status: "Request Created",
+    statusTone: "#4F89FF",
+    statusBg: "#EEF4FF",
+    action: "Waiting for Quotes",
+    actionPrimary: false,
+    to: "/tenders/live",
+  };
+}
+
+function toBookingCard(lead, quotes, projects, index) {
+  const matchingQuotes = quotes.filter((quote) => String(quote.leadId) === String(lead.id));
+  const matchingProject = projects.find((project) => String(project.leadId) === String(lead.id));
+  const status = getLeadStatusStyle(lead.status);
+  const city = lead.installationAddress?.city || "Location";
+  const state = lead.installationAddress?.state || "Pending";
+  const roofLabel = lead.roof?.sizeRange?.replaceAll("_", " ") || "Shared after survey";
+  const imagePool = [bookingHouseModern, bookingHouseClassic, bookingSolarFacility, bookingHouseUnderConstruction];
+
+  return {
+    id: lead.id,
+    image: imagePool[index % imagePool.length],
+    title: `${city} - ${lead.property?.type?.replaceAll("_", " ") || "Solar Request"}`,
+    meta: `${city}, ${state} - Submitted ${formatDate(lead.createdAt || lead.submittedAt)}`,
+    sizeLabel: "Roof Size",
+    sizeValue: roofLabel,
+    infoLabel: matchingProject ? "Project Stage" : "Quotes",
+    infoValue: matchingProject ? matchingProject.status.replaceAll("_", " ") : `${matchingQuotes.length} Received`,
+    ...status,
+    to: matchingProject ? `/project/installation?projectId=${matchingProject.id}` : status.to,
+  };
+}
+
 function KpiCard({ card }) {
   return (
     <Box
@@ -166,6 +234,61 @@ function KpiCard({ card }) {
 }
 
 export default function CustomerBookingsPage() {
+  const [leads, setLeads] = useState([]);
+  const [quotes, setQuotes] = useState([]);
+  const [projects, setProjects] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadBookings() {
+      setIsLoading(true);
+      setError("");
+
+      try {
+        const [leadResult, quoteResult, projectResult] = await Promise.all([
+          leadsApi.listLeads(),
+          quotesApi.listQuotes(),
+          projectsApi.listProjects(),
+        ]);
+
+        if (active) {
+          setLeads(leadResult);
+          setQuotes(quoteResult);
+          setProjects(projectResult);
+        }
+      } catch (apiError) {
+        if (active) setError(apiError?.response?.data?.message || "Could not load bookings.");
+      } finally {
+        if (active) setIsLoading(false);
+      }
+    }
+
+    loadBookings();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const bookingCards = useMemo(
+    () => leads.map((lead, index) => toBookingCard(lead, quotes, projects, index)),
+    [leads, projects, quotes],
+  );
+  const liveCount = leads.filter((lead) => lead.status === "open_for_quotes").length;
+  const totalSystemSize = projects.reduce((sum, project) => sum + (Number(project.system?.sizeKw) || 0), 0);
+  const dashboardKpis = useMemo(
+    () => [
+      { ...kpiCards[0], value: String(leads.length).padStart(2, "0"), subtitle: "Total Requests" },
+      { ...kpiCards[1], value: String(liveCount).padStart(2, "0"), subtitle: "Bidding Active" },
+      { ...kpiCards[2], value: String(projects.length).padStart(2, "0"), subtitle: "Projects Created" },
+      { ...kpiCards[3], value: `${totalSystemSize || 0}kW`, subtitle: "Selected System Size" },
+    ],
+    [leads.length, liveCount, projects.length, totalSystemSize],
+  );
+
   return (
     <Box sx={{ width: "100%" }}>
       <Stack
@@ -200,6 +323,8 @@ export default function CustomerBookingsPage() {
 
         <Button
           variant="contained"
+          component={RouterLink}
+          to="/booking"
           startIcon={<AddRoundedIcon />}
           sx={{
             minHeight: 38,
@@ -229,15 +354,33 @@ export default function CustomerBookingsPage() {
           gap: 1.3,
         }}
       >
-        {kpiCards.map((card) => (
+        {dashboardKpis.map((card) => (
           <KpiCard key={card.label} card={card} />
         ))}
       </Box>
 
       <Stack spacing={1.35} sx={{ mt: 1.8 }}>
-        {bookings.map((item) => (
+        {isLoading ? (
+          <Box sx={{ py: 5, display: "grid", placeItems: "center" }}>
+            <CircularProgress />
+          </Box>
+        ) : null}
+
+        {!isLoading && error ? (
+          <Alert severity="error" sx={{ borderRadius: "0.9rem" }}>
+            {error}
+          </Alert>
+        ) : null}
+
+        {!isLoading && !error && bookingCards.length === 0 ? (
+          <Alert severity="info" sx={{ borderRadius: "0.9rem" }}>
+            No bookings yet. Create your first solar request to start receiving vendor quotes.
+          </Alert>
+        ) : null}
+
+        {bookingCards.map((item) => (
           <Box
-            key={item.title}
+            key={item.id}
             sx={{
               p: 1.35,
               borderRadius: "1.2rem",
@@ -375,6 +518,8 @@ export default function CustomerBookingsPage() {
                 </Box>
 
                 <Button
+                  component={RouterLink}
+                  to={item.to}
                   variant={item.actionPrimary ? "contained" : "outlined"}
                   endIcon={
                     item.actionPrimary ? (
