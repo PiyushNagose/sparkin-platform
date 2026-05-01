@@ -154,6 +154,9 @@ export function VendorStatusPill({ children, tone = "#596579", bg = "#EEF2F6", s
     <Box
       sx={{
         justifySelf: "start",
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 0.55,
         px: 1,
         py: 0.38,
         borderRadius: vendorUi.radius.pill,
@@ -165,6 +168,15 @@ export function VendorStatusPill({ children, tone = "#596579", bg = "#EEF2F6", s
         ...sx,
       }}
     >
+      <Box
+        sx={{
+          width: 5,
+          height: 5,
+          borderRadius: "50%",
+          bgcolor: tone,
+          flexShrink: 0,
+        }}
+      />
       {children}
     </Box>
   );

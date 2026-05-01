@@ -111,8 +111,8 @@ function getStatusMeta(status) {
     submitted: { status: "Pending", statusTone: "#4F89FF", statusBg: "#EEF4FF" },
     shortlisted: { status: "Under Review", statusTone: "#878500", statusBg: "#F2F08E" },
     accepted: { status: "Accepted", statusTone: "#1FA453", statusBg: "#E8FAEF" },
-    rejected: { status: "Rejected", statusTone: "#E05252", statusBg: "#FDECEC" },
-    withdrawn: { status: "Rejected", statusTone: "#E05252", statusBg: "#FDECEC" },
+    rejected: { status: "Rejected", statusTone: "#D94040", statusBg: "#FDECEC" },
+    withdrawn: { status: "Rejected", statusTone: "#D94040", statusBg: "#FDECEC" },
   };
 
   return map[status] || map.submitted;
@@ -367,7 +367,13 @@ export default function VendorQuotesPage() {
   }, [activeTab, quoteRows, searchTerm]);
   const totalPages = Math.max(1, Math.ceil(filteredQuotes.length / pageSize));
   const visibleQuotes = filteredQuotes.slice((page - 1) * pageSize, page * pageSize);
-  const pageNumbers = useMemo(() => Array.from({ length: totalPages }, (_, index) => index + 1), [totalPages]);
+  const pageNumbers = useMemo(() => {
+    if (totalPages <= 5) return Array.from({ length: totalPages }, (_, i) => i + 1);
+    const pages = new Set([1, totalPages, page]);
+    if (page > 1) pages.add(page - 1);
+    if (page < totalPages) pages.add(page + 1);
+    return [...pages].sort((a, b) => a - b);
+  }, [totalPages, page]);
   const firstVisibleQuote = filteredQuotes.length ? (page - 1) * pageSize + 1 : 0;
   const lastVisibleQuote = filteredQuotes.length ? firstVisibleQuote + visibleQuotes.length - 1 : 0;
   const acceptedCount = quoteRows.filter((quote) => quote.rawStatus === "accepted").length;
@@ -880,23 +886,24 @@ export default function VendorQuotesPage() {
           direction={{ xs: "column", md: "row" }}
           justifyContent="space-between"
           alignItems={{ xs: "stretch", md: "center" }}
-          spacing={1.2}
-          sx={{ px: 1.7, pt: 1.5 }}
+          sx={{ px: 1.7, pt: 1.5, borderBottom: "1px solid rgba(234,239,245,0.95)" }}
         >
-          <Stack direction="row" spacing={0.7} flexWrap="wrap">
-            {tabs.map((tab, index) => (
+          <Stack direction="row" spacing={0}>
+            {tabs.map((tab) => (
               <Button
                 key={tab}
                 onClick={() => updateTab(tab)}
                 sx={{
-                  minHeight: 30,
-                  px: 1.2,
-                  borderRadius: "999px",
-                  bgcolor: activeTab === tab ? "#0E56C8" : "transparent",
-                  color: activeTab === tab ? "#FFFFFF" : "#556478",
-                  fontSize: "0.7rem",
-                  fontWeight: 700,
+                  minHeight: 38,
+                  px: 1.4,
+                  borderRadius: 0,
+                  borderBottom: activeTab === tab ? "2px solid #0E56C8" : "2px solid transparent",
+                  color: activeTab === tab ? "#0E56C8" : "#6F7D8F",
+                  fontSize: "0.76rem",
+                  fontWeight: activeTab === tab ? 800 : 600,
                   textTransform: "none",
+                  mb: "-1px",
+                  "&:hover": { bgcolor: "transparent", color: "#0E56C8" },
                 }}
               >
                 {tab}
@@ -904,22 +911,7 @@ export default function VendorQuotesPage() {
             ))}
           </Stack>
 
-          <Stack direction="row" spacing={0.8} flexWrap="wrap">
-            <TextField
-              size="small"
-              value={searchTerm}
-              onChange={(event) => applySearch(event.target.value)}
-              placeholder="Search quotes"
-              sx={{
-                minWidth: { xs: "100%", md: 210 },
-                "& .MuiOutlinedInput-root": {
-                  height: 32,
-                  borderRadius: "0.8rem",
-                  bgcolor: "#FFFFFF",
-                  fontSize: "0.72rem",
-                },
-              }}
-            />
+          <Stack direction="row" spacing={0.8} alignItems="center" sx={{ pb: { xs: 1, md: 0 } }}>
             <Button
               startIcon={<TuneRoundedIcon />}
               variant="outlined"
@@ -948,7 +940,7 @@ export default function VendorQuotesPage() {
           </Stack>
         </Stack>
 
-        <Box sx={{ display: { xs: "none", lg: "block" }, px: 1.7, pt: 1.55, pb: 1 }}>
+        <Box sx={{ display: { xs: "none", lg: "block" }, px: 1.7, pt: 1.3, pb: 0.6 }}>
           <Box
             sx={{
               display: "grid",
@@ -1033,7 +1025,7 @@ export default function VendorQuotesPage() {
                 <Typography sx={{ color: "#0E56C8", fontSize: "0.8rem", fontWeight: 800 }}>
                   {quote.yourPrice}
                 </Typography>
-                <VendorStatusPill tone={quote.statusTone} bg={quote.statusBg} sx={{ px: 0.9, py: 0.34, fontSize: "0.62rem" }}>
+                <VendorStatusPill tone={quote.statusTone} bg={quote.statusBg}>
                   {quote.status}
                 </VendorStatusPill>
                 <Typography sx={{ color: "#5E6A7D", fontSize: "0.76rem" }}>
@@ -1141,7 +1133,7 @@ export default function VendorQuotesPage() {
                   </Box>
 
                   <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
-                    <VendorStatusPill tone={quote.statusTone} bg={quote.statusBg} sx={{ px: 0.9, py: 0.34, fontSize: "0.62rem" }}>
+                    <VendorStatusPill tone={quote.statusTone} bg={quote.statusBg}>
                       {quote.status}
                     </VendorStatusPill>
                     <Button
@@ -1214,26 +1206,34 @@ export default function VendorQuotesPage() {
             >
               <KeyboardArrowLeftRoundedIcon sx={{ fontSize: "1rem" }} />
             </Button>
-            {pageNumbers.map((pageNumber) => (
-              <Button
-                key={pageNumber}
-                onClick={() => setPage(pageNumber)}
-                sx={{
-                  minWidth: 30,
-                  width: 30,
-                  height: 30,
-                  borderRadius: "0.6rem",
-                  p: 0,
-                  color: pageNumber === page ? "#FFFFFF" : "#223146",
-                  bgcolor: pageNumber === page ? "#0E56C8" : "#FFFFFF",
-                  border: pageNumber === page ? "none" : "1px solid rgba(225,232,241,0.96)",
-                  fontSize: "0.7rem",
-                  fontWeight: 700,
-                }}
-              >
-                {pageNumber}
-              </Button>
-            ))}
+            {pageNumbers.map((pageNumber, idx) => {
+              const prev = pageNumbers[idx - 1];
+              const showEllipsis = prev && pageNumber - prev > 1;
+              return (
+                <Box key={pageNumber} sx={{ display: "flex", alignItems: "center", gap: 0.45 }}>
+                  {showEllipsis && (
+                    <Typography sx={{ color: "#8B97A8", fontSize: "0.7rem", px: 0.3 }}>…</Typography>
+                  )}
+                  <Button
+                    onClick={() => setPage(pageNumber)}
+                    sx={{
+                      minWidth: 30,
+                      width: 30,
+                      height: 30,
+                      borderRadius: "0.6rem",
+                      p: 0,
+                      color: pageNumber === page ? "#FFFFFF" : "#223146",
+                      bgcolor: pageNumber === page ? "#0E56C8" : "#FFFFFF",
+                      border: pageNumber === page ? "none" : "1px solid rgba(225,232,241,0.96)",
+                      fontSize: "0.7rem",
+                      fontWeight: 700,
+                    }}
+                  >
+                    {pageNumber}
+                  </Button>
+                </Box>
+              );
+            })}
             <Button
               onClick={() => setPage((currentPage) => Math.min(totalPages, currentPage + 1))}
               disabled={page === totalPages}
