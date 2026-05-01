@@ -15,4 +15,9 @@ export const leadsController = {
     const lead = await leadsService.getLead(req.auth, req.params.leadId);
     res.status(200).json({ lead });
   },
+
+  async updateStatus(req, res) {
+    const lead = await leadsService.updateLeadStatus(req.auth, req.params.leadId, req.body);
+    res.status(200).json({ lead });
+  },
 };

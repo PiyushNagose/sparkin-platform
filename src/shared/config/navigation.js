@@ -24,6 +24,6 @@ export const portalNavigation = {
     { label: "Projects", href: "/vendor/projects" },
     { label: "Services", href: "/vendor/services" },
     { label: "Payments", href: "/vendor/payments" },
-    { label: "Settings", href: "/vendor/profile" },
+    { label: "Settings", href: "/vendor/settings" },
   ],
 };

@@ -22,10 +22,11 @@ import WorkspacePremiumOutlinedIcon from "@mui/icons-material/WorkspacePremiumOu
 import CheckBoxRoundedIcon from "@mui/icons-material/CheckBoxRounded";
 import CloudUploadOutlinedIcon from "@mui/icons-material/CloudUploadOutlined";
 import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { authApi } from "@/features/auth/authApi";
 import { vendorsApi } from "@/features/vendor/api/vendorsApi";
+import { getVendorProfileCompletion, getVendorProfileRequirements, isVendorProfileComplete } from "@/features/vendor/VendorProfileCompletionGate";
 import vendorProfileAvatar from "@/shared/assets/images/vendor/profile/vendor-profile-avatar-placeholder.svg";
 
 const tabs = ["Profile", "Business Details"];
@@ -148,11 +149,12 @@ function readFileAsDataUrl(file) {
 
 export default function VendorProfilePage() {
   const location = useLocation();
+  const navigate = useNavigate();
   const { user, updateUserAvatar, updateUserProfile } = useAuth();
   const avatarInputRef = useRef(null);
   const companyDocumentRef = useRef(null);
   const certificationDocumentRef = useRef(null);
-  const [activeTab, setActiveTab] = useState("Profile");
+  const [activeTab, setActiveTab] = useState(location.state?.needsBusinessProfile ? "Business Details" : "Profile");
   const [vendorProfile, setVendorProfile] = useState(null);
   const [form, setForm] = useState(() => mergeProfileIntoForm(null, user));
   const [isLoading, setIsLoading] = useState(true);
@@ -192,21 +194,26 @@ export default function VendorProfilePage() {
   const companyDocuments = documents.filter((document) => document.type === "company");
   const certificationDocuments = documents.filter((document) => document.type === "certification");
   const completedServices = serviceItems.filter((item) => form.services[item.key]).length;
-  const completion = useMemo(() => {
-    const required = [
-      form.account.fullName,
-      form.account.email,
-      form.account.phoneNumber,
-      form.company.name,
-      form.company.gstNumber,
-      form.company.address,
-      form.company.city,
-      form.company.state,
-      completedServices > 0 ? "services" : "",
-      documents.length ? "documents" : "",
-    ];
-    return Math.round((required.filter(Boolean).length / required.length) * 100);
-  }, [completedServices, documents.length, form]);
+  const draftProfile = useMemo(
+    () => ({
+      ...(vendorProfile || {}),
+      account: form.account,
+      company: form.company,
+      services: form.services,
+      documents,
+    }),
+    [documents, form, vendorProfile],
+  );
+  const completion = useMemo(() => getVendorProfileCompletion(draftProfile), [draftProfile]);
+  const missingRequirements = useMemo(
+    () => getVendorProfileRequirements(draftProfile).filter((item) => !item.complete),
+    [draftProfile],
+  );
+  const isComplete = useMemo(() => isVendorProfileComplete(draftProfile), [draftProfile]);
+
+  function publishProfileUpdate(profile) {
+    window.dispatchEvent(new CustomEvent("sparkin:vendor-profile-updated", { detail: profile }));
+  }
 
   function updateGroupField(group, field, value) {
     setForm((current) => ({
@@ -291,6 +298,7 @@ export default function VendorProfilePage() {
         data,
       });
       setVendorProfile(result);
+      publishProfileUpdate(result);
       setSuccess("Document uploaded.");
     } catch (apiError) {
       setError(apiError?.response?.data?.message || "Could not upload document.");
@@ -306,6 +314,7 @@ export default function VendorProfilePage() {
     try {
       const result = await vendorsApi.deleteDocument(documentId);
       setVendorProfile(result);
+      publishProfileUpdate(result);
       setSuccess("Document removed.");
     } catch (apiError) {
       setError(apiError?.response?.data?.message || "Could not remove document.");
@@ -337,6 +346,7 @@ export default function VendorProfilePage() {
 
       setVendorProfile(profile);
       setForm(mergeProfileIntoForm(profile, user));
+      publishProfileUpdate(profile);
       setSuccess("Vendor profile updated.");
     } catch (apiError) {
       setError(apiError?.response?.data?.message || "Could not save vendor profile.");
@@ -434,7 +444,7 @@ export default function VendorProfilePage() {
       {error ? <Alert severity="error" sx={{ mt: 1.4, borderRadius: "0.9rem" }}>{error}</Alert> : null}
       {location.state?.needsBusinessProfile ? (
         <Alert severity="info" sx={{ mt: 1.4, borderRadius: "0.9rem" }}>
-          Complete your business details and upload at least one compliance document before accessing vendor tools.
+          Complete all required business details before accessing vendor tools.
         </Alert>
       ) : null}
       {success ? (
@@ -493,8 +503,34 @@ export default function VendorProfilePage() {
           >
             {isSaving ? "Saving..." : "Save Changes"}
           </Button>
+          {isComplete ? (
+            <Button
+              variant="contained"
+              onClick={() => navigate("/vendor", { replace: true })}
+              sx={{
+                minHeight: 38,
+                px: 2,
+                borderRadius: "0.95rem",
+                bgcolor: "#239654",
+                boxShadow: "0 12px 24px rgba(35,150,84,0.16)",
+                fontSize: "0.75rem",
+                fontWeight: 700,
+                textTransform: "none",
+              }}
+            >
+              Continue to Dashboard
+            </Button>
+          ) : null}
         </Stack>
       </Stack>
+
+      {!isComplete ? (
+        <CompletionChecklist completion={completion} missingRequirements={missingRequirements} />
+      ) : (
+        <Alert severity="success" sx={{ mt: 1.4, borderRadius: "0.9rem" }}>
+          Vendor profile is complete. You can access leads, quotes, projects, and payments.
+        </Alert>
+      )}
 
       {activeTab === "Profile" ? (
         <ProfileHeader
@@ -598,6 +634,78 @@ export default function VendorProfilePage() {
           </Box>
         </Box>
       ) : null}
+    </Box>
+  );
+}
+
+function CompletionChecklist({ completion, missingRequirements }) {
+  const visibleMissing = missingRequirements.slice(0, 6);
+
+  return (
+    <Box
+      sx={{
+        mt: 1.4,
+        p: 1.35,
+        borderRadius: "1rem",
+        bgcolor: "#FFF8E6",
+        border: "1px solid rgba(244,165,28,0.28)",
+      }}
+    >
+      <Stack
+        direction={{ xs: "column", md: "row" }}
+        spacing={1.2}
+        justifyContent="space-between"
+        alignItems={{ xs: "flex-start", md: "center" }}
+      >
+        <Box>
+          <Typography sx={{ color: "#6B4E00", fontSize: "0.88rem", fontWeight: 800 }}>
+            Business profile is {completion}% complete
+          </Typography>
+          <Typography sx={{ mt: 0.25, color: "#7A5B10", fontSize: "0.74rem", lineHeight: 1.55 }}>
+            Required before accessing vendor dashboard, leads, quotes, projects, and payments.
+          </Typography>
+        </Box>
+        <Box
+          sx={{
+            px: 1,
+            py: 0.45,
+            borderRadius: "999px",
+            bgcolor: "#FFFFFF",
+            color: "#6B4E00",
+            fontSize: "0.68rem",
+            fontWeight: 800,
+          }}
+        >
+          {missingRequirements.length} item{missingRequirements.length === 1 ? "" : "s"} remaining
+        </Box>
+      </Stack>
+
+      <Box
+        sx={{
+          mt: 1,
+          display: "grid",
+          gridTemplateColumns: { xs: "1fr", md: "repeat(3, minmax(0, 1fr))" },
+          gap: 0.7,
+        }}
+      >
+        {visibleMissing.map((item) => (
+          <Box
+            key={item.key}
+            sx={{
+              px: 0.9,
+              py: 0.65,
+              borderRadius: "0.75rem",
+              bgcolor: "#FFFFFF",
+              color: "#263449",
+              fontSize: "0.72rem",
+              fontWeight: 700,
+              border: "1px solid rgba(244,165,28,0.18)",
+            }}
+          >
+            {item.label}
+          </Box>
+        ))}
+      </Box>
     </Box>
   );
 }

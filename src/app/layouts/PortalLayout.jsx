@@ -1,10 +1,13 @@
 import {
   Avatar,
+  Badge,
   Box,
   Button,
   Container,
   IconButton,
   InputAdornment,
+  Menu,
+  MenuItem,
   Stack,
   TextField,
   Typography,
@@ -20,16 +23,19 @@ import BoltOutlinedIcon from "@mui/icons-material/BoltOutlined";
 import SavingsOutlinedIcon from "@mui/icons-material/SavingsOutlined";
 import RedeemOutlinedIcon from "@mui/icons-material/RedeemOutlined";
 import PersonOutlineOutlinedIcon from "@mui/icons-material/PersonOutlineOutlined";
-import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import NotificationsNoneRoundedIcon from "@mui/icons-material/NotificationsNoneRounded";
 import HelpOutlineRoundedIcon from "@mui/icons-material/HelpOutlineRounded";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
+import { useEffect, useMemo, useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { portalNavigation } from "@/shared/config/navigation";
 import logoPlaceholder from "@/shared/assets/logo-placeholder.png";
 import { AppFooter } from "@/shared/components/AppFooter";
 import { useAuth } from "@/features/auth/AuthProvider";
+import { leadsApi } from "@/features/public/api/leadsApi";
+import { projectsApi } from "@/features/public/api/projectsApi";
+import { paymentsApi } from "@/features/public/api/paymentsApi";
 
 const vendorNavIcons = {
   Dashboard: DashboardRoundedIcon,
@@ -52,9 +58,46 @@ const customerNavIcons = {
   Profile: PersonOutlineOutlinedIcon,
 };
 
+const vendorSearchRoutes = [
+  { terms: ["lead", "leads", "customer", "booking", "quote request"], path: "/vendor/leads" },
+  { terms: ["quote", "quotes", "proposal", "bid"], path: "/vendor/quotes" },
+  { terms: ["project", "projects", "install", "installation", "milestone"], path: "/vendor/projects" },
+  { terms: ["service", "services", "ticket", "support", "repair"], path: "/vendor/services" },
+  { terms: ["payment", "payments", "transaction", "invoice", "payout"], path: "/vendor/payments" },
+  { terms: ["setting", "settings", "notification", "logout"], path: "/vendor/settings" },
+  { terms: ["profile", "business", "company", "document"], path: "/vendor/profile" },
+];
+
+function resolvePortalSearchPath(portal, query) {
+  const normalizedQuery = query.trim().toLowerCase();
+
+  if (!normalizedQuery) {
+    return `/${portal}`;
+  }
+
+  if (portal === "vendor") {
+    return vendorSearchRoutes.find((route) => route.terms.some((term) => normalizedQuery.includes(term)))?.path || "/vendor/leads";
+  }
+
+  if (normalizedQuery.includes("project")) return "/customer/projects";
+  if (normalizedQuery.includes("service") || normalizedQuery.includes("support")) return "/customer/services";
+  if (normalizedQuery.includes("saving")) return "/customer/savings";
+  if (normalizedQuery.includes("tender") || normalizedQuery.includes("quote")) return "/customer/tenders";
+  if (normalizedQuery.includes("booking")) return "/customer/bookings";
+
+  return "/customer";
+}
+
 export function PortalLayout({ portal }) {
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [notificationAnchor, setNotificationAnchor] = useState(null);
+  const [vendorSummary, setVendorSummary] = useState({
+    openLeads: 0,
+    activeProjects: 0,
+    pendingPayments: 0,
+  });
   const navItems = portalNavigation[portal];
   const sidebarWidth = 158;
   const navIconMap = portal === "customer" ? customerNavIcons : vendorNavIcons;
@@ -63,10 +106,76 @@ export function PortalLayout({ portal }) {
   const profileRole =
     user?.role === "vendor" ? "Solar Lead Partner" : user?.role === "admin" ? "Administrator" : "Residential User";
   const profileInitial = profileName.trim().charAt(0).toUpperCase() || "S";
+  const notificationCount = portal === "vendor"
+    ? vendorSummary.openLeads + vendorSummary.activeProjects + vendorSummary.pendingPayments
+    : 0;
+  const notificationItems = useMemo(
+    () => [
+      {
+        label: `${vendorSummary.openLeads} open leads need review`,
+        caption: "Review new customer opportunities",
+        path: "/vendor/leads",
+      },
+      {
+        label: `${vendorSummary.activeProjects} active projects`,
+        caption: "Track installation milestones",
+        path: "/vendor/projects",
+      },
+      {
+        label: `${vendorSummary.pendingPayments} pending payments`,
+        caption: "Check payment schedules and invoices",
+        path: "/vendor/payments",
+      },
+    ],
+    [vendorSummary],
+  );
 
-  async function handleLogout() {
-    await logout();
-    navigate("/auth/login", { replace: true });
+  useEffect(() => {
+    if (portal !== "vendor") return undefined;
+
+    let active = true;
+
+    async function loadVendorSummary() {
+      const [leadsResult, projectsResult, paymentsResult] = await Promise.allSettled([
+        leadsApi.listLeads(),
+        projectsApi.listProjects(),
+        paymentsApi.listPayments(),
+      ]);
+
+      if (!active) return;
+
+      const leads = leadsResult.status === "fulfilled" ? leadsResult.value : [];
+      const projects = projectsResult.status === "fulfilled" ? projectsResult.value : [];
+      const payments = paymentsResult.status === "fulfilled" ? paymentsResult.value : [];
+
+      setVendorSummary({
+        openLeads: leads.filter((lead) => !["accepted", "closed", "cancelled"].includes(lead.status)).length,
+        activeProjects: projects.filter((project) => !["completed", "cancelled"].includes(project.status)).length,
+        pendingPayments: payments.filter((payment) => payment.status === "pending").length,
+      });
+    }
+
+    loadVendorSummary();
+
+    return () => {
+      active = false;
+    };
+  }, [portal]);
+
+  function handleSearchSubmit(event) {
+    event.preventDefault();
+    const query = searchTerm.trim();
+    const path = resolvePortalSearchPath(portal, query);
+
+    navigate(path, { state: query ? { portalSearch: query } : undefined });
+  }
+
+  function openNotifications(event) {
+    setNotificationAnchor(event.currentTarget);
+  }
+
+  function closeNotifications() {
+    setNotificationAnchor(null);
   }
 
   return (
@@ -164,6 +273,8 @@ export function PortalLayout({ portal }) {
             {portal === "vendor" ? (
               <Stack spacing={0.65}>
                 <Button
+                  component={NavLink}
+                  to="/vendor/quotes"
                   variant="contained"
                   startIcon={<AddRoundedIcon />}
                   sx={{
@@ -177,68 +288,11 @@ export function PortalLayout({ portal }) {
                     boxShadow: "none",
                   }}
                 >
-                  New Project
-                </Button>
-                <Button
-                  variant="text"
-                  color="inherit"
-                  onClick={handleLogout}
-                  sx={{
-                    justifyContent: "flex-start",
-                    gap: 0.9,
-                    minHeight: 34,
-                    px: 1.05,
-                    borderRadius: "0.7rem",
-                    color: "#647387",
-                    fontSize: "0.72rem",
-                    fontWeight: 600,
-                    textTransform: "none",
-                  }}
-                >
-                  <LogoutOutlinedIcon sx={{ fontSize: "0.9rem" }} />
-                  Logout
+                  View Quotes
                 </Button>
               </Stack>
             ) : (
-              <Stack spacing={0.65}>
-                <Button
-                  variant="text"
-                  color="inherit"
-                  onClick={handleLogout}
-                  sx={{
-                    justifyContent: "flex-start",
-                    gap: 0.9,
-                    minHeight: 34,
-                    px: 1.05,
-                    borderRadius: "0.7rem",
-                    color: "#647387",
-                    fontSize: "0.72rem",
-                    fontWeight: 600,
-                    textTransform: "none",
-                  }}
-                >
-                  <SettingsOutlinedIcon sx={{ fontSize: "0.9rem" }} />
-                  Settings
-                </Button>
-                <Button
-                  variant="text"
-                  color="inherit"
-                  sx={{
-                    justifyContent: "flex-start",
-                    gap: 0.9,
-                    minHeight: 34,
-                    px: 1.05,
-                    borderRadius: "0.7rem",
-                    color: "#647387",
-                    fontSize: "0.72rem",
-                    fontWeight: 600,
-                    textTransform: "none",
-                  }}
-                >
-                  <LogoutOutlinedIcon sx={{ fontSize: "0.9rem" }} />
-                  Logout
-                </Button>
-              </Stack>
+              <Box />
             )}
           </Box>
         </Box>
@@ -267,29 +321,32 @@ export function PortalLayout({ portal }) {
               zIndex: 10,
             }}
           >
-            <TextField
-              size="small"
-              placeholder="Search leads, projects..."
-              sx={{
-                flex: 1,
-                maxWidth: 610,
-                "& .MuiOutlinedInput-root": {
-                  height: 40,
-                  borderRadius: "999px",
-                  bgcolor: "#FFFFFF",
-                  fontSize: "0.82rem",
-                },
-              }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchRoundedIcon
-                      sx={{ color: "#92A0B4", fontSize: "1.05rem" }}
-                    />
-                  </InputAdornment>
-                ),
-              }}
-            />
+            <Box component="form" onSubmit={handleSearchSubmit} sx={{ flex: 1, maxWidth: 610 }}>
+              <TextField
+                fullWidth
+                size="small"
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+                placeholder={portal === "vendor" ? "Search leads, projects..." : "Search bookings, projects..."}
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    height: 40,
+                    borderRadius: "999px",
+                    bgcolor: "#FFFFFF",
+                    fontSize: "0.82rem",
+                  },
+                }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchRoundedIcon
+                        sx={{ color: "#92A0B4", fontSize: "1.05rem" }}
+                      />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            </Box>
 
             <Stack
               direction="row"
@@ -297,14 +354,77 @@ export function PortalLayout({ portal }) {
               alignItems="center"
               sx={{ ml: "auto" }}
             >
-              <IconButton sx={{ color: "#6D7A8D" }}>
-                <NotificationsNoneRoundedIcon sx={{ fontSize: "1.05rem" }} />
+              <IconButton
+                onClick={openNotifications}
+                aria-label="Open notifications"
+                sx={{ color: "#6D7A8D" }}
+              >
+                <Badge
+                  badgeContent={notificationCount}
+                  color="error"
+                  max={99}
+                  invisible={notificationCount === 0}
+                >
+                  <NotificationsNoneRoundedIcon sx={{ fontSize: "1.05rem" }} />
+                </Badge>
               </IconButton>
+              <Menu
+                anchorEl={notificationAnchor}
+                open={Boolean(notificationAnchor)}
+                onClose={closeNotifications}
+                PaperProps={{
+                  sx: {
+                    mt: 1,
+                    width: 300,
+                    borderRadius: "1rem",
+                    border: "1px solid rgba(225,232,241,0.96)",
+                    boxShadow: "0 18px 38px rgba(16,29,51,0.14)",
+                  },
+                }}
+              >
+                <Box sx={{ px: 1.5, py: 1.1 }}>
+                  <Typography sx={{ color: "#18253A", fontSize: "0.86rem", fontWeight: 800 }}>
+                    Notifications
+                  </Typography>
+                  <Typography sx={{ mt: 0.2, color: "#7A8799", fontSize: "0.7rem" }}>
+                    Live vendor activity summary
+                  </Typography>
+                </Box>
+                {portal === "vendor" ? (
+                  notificationItems.map((item) => (
+                    <MenuItem
+                      key={item.path}
+                      component={NavLink}
+                      to={item.path}
+                      onClick={closeNotifications}
+                      sx={{ alignItems: "flex-start", py: 1.05, whiteSpace: "normal" }}
+                    >
+                      <Box>
+                        <Typography sx={{ color: "#223146", fontSize: "0.78rem", fontWeight: 800 }}>
+                          {item.label}
+                        </Typography>
+                        <Typography sx={{ mt: 0.15, color: "#7A8799", fontSize: "0.68rem" }}>
+                          {item.caption}
+                        </Typography>
+                      </Box>
+                    </MenuItem>
+                  ))
+                ) : (
+                  <MenuItem onClick={closeNotifications}>
+                    <Typography sx={{ color: "#7A8799", fontSize: "0.76rem" }}>
+                      No notifications right now.
+                    </Typography>
+                  </MenuItem>
+                )}
+              </Menu>
               <Stack
+                component={NavLink}
+                to={portal === "vendor" ? "/vendor/services" : "/customer/services"}
                 direction="row"
                 spacing={0.5}
                 alignItems="center"
                 sx={{ color: "#6D7A8D" }}
+                style={{ textDecoration: "none" }}
               >
                 <HelpOutlineRoundedIcon sx={{ fontSize: "0.95rem" }} />
                 <Typography sx={{ fontSize: "0.77rem", fontWeight: 600 }}>

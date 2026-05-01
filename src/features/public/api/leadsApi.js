@@ -23,6 +23,11 @@ export const leadsApi = {
     const { data } = await businessClient.get(`/leads/${requireId(leadId, "Lead id")}`);
     return data.lead;
   },
+
+  async updateLeadStatus(leadId, payload) {
+    const { data } = await businessClient.patch(`/leads/${requireId(leadId, "Lead id")}/status`, payload);
+    return data.lead;
+  },
 };
 
 export const quotesApi = {

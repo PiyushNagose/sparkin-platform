@@ -83,6 +83,20 @@ export const vendorsService = {
     return ensureProfile(user);
   },
 
+  async getVendorProfile(user, vendorId) {
+    if (!user.userId) {
+      throw new AppError(401, "Authentication is required");
+    }
+
+    const profile = await vendorsRepository.findByVendorId(vendorId);
+
+    if (!profile) {
+      throw new AppError(404, "Vendor profile not found");
+    }
+
+    return profile;
+  },
+
   async updateMyProfile(user, input) {
     assertVendor(user);
     await ensureProfile(user);

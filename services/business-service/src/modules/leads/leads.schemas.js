@@ -43,3 +43,7 @@ export const createLeadSchema = z.object({
   notes: nullableTrimmedString,
   specialInstructions: nullableTrimmedString,
 });
+
+export const updateLeadStatusSchema = z.object({
+  status: z.enum(["reviewing", "open_for_quotes", "closed"]),
+});

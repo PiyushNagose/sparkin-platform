@@ -14,7 +14,7 @@ import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
 import OpenInNewRoundedIcon from "@mui/icons-material/OpenInNewRounded";
 import { Link as RouterLink, useParams } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
-import { leadsApi } from "@/features/public/api/leadsApi";
+import { leadsApi, quotesApi } from "@/features/public/api/leadsApi";
 
 const verificationRows = [
   { label: "Ownership Status", value: "Owned", tone: "#2A9656", bg: "#E8F7EC" },
@@ -34,7 +34,37 @@ const labels = {
   heavy: "Heavy Shadow",
   owned: "Owned",
   rented: "Rented",
+  flat: "Flat Roof",
+  sloped: "Sloped Roof",
+  excellent: "Excellent",
+  average: "Average",
+  needs_repair: "Needs Repair",
+  single_phase: "Single Phase",
+  three_phase: "Three Phase",
+  morning: "Morning",
+  afternoon: "Afternoon",
+  evening: "Evening",
 };
+
+function formatPrice(value) {
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(Number(value) || 0);
+}
+
+function getBudgetEstimate(lead) {
+  const load = Number(lead?.property?.sanctionedLoadKw) || 0;
+  return load ? formatPrice(load * 75000) : "Pending quote";
+}
+
+function getMapUrl(address) {
+  const query = [address?.street, address?.landmark, address?.city, address?.state, address?.pincode]
+    .filter(Boolean)
+    .join(", ");
+  return query ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}` : "";
+}
 
 function getInitials(name) {
   return name
@@ -64,8 +94,11 @@ function formatTimeReceived(value) {
 export default function VendorLeadDetailPage() {
   const { leadId } = useParams();
   const [lead, setLead] = useState(null);
+  const [existingQuote, setExistingQuote] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   useEffect(() => {
     let active = true;
@@ -81,8 +114,11 @@ export default function VendorLeadDetailPage() {
       setError("");
 
       try {
-        const result = await leadsApi.getLead(leadId);
-        if (active) setLead(result);
+        const [result, quote] = await Promise.all([leadsApi.getLead(leadId), quotesApi.getMyQuoteForLead(leadId)]);
+        if (active) {
+          setLead(result);
+          setExistingQuote(quote);
+        }
       } catch (apiError) {
         if (active) setError(apiError?.response?.data?.message || "Could not load lead details.");
       } finally {
@@ -111,7 +147,7 @@ export default function VendorLeadDetailPage() {
       {
         icon: CurrencyRupeeRoundedIcon,
         label: "Budget Range",
-        value: "Pending quote",
+        value: existingQuote?.pricing?.totalPrice ? formatPrice(existingQuote.pricing.totalPrice) : getBudgetEstimate(lead),
         tone: "#239654",
         bg: "#EAF7EF",
       },
@@ -139,12 +175,42 @@ export default function VendorLeadDetailPage() {
       {
         icon: CalendarMonthOutlinedIcon,
         label: "Inspection Slot",
-        value: lead.inspection?.preferredTimeSlot || "Flexible",
+        value: [lead.inspection?.preferredDate, labels[lead.inspection?.preferredTimeSlot] || lead.inspection?.preferredTimeSlot]
+          .filter(Boolean)
+          .join(", ") || "Flexible",
         tone: "#2F73FF",
         bg: "#EEF4FF",
       },
     ];
+  }, [existingQuote, lead]);
+
+  const dynamicVerificationRows = useMemo(() => {
+    if (!lead) return verificationRows;
+
+    return [
+      { label: "Ownership Status", value: labels[lead.property?.ownership] || "Pending", tone: "#2A9656", bg: "#E8F7EC" },
+      { label: "Phone Verified", value: "", iconOnly: true },
+      { label: "Location Accuracy", value: lead.installationAddress?.pincode ? "High" : "Pending" },
+      { label: "Roof Condition", value: labels[lead.roof?.condition] || "Pending" },
+      { label: "Connection Type", value: labels[lead.property?.connectionType] || "Pending" },
+    ];
   }, [lead]);
+
+  async function handleSaveForLater() {
+    setIsSaving(true);
+    setError("");
+    setSuccess("");
+
+    try {
+      const updatedLead = await leadsApi.updateLeadStatus(resolvedLeadId, { status: "reviewing" });
+      setLead(updatedLead);
+      setSuccess("Lead saved for review.");
+    } catch (apiError) {
+      setError(apiError?.response?.data?.message || "Could not save this lead for later.");
+    } finally {
+      setIsSaving(false);
+    }
+  }
 
   if (isLoading) {
     return (
@@ -154,7 +220,7 @@ export default function VendorLeadDetailPage() {
     );
   }
 
-  if (error) {
+  if (error && !lead) {
     return <Alert severity="error">{error}</Alert>;
   }
 
@@ -166,6 +232,7 @@ export default function VendorLeadDetailPage() {
   const location = [lead.installationAddress?.city, lead.installationAddress?.state].filter(Boolean).join(", ");
   const initials = getInitials(customerName) || "CU";
   const resolvedLeadId = lead.id || lead._id || leadId;
+  const mapUrl = getMapUrl(lead.installationAddress);
 
   return (
     <Box sx={{ width: "100%" }}>
@@ -255,14 +322,29 @@ export default function VendorLeadDetailPage() {
 
           <Stack direction="row" spacing={0.9} flexWrap="wrap">
             {[
-              { icon: PhoneOutlinedIcon },
-              { icon: MailOutlineRoundedIcon },
-              { icon: ShareOutlinedIcon },
+              { icon: PhoneOutlinedIcon, component: "a", href: `tel:${lead.contact?.phoneNumber || ""}` },
+              { icon: MailOutlineRoundedIcon, component: "a", href: lead.contact?.email ? `mailto:${lead.contact.email}` : undefined },
+              {
+                icon: ShareOutlinedIcon,
+                onClick: () => {
+                  const text = `${customerName} - ${location || "Lead"} - ${window.location.href}`;
+                  if (navigator.share) {
+                    navigator.share({ title: "Sparkin lead", text, url: window.location.href }).catch(() => {});
+                  } else {
+                    navigator.clipboard?.writeText(text);
+                    setSuccess("Lead link copied.");
+                  }
+                },
+              },
             ].map((item, index) => {
               const Icon = item.icon;
               return (
                 <Button
                   key={index}
+                  component={item.component || "button"}
+                  href={item.href}
+                  onClick={item.onClick}
+                  disabled={item.component === "a" && !item.href}
                   sx={{
                     minWidth: 40,
                     width: 40,
@@ -292,6 +374,18 @@ export default function VendorLeadDetailPage() {
       >
         System Specifications
       </Typography>
+
+      {error ? (
+        <Alert severity="error" sx={{ mb: 2, borderRadius: "0.9rem" }}>
+          {error}
+        </Alert>
+      ) : null}
+
+      {success ? (
+        <Alert severity="success" sx={{ mb: 2, borderRadius: "0.9rem" }}>
+          {success}
+        </Alert>
+      ) : null}
 
       <Box
         sx={{
@@ -387,7 +481,7 @@ export default function VendorLeadDetailPage() {
             </Typography>
 
             <Stack spacing={1.05}>
-              {verificationRows.map((row) => (
+              {dynamicVerificationRows.map((row) => (
                 <Stack
                   key={row.label}
                   direction="row"
@@ -466,6 +560,10 @@ export default function VendorLeadDetailPage() {
                 Location Preview
               </Typography>
               <Button
+                component={mapUrl ? "a" : "button"}
+                href={mapUrl || undefined}
+                target={mapUrl ? "_blank" : undefined}
+                rel={mapUrl ? "noreferrer" : undefined}
                 endIcon={<OpenInNewRoundedIcon />}
                 sx={{
                   minHeight: 28,
@@ -561,7 +659,7 @@ export default function VendorLeadDetailPage() {
             </Typography>
             <Stack direction="row" spacing={0.6} alignItems="baseline" sx={{ mt: 0.35 }}>
               <Typography sx={{ color: "#118A44", fontSize: "1.8rem", fontWeight: 800 }}>
-                Pending
+                {existingQuote?.pricing?.totalPrice ? formatPrice(existingQuote.pricing.totalPrice) : getBudgetEstimate(lead)}
               </Typography>
               <Typography sx={{ color: "#5E6A7D", fontSize: "0.82rem" }}>
                 Quote Value
@@ -572,6 +670,8 @@ export default function VendorLeadDetailPage() {
           <Stack direction="row" spacing={1.05} sx={{ flexWrap: "wrap" }}>
             <Button
               variant="outlined"
+              onClick={handleSaveForLater}
+              disabled={isSaving}
               sx={{
                 minHeight: 40,
                 px: 1.8,
@@ -584,7 +684,7 @@ export default function VendorLeadDetailPage() {
                 textTransform: "none",
               }}
             >
-              Save for Later
+              {isSaving ? "Saving..." : "Save for Later"}
             </Button>
             <Button
               component={RouterLink}
@@ -601,7 +701,7 @@ export default function VendorLeadDetailPage() {
                 textTransform: "none",
               }}
             >
-              Submit Quote
+              {existingQuote ? "Edit Quote" : "Submit Quote"}
             </Button>
           </Stack>
         </Stack>

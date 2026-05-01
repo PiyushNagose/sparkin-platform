@@ -4,6 +4,17 @@ import { leadsRepository } from "../leads/leads.repository.js";
 import { quotesRepository } from "./quotes.repository.js";
 import mongoose from "mongoose";
 
+async function attachLeads(quotes) {
+  const leadIds = [...new Set(quotes.map((quote) => quote.leadId?.toString()).filter(Boolean))];
+  const leads = leadIds.length ? await leadsRepository.findLeadsByIds(leadIds) : [];
+  const leadById = new Map(leads.map((lead) => [String(lead.id || lead._id), lead]));
+
+  return quotes.map((quote) => ({
+    ...quote,
+    lead: leadById.get(String(quote.leadId)) ?? null,
+  }));
+}
+
 export const quotesService = {
   async createQuote(user, leadId, input) {
     if (user.role !== "vendor" && user.role !== "admin") {
@@ -23,6 +34,10 @@ export const quotesService = {
     const existingQuote = await quotesRepository.findQuoteByVendorAndLead(user.userId, leadId);
 
     if (existingQuote) {
+      if (existingQuote.status === "accepted") {
+        throw new AppError(409, "Accepted quotes cannot be changed");
+      }
+
       return quotesRepository.updateQuoteByVendorAndLead(user.userId, leadId, {
         ...input,
         customerId: lead.customerId,
@@ -65,16 +80,16 @@ export const quotesService = {
         throw new AppError(403, "You do not have access to these quotes");
       }
 
-      return quotesRepository.findQuotesByLeadId(leadId);
+      return attachLeads(await quotesRepository.findQuotesByLeadId(leadId));
     }
 
     if (user.role === "vendor") {
-      return quotesRepository.findQuotesByVendor(user.userId);
+      return attachLeads(await quotesRepository.findQuotesByVendor(user.userId));
     }
 
     const leads = await leadsRepository.findLeadsForCustomer(user.userId);
     const leadIds = leads.map((lead) => lead._id || lead.id).filter(Boolean);
-    return quotesRepository.findQuotesByCustomer(user.userId, leadIds);
+    return attachLeads(await quotesRepository.findQuotesByCustomer(user.userId, leadIds));
   },
 
   async getQuote(user, quoteId) {

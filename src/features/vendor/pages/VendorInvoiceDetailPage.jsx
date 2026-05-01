@@ -13,33 +13,34 @@ import { paymentsApi } from "@/features/vendor/api/paymentsApi";
 import invoiceBannerPlaceholder from "@/shared/assets/images/vendor/payments/invoice-banner-placeholder.png";
 
 const summaryStats = [
-  ["Invoice ID", "#INV-2023-8821"],
-  ["Issued Date", "Oct 24, 2023"],
-  ["Status", "Paid"],
+  ["Invoice ID", "Not available"],
+  ["Issued Date", "Not available"],
+  ["Status", "Not available"],
 ];
 
 const customerRows = [
-  ["Full Name", "Arjun Mehta"],
-  ["Email", "arjun.m@example.com"],
-  ["Contact Number", "+91 98765 43210"],
+  ["Full Name", "Not available"],
+  ["Email", "Not available"],
+  ["Customer ID", "Not available"],
 ];
 
 const paymentRows = [
-  ["Method", "HDFC Bank •••• 8821"],
-  ["Transaction ID", "TXN-992810"],
-  ["Date", "Oct 24, 2023, 11:42 AM"],
+  ["Method", "Not available"],
+  ["Transaction ID", "Not available"],
+  ["Date", "Not available"],
 ];
 
 const projectRows = [
-  ["Project ID", "SPK-2023-9842"],
-  ["System Size", "5kW Off-Grid System"],
-  ["Location", "Pune, Maharashtra"],
+  ["Project ID", "Not available"],
+  ["Milestone", "Not available"],
+  ["System Size", "Not available"],
+  ["Location", "Not available"],
 ];
 
 const invoiceRows = [
-  ["Panel & Equipment Cost", "\u20B91,80,000"],
-  ["Installation & Labor", "\u20B945,000"],
-  ["GST (18%)", "\u20B920,000"],
+  ["Milestone Amount", "Not available"],
+  ["GST Estimate (18%)", "Not available"],
+  ["Invoice Total", "Not available"],
 ];
 
 function formatPrice(value) {
@@ -60,6 +61,38 @@ function formatDate(value) {
     month: "short",
     year: "numeric",
   }).format(new Date(value));
+}
+
+function formatDateTime(value) {
+  if (!value) {
+    return "Pending";
+  }
+
+  return new Intl.DateTimeFormat("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(value));
+}
+
+function csvEscape(value) {
+  const text = String(value ?? "");
+  if (/[",\n]/.test(text)) return `"${text.replaceAll('"', '""')}"`;
+  return text;
+}
+
+function downloadFile(fileName, content) {
+  const blob = new Blob([content], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
 }
 
 function getPaymentView(payment) {
@@ -85,12 +118,13 @@ function getPaymentView(payment) {
     paymentRows: [
       ["Method", payment.status === "paid" ? "Recorded payment" : "Pending collection"],
       ["Transaction ID", payment.id],
-      ["Date", formatDate(payment.paidAt || payment.dueAt)],
+      ["Date", formatDateTime(payment.paidAt || payment.dueAt)],
     ],
     projectRows: [
       ["Project ID", payment.projectId],
       ["Milestone", payment.milestone.title],
-      ["Quote ID", payment.quoteId],
+      ["System Size", payment.project?.system?.sizeKw ? `${payment.project.system.sizeKw} kW` : "Not available"],
+      ["Location", [payment.project?.installationAddress?.city, payment.project?.installationAddress?.state].filter(Boolean).join(", ") || "Not available"],
     ],
     invoiceRows: [
       ["Milestone Amount", formatPrice(baseEstimate)],
@@ -183,7 +217,46 @@ export default function VendorInvoiceDetailPage() {
   const displayPaymentRows = paymentView?.paymentRows ?? paymentRows;
   const displayProjectRows = paymentView?.projectRows ?? projectRows;
   const displayInvoiceRows = paymentView?.invoiceRows ?? invoiceRows;
-  const displayTotalAmount = paymentView?.totalAmount ?? "₹2,45,000";
+  const displayVerifiedDate = formatDate(payment?.paidAt || payment?.updatedAt || payment?.createdAt);
+  const displaySystemCapacity = payment?.project?.system?.sizeKw
+    ? `${payment.project.system.sizeKw} kW System Capacity`
+    : "System capacity pending";
+  const displayTotalAmount = paymentView?.totalAmount ?? "Not available";
+
+  function buildInvoiceCsv() {
+    const rows = [
+      ["Invoice Summary"],
+      ...displaySummaryStats,
+      [],
+      ["Customer Information"],
+      ...displayCustomerRows,
+      [],
+      ["Payment Summary"],
+      ...displayPaymentRows,
+      [],
+      ["Project Details"],
+      ...displayProjectRows,
+      [],
+      ["Invoice Breakdown"],
+      ...displayInvoiceRows,
+      ["Total", displayTotalAmount],
+    ];
+
+    return rows.map((row) => row.map(csvEscape).join(",")).join("\n");
+  }
+
+  function downloadInvoice() {
+    downloadFile(`${payment?.invoiceNumber || invoiceId || "sparkin-invoice"}.csv`, buildInvoiceCsv());
+  }
+
+  function shareInvoice() {
+    const text = `${payment?.invoiceNumber || "Invoice"} - ${displayTotalAmount}`;
+    if (navigator.share) {
+      navigator.share({ title: "Sparkin invoice", text, url: window.location.href }).catch(() => {});
+    } else {
+      navigator.clipboard?.writeText(`${text} ${window.location.href}`);
+    }
+  }
 
   useEffect(() => {
     let active = true;
@@ -276,6 +349,7 @@ export default function VendorInvoiceDetailPage() {
           <Button
             variant="outlined"
             startIcon={<ShareOutlinedIcon />}
+            onClick={shareInvoice}
             sx={{
               minHeight: 38,
               px: 1.35,
@@ -293,6 +367,7 @@ export default function VendorInvoiceDetailPage() {
           <Button
             variant="outlined"
             startIcon={<PrintOutlinedIcon />}
+            onClick={() => window.print()}
             sx={{
               minHeight: 38,
               px: 1.35,
@@ -310,6 +385,8 @@ export default function VendorInvoiceDetailPage() {
           <Button
             variant="contained"
             startIcon={<DownloadRoundedIcon />}
+            onClick={downloadInvoice}
+            disabled={!payment}
             sx={{
               minHeight: 38,
               px: 1.5,
@@ -573,7 +650,7 @@ export default function VendorInvoiceDetailPage() {
               lineHeight: 1.5,
             }}
           >
-            Installation verified and certified on Oct 25, 2023.
+            Installation verified and certified on {displayVerifiedDate}.
           </Typography>
         </Box>
 
@@ -608,7 +685,7 @@ export default function VendorInvoiceDetailPage() {
           >
             ⚡
           </Box>
-          5.2 kW Peak Generation Today
+          {displaySystemCapacity}
         </Box>
       </Box>
     </Box>

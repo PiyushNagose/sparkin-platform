@@ -33,6 +33,11 @@ export const leadsRepository = {
     return normalizeLead(lead);
   },
 
+  async findLeadsByIds(ids) {
+    const leads = await LeadModel.find({ _id: { $in: ids } }).lean({ virtuals: true });
+    return normalizeLeads(leads);
+  },
+
   async findVendorVisibleLeads() {
     const leads = await LeadModel.find({ status: { $in: ["submitted", "reviewing", "open_for_quotes"] } })
       .sort({ createdAt: -1 })
@@ -45,6 +50,16 @@ export const leadsRepository = {
     const lead = await LeadModel.findByIdAndUpdate(
       id,
       { $set: { status: "open_for_quotes" } },
+      { new: true },
+    ).lean({ virtuals: true });
+
+    return normalizeLead(lead);
+  },
+
+  async updateStatus(id, status) {
+    const lead = await LeadModel.findByIdAndUpdate(
+      id,
+      { $set: { status } },
       { new: true },
     ).lean({ virtuals: true });
 

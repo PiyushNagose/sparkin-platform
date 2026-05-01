@@ -46,4 +46,18 @@ export const leadsService = {
 
     return lead;
   },
+
+  async updateLeadStatus(user, leadId, input) {
+    if (user.role !== "vendor" && user.role !== "admin") {
+      throw new AppError(403, "Only vendors can update lead status");
+    }
+
+    const lead = await this.getLead(user, leadId);
+
+    if (lead.status === "quote_selected" && input.status !== "closed") {
+      throw new AppError(409, "Selected leads cannot be moved back into review");
+    }
+
+    return leadsRepository.updateStatus(leadId, input.status);
+  },
 };

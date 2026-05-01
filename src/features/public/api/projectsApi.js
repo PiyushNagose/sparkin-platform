@@ -34,4 +34,12 @@ export const projectsApi = {
     );
     return data.project;
   },
+
+  async uploadDocument(projectId, payload) {
+    const { data } = await fulfillmentClient.post(
+      `/projects/${requireId(projectId, "Project id")}/documents`,
+      payload,
+    );
+    return data.project;
+  },
 };

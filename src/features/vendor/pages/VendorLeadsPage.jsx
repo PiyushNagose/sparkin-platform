@@ -1,19 +1,12 @@
-import { Alert, Avatar, Box, Button, CircularProgress, Stack, Typography } from "@mui/material";
-import KeyboardArrowDownRoundedIcon from "@mui/icons-material/KeyboardArrowDownRounded";
+import { Alert, Avatar, Box, Button, CircularProgress, MenuItem, Stack, TextField, Typography } from "@mui/material";
 import FileDownloadOutlinedIcon from "@mui/icons-material/FileDownloadOutlined";
-import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import TuneRoundedIcon from "@mui/icons-material/TuneRounded";
 import KeyboardArrowLeftRoundedIcon from "@mui/icons-material/KeyboardArrowLeftRounded";
 import KeyboardArrowRightRoundedIcon from "@mui/icons-material/KeyboardArrowRightRounded";
-import { Link as RouterLink } from "react-router-dom";
+import RefreshRoundedIcon from "@mui/icons-material/RefreshRounded";
+import { Link as RouterLink, useLocation } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
-import { leadsApi } from "@/features/public/api/leadsApi";
-
-const filters = [
-  { label: "Status", value: "All Statuses" },
-  { label: "Location", value: "Maharashtra" },
-  { label: "System", value: "Any Size" },
-];
+import { leadsApi, quotesApi } from "@/features/public/api/leadsApi";
 
 const columns = [
   "Customer Name",
@@ -25,15 +18,17 @@ const columns = [
   "Actions",
 ];
 
-function FilterChip({ label, value }) {
+const pageSize = 8;
+
+function FilterSelect({ label, value, onChange, options }) {
   return (
     <Stack
       direction="row"
-      spacing={0.6}
+      spacing={0.7}
       alignItems="center"
       sx={{
         minHeight: 40,
-        px: 1.3,
+        px: 1.1,
         borderRadius: "999px",
         bgcolor: "#FFFFFF",
         border: "1px solid rgba(225,232,241,0.96)",
@@ -46,14 +41,33 @@ function FilterChip({ label, value }) {
           fontWeight: 700,
           letterSpacing: "0.08em",
           textTransform: "uppercase",
+          whiteSpace: "nowrap",
         }}
       >
         {label}:
       </Typography>
-      <Typography sx={{ color: "#223146", fontSize: "0.74rem", fontWeight: 700 }}>
-        {value}
-      </Typography>
-      <KeyboardArrowDownRoundedIcon sx={{ color: "#7D8797", fontSize: "1rem" }} />
+      <TextField
+        select
+        variant="standard"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        slotProps={{ input: { disableUnderline: true } }}
+        sx={{
+          minWidth: { xs: 150, md: 122 },
+          "& .MuiInputBase-input": {
+            py: 0,
+            color: "#223146",
+            fontSize: "0.74rem",
+            fontWeight: 700,
+          },
+        }}
+      >
+        {options.map(([optionValue, optionLabel]) => (
+          <MenuItem key={optionValue} value={optionValue}>
+            {optionLabel}
+          </MenuItem>
+        ))}
+      </TextField>
     </Stack>
   );
 }
@@ -117,59 +131,109 @@ function formatTimeReceived(value) {
   return `${diffDays} day${diffDays === 1 ? "" : "s"} ago`;
 }
 
-function toLeadRow(lead) {
+function formatPrice(value) {
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(Number(value) || 0);
+}
+
+function getLeadBudget(lead) {
+  const load = Number(lead.property?.sanctionedLoadKw) || 0;
+  return load ? formatPrice(load * 75000) : "Pending quote";
+}
+
+function downloadFile(fileName, content) {
+  const blob = new Blob([content], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+function csvEscape(value) {
+  const text = String(value ?? "");
+  if (/[",\n]/.test(text)) return `"${text.replaceAll('"', '""')}"`;
+  return text;
+}
+
+function toCsv(rows) {
+  return rows.map((row) => row.map(csvEscape).join(",")).join("\n");
+}
+
+function toLeadRow(lead, quote) {
   const { statusTone, statusBg } = getStatusStyle(lead.status);
   const name = lead.contact?.fullName || "Customer";
   const load = lead.property?.sanctionedLoadKw;
   const id = lead.id || lead._id;
+  const hasQuote = Boolean(quote);
 
   return {
     id,
+    raw: lead,
     initials: getInitials(name) || "CU",
     name,
     location: [lead.installationAddress?.city, lead.installationAddress?.state].filter(Boolean).join(", "),
     systemSize: load ? `${load} kW` : "Assessment pending",
-    budget: "Pending quote",
+    systemLoad: Number(load) || 0,
+    budget: getLeadBudget(lead),
     status: formatLeadStatus(lead.status),
+    rawStatus: lead.status,
     statusTone,
     statusBg,
     timeReceived: formatTimeReceived(lead.createdAt),
-    primaryAction: "Submit Quote",
+    primaryAction: hasQuote ? "Edit Quote" : "Submit Quote",
     detailAction: "View Details",
     quotePath: id ? `/vendor/leads/${id}/quote` : "/vendor/leads",
     detailPath: id ? `/vendor/leads/${id}` : "/vendor/leads",
+    quoteStatus: quote?.status || null,
+    createdAt: lead.createdAt || lead.submittedAt,
   };
 }
 
 export default function VendorLeadsPage() {
+  const location = useLocation();
   const [leads, setLeads] = useState([]);
+  const [quotes, setQuotes] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [locationFilter, setLocationFilter] = useState("all");
+  const [systemFilter, setSystemFilter] = useState("all");
+  const [sortBy, setSortBy] = useState("newest");
+  const [page, setPage] = useState(1);
+
+  async function loadLeads(active = true) {
+    setIsLoading(true);
+    setError("");
+
+    try {
+      const [leadRows, quoteRows] = await Promise.all([leadsApi.listLeads(), quotesApi.listQuotes()]);
+
+      if (active) {
+        setLeads(leadRows);
+        setQuotes(quoteRows);
+        setPage(1);
+      }
+    } catch (apiError) {
+      if (active) {
+        setError(apiError?.response?.data?.message || "Could not load leads.");
+      }
+    } finally {
+      if (active) {
+        setIsLoading(false);
+      }
+    }
+  }
 
   useEffect(() => {
     let active = true;
-
-    async function loadLeads() {
-      setIsLoading(true);
-      setError("");
-
-      try {
-        const result = await leadsApi.listLeads();
-
-        if (active) {
-          setLeads(result);
-        }
-      } catch (apiError) {
-        if (active) {
-          setError(apiError?.response?.data?.message || "Could not load leads.");
-        }
-      } finally {
-        if (active) {
-          setIsLoading(false);
-        }
-      }
-    }
-
     loadLeads();
 
     return () => {
@@ -177,7 +241,81 @@ export default function VendorLeadsPage() {
     };
   }, []);
 
-  const leadRows = useMemo(() => leads.map(toLeadRow), [leads]);
+  useEffect(() => {
+    const incomingSearch = location.state?.portalSearch || "";
+    setSearchTerm(incomingSearch);
+    setPage(1);
+  }, [location.state]);
+
+  const quoteByLeadId = useMemo(() => {
+    const map = new Map();
+    quotes.forEach((quote) => {
+      map.set(String(quote.leadId), quote);
+    });
+    return map;
+  }, [quotes]);
+  const leadRows = useMemo(
+    () => leads.map((lead) => toLeadRow(lead, quoteByLeadId.get(String(lead.id || lead._id)))),
+    [leads, quoteByLeadId],
+  );
+  const locationOptions = useMemo(
+    () => [...new Set(leadRows.map((lead) => lead.raw.installationAddress?.state).filter(Boolean))],
+    [leadRows],
+  );
+  const filteredRows = useMemo(() => {
+    const normalizedSearch = searchTerm.trim().toLowerCase();
+    const rows = leadRows.filter((lead) => {
+      const matchesStatus = statusFilter === "all" || lead.rawStatus === statusFilter;
+      const matchesLocation = locationFilter === "all" || lead.raw.installationAddress?.state === locationFilter;
+      const matchesSystem =
+        systemFilter === "all" ||
+        (systemFilter === "assessment" && !lead.systemLoad) ||
+        (systemFilter === "under_5" && lead.systemLoad > 0 && lead.systemLoad < 5) ||
+        (systemFilter === "5_10" && lead.systemLoad >= 5 && lead.systemLoad <= 10) ||
+        (systemFilter === "over_10" && lead.systemLoad > 10);
+      const matchesSearch =
+        !normalizedSearch ||
+        [lead.id, lead.name, lead.location, lead.systemSize, lead.budget, lead.status, lead.quoteStatus]
+          .some((value) => String(value || "").toLowerCase().includes(normalizedSearch));
+
+      return matchesStatus && matchesLocation && matchesSystem && matchesSearch;
+    });
+
+    return [...rows].sort((a, b) => {
+      if (sortBy === "oldest") return new Date(a.createdAt || 0) - new Date(b.createdAt || 0);
+      if (sortBy === "system_desc") return b.systemLoad - a.systemLoad;
+      if (sortBy === "system_asc") return a.systemLoad - b.systemLoad;
+      return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+    });
+  }, [leadRows, locationFilter, searchTerm, sortBy, statusFilter, systemFilter]);
+  const totalPages = Math.max(1, Math.ceil(filteredRows.length / pageSize));
+  const visibleRows = filteredRows.slice((page - 1) * pageSize, page * pageSize);
+  const pageNumbers = useMemo(() => Array.from({ length: totalPages }, (_, index) => index + 1), [totalPages]);
+  const firstVisibleLead = filteredRows.length ? (page - 1) * pageSize + 1 : 0;
+  const lastVisibleLead = filteredRows.length ? firstVisibleLead + visibleRows.length - 1 : 0;
+
+  function exportCsv() {
+    const rows = [
+      ["Lead ID", "Customer", "Location", "System Size", "Budget", "Status", "Quote Status", "Time Received"],
+      ...filteredRows.map((lead) => [
+        lead.id,
+        lead.name,
+        lead.location,
+        lead.systemSize,
+        lead.budget,
+        lead.status,
+        lead.quoteStatus || "not quoted",
+        lead.createdAt,
+      ]),
+    ];
+
+    downloadFile(`sparkin-leads-${new Date().toISOString().slice(0, 10)}.csv`, toCsv(rows));
+  }
+
+  function updateFilter(setter, value) {
+    setter(value);
+    setPage(1);
+  }
 
   return (
     <Box sx={{ width: "100%" }}>
@@ -216,6 +354,8 @@ export default function VendorLeadsPage() {
           <Button
             variant="outlined"
             startIcon={<FileDownloadOutlinedIcon />}
+            onClick={exportCsv}
+            disabled={isLoading}
             sx={{
               minHeight: 38,
               px: 1.65,
@@ -231,7 +371,9 @@ export default function VendorLeadsPage() {
           </Button>
           <Button
             variant="contained"
-            startIcon={<AddRoundedIcon />}
+            startIcon={<RefreshRoundedIcon />}
+            onClick={() => loadLeads()}
+            disabled={isLoading}
             sx={{
               minHeight: 38,
               px: 1.7,
@@ -243,7 +385,7 @@ export default function VendorLeadsPage() {
               textTransform: "none",
             }}
           >
-            Manual Lead
+            Refresh Leads
           </Button>
         </Stack>
       </Stack>
@@ -264,9 +406,52 @@ export default function VendorLeadsPage() {
           spacing={1.35}
         >
           <Stack direction={{ xs: "column", md: "row" }} spacing={1} flexWrap="wrap">
-            {filters.map((filter) => (
-              <FilterChip key={filter.label} label={filter.label} value={filter.value} />
-            ))}
+            <TextField
+              size="small"
+              label="Search"
+              value={searchTerm}
+              onChange={(event) => updateFilter(setSearchTerm, event.target.value)}
+              sx={{
+                minWidth: { xs: "100%", md: 220 },
+                "& .MuiOutlinedInput-root": {
+                  height: 40,
+                  borderRadius: "999px",
+                  bgcolor: "#FFFFFF",
+                  fontSize: "0.74rem",
+                  fontWeight: 700,
+                },
+              }}
+            />
+            <FilterSelect
+              label="Status"
+              value={statusFilter}
+              onChange={(value) => updateFilter(setStatusFilter, value)}
+              options={[
+                ["all", "All Statuses"],
+                ["submitted", "New"],
+                ["reviewing", "In Review"],
+                ["open_for_quotes", "Open"],
+                ["quote_selected", "Selected"],
+              ]}
+            />
+            <FilterSelect
+              label="Location"
+              value={locationFilter}
+              onChange={(value) => updateFilter(setLocationFilter, value)}
+              options={[["all", "All Locations"], ...locationOptions.map((location) => [location, location])]}
+            />
+            <FilterSelect
+              label="System"
+              value={systemFilter}
+              onChange={(value) => updateFilter(setSystemFilter, value)}
+              options={[
+                ["all", "Any Size"],
+                ["assessment", "Assessment Pending"],
+                ["under_5", "Under 5 kW"],
+                ["5_10", "5-10 kW"],
+                ["over_10", "Over 10 kW"],
+              ]}
+            />
           </Stack>
 
           <Stack direction="row" spacing={0.85} alignItems="center" justifyContent="flex-end">
@@ -274,10 +459,28 @@ export default function VendorLeadsPage() {
             <Typography sx={{ color: "#6E7B8C", fontSize: "0.74rem", fontWeight: 600 }}>
               Sort by:
             </Typography>
-            <Typography sx={{ color: "#0E56C8", fontSize: "0.74rem", fontWeight: 700 }}>
-              Time Received (Newest)
-            </Typography>
-            <KeyboardArrowDownRoundedIcon sx={{ color: "#7D8797", fontSize: "1rem" }} />
+            <TextField
+              select
+              size="small"
+              value={sortBy}
+              onChange={(event) => updateFilter(setSortBy, event.target.value)}
+              sx={{
+                minWidth: 190,
+                "& .MuiOutlinedInput-root": {
+                  height: 36,
+                  borderRadius: "999px",
+                  bgcolor: "#FFFFFF",
+                  fontSize: "0.74rem",
+                  fontWeight: 700,
+                  color: "#0E56C8",
+                },
+              }}
+            >
+              <MenuItem value="newest">Time Received (Newest)</MenuItem>
+              <MenuItem value="oldest">Time Received (Oldest)</MenuItem>
+              <MenuItem value="system_desc">System Size (High-Low)</MenuItem>
+              <MenuItem value="system_asc">System Size (Low-High)</MenuItem>
+            </TextField>
           </Stack>
         </Stack>
       </Box>
@@ -329,18 +532,18 @@ export default function VendorLeadsPage() {
             </Alert>
           ) : null}
 
-          {!isLoading && !error && leadRows.length === 0 ? (
+          {!isLoading && !error && filteredRows.length === 0 ? (
             <Box sx={{ py: 5, textAlign: "center" }}>
               <Typography sx={{ color: "#223146", fontSize: "0.95rem", fontWeight: 700 }}>
-                No leads available yet
+                No matching leads
               </Typography>
               <Typography sx={{ mt: 0.45, color: "#738094", fontSize: "0.78rem" }}>
-                New customer booking requests will appear here.
+                Adjust the filters or refresh to check for new customer booking requests.
               </Typography>
             </Box>
           ) : null}
 
-          {leadRows.map((lead, index) => (
+          {visibleRows.map((lead, index) => (
             <Box
               key={lead.id || `${lead.name}-${index}`}
               sx={{
@@ -408,18 +611,17 @@ export default function VendorLeadsPage() {
                     </Box>
                   </Typography>
                   <Button
-                    component={lead.actionDisabled ? "button" : RouterLink}
-                    to={lead.actionDisabled ? undefined : lead.quotePath}
-                    variant={lead.actionDisabled ? "outlined" : "contained"}
-                    disabled={lead.actionDisabled}
+                    component={RouterLink}
+                    to={lead.quotePath}
+                    variant="contained"
                     sx={{
                       minHeight: 34,
                       px: 1.25,
                       borderRadius: "999px",
-                      bgcolor: lead.actionDisabled ? "#F2F4F8" : "#0E56C8",
+                      bgcolor: "#0E56C8",
                       borderColor: "rgba(225,232,241,0.96)",
-                      color: lead.actionDisabled ? "#A1ACBA" : "#FFFFFF",
-                      boxShadow: lead.actionDisabled ? "none" : "0 10px 20px rgba(14,86,200,0.16)",
+                      color: "#FFFFFF",
+                      boxShadow: "0 10px 20px rgba(14,86,200,0.16)",
                       fontSize: "0.68rem",
                       fontWeight: 700,
                       textTransform: "none",
@@ -504,18 +706,17 @@ export default function VendorLeadsPage() {
                       {lead.detailAction}
                     </Button>
                     <Button
-                      component={lead.actionDisabled ? "button" : RouterLink}
-                      to={lead.actionDisabled ? undefined : lead.quotePath}
-                      variant={lead.actionDisabled ? "outlined" : "contained"}
-                      disabled={lead.actionDisabled}
+                      component={RouterLink}
+                      to={lead.quotePath}
+                      variant="contained"
                       sx={{
                         minHeight: 34,
                         px: 1.25,
                         borderRadius: "999px",
-                        bgcolor: lead.actionDisabled ? "#F2F4F8" : "#0E56C8",
+                        bgcolor: "#0E56C8",
                         borderColor: "rgba(225,232,241,0.96)",
-                        color: lead.actionDisabled ? "#A1ACBA" : "#FFFFFF",
-                        boxShadow: lead.actionDisabled ? "none" : "0 10px 20px rgba(14,86,200,0.16)",
+                        color: "#FFFFFF",
+                        boxShadow: "0 10px 20px rgba(14,86,200,0.16)",
                         fontSize: "0.68rem",
                         fontWeight: 700,
                         textTransform: "none",
@@ -542,11 +743,14 @@ export default function VendorLeadsPage() {
           }}
         >
           <Typography sx={{ color: "#738094", fontSize: "0.74rem", fontWeight: 500 }}>
-            Showing {leadRows.length} lead{leadRows.length === 1 ? "" : "s"}
+            Showing {firstVisibleLead}-{lastVisibleLead} of {filteredRows.length} lead
+            {filteredRows.length === 1 ? "" : "s"}
           </Typography>
 
           <Stack direction="row" spacing={0.55} alignItems="center">
             <Button
+              onClick={() => setPage((currentPage) => Math.max(1, currentPage - 1))}
+              disabled={page === 1}
               sx={{
                 minWidth: 32,
                 width: 32,
@@ -558,25 +762,28 @@ export default function VendorLeadsPage() {
             >
               <KeyboardArrowLeftRoundedIcon />
             </Button>
-            {[1, 2, 3].map((page) => (
+            {pageNumbers.map((pageNumber) => (
               <Button
-                key={page}
+                key={pageNumber}
+                onClick={() => setPage(pageNumber)}
                 sx={{
                   minWidth: 32,
                   width: 32,
                   height: 32,
                   borderRadius: "50%",
                   p: 0,
-                  color: page === 1 ? "#FFFFFF" : "#223146",
-                  bgcolor: page === 1 ? "#0E56C8" : "transparent",
+                  color: pageNumber === page ? "#FFFFFF" : "#223146",
+                  bgcolor: pageNumber === page ? "#0E56C8" : "transparent",
                   fontSize: "0.72rem",
                   fontWeight: 700,
                 }}
               >
-                {page}
+                {pageNumber}
               </Button>
             ))}
             <Button
+              onClick={() => setPage((currentPage) => Math.min(totalPages, currentPage + 1))}
+              disabled={page === totalPages}
               sx={{
                 minWidth: 32,
                 width: 32,
