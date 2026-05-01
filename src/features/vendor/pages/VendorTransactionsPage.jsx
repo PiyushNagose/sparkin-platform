@@ -16,64 +16,9 @@ import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import DownloadRoundedIcon from "@mui/icons-material/DownloadRounded";
 import KeyboardArrowLeftRoundedIcon from "@mui/icons-material/KeyboardArrowLeftRounded";
 import KeyboardArrowRightRoundedIcon from "@mui/icons-material/KeyboardArrowRightRounded";
-import { Link as RouterLink } from "react-router-dom";
+import { Link as RouterLink, useLocation } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import { paymentsApi } from "@/features/vendor/api/paymentsApi";
-
-const transactions = [
-  {
-    id: "#TXN-882910",
-    initials: "AM",
-    name: "Arjun Mehta",
-    email: "arjun.m@example.com",
-    project: "Residential 5kW",
-    amount: "\u20B92,45,000",
-    method: "HDFC Bank •••• 8821",
-    status: "Paid",
-    statusTone: "#239654",
-    statusBg: "#DDF8E7",
-    date: "Oct 24, 2023",
-  },
-  {
-    id: "#TXN-882911",
-    initials: "PS",
-    name: "Priya Sharma",
-    email: "p.sharma@domain.in",
-    project: "Commercial 12kW",
-    amount: "\u20B96,10,000",
-    method: "NEFT Transfer",
-    status: "Pending",
-    statusTone: "#726C00",
-    statusBg: "#F2F08E",
-    date: "Oct 23, 2023",
-  },
-  {
-    id: "#TXN-882912",
-    initials: "VS",
-    name: "Vikram Singh",
-    email: "vikram@techcorp.com",
-    project: "Residential 3kW",
-    amount: "\u20B91,85,000",
-    method: "UPI Payment",
-    status: "Failed",
-    statusTone: "#D74C4C",
-    statusBg: "#FDECEC",
-    date: "Oct 21, 2023",
-  },
-  {
-    id: "#TXN-882915",
-    initials: "SV",
-    name: "Sanya Verma",
-    email: "sanya.v@email.com",
-    project: "Residential 5kW",
-    amount: "\u20B92,45,000",
-    method: "ICICI Bank •••• 1102",
-    status: "Paid",
-    statusTone: "#239654",
-    statusBg: "#DDF8E7",
-    date: "Oct 20, 2023",
-  },
-];
 
 const columns = [
   "Transaction ID",
@@ -143,10 +88,11 @@ function toTransaction(payment) {
     statusTone: status.tone,
     statusBg: status.bg,
     date: formatDate(payment.paidAt || payment.dueAt),
+    rawStatus: payment.status,
   };
 }
 
-function FilterField({ label, value, wide, search, calendar }) {
+function FilterField({ label, value, wide, search, calendar, onChange }) {
   return (
     <Box sx={{ minWidth: wide ? 0 : 170, flex: wide ? 1 : "unset" }}>
       <Typography
@@ -178,7 +124,8 @@ function FilterField({ label, value, wide, search, calendar }) {
         ) : null}
         <InputBase
           value={value}
-          readOnly
+          onChange={(event) => onChange?.(event.target.value)}
+          readOnly={!onChange}
           sx={{
             flex: 1,
             color: "#223146",
@@ -200,8 +147,32 @@ function FilterField({ label, value, wide, search, calendar }) {
   );
 }
 
+function csvEscape(value) {
+  const text = String(value ?? "");
+  if (/[",\n]/.test(text)) return `"${text.replaceAll('"', '""')}"`;
+  return text;
+}
+
+function downloadFile(fileName, content) {
+  const blob = new Blob([content], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+const pageSize = 8;
+
 export default function VendorTransactionsPage() {
+  const location = useLocation();
   const [payments, setPayments] = useState([]);
+  const [query, setQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [page, setPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -214,7 +185,10 @@ export default function VendorTransactionsPage() {
 
       try {
         const result = await paymentsApi.listPayments();
-        if (active) setPayments(result);
+        if (active) {
+          setPayments(result);
+          setPage(1);
+        }
       } catch (apiError) {
         if (active) setError(apiError?.response?.data?.message || "Could not load transactions.");
       } finally {
@@ -229,7 +203,42 @@ export default function VendorTransactionsPage() {
     };
   }, []);
 
+  useEffect(() => {
+    const incomingSearch = location.state?.portalSearch || "";
+    if (incomingSearch) {
+      setQuery(incomingSearch);
+      setPage(1);
+    }
+  }, [location.state]);
+
   const transactionRows = useMemo(() => payments.map(toTransaction), [payments]);
+  const filteredRows = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase();
+    return transactionRows.filter((item) => {
+      const matchesStatus = statusFilter === "all" || item.rawStatus === statusFilter;
+      const matchesQuery =
+        !normalizedQuery ||
+        [item.invoiceNumber, item.name, item.email, item.project, item.id].some((value) =>
+          String(value || "").toLowerCase().includes(normalizedQuery),
+        );
+      return matchesStatus && matchesQuery;
+    });
+  }, [query, statusFilter, transactionRows]);
+  const totalPages = Math.max(1, Math.ceil(filteredRows.length / pageSize));
+  const visibleRows = filteredRows.slice((page - 1) * pageSize, page * pageSize);
+  const firstVisible = filteredRows.length ? (page - 1) * pageSize + 1 : 0;
+  const lastVisible = filteredRows.length ? firstVisible + visibleRows.length - 1 : 0;
+  const paidTotal = payments.filter((payment) => payment.status === "paid").reduce((sum, payment) => sum + payment.amount, 0);
+  const activeProjectCount = new Set(payments.map((payment) => String(payment.projectId))).size;
+
+  function exportTransactions() {
+    const rows = [
+      ["Invoice", "Customer", "Email", "Project", "Amount", "Status", "Date"],
+      ...filteredRows.map((item) => [item.invoiceNumber, item.name, item.email, item.project, item.amount, item.status, item.date]),
+    ];
+
+    downloadFile(`sparkin-transactions-${new Date().toISOString().slice(0, 10)}.csv`, rows.map((row) => row.map(csvEscape).join(",")).join("\n"));
+  }
 
   return (
     <Box sx={{ width: "100%" }}>
@@ -271,12 +280,13 @@ export default function VendorTransactionsPage() {
           spacing={1}
           alignItems={{ xs: "stretch", lg: "flex-end" }}
         >
-          <FilterField label="Search Customer" value="Name, email, or ID..." wide search />
-          <FilterField label="Status" value="All Status" />
-          <FilterField label="Date Range" value="Oct 01 - Oct 31, 2023" calendar />
+          <FilterField label="Search Customer" value={query} onChange={(value) => { setQuery(value); setPage(1); }} wide search />
+          <FilterField label="Status" value={statusFilter} onChange={(value) => { setStatusFilter(value.toLowerCase()); setPage(1); }} />
+          <FilterField label="Date Range" value="All Dates" calendar />
           <Button
             variant="contained"
             startIcon={<TuneRoundedIcon />}
+            onClick={exportTransactions}
             sx={{
               minHeight: 38,
               px: 1.65,
@@ -289,7 +299,7 @@ export default function VendorTransactionsPage() {
               whiteSpace: "nowrap",
             }}
           >
-            Apply Filters
+            Export
           </Button>
         </Stack>
       </Box>
@@ -344,7 +354,7 @@ export default function VendorTransactionsPage() {
             </Box>
           ) : null}
 
-          {!isLoading && !error && transactionRows.length === 0 ? (
+          {!isLoading && !error && filteredRows.length === 0 ? (
             <Box sx={{ py: 4 }}>
               <Alert severity="info" sx={{ borderRadius: "0.9rem" }}>
                 No payment transactions are available yet.
@@ -352,7 +362,7 @@ export default function VendorTransactionsPage() {
             </Box>
           ) : null}
 
-          {transactionRows.map((item, index) => (
+          {visibleRows.map((item, index) => (
             <Box
               key={item.id}
               sx={{
@@ -587,11 +597,13 @@ export default function VendorTransactionsPage() {
           }}
         >
           <Typography sx={{ color: "#738094", fontSize: "0.72rem", fontWeight: 500 }}>
-            Showing {transactionRows.length === 0 ? "0" : `1 to ${transactionRows.length}`} of {transactionRows.length} transactions
+            Showing {firstVisible === 0 ? "0" : `${firstVisible} to ${lastVisible}`} of {filteredRows.length} transactions
           </Typography>
 
           <Stack direction="row" spacing={0.45} alignItems="center">
             <Button
+              onClick={() => setPage((currentPage) => Math.max(1, currentPage - 1))}
+              disabled={page === 1}
               sx={{
                 minWidth: 30,
                 width: 30,
@@ -604,44 +616,29 @@ export default function VendorTransactionsPage() {
             >
               <KeyboardArrowLeftRoundedIcon sx={{ fontSize: "1rem" }} />
             </Button>
-            {[1, 2, 3].map((page) => (
+            {Array.from({ length: totalPages }, (_, index) => index + 1).map((pageNumber) => (
               <Button
-                key={page}
+                key={pageNumber}
+                onClick={() => setPage(pageNumber)}
                 sx={{
                   minWidth: 30,
                   width: 30,
                   height: 30,
                   borderRadius: "0.6rem",
                   p: 0,
-                  color: page === 1 ? "#FFFFFF" : "#223146",
-                  bgcolor: page === 1 ? "#0E56C8" : "#FFFFFF",
-                  border: page === 1 ? "none" : "1px solid rgba(225,232,241,0.96)",
+                  color: pageNumber === page ? "#FFFFFF" : "#223146",
+                  bgcolor: pageNumber === page ? "#0E56C8" : "#FFFFFF",
+                  border: pageNumber === page ? "none" : "1px solid rgba(225,232,241,0.96)",
                   fontSize: "0.7rem",
                   fontWeight: 700,
                 }}
               >
-                {page}
+                {pageNumber}
               </Button>
             ))}
-            <Typography sx={{ color: "#738094", fontSize: "0.72rem", px: 0.2 }}>
-              ...
-            </Typography>
             <Button
-              sx={{
-                minWidth: 30,
-                width: 30,
-                height: 30,
-                borderRadius: "0.6rem",
-                p: 0,
-                color: "#223146",
-                border: "1px solid rgba(225,232,241,0.96)",
-                fontSize: "0.7rem",
-                fontWeight: 700,
-              }}
-            >
-              32
-            </Button>
-            <Button
+              onClick={() => setPage((currentPage) => Math.min(totalPages, currentPage + 1))}
+              disabled={page === totalPages}
               sx={{
                 minWidth: 30,
                 width: 30,
@@ -687,7 +684,7 @@ export default function VendorTransactionsPage() {
             Total Revenue
           </Typography>
           <Typography sx={{ mt: 0.9, fontSize: "2rem", fontWeight: 800, lineHeight: 1.05 }}>
-            \u20B942,85,000
+            {formatPrice(paidTotal)}
           </Typography>
           <Box
             sx={{
@@ -703,7 +700,7 @@ export default function VendorTransactionsPage() {
               lineHeight: 1,
             }}
           >
-            +12.5% this month
+            Live total
           </Box>
         </Box>
 
@@ -728,13 +725,13 @@ export default function VendorTransactionsPage() {
             Active Projects
           </Typography>
           <Typography sx={{ mt: 0.9, color: "#18253A", fontSize: "2rem", fontWeight: 800, lineHeight: 1.05 }}>
-            24
+            {activeProjectCount}
           </Typography>
           <Box sx={{ mt: 1.2, height: 5, borderRadius: "999px", bgcolor: "#E6EBF2" }}>
             <Box sx={{ width: "70%", height: "100%", borderRadius: "inherit", bgcolor: "#D3E717" }} />
           </Box>
           <Typography sx={{ mt: 0.7, color: "#6F7D8F", fontSize: "0.72rem" }}>
-            17 installation in progress
+            Projects with payment schedule
           </Typography>
         </Box>
 

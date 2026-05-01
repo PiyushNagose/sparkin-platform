@@ -13,6 +13,7 @@ import BuildOutlinedIcon from "@mui/icons-material/BuildOutlined";
 import CheckCircleOutlineRoundedIcon from "@mui/icons-material/CheckCircleOutlineRounded";
 import ManageSearchRoundedIcon from "@mui/icons-material/ManageSearchRounded";
 import SupportAgentRoundedIcon from "@mui/icons-material/SupportAgentRounded";
+import { useLocation } from "react-router-dom";
 import { serviceRequestsApi } from "@/features/public/api/serviceRequestsApi";
 
 const statusOptions = [
@@ -36,6 +37,7 @@ const typeMeta = {
   repair: { label: "Repair", icon: ManageSearchRoundedIcon },
   warranty: { label: "Warranty", icon: SupportAgentRoundedIcon },
 };
+const pageSize = 6;
 
 function formatDate(value) {
   if (!value) return "Not scheduled";
@@ -122,6 +124,12 @@ function ServiceRequestCard({
             <Typography sx={{ mt: 0.25, color: "#7D8797", fontSize: "0.72rem", fontWeight: 700 }}>
               #{request.ticketNumber} | Submitted {formatDate(request.createdAt)}
             </Typography>
+            {request.project ? (
+              <Typography sx={{ mt: 0.35, color: "#5F6C7E", fontSize: "0.72rem", fontWeight: 700 }}>
+                {request.project.customer?.fullName || "Customer"} | {request.project.installationAddress?.city || "Location"} |{" "}
+                {request.project.system?.sizeKw || "-"} kW
+              </Typography>
+            ) : null}
             <Typography sx={{ mt: 0.65, color: "#4F5F73", fontSize: "0.8rem", lineHeight: 1.6 }}>
               {request.description}
             </Typography>
@@ -176,9 +184,14 @@ function ServiceRequestCard({
 }
 
 export default function VendorServiceRequestsPage() {
+  const location = useLocation();
   const [requests, setRequests] = useState([]);
   const [draftStatuses, setDraftStatuses] = useState({});
   const [draftNotes, setDraftNotes] = useState({});
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [typeFilter, setTypeFilter] = useState("all");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [page, setPage] = useState(1);
   const [savingId, setSavingId] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
@@ -197,6 +210,7 @@ export default function VendorServiceRequestsPage() {
         if (active) {
           setRequests(result);
           setDraftStatuses(Object.fromEntries(result.map((request) => [request.id, request.status])));
+          setPage(1);
         }
       } catch (apiError) {
         if (active) {
@@ -216,7 +230,42 @@ export default function VendorServiceRequestsPage() {
     };
   }, []);
 
+  useEffect(() => {
+    const incomingSearch = location.state?.portalSearch || "";
+    setSearchTerm(incomingSearch);
+    setPage(1);
+  }, [location.state]);
+
   const kpis = useMemo(() => getKpis(requests), [requests]);
+  const filteredRequests = useMemo(() => {
+    const normalizedSearch = searchTerm.trim().toLowerCase();
+    const rows = requests.filter((request) => {
+      const matchesStatus = statusFilter === "all" || request.status === statusFilter;
+      const matchesType = typeFilter === "all" || request.type === typeFilter;
+      const matchesSearch =
+        !normalizedSearch ||
+        [
+          request.ticketNumber,
+          request.type,
+          request.status,
+          request.description,
+          request.project?.customer?.fullName,
+          request.project?.installationAddress?.city,
+        ].some((value) => String(value || "").toLowerCase().includes(normalizedSearch));
+      return matchesStatus && matchesType && matchesSearch;
+    });
+
+    return [...rows].sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+  }, [requests, searchTerm, statusFilter, typeFilter]);
+  const totalPages = Math.max(1, Math.ceil(filteredRequests.length / pageSize));
+  const visibleRequests = filteredRequests.slice((page - 1) * pageSize, page * pageSize);
+  const firstVisibleRequest = filteredRequests.length ? (page - 1) * pageSize + 1 : 0;
+  const lastVisibleRequest = filteredRequests.length ? firstVisibleRequest + visibleRequests.length - 1 : 0;
+
+  function updateFilter(setter, value) {
+    setter(value);
+    setPage(1);
+  }
 
   function handleStatusChange(requestId, status) {
     setDraftStatuses((current) => ({ ...current, [requestId]: status }));
@@ -302,6 +351,64 @@ export default function VendorServiceRequestsPage() {
         ))}
       </Box>
 
+      <Stack
+        direction={{ xs: "column", md: "row" }}
+        spacing={1}
+        justifyContent="space-between"
+        alignItems={{ xs: "stretch", md: "center" }}
+        sx={{
+          mt: 1.6,
+          p: 1.2,
+          borderRadius: "1rem",
+          bgcolor: "#FFFFFF",
+          border: "1px solid rgba(225,232,241,0.96)",
+        }}
+      >
+        <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+          <TextField
+            size="small"
+            label="Search"
+            value={searchTerm}
+            onChange={(event) => updateFilter(setSearchTerm, event.target.value)}
+            sx={{ minWidth: 220 }}
+          />
+          <TextField
+            select
+            size="small"
+            label="Status"
+            value={statusFilter}
+            onChange={(event) => updateFilter(setStatusFilter, event.target.value)}
+            sx={{ minWidth: 190 }}
+          >
+            <MenuItem value="all">All Statuses</MenuItem>
+            {statusOptions.map((option) => (
+              <MenuItem key={option.value} value={option.value}>
+                {option.label}
+              </MenuItem>
+            ))}
+          </TextField>
+          <TextField
+            select
+            size="small"
+            label="Type"
+            value={typeFilter}
+            onChange={(event) => updateFilter(setTypeFilter, event.target.value)}
+            sx={{ minWidth: 180 }}
+          >
+            <MenuItem value="all">All Types</MenuItem>
+            {Object.entries(typeMeta).map(([value, meta]) => (
+              <MenuItem key={value} value={value}>
+                {meta.label}
+              </MenuItem>
+            ))}
+          </TextField>
+        </Stack>
+        <Typography sx={{ color: "#7D8797", fontSize: "0.74rem", fontWeight: 700 }}>
+          Showing {firstVisibleRequest === 0 ? "0" : `${firstVisibleRequest}-${lastVisibleRequest}`} of{" "}
+          {filteredRequests.length} tickets
+        </Typography>
+      </Stack>
+
       <Stack spacing={1.2} sx={{ mt: 1.6 }}>
         {error ? <Alert severity="error" sx={{ borderRadius: "0.9rem" }}>{error}</Alert> : null}
         {success ? <Alert severity="success" sx={{ borderRadius: "0.9rem" }}>{success}</Alert> : null}
@@ -312,13 +419,13 @@ export default function VendorServiceRequestsPage() {
           </Box>
         ) : null}
 
-        {!isLoading && !error && requests.length === 0 ? (
+        {!isLoading && !error && filteredRequests.length === 0 ? (
           <Alert severity="info" sx={{ borderRadius: "0.9rem" }}>
             No service requests are attached to your projects yet.
           </Alert>
         ) : null}
 
-        {requests.map((request) => (
+        {visibleRequests.map((request) => (
           <ServiceRequestCard
             key={request.id}
             request={request}
@@ -330,6 +437,30 @@ export default function VendorServiceRequestsPage() {
             onSave={handleSave}
           />
         ))}
+
+        {!isLoading && !error && filteredRequests.length > pageSize ? (
+          <Stack direction="row" spacing={0.8} justifyContent="flex-end" alignItems="center">
+            <Button
+              variant="outlined"
+              disabled={page === 1}
+              onClick={() => setPage((currentPage) => Math.max(1, currentPage - 1))}
+              sx={{ borderRadius: "0.8rem", textTransform: "none", fontWeight: 700 }}
+            >
+              Previous
+            </Button>
+            <Typography sx={{ color: "#556478", fontSize: "0.78rem", fontWeight: 700 }}>
+              Page {page} of {totalPages}
+            </Typography>
+            <Button
+              variant="outlined"
+              disabled={page === totalPages}
+              onClick={() => setPage((currentPage) => Math.min(totalPages, currentPage + 1))}
+              sx={{ borderRadius: "0.8rem", textTransform: "none", fontWeight: 700 }}
+            >
+              Next
+            </Button>
+          </Stack>
+        ) : null}
       </Stack>
     </Box>
   );

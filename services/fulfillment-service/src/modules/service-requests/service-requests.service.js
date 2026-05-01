@@ -50,6 +50,17 @@ async function canManageRequest(user, request) {
   return project?.vendorId === user.userId;
 }
 
+async function attachProjects(requests) {
+  const projectIds = [...new Set(requests.map((request) => request.projectId?.toString()).filter(Boolean))];
+  const projects = projectIds.length ? await projectsRepository.findByIds(projectIds) : [];
+  const projectById = new Map(projects.map((project) => [String(project.id || project._id), project]));
+
+  return requests.map((request) => ({
+    ...request,
+    project: request.projectId ? projectById.get(String(request.projectId)) ?? null : null,
+  }));
+}
+
 export const serviceRequestsService = {
   async createRequest(user, input) {
     if (user.role !== "customer" && user.role !== "admin") {
@@ -80,15 +91,15 @@ export const serviceRequestsService = {
 
   async listRequests(user) {
     if (user.role === "admin") {
-      return serviceRequestsRepository.findAll();
+      return attachProjects(await serviceRequestsRepository.findAll());
     }
 
     if (user.role === "vendor") {
       const projects = await projectsRepository.findForVendor(user.userId);
-      return serviceRequestsRepository.findForProjectIds(projects.map((project) => project.id));
+      return attachProjects(await serviceRequestsRepository.findForProjectIds(projects.map((project) => project.id)));
     }
 
-    return serviceRequestsRepository.findForCustomer(user.userId);
+    return attachProjects(await serviceRequestsRepository.findForCustomer(user.userId));
   },
 
   async getRequest(user, requestId) {
@@ -106,7 +117,7 @@ export const serviceRequestsService = {
       throw new AppError(403, "You do not have access to this service request");
     }
 
-    return request;
+    return (await attachProjects([request]))[0];
   },
 
   async updateStatus(user, requestId, input) {
@@ -116,22 +127,25 @@ export const serviceRequestsService = {
       throw new AppError(403, "Only the assigned vendor or admin can update this service request");
     }
 
-    if (request.status === input.status) {
+    if (request.status === input.status && !input.note) {
       return request;
     }
 
+    const noteOnly = request.status === input.status;
     const activity = [
       {
-        title: statusActivityTitles[input.status],
+        title: noteOnly ? "Service request note added" : statusActivityTitles[input.status],
         note: input.note ?? null,
         createdAt: new Date(),
       },
       ...(request.activity ?? []),
     ];
 
-    return serviceRequestsRepository.updateRequest(requestId, {
+    const updatedRequest = await serviceRequestsRepository.updateRequest(requestId, {
       status: input.status,
       activity,
     });
+
+    return (await attachProjects([updatedRequest]))[0];
   },
 };

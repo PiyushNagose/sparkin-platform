@@ -22,6 +22,17 @@ function canViewPayment(user, payment) {
   );
 }
 
+async function attachProjects(payments) {
+  const projectIds = [...new Set(payments.map((payment) => payment.projectId?.toString()).filter(Boolean))];
+  const projects = projectIds.length ? await projectsRepository.findByIds(projectIds) : [];
+  const projectById = new Map(projects.map((project) => [String(project.id || project._id), project]));
+
+  return payments.map((payment) => ({
+    ...payment,
+    project: payment.projectId ? projectById.get(String(payment.projectId)) ?? null : null,
+  }));
+}
+
 export const paymentsService = {
   async createScheduleForProject(project) {
     const existingPayments = await paymentsRepository.findForProject(project.id);
@@ -64,18 +75,18 @@ export const paymentsService = {
     if (user.role === "admin") {
       const projects = await projectsRepository.findAll();
       await Promise.all(projects.map((project) => this.createScheduleForProject(project)));
-      return paymentsRepository.findAll();
+      return attachProjects(await paymentsRepository.findAll());
     }
 
     if (user.role === "vendor") {
       const projects = await projectsRepository.findForVendor(user.userId);
       await Promise.all(projects.map((project) => this.createScheduleForProject(project)));
-      return paymentsRepository.findForVendor(user.userId);
+      return attachProjects(await paymentsRepository.findForVendor(user.userId));
     }
 
     const projects = await projectsRepository.findForCustomer(user.userId);
     await Promise.all(projects.map((project) => this.createScheduleForProject(project)));
-    return paymentsRepository.findForCustomer(user.userId);
+    return attachProjects(await paymentsRepository.findForCustomer(user.userId));
   },
 
   async getPayment(user, paymentId) {
@@ -93,6 +104,6 @@ export const paymentsService = {
       throw new AppError(403, "You do not have access to this payment");
     }
 
-    return payment;
+    return (await attachProjects([payment]))[0];
   },
 };

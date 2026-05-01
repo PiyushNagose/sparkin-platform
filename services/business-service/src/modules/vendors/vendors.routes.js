@@ -17,3 +17,4 @@ vendorsRouter.post(
 );
 vendorsRouter.delete("/me/documents/:documentId", asyncHandler(vendorsController.deleteDocument));
 vendorsRouter.post("/me/submit", asyncHandler(vendorsController.submitApplication));
+vendorsRouter.get("/:vendorId", asyncHandler(vendorsController.getByVendorId));

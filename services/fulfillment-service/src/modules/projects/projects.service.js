@@ -1,4 +1,6 @@
 import mongoose from "mongoose";
+import fs from "node:fs/promises";
+import path from "node:path";
 import { AppError } from "../../common/errors/app-error.js";
 import { paymentsService } from "../payments/payments.service.js";
 import { projectsRepository } from "./projects.repository.js";
@@ -10,6 +12,13 @@ const initialMilestones = [
   { key: "inspection", title: "Inspection", status: "pending", completedAt: null },
   { key: "activation", title: "Activation", status: "pending", completedAt: null },
 ];
+const allowedDocumentTypes = new Map([
+  ["application/pdf", "pdf"],
+  ["image/jpeg", "jpg"],
+  ["image/png", "png"],
+  ["image/webp", "webp"],
+]);
+const maxDocumentBytes = 5 * 1024 * 1024;
 
 function getSiteAuditDueAt() {
   const dueAt = new Date();
@@ -89,6 +98,23 @@ function applyMilestoneStatus(project, milestoneKey, status) {
       completedAt: null,
     };
   });
+}
+
+function decodeDocument(input) {
+  const extension = allowedDocumentTypes.get(input.mimeType);
+
+  if (!extension) {
+    throw new AppError(400, "Only PDF, JPG, PNG, or WEBP documents are supported");
+  }
+
+  const base64 = input.data.includes(",") ? input.data.split(",").at(-1) : input.data;
+  const buffer = Buffer.from(base64, "base64");
+
+  if (!buffer.length || buffer.length > maxDocumentBytes) {
+    throw new AppError(400, "Document must be smaller than 5MB");
+  }
+
+  return { buffer, extension };
 }
 
 export const projectsService = {
@@ -199,6 +225,31 @@ export const projectsService = {
         preferredVisitWindow: input.preferredVisitWindow || null,
         completedAt: new Date(),
       },
+    });
+  },
+
+  async uploadDocument(user, projectId, input) {
+    const project = await this.getProject(user, projectId);
+
+    if (!canManageProject(user, project)) {
+      throw new AppError(403, "Only the assigned vendor can upload project documents");
+    }
+
+    const { buffer, extension } = decodeDocument(input);
+    const uploadDir = path.resolve("uploads", "project-documents");
+    await fs.mkdir(uploadDir, { recursive: true });
+
+    const storedFileName = `${projectId}-${Date.now()}.${extension}`;
+    await fs.writeFile(path.join(uploadDir, storedFileName), buffer);
+
+    return projectsRepository.addDocument(projectId, {
+      title: input.title,
+      fileName: input.fileName,
+      mimeType: input.mimeType,
+      size: buffer.length,
+      url: `/uploads/project-documents/${storedFileName}`,
+      uploadedBy: user.userId,
+      uploadedAt: new Date(),
     });
   },
 };

@@ -58,6 +58,34 @@ function numberOrNull(value) {
   return value === "" ? null : Number(value);
 }
 
+function getDraftKey(leadId) {
+  return `sparkin:quote-draft:${leadId}`;
+}
+
+function validateQuoteForm(form) {
+  const totalPrice = Number(form.totalPrice);
+  const sizeKw = Number(form.sizeKw);
+
+  if (!Number.isFinite(totalPrice) || totalPrice <= 0) return "Enter a valid total proposal price.";
+  if (!Number.isFinite(sizeKw) || sizeKw <= 0) return "Enter a valid system size.";
+  if (!form.inverterType.trim()) return "Enter inverter type.";
+
+  const breakdown = [form.equipmentCost, form.laborCost, form.permittingCost]
+    .map(numberOrNull)
+    .filter((value) => value !== null);
+
+  if (breakdown.some((value) => !Number.isFinite(value) || value < 0)) {
+    return "Cost breakdown values cannot be negative.";
+  }
+
+  const breakdownTotal = breakdown.reduce((sum, value) => sum + value, 0);
+  if (breakdownTotal > totalPrice) {
+    return "Cost breakdown cannot exceed the total proposal price.";
+  }
+
+  return "";
+}
+
 export default function VendorQuoteProposalPage() {
   const navigate = useNavigate();
   const { leadId } = useParams();
@@ -65,6 +93,7 @@ export default function VendorQuoteProposalPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [existingQuote, setExistingQuote] = useState(null);
   const [form, setForm] = useState({
     totalPrice: "",
@@ -101,21 +130,26 @@ export default function VendorQuoteProposalPage() {
 
         setLead(result);
         setExistingQuote(quote);
+        const draft = quote ? null : JSON.parse(window.localStorage.getItem(getDraftKey(leadId)) || "null");
+
         setForm((current) => ({
           ...current,
-          totalPrice: quote?.pricing?.totalPrice ? String(quote.pricing.totalPrice) : current.totalPrice,
-          equipmentCost: quote?.pricing?.equipmentCost ? String(quote.pricing.equipmentCost) : current.equipmentCost,
-          laborCost: quote?.pricing?.laborCost ? String(quote.pricing.laborCost) : current.laborCost,
-          permittingCost: quote?.pricing?.permittingCost ? String(quote.pricing.permittingCost) : current.permittingCost,
+          ...(draft || {}),
+          totalPrice: quote?.pricing?.totalPrice ? String(quote.pricing.totalPrice) : draft?.totalPrice || current.totalPrice,
+          equipmentCost: quote?.pricing?.equipmentCost ? String(quote.pricing.equipmentCost) : draft?.equipmentCost || current.equipmentCost,
+          laborCost: quote?.pricing?.laborCost ? String(quote.pricing.laborCost) : draft?.laborCost || current.laborCost,
+          permittingCost: quote?.pricing?.permittingCost ? String(quote.pricing.permittingCost) : draft?.permittingCost || current.permittingCost,
           sizeKw: quote?.system?.sizeKw
             ? String(quote.system.sizeKw)
+            : draft?.sizeKw
+              ? draft.sizeKw
             : result.property?.sanctionedLoadKw
               ? String(result.property.sanctionedLoadKw)
               : current.sizeKw,
-          panelType: quote?.system?.panelType || current.panelType,
-          inverterType: quote?.system?.inverterType || current.inverterType,
-          installationWindow: quote?.timeline?.installationWindow || current.installationWindow,
-          proposalNotes: quote?.proposalNotes || current.proposalNotes,
+          panelType: quote?.system?.panelType || draft?.panelType || current.panelType,
+          inverterType: quote?.system?.inverterType || draft?.inverterType || current.inverterType,
+          installationWindow: quote?.timeline?.installationWindow || draft?.installationWindow || current.installationWindow,
+          proposalNotes: quote?.proposalNotes || draft?.proposalNotes || current.proposalNotes,
         }));
       } catch (apiError) {
         if (active) {
@@ -152,6 +186,19 @@ export default function VendorQuoteProposalPage() {
 
   async function handleSubmit() {
     setError("");
+    setSuccess("");
+
+    const validationError = validateQuoteForm(form);
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
+    if (existingQuote?.status === "accepted") {
+      setError("Accepted quotes cannot be changed.");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -173,12 +220,19 @@ export default function VendorQuoteProposalPage() {
         proposalNotes: form.proposalNotes,
       });
 
+      window.localStorage.removeItem(getDraftKey(leadId));
       navigate("/vendor/quotes", { replace: true });
     } catch (apiError) {
       setError(apiError?.response?.data?.message || "Could not submit quote. Please check the details.");
     } finally {
       setIsSubmitting(false);
     }
+  }
+
+  function handleSaveDraft() {
+    window.localStorage.setItem(getDraftKey(leadId), JSON.stringify(form));
+    setError("");
+    setSuccess("Draft saved on this device.");
   }
 
   if (isLoading) {
@@ -269,6 +323,12 @@ export default function VendorQuoteProposalPage() {
       {error ? (
         <Alert severity="error" sx={{ borderRadius: "0.9rem", mb: 2 }}>
           {error}
+        </Alert>
+      ) : null}
+
+      {success ? (
+        <Alert severity="success" sx={{ borderRadius: "0.9rem", mb: 2 }}>
+          {success}
         </Alert>
       ) : null}
 
@@ -440,6 +500,8 @@ export default function VendorQuoteProposalPage() {
       <Stack direction="row" spacing={1.1} justifyContent="flex-end" sx={{ mt: { xs: 2.6, md: 3 } }}>
         <Button
           variant="outlined"
+          onClick={handleSaveDraft}
+          disabled={isSubmitting || existingQuote?.status === "accepted"}
           sx={{
             minHeight: 40,
             px: 1.8,
@@ -458,7 +520,7 @@ export default function VendorQuoteProposalPage() {
           variant="contained"
           startIcon={<BoltRoundedIcon />}
           onClick={handleSubmit}
-          disabled={isSubmitting}
+          disabled={isSubmitting || existingQuote?.status === "accepted"}
           sx={{
             minHeight: 40,
             px: 2,

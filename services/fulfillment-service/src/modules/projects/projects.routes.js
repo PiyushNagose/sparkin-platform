@@ -3,7 +3,12 @@ import { requireAuth } from "../../common/middleware/require-auth.js";
 import { validate } from "../../common/middleware/validate.js";
 import { asyncHandler } from "../../common/utils/async-handler.js";
 import { projectsController } from "./projects.controller.js";
-import { createProjectSchema, submitProjectOnboardingSchema, updateProjectMilestoneSchema } from "./projects.schemas.js";
+import {
+  createProjectSchema,
+  submitProjectOnboardingSchema,
+  updateProjectMilestoneSchema,
+  uploadProjectDocumentSchema,
+} from "./projects.schemas.js";
 
 export const projectsRouter = Router();
 
@@ -19,5 +24,10 @@ projectsRouter.patch(
   "/:projectId/onboarding",
   validate(submitProjectOnboardingSchema),
   asyncHandler(projectsController.submitOnboarding),
+);
+projectsRouter.post(
+  "/:projectId/documents",
+  validate(uploadProjectDocumentSchema),
+  asyncHandler(projectsController.uploadDocument),
 );
 projectsRouter.post("/from-accepted-quote", validate(createProjectSchema), asyncHandler(projectsController.createFromAcceptedQuote));

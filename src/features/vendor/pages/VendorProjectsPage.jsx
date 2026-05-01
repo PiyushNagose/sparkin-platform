@@ -6,6 +6,7 @@ import {
   CircularProgress,
   LinearProgress,
   Stack,
+  TextField,
   Typography,
 } from "@mui/material";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
@@ -14,7 +15,7 @@ import KeyboardArrowRightRoundedIcon from "@mui/icons-material/KeyboardArrowRigh
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import TuneRoundedIcon from "@mui/icons-material/TuneRounded";
 import SortRoundedIcon from "@mui/icons-material/SortRounded";
-import { Link as RouterLink } from "react-router-dom";
+import { Link as RouterLink, useLocation } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import { projectsApi } from "@/features/public/api/projectsApi";
 
@@ -51,48 +52,6 @@ const kpiCards = [
 
 const tabs = ["All", "Active", "In Progress", "Completed"];
 
-const projects = [
-  {
-    initials: "AS",
-    id: "amit-sharma",
-    name: "Amit Sharma",
-    location: "Pune, Maharashtra",
-    systemSize: "5.4 kW",
-    systemType: "MONOPERC",
-    status: "Active",
-    statusTone: "#7C7A00",
-    statusBg: "#F2F08E",
-    stage: "Site Visit",
-    progress: 45,
-  },
-  {
-    initials: "PK",
-    id: "priya-kulkarni",
-    name: "Priya Kulkarni",
-    location: "Mumbai, MH",
-    systemSize: "8.2 kW",
-    systemType: "BIFACIAL",
-    status: "In Progress",
-    statusTone: "#239654",
-    statusBg: "#DDF8E7",
-    stage: "Site Visit",
-    progress: 75,
-  },
-  {
-    initials: "RJ",
-    id: "rahul-joshi",
-    name: "Rahul Joshi",
-    location: "Nagpur, Maharashtra",
-    systemSize: "3.0 kW",
-    systemType: "GRID-TIED",
-    status: "Pending",
-    statusTone: "#6F7D8F",
-    statusBg: "#EDF1F5",
-    stage: "Site Visit",
-    progress: 15,
-  },
-];
-
 const columns = [
   "Customer",
   "System Size",
@@ -100,6 +59,8 @@ const columns = [
   "Stage Progression",
   "Actions",
 ];
+
+const pageSize = 8;
 
 function getInitials(name) {
   return name
@@ -112,14 +73,18 @@ function getInitials(name) {
 
 function getStatusMeta(status) {
   if (["activated", "completed"].includes(status)) {
-    return { label: "Completed", tone: "#239654", bg: "#DDF8E7", progress: 100 };
+    return { label: "Completed", tone: "#239654", bg: "#DDF8E7" };
   }
 
   if (["installation_scheduled", "installation_in_progress", "inspection_pending"].includes(status)) {
-    return { label: "In Progress", tone: "#239654", bg: "#DDF8E7", progress: 65 };
+    return { label: "In Progress", tone: "#239654", bg: "#DDF8E7" };
   }
 
-  return { label: "Pending", tone: "#6F7D8F", bg: "#EDF1F5", progress: 20 };
+  if (status === "design_approval_pending") {
+    return { label: "Active", tone: "#7C7A00", bg: "#F2F08E" };
+  }
+
+  return { label: "Pending", tone: "#6F7D8F", bg: "#EDF1F5" };
 }
 
 function formatLocation(address) {
@@ -130,13 +95,32 @@ function formatLocation(address) {
   return [address.city, address.state].filter(Boolean).join(", ");
 }
 
+function getProjectProgress(project) {
+  if (["activated", "completed"].includes(project.status)) {
+    return 100;
+  }
+
+  const milestones = project.milestones || [];
+  if (!milestones.length) {
+    return 0;
+  }
+
+  const completed = milestones.filter((milestone) => milestone.status === "completed").length;
+  const inProgress = milestones.some((milestone) => milestone.status === "in_progress") ? 0.5 : 0;
+
+  return Math.min(99, Math.round(((completed + inProgress) / milestones.length) * 100));
+}
+
 function toVendorProject(project) {
   const statusMeta = getStatusMeta(project.status);
   const activeMilestone = project.milestones?.find((milestone) => milestone.status === "in_progress");
+  const nextMilestone = project.milestones?.find((milestone) => milestone.status !== "completed");
 
   return {
     initials: getInitials(project.customer.fullName),
     id: project.id,
+    rawStatus: project.status,
+    createdAt: project.createdAt || project.createdFromQuoteAt,
     name: project.customer.fullName,
     location: formatLocation(project.installationAddress),
     systemSize: `${project.system.sizeKw} kW`,
@@ -144,8 +128,8 @@ function toVendorProject(project) {
     status: statusMeta.label,
     statusTone: statusMeta.tone,
     statusBg: statusMeta.bg,
-    stage: activeMilestone?.title || "Project Started",
-    progress: statusMeta.progress,
+    stage: activeMilestone?.title || nextMilestone?.title || "Project Started",
+    progress: getProjectProgress(project),
   };
 }
 
@@ -390,7 +374,12 @@ function ProjectRow({ project, mobile = false }) {
 }
 
 export default function VendorProjectsPage() {
+  const location = useLocation();
   const [projectRecords, setProjectRecords] = useState([]);
+  const [activeTab, setActiveTab] = useState("All");
+  const [sortNewestFirst, setSortNewestFirst] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [page, setPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -403,7 +392,10 @@ export default function VendorProjectsPage() {
 
       try {
         const result = await projectsApi.listProjects();
-        if (active) setProjectRecords(result);
+        if (active) {
+          setProjectRecords(result);
+          setPage(1);
+        }
       } catch (apiError) {
         if (active) setError(apiError?.response?.data?.message || "Could not load projects.");
       } finally {
@@ -418,17 +410,60 @@ export default function VendorProjectsPage() {
     };
   }, []);
 
+  useEffect(() => {
+    const incomingSearch = location.state?.portalSearch || "";
+    setSearchTerm(incomingSearch);
+    setPage(1);
+  }, [location.state]);
+
   const projects = useMemo(() => projectRecords.map(toVendorProject), [projectRecords]);
+  const filteredProjects = useMemo(() => {
+    const normalizedSearch = searchTerm.trim().toLowerCase();
+    const rows = projects.filter((project) => {
+      if (activeTab === "Active") return !["activated", "completed", "cancelled"].includes(project.rawStatus);
+      if (activeTab === "In Progress") {
+        return ["installation_scheduled", "installation_in_progress", "inspection_pending"].includes(project.rawStatus);
+      }
+      if (activeTab === "Completed") return ["activated", "completed"].includes(project.rawStatus);
+      return true;
+    }).filter((project) => {
+      if (!normalizedSearch) return true;
+      return [project.id, project.name, project.location, project.systemSize, project.systemType, project.status, project.stage]
+        .some((value) => String(value || "").toLowerCase().includes(normalizedSearch));
+    });
+
+    return [...rows].sort((a, b) => {
+      const first = new Date(a.createdAt || 0).getTime();
+      const second = new Date(b.createdAt || 0).getTime();
+      return sortNewestFirst ? second - first : first - second;
+    });
+  }, [activeTab, projects, searchTerm, sortNewestFirst]);
+  const totalPages = Math.max(1, Math.ceil(filteredProjects.length / pageSize));
+  const visibleProjects = filteredProjects.slice((page - 1) * pageSize, page * pageSize);
+  const pageNumbers = useMemo(() => Array.from({ length: totalPages }, (_, index) => index + 1), [totalPages]);
+  const firstVisibleProject = filteredProjects.length ? (page - 1) * pageSize + 1 : 0;
+  const lastVisibleProject = filteredProjects.length ? firstVisibleProject + visibleProjects.length - 1 : 0;
   const dashboardKpis = useMemo(
     () => [
-      { ...kpiCards[0], value: String(projectRecords.length) },
+      {
+        ...kpiCards[0],
+        value: String(projectRecords.filter((project) => !["activated", "completed", "cancelled"].includes(project.status)).length),
+      },
       {
         ...kpiCards[1],
-        value: String(projectRecords.filter((project) => project.status === "installation_in_progress").length),
+        value: String(
+          projectRecords.filter((project) =>
+            ["installation_scheduled", "installation_in_progress", "inspection_pending"].includes(project.status),
+          ).length,
+        ),
       },
       {
         ...kpiCards[2],
-        value: String(projectRecords.filter((project) => project.status === "site_audit_pending").length),
+        value: String(
+          projectRecords.filter((project) =>
+            ["site_audit_pending", "design_approval_pending"].includes(project.status),
+          ).length,
+        ),
       },
       {
         ...kpiCards[3],
@@ -437,6 +472,17 @@ export default function VendorProjectsPage() {
     ],
     [projectRecords],
   );
+
+  function updateTab(tab) {
+    setActiveTab(tab);
+    setPage(1);
+  }
+
+  function resetFilters() {
+    setActiveTab("All");
+    setSortNewestFirst(true);
+    setPage(1);
+  }
 
   return (
     <Box sx={{ width: "100%" }}>
@@ -472,6 +518,8 @@ export default function VendorProjectsPage() {
         </Box>
 
         <Button
+          component={RouterLink}
+          to="/vendor/quotes"
           variant="contained"
           startIcon={<AddRoundedIcon />}
           sx={{
@@ -485,7 +533,7 @@ export default function VendorProjectsPage() {
             textTransform: "none",
           }}
         >
-          Create New Project
+          View Accepted Quotes
         </Button>
       </Stack>
 
@@ -554,15 +602,34 @@ export default function VendorProjectsPage() {
           sx={{ px: 1.7, pt: 1.5 }}
         >
           <Stack direction="row" spacing={0.7} flexWrap="wrap">
+            <TextField
+              size="small"
+              value={searchTerm}
+              onChange={(event) => {
+                setSearchTerm(event.target.value);
+                setPage(1);
+              }}
+              placeholder="Search projects"
+              sx={{
+                minWidth: { xs: "100%", md: 220 },
+                "& .MuiOutlinedInput-root": {
+                  height: 30,
+                  borderRadius: "999px",
+                  bgcolor: "#FFFFFF",
+                  fontSize: "0.72rem",
+                },
+              }}
+            />
             {tabs.map((tab, index) => (
               <Button
                 key={tab}
+                onClick={() => updateTab(tab)}
                 sx={{
                   minHeight: 30,
                   px: 1.18,
                   borderRadius: "999px",
-                  bgcolor: index === 0 ? "#0E56C8" : "transparent",
-                  color: index === 0 ? "#FFFFFF" : "#556478",
+                  bgcolor: activeTab === tab ? "#0E56C8" : "transparent",
+                  color: activeTab === tab ? "#FFFFFF" : "#556478",
                   fontSize: "0.7rem",
                   fontWeight: 700,
                   textTransform: "none",
@@ -575,6 +642,7 @@ export default function VendorProjectsPage() {
 
           <Stack direction="row" spacing={0.7} alignItems="center" justifyContent="flex-end">
             <Button
+              onClick={resetFilters}
               sx={{
                 minWidth: 28,
                 width: 28,
@@ -587,6 +655,10 @@ export default function VendorProjectsPage() {
               <TuneRoundedIcon sx={{ fontSize: "0.88rem" }} />
             </Button>
             <Button
+              onClick={() => {
+                setSortNewestFirst((currentValue) => !currentValue);
+                setPage(1);
+              }}
               sx={{
                 minWidth: 28,
                 width: 28,
@@ -640,7 +712,7 @@ export default function VendorProjectsPage() {
           </Box>
         ) : null}
 
-        {!isLoading && !error && projects.length === 0 ? (
+        {!isLoading && !error && filteredProjects.length === 0 ? (
           <Box sx={{ px: { xs: 1.2, md: 1.7 }, py: 4 }}>
             <Alert severity="info" sx={{ borderRadius: "0.9rem" }}>
               No assigned projects yet. Projects will appear here when customers accept your quotes.
@@ -649,9 +721,9 @@ export default function VendorProjectsPage() {
         ) : null}
 
         <Stack spacing={0} sx={{ px: { xs: 1.2, md: 1.7 }, pb: 1.1 }}>
-          {projects.map((project, index) => (
+          {visibleProjects.map((project, index) => (
             <Box
-              key={project.name}
+              key={project.id}
               sx={{
                 borderTop: index === 0 ? "none" : "1px solid rgba(234,239,245,0.95)",
                 py: { xs: 1.45, md: 1.55 },
@@ -679,11 +751,14 @@ export default function VendorProjectsPage() {
           }}
         >
           <Typography sx={{ color: "#738094", fontSize: "0.72rem", fontWeight: 500 }}>
-            Showing {projects.length === 0 ? "0" : `1-${projects.length}`} of {projects.length} active projects
+            Showing {firstVisibleProject === 0 ? "0" : `${firstVisibleProject}-${lastVisibleProject}`} of{" "}
+            {filteredProjects.length} active projects
           </Typography>
 
           <Stack direction="row" spacing={0.45} alignItems="center">
             <Button
+              onClick={() => setPage((currentPage) => Math.max(1, currentPage - 1))}
+              disabled={page === 1}
               sx={{
                 minWidth: 30,
                 width: 30,
@@ -696,26 +771,29 @@ export default function VendorProjectsPage() {
             >
               <KeyboardArrowLeftRoundedIcon sx={{ fontSize: "1rem" }} />
             </Button>
-            {[1, 2, 3].map((page) => (
+            {pageNumbers.map((pageNumber) => (
               <Button
-                key={page}
+                key={pageNumber}
+                onClick={() => setPage(pageNumber)}
                 sx={{
                   minWidth: 30,
                   width: 30,
                   height: 30,
                   borderRadius: "0.6rem",
                   p: 0,
-                  color: page === 1 ? "#FFFFFF" : "#223146",
-                  bgcolor: page === 1 ? "#0E56C8" : "#FFFFFF",
-                  border: page === 1 ? "none" : "1px solid rgba(225,232,241,0.96)",
+                  color: pageNumber === page ? "#FFFFFF" : "#223146",
+                  bgcolor: pageNumber === page ? "#0E56C8" : "#FFFFFF",
+                  border: pageNumber === page ? "none" : "1px solid rgba(225,232,241,0.96)",
                   fontSize: "0.7rem",
                   fontWeight: 700,
                 }}
               >
-                {page}
+                {pageNumber}
               </Button>
             ))}
             <Button
+              onClick={() => setPage((currentPage) => Math.min(totalPages, currentPage + 1))}
+              disabled={page === totalPages}
               sx={{
                 minWidth: 30,
                 width: 30,

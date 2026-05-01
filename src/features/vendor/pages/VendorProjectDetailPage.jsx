@@ -1,5 +1,5 @@
 import { Alert, Avatar, Box, Button, CircularProgress, Stack, Typography } from "@mui/material";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
 import PlaceOutlinedIcon from "@mui/icons-material/PlaceOutlined";
@@ -19,15 +19,15 @@ import { projectsApi } from "@/features/public/api/projectsApi";
 import projectMapPlaceholder from "@/shared/assets/images/vendor/project/vendor-project-map-placeholder.png";
 
 const statCards = [
-  { label: "System Size", value: "5.4 kW" },
-  { label: "Total Price", value: "\u20B93,15,000", highlight: true },
-  { label: "Start Date", value: "Oct 24, 2023" },
-  { label: "Est. Payback", value: "4.2 Years" },
+  { label: "System Size", value: "Pending" },
+  { label: "Total Price", value: "Pending", highlight: true },
+  { label: "Start Date", value: "Pending" },
+  { label: "Project Status", value: "Pending" },
 ];
 
 const milestones = [
-  { label: "Site Visit", date: "Oct 26, 2023", state: "completed" },
-  { label: "Bank Loan", date: "In Progress", state: "active" },
+  { label: "Site Visit", date: "Pending", state: "upcoming" },
+  { label: "Bank Loan", date: "Pending", state: "upcoming" },
   { label: "Installation", state: "upcoming" },
   { label: "Inspection", state: "upcoming" },
   { label: "Activation", state: "upcoming" },
@@ -35,94 +35,33 @@ const milestones = [
 
 const timeline = [
   {
-    title: "Panels Delivered",
-    meta: "Today, 10:24 AM • Warehouse",
-    tone: "#0E56C8",
-    bg: "#EAF1FF",
-  },
-  {
-    title: "Site Visit Completed",
-    meta: "Oct 26, 2023 • Eng. Vikram Singh",
-    note: "Site ready for structural installation. Anchor points marked.",
-    tone: "#0E56C8",
-    bg: "#EAF1FF",
-  },
-  {
-    title: "Agreement Signed",
-    meta: "Oct 24, 2023 • Digital Signature",
-    tone: "#0E56C8",
-    bg: "#EAF1FF",
-  },
-  {
-    title: "Project Created",
-    meta: "Oct 24, 2023 • Portal",
+    title: "Project activity will appear here",
+    meta: "Waiting for project updates",
     tone: "#95B9F0",
     bg: "#EFF5FF",
   },
 ];
 
 const technicalSpecs = [
-  ["Panel Type", "Mono PERC 540W"],
-  ["Inverter", "Sparkin Hybrid 5kW"],
-  ["Roof Type", "Concrete Flat Roof"],
-  ["Mounting", "HDG Fixed Structure"],
+  ["Panel Type", "Pending"],
+  ["Inverter", "Pending"],
+  ["Install Window", "Pending"],
+  ["Total Cost", "Pending"],
 ];
 
 const tabs = ["Installation Details", "Customer Info", "Documents"];
 
 const customerInfoBlocks = [
-  {
-    title: "Primary Contact",
-    rows: ["Amit Sharma", "+91 98765 43210", "amit.sharma@example.com"],
-  },
-  {
-    title: "Installation Address",
-    rows: [
-      "Plot 42, Harmony Residency,",
-      "Baner-Pashan Link Road,",
-      "Pune, Maharashtra 411045",
-    ],
-  },
-  {
-    title: "Utility Provider",
-    rows: ["MSEDCL (Maharashtra State Electricity)", "Consumer No: 1542389021"],
-  },
-  {
-    title: "Billing Tier",
-    rows: ["Residential - LT-1"],
-  },
+  { title: "Primary Contact", rows: ["Pending", "Pending", "Pending"] },
+  { title: "Installation Address", rows: ["Pending"] },
+  { title: "Project Ownership", rows: ["Pending"] },
+  { title: "Current Stage", rows: ["Pending"] },
 ];
 
-const documentItems = [
-  {
-    name: "Signed_Contract_Final.pdf",
-    meta: "Uploaded Oct 24, 2023 • 2.4 MB",
-    tone: "#FF6B6B",
-    bg: "#FFF1F1",
-    icon: "pdf",
-  },
-  {
-    name: "Roof_Survey_Photos.zip",
-    meta: "Uploaded Oct 26, 2023 • 15.8 MB",
-    tone: "#4F89FF",
-    bg: "#EEF4FF",
-    icon: "zip",
-  },
-  {
-    name: "Technical_Layout_v2.dwg",
-    meta: "Uploaded Oct 25, 2023 • 4.1 MB",
-    tone: "#33B864",
-    bg: "#EAF9F0",
-    icon: "dwg",
-  },
-  {
-    name: "NOC_Utility_Company.pdf",
-    meta: "Uploaded Nov 02, 2023 • 1.1 MB",
-    tone: "#FFB01F",
-    bg: "#FFF6E5",
-    icon: "noc",
-  },
-];
+const fulfillmentOrigin = (import.meta.env.VITE_FULFILLMENT_API_BASE_URL || "http://localhost:4003/api/v1").replace(
+  /\/api\/v1\/?$/,
+  "",
+);
 
 function formatPrice(value) {
   return new Intl.NumberFormat("en-IN", {
@@ -144,6 +83,36 @@ function formatDate(value) {
   }).format(new Date(value));
 }
 
+function formatDateTime(value) {
+  if (!value) {
+    return "Pending";
+  }
+
+  return new Intl.DateTimeFormat("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(value));
+}
+
+function formatFileSize(bytes) {
+  const size = Number(bytes) || 0;
+  if (size >= 1024 * 1024) return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+  if (size >= 1024) return `${Math.round(size / 1024)} KB`;
+  return `${size} B`;
+}
+
+function readFileAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
+
 function formatAddress(address) {
   if (!address) {
     return ["Location pending"];
@@ -154,6 +123,13 @@ function formatAddress(address) {
     address.landmark,
     `${address.city}, ${address.state} ${address.pincode}`,
   ].filter(Boolean);
+}
+
+function getMapUrl(address) {
+  const query = formatAddress(address).join(" ");
+  return query && query !== "Location pending"
+    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`
+    : "";
 }
 
 function toMilestoneNode(milestone) {
@@ -215,6 +191,30 @@ function getProjectView(project) {
       },
     ],
     activeMilestone: project.milestones.find((milestone) => milestone.status === "in_progress"),
+    documents: (project.documents || []).map((document) => ({
+      name: document.title || document.fileName,
+      meta: `Uploaded ${formatDate(document.uploadedAt)} • ${formatFileSize(document.size)}`,
+      tone: document.mimeType === "application/pdf" ? "#FF6B6B" : "#4F89FF",
+      bg: document.mimeType === "application/pdf" ? "#FFF1F1" : "#EEF4FF",
+      icon: document.mimeType === "application/pdf" ? "pdf" : "image",
+      url: document.url?.startsWith("http") ? document.url : `${fulfillmentOrigin}${document.url}`,
+    })),
+    timeline: [
+      ...(project.milestones || [])
+        .filter((milestone) => milestone.completedAt)
+        .map((milestone) => ({
+          title: `${milestone.title} Completed`,
+          meta: `${formatDateTime(milestone.completedAt)} • Project Update`,
+          tone: "#0E56C8",
+          bg: "#EAF1FF",
+        })),
+      {
+        title: "Project Created",
+        meta: `${formatDateTime(project.createdAt || project.createdFromQuoteAt)} • Portal`,
+        tone: "#95B9F0",
+        bg: "#EFF5FF",
+      },
+    ],
   };
 }
 
@@ -301,11 +301,14 @@ function MilestoneNode({ milestone, isFirst, isLast }) {
 
 export default function VendorProjectDetailPage() {
   const { projectId } = useParams();
+  const documentInputRef = useRef(null);
   const [activeTab, setActiveTab] = useState("Installation Details");
   const [project, setProject] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const projectView = useMemo(() => getProjectView(project), [project]);
   const displayTitle = projectView?.title ?? "Project Details";
   const displaySubtitle = projectView?.subtitle ?? "Loading project details";
@@ -313,6 +316,9 @@ export default function VendorProjectDetailPage() {
   const displayMilestones = projectView?.milestones ?? milestones;
   const displayTechnicalSpecs = projectView?.technicalSpecs ?? technicalSpecs;
   const displayCustomerInfoBlocks = projectView?.customerInfoBlocks ?? customerInfoBlocks;
+  const displayDocuments = projectView?.documents || [];
+  const displayTimeline = projectView?.timeline?.length ? projectView.timeline : timeline;
+  const mapUrl = project ? getMapUrl(project.installationAddress) : "";
 
   useEffect(() => {
     let active = true;
@@ -345,6 +351,7 @@ export default function VendorProjectDetailPage() {
 
     setIsUpdating(true);
     setError("");
+    setSuccess("");
 
     try {
       const updatedProject = await projectsApi.updateProjectMilestone(projectId, {
@@ -352,10 +359,79 @@ export default function VendorProjectDetailPage() {
         status: "completed",
       });
       setProject(updatedProject);
+      setSuccess("Project status updated.");
     } catch (apiError) {
       setError(apiError?.response?.data?.message || "Could not update project status.");
     } finally {
       setIsUpdating(false);
+    }
+  }
+
+  async function handleScheduleVisit() {
+    if (!project?.milestones?.length) {
+      return;
+    }
+
+    const siteVisit = project.milestones.find((milestone) => milestone.key === "site_visit");
+    if (siteVisit?.status === "completed") {
+      setError("");
+      setSuccess("Project status updated.");
+      return;
+    }
+
+    setIsUpdating(true);
+    setError("");
+    setSuccess("");
+
+    try {
+      const updatedProject = await projectsApi.updateProjectMilestone(projectId, {
+        milestoneKey: "site_visit",
+        status: "in_progress",
+      });
+      setProject(updatedProject);
+      setSuccess("Project status updated.");
+    } catch (apiError) {
+      setError(apiError?.response?.data?.message || "Could not update project status.");
+    } finally {
+      setIsUpdating(false);
+    }
+  }
+
+  async function handleDocumentSelected(event) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+
+    if (!file) return;
+
+    if (!["application/pdf", "image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      setError("Please upload a PDF, JPG, PNG, or WEBP document.");
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setError("Document must be smaller than 5MB.");
+      return;
+    }
+
+    setIsUploading(true);
+    setError("");
+    setSuccess("");
+
+    try {
+      const data = await readFileAsDataUrl(file);
+      const updatedProject = await projectsApi.uploadDocument(projectId, {
+        title: file.name,
+        fileName: file.name,
+        mimeType: file.type,
+        data,
+      });
+      setProject(updatedProject);
+      setActiveTab("Documents");
+      setSuccess("Document uploaded.");
+    } catch (apiError) {
+      setError(apiError?.response?.data?.message || "Could not upload document.");
+    } finally {
+      setIsUploading(false);
     }
   }
 
@@ -369,6 +445,14 @@ export default function VendorProjectDetailPage() {
 
   return (
     <Box sx={{ width: "100%" }}>
+      <input
+        ref={documentInputRef}
+        type="file"
+        accept="application/pdf,image/jpeg,image/png,image/webp"
+        hidden
+        onChange={handleDocumentSelected}
+      />
+
       <Button
         component={RouterLink}
         to="/vendor/projects"
@@ -395,6 +479,12 @@ export default function VendorProjectDetailPage() {
       {error ? (
         <Alert severity="error" sx={{ mb: 2, borderRadius: "0.9rem" }}>
           {error}
+        </Alert>
+      ) : null}
+
+      {success ? (
+        <Alert severity="success" sx={{ mb: 2, borderRadius: "0.9rem" }}>
+          {success}
         </Alert>
       ) : null}
 
@@ -844,7 +934,12 @@ export default function VendorProjectDetailPage() {
                 gap: 1.2,
               }}
             >
-              {documentItems.map((item) => (
+              {displayDocuments.length === 0 ? (
+                <Alert severity="info" sx={{ gridColumn: "1 / -1", borderRadius: "0.9rem" }}>
+                  No documents have been uploaded for this project yet.
+                </Alert>
+              ) : null}
+              {displayDocuments.map((item) => (
                 <Stack
                   key={item.name}
                   direction="row"
@@ -907,6 +1002,10 @@ export default function VendorProjectDetailPage() {
                   </Stack>
 
                   <Button
+                    component={item.url ? "a" : "button"}
+                    href={item.url || undefined}
+                    target={item.url ? "_blank" : undefined}
+                    rel={item.url ? "noreferrer" : undefined}
                     sx={{
                       minWidth: 28,
                       width: 28,
@@ -942,7 +1041,7 @@ export default function VendorProjectDetailPage() {
             </Typography>
 
             <Stack spacing={1.25} sx={{ mt: 1.5 }}>
-              {timeline.map((item, index) => (
+              {displayTimeline.map((item, index) => (
                 <Stack
                   key={item.title}
                   direction="row"
@@ -965,7 +1064,7 @@ export default function VendorProjectDetailPage() {
                     >
                       {index < 3 ? "■" : "+"}
                     </Box>
-                    {index !== timeline.length - 1 ? (
+                    {index !== displayTimeline.length - 1 ? (
                       <Box
                         sx={{
                           width: 2,
@@ -1055,6 +1154,11 @@ export default function VendorProjectDetailPage() {
                 Location Preview
               </Typography>
               <Button
+                component={mapUrl ? "a" : "button"}
+                href={mapUrl || undefined}
+                target={mapUrl ? "_blank" : undefined}
+                rel={mapUrl ? "noreferrer" : undefined}
+                disabled={!mapUrl}
                 size="small"
                 startIcon={<PlaceOutlinedIcon sx={{ fontSize: "0.9rem" }} />}
                 sx={{
@@ -1100,6 +1204,8 @@ export default function VendorProjectDetailPage() {
             <Button
               startIcon={<SettingsOutlinedIcon />}
               variant="outlined"
+              onClick={handleCompleteActiveStep}
+              disabled={isUpdating || isLoading || !projectView?.activeMilestone}
               sx={{
                 minHeight: 38,
                 px: 1.3,
@@ -1117,6 +1223,8 @@ export default function VendorProjectDetailPage() {
             <Button
               startIcon={<EventAvailableOutlinedIcon />}
               variant="outlined"
+              onClick={handleScheduleVisit}
+              disabled={isUpdating || isLoading || !project}
               sx={{
                 minHeight: 38,
                 px: 1.3,
@@ -1134,6 +1242,8 @@ export default function VendorProjectDetailPage() {
             <Button
               startIcon={<UploadFileOutlinedIcon />}
               variant="outlined"
+              onClick={() => documentInputRef.current?.click()}
+              disabled={isUploading || isLoading || !project}
               sx={{
                 minHeight: 38,
                 px: 1.3,
@@ -1146,7 +1256,7 @@ export default function VendorProjectDetailPage() {
                 textTransform: "none",
               }}
             >
-              Upload Document
+              {isUploading ? "Uploading..." : "Upload Document"}
             </Button>
           </Stack>
 

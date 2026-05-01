@@ -11,6 +11,7 @@ import VendorPaymentsPage from "@/features/vendor/pages/VendorPaymentsPage";
 import VendorTransactionsPage from "@/features/vendor/pages/VendorTransactionsPage";
 import VendorInvoiceDetailPage from "@/features/vendor/pages/VendorInvoiceDetailPage";
 import VendorProfilePage from "@/features/vendor/pages/VendorProfilePage";
+import VendorSettingsPage from "@/features/vendor/pages/VendorSettingsPage";
 
 export const vendorRoutes = [
   {
@@ -68,5 +69,9 @@ export const vendorRoutes = [
   {
     path: "profile",
     element: <VendorProfilePage />,
+  },
+  {
+    path: "settings",
+    element: <VendorSettingsPage />,
   },
 ];

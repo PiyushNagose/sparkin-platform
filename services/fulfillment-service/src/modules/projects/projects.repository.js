@@ -10,6 +10,10 @@ function normalizeProject(project) {
   return {
     ...value,
     id: value.id || value._id?.toString(),
+    documents: (value.documents || []).map((document) => ({
+      ...document,
+      id: document.id || document._id?.toString(),
+    })),
   };
 }
 
@@ -33,6 +37,11 @@ export const projectsRepository = {
     return normalizeProject(project);
   },
 
+  async findByIds(projectIds) {
+    const projects = await ProjectModel.find({ _id: { $in: projectIds } }).lean({ virtuals: true });
+    return normalizeProjects(projects);
+  },
+
   async findForCustomer(customerId) {
     const projects = await ProjectModel.find({ customerId }).sort({ createdAt: -1 }).lean({ virtuals: true });
     return normalizeProjects(projects);
@@ -52,6 +61,16 @@ export const projectsRepository = {
     const project = await ProjectModel.findByIdAndUpdate(
       projectId,
       { $set: updates },
+      { new: true },
+    ).lean({ virtuals: true });
+
+    return normalizeProject(project);
+  },
+
+  async addDocument(projectId, document) {
+    const project = await ProjectModel.findByIdAndUpdate(
+      projectId,
+      { $push: { documents: document } },
       { new: true },
     ).lean({ virtuals: true });
 

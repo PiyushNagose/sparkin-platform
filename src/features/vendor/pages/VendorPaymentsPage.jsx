@@ -12,8 +12,7 @@ import AccountBalanceWalletOutlinedIcon from "@mui/icons-material/AccountBalance
 import PaymentsOutlinedIcon from "@mui/icons-material/PaymentsOutlined";
 import CheckCircleOutlineRoundedIcon from "@mui/icons-material/CheckCircleOutlineRounded";
 import CalendarTodayOutlinedIcon from "@mui/icons-material/CalendarTodayOutlined";
-import MoreVertRoundedIcon from "@mui/icons-material/MoreVertRounded";
-import { Link as RouterLink } from "react-router-dom";
+import { Link as RouterLink, useLocation } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import { paymentsApi } from "@/features/vendor/api/paymentsApi";
 
@@ -59,49 +58,6 @@ const chartBars = [
   { month: "Aug", height: 98, tone: "#A8C0E7" },
   { month: "Sep", height: 118, tone: "#7E9FD5" },
   { month: "Oct", height: 106, tone: "#0E56C8" },
-];
-
-const transactions = [
-  {
-    initials: "AS",
-    name: "Amit Sharma",
-    project: "Residential 5kW",
-    amount: "\u20B91,05,000",
-    status: "Paid",
-    statusTone: "#239654",
-    statusBg: "#DDF8E7",
-    date: "Oct 24, 2023",
-  },
-  {
-    initials: "PK",
-    name: "Priya Kulkarni",
-    project: "Commercial 12kW",
-    amount: "\u20B92,10,000",
-    status: "Pending",
-    statusTone: "#6E6900",
-    statusBg: "#F2F08E",
-    date: "Oct 22, 2023",
-  },
-  {
-    initials: "RB",
-    name: "Rahul Bansal",
-    project: "Off-grid Cabin",
-    amount: "\u20B945,000",
-    status: "Failed",
-    statusTone: "#D74C4C",
-    statusBg: "#FDECEC",
-    date: "Oct 19, 2023",
-  },
-  {
-    initials: "SN",
-    name: "S. Narayan",
-    project: "Residential 3kW",
-    amount: "\u20B982,000",
-    status: "Paid",
-    statusTone: "#239654",
-    statusBg: "#DDF8E7",
-    date: "Oct 15, 2023",
-  },
 ];
 
 const columns = ["Customer", "Project", "Amount", "Status", "Date", "Action"];
@@ -154,13 +110,78 @@ function toTransaction(payment) {
     id: payment.id,
     initials: getInitials(payment.customer.fullName),
     name: payment.customer.fullName,
-    project: payment.milestone.title,
+    project: payment.project?.system?.sizeKw ? `${payment.milestone.title} - ${payment.project.system.sizeKw} kW` : payment.milestone.title,
     amount: formatPrice(payment.amount),
     status: status.label,
     statusTone: status.tone,
     statusBg: status.bg,
     date: formatDate(payment.paidAt || payment.dueAt),
   };
+}
+
+function csvEscape(value) {
+  const text = String(value ?? "");
+  if (/[",\n]/.test(text)) return `"${text.replaceAll('"', '""')}"`;
+  return text;
+}
+
+function downloadFile(fileName, content) {
+  const blob = new Blob([content], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+function buildStatement(payments) {
+  const rows = [
+    ["Invoice", "Customer", "Project", "Milestone", "Amount", "Status", "Due Date", "Paid Date"],
+    ...payments.map((payment) => [
+      payment.invoiceNumber,
+      payment.customer?.fullName,
+      payment.project?.id || payment.projectId,
+      payment.milestone?.title,
+      payment.amount,
+      payment.status,
+      payment.dueAt,
+      payment.paidAt,
+    ]),
+  ];
+
+  return rows.map((row) => row.map(csvEscape).join(",")).join("\n");
+}
+
+function buildChartBars(payments) {
+  const monthTotals = new Map();
+  const formatter = new Intl.DateTimeFormat("en-IN", { month: "short" });
+
+  payments
+    .filter((payment) => payment.status === "paid")
+    .forEach((payment) => {
+      const date = new Date(payment.paidAt || payment.createdAt);
+      if (Number.isNaN(date.getTime())) return;
+      const key = `${date.getFullYear()}-${date.getMonth()}`;
+      monthTotals.set(key, {
+        month: formatter.format(date),
+        total: (monthTotals.get(key)?.total || 0) + payment.amount,
+        time: date.getTime(),
+      });
+    });
+
+  const totals = [...monthTotals.values()].sort((a, b) => a.time - b.time).slice(-6);
+  const max = Math.max(...totals.map((item) => item.total), 1);
+
+  return totals.length
+    ? totals.map((item, index) => ({
+        month: item.month,
+        height: Math.max(22, Math.round((item.total / max) * 118)),
+        tone: index === totals.length - 1 ? "#0E56C8" : "#A8C0E7",
+      }))
+    : chartBars;
 }
 
 function KpiCard({ card }) {
@@ -226,9 +247,12 @@ function KpiCard({ card }) {
 }
 
 export default function VendorPaymentsPage() {
+  const location = useLocation();
   const [payments, setPayments] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
 
   useEffect(() => {
     let active = true;
@@ -254,7 +278,13 @@ export default function VendorPaymentsPage() {
     };
   }, []);
 
+  useEffect(() => {
+    const incomingSearch = location.state?.portalSearch || "";
+    setSearchTerm(incomingSearch);
+  }, [location.state]);
+
   const transactions = useMemo(() => payments.map(toTransaction), [payments]);
+  const paidPayments = payments.filter((payment) => payment.status === "paid");
   const paidAmount = payments
     .filter((payment) => payment.status === "paid")
     .reduce((sum, payment) => sum + payment.amount, 0);
@@ -262,6 +292,22 @@ export default function VendorPaymentsPage() {
     .filter((payment) => payment.status === "pending")
     .reduce((sum, payment) => sum + payment.amount, 0);
   const totalAmount = payments.reduce((sum, payment) => sum + payment.amount, 0);
+  const monthlyPaidAmount = paidPayments
+    .filter((payment) => {
+      const date = new Date(payment.paidAt || payment.createdAt);
+      const now = new Date();
+      return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
+    })
+    .reduce((sum, payment) => sum + payment.amount, 0);
+  const dynamicChartBars = useMemo(() => buildChartBars(payments), [payments]);
+  const recentTransactions = transactions
+    .filter((transaction) => {
+      const normalizedSearch = searchTerm.trim().toLowerCase();
+      if (!normalizedSearch) return true;
+      return [transaction.id, transaction.name, transaction.project, transaction.amount, transaction.status, transaction.date]
+        .some((value) => String(value || "").toLowerCase().includes(normalizedSearch));
+    })
+    .slice(0, 5);
   const dashboardKpis = useMemo(
     () => [
       { ...kpiCards[0], value: formatPrice(totalAmount), delta: payments.length ? "+live" : "" },
@@ -271,10 +317,22 @@ export default function VendorPaymentsPage() {
         note: `${payments.filter((payment) => payment.status === "pending").length} Active`,
       },
       { ...kpiCards[2], value: formatPrice(paidAmount), note: "Recorded" },
-      { ...kpiCards[3], value: formatPrice(paidAmount), delta: payments.length ? "+live" : "" },
+      { ...kpiCards[3], value: formatPrice(monthlyPaidAmount), delta: payments.length ? "+live" : "" },
     ],
-    [paidAmount, payments, pendingAmount, totalAmount],
+    [monthlyPaidAmount, paidAmount, payments, pendingAmount, totalAmount],
   );
+
+  function downloadStatement() {
+    downloadFile(`sparkin-payment-statement-${new Date().toISOString().slice(0, 10)}.csv`, buildStatement(payments));
+  }
+
+  function handleWithdraw() {
+    setNotice(
+      pendingAmount > 0
+        ? "Withdrawals will be enabled after pending project milestones are marked paid."
+        : "There are no pending vendor payouts to withdraw right now.",
+    );
+  }
 
   return (
     <Box sx={{ width: "100%" }}>
@@ -313,6 +371,8 @@ export default function VendorPaymentsPage() {
           <Button
             variant="outlined"
             startIcon={<FileDownloadOutlinedIcon />}
+            onClick={downloadStatement}
+            disabled={isLoading || payments.length === 0}
             sx={{
               minHeight: 38,
               px: 1.55,
@@ -329,6 +389,7 @@ export default function VendorPaymentsPage() {
           <Button
             variant="contained"
             startIcon={<PaymentsOutlinedIcon />}
+            onClick={handleWithdraw}
             sx={{
               minHeight: 38,
               px: 1.65,
@@ -344,6 +405,12 @@ export default function VendorPaymentsPage() {
           </Button>
         </Stack>
       </Stack>
+
+      {notice ? (
+        <Alert severity="info" sx={{ mb: 2, borderRadius: "0.9rem" }}>
+          {notice}
+        </Alert>
+      ) : null}
 
       <Box
         sx={{
@@ -405,7 +472,7 @@ export default function VendorPaymentsPage() {
             spacing={0.45}
             sx={{ mt: 3.2, height: 166 }}
           >
-            {chartBars.map((bar) => (
+            {dynamicChartBars.map((bar) => (
               <Box key={bar.month} sx={{ flex: 1, minWidth: 0 }}>
                 <Box
                   sx={{
@@ -500,7 +567,7 @@ export default function VendorPaymentsPage() {
                   ▣
                 </Box>
                 <Typography sx={{ color: "#223146", fontSize: "0.82rem", fontWeight: 700 }}>
-                  HDFC Bank •••• 8821
+                  Bank account not connected
                 </Typography>
               </Stack>
               <Box
@@ -526,7 +593,7 @@ export default function VendorPaymentsPage() {
                   Next payout date
                 </Typography>
                 <Typography sx={{ color: "#223146", fontSize: "0.72rem", fontWeight: 700 }}>
-                  Oct 30, 2023
+                  {pendingAmount > 0 ? formatDate(new Date()) : "No payout pending"}
                 </Typography>
               </Stack>
               <Stack direction="row" justifyContent="space-between" spacing={1}>
@@ -543,6 +610,7 @@ export default function VendorPaymentsPage() {
           <Button
             variant="contained"
             fullWidth
+            onClick={handleWithdraw}
             sx={{
               mt: 1.45,
               minHeight: 39,
@@ -650,7 +718,7 @@ export default function VendorPaymentsPage() {
           </Box>
         ) : null}
 
-        {!isLoading && !error && transactions.length === 0 ? (
+        {!isLoading && !error && recentTransactions.length === 0 ? (
           <Box sx={{ px: { xs: 1.2, md: 1.7 }, py: 4 }}>
             <Alert severity="info" sx={{ borderRadius: "0.9rem" }}>
               Payments will appear here after customers accept your quotes and projects are created.
@@ -659,7 +727,7 @@ export default function VendorPaymentsPage() {
         ) : null}
 
         <Stack spacing={0} sx={{ px: { xs: 1.2, md: 1.7 }, pb: 1.1 }}>
-          {transactions.map((item, index) => (
+          {recentTransactions.map((item, index) => (
             <Box
               key={item.id}
               sx={{
@@ -718,6 +786,8 @@ export default function VendorPaymentsPage() {
                   {item.date}
                 </Typography>
                 <Button
+                  component={RouterLink}
+                  to={`/vendor/payments/transactions/${item.id}`}
                   sx={{
                     minWidth: 28,
                     width: 28,
@@ -727,7 +797,7 @@ export default function VendorPaymentsPage() {
                     color: "#556478",
                   }}
                 >
-                  <MoreVertRoundedIcon sx={{ fontSize: "1rem" }} />
+                  <FileDownloadOutlinedIcon sx={{ fontSize: "1rem" }} />
                 </Button>
               </Box>
 
@@ -757,6 +827,8 @@ export default function VendorPaymentsPage() {
                       </Box>
                     </Stack>
                     <Button
+                      component={RouterLink}
+                      to={`/vendor/payments/transactions/${item.id}`}
                       sx={{
                         minWidth: 28,
                         width: 28,
@@ -766,7 +838,7 @@ export default function VendorPaymentsPage() {
                         color: "#556478",
                       }}
                     >
-                      <MoreVertRoundedIcon sx={{ fontSize: "1rem" }} />
+                      <FileDownloadOutlinedIcon sx={{ fontSize: "1rem" }} />
                     </Button>
                   </Stack>
 

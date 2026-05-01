@@ -1,4 +1,5 @@
-import { Avatar, Box, Button, Stack, Typography } from "@mui/material";
+import { useEffect, useMemo, useState } from "react";
+import { Alert, Avatar, Box, Button, CircularProgress, Stack, TextField, Typography } from "@mui/material";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import KeyboardArrowLeftRoundedIcon from "@mui/icons-material/KeyboardArrowLeftRounded";
 import KeyboardArrowRightRoundedIcon from "@mui/icons-material/KeyboardArrowRightRounded";
@@ -7,93 +8,10 @@ import FileDownloadOutlinedIcon from "@mui/icons-material/FileDownloadOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
-import { Link as RouterLink } from "react-router-dom";
-
-const kpiCards = [
-  {
-    label: "Total Quotes",
-    value: "128",
-    delta: "+12%",
-    icon: "file",
-    tone: "#4F89FF",
-    bg: "#EEF4FF",
-  },
-  {
-    label: "Pending",
-    value: "42",
-    icon: "pending",
-    tone: "#4F89FF",
-    bg: "#EEF4FF",
-  },
-  {
-    label: "Accepted",
-    value: "76",
-    badge: "High Win Rate",
-    icon: "accepted",
-    tone: "#1FA453",
-    bg: "#E8FAEF",
-  },
-  {
-    label: "Rejected",
-    value: "10",
-    icon: "rejected",
-    tone: "#E05252",
-    bg: "#FDECEC",
-  },
-];
+import { Link as RouterLink, useLocation } from "react-router-dom";
+import { leadsApi, quotesApi } from "@/features/public/api/leadsApi";
 
 const tabs = ["All", "Pending", "Accepted", "Rejected"];
-
-const quotes = [
-  {
-    initials: "AS",
-    name: "Amit Sharma",
-    type: "Residential Project",
-    location: "Pune, Maharashtra",
-    systemSize: "5.5 kW",
-    yourPrice: "\u20B94,25,000",
-    status: "Pending",
-    statusTone: "#4F89FF",
-    statusBg: "#EEF4FF",
-    date: "24 Oct, 2023",
-  },
-  {
-    initials: "PK",
-    name: "Priya Kulkarni",
-    type: "Villa Installation",
-    location: "Mumbai, MH",
-    systemSize: "8.0 kW",
-    yourPrice: "\u20B96,80,000",
-    status: "Accepted",
-    statusTone: "#1FA453",
-    statusBg: "#E8FAEF",
-    date: "22 Oct, 2023",
-  },
-  {
-    initials: "RJ",
-    name: "Rohan Joshi",
-    type: "Small Scale Industrial",
-    location: "Nagpur, MH",
-    systemSize: "15.0 kW",
-    yourPrice: "\u20B912,50,000",
-    status: "Under Review",
-    statusTone: "#878500",
-    statusBg: "#F2F08E",
-    date: "21 Oct, 2023",
-  },
-  {
-    initials: "SK",
-    name: "Suresh Khan",
-    type: "Bungalow Project",
-    location: "Nashik, MH",
-    systemSize: "3.0 kW",
-    yourPrice: "\u20B92,90,000",
-    status: "Rejected",
-    statusTone: "#E05252",
-    statusBg: "#FDECEC",
-    date: "18 Oct, 2023",
-  },
-];
 
 const columns = [
   "Customer",
@@ -104,6 +22,92 @@ const columns = [
   "Date",
   "Actions",
 ];
+
+const pageSize = 8;
+
+function formatPrice(value) {
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(Number(value) || 0);
+}
+
+function formatDate(value) {
+  const date = value ? new Date(value) : null;
+  if (!date || Number.isNaN(date.getTime())) return "-";
+
+  return new Intl.DateTimeFormat("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(date);
+}
+
+function getInitials(name = "") {
+  return name
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("") || "CU";
+}
+
+function getStatusMeta(status) {
+  const map = {
+    submitted: { status: "Pending", statusTone: "#4F89FF", statusBg: "#EEF4FF" },
+    shortlisted: { status: "Under Review", statusTone: "#878500", statusBg: "#F2F08E" },
+    accepted: { status: "Accepted", statusTone: "#1FA453", statusBg: "#E8FAEF" },
+    rejected: { status: "Rejected", statusTone: "#E05252", statusBg: "#FDECEC" },
+    withdrawn: { status: "Rejected", statusTone: "#E05252", statusBg: "#FDECEC" },
+  };
+
+  return map[status] || map.submitted;
+}
+
+function downloadFile(fileName, content) {
+  const blob = new Blob([content], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+function csvEscape(value) {
+  const text = String(value ?? "");
+  if (/[",\n]/.test(text)) return `"${text.replaceAll('"', '""')}"`;
+  return text;
+}
+
+function toCsv(rows) {
+  return rows.map((row) => row.map(csvEscape).join(",")).join("\n");
+}
+
+function toQuoteRow(quote, lead) {
+  const customerName = lead?.contact?.fullName || "Customer";
+  const { status, statusTone, statusBg } = getStatusMeta(quote.status);
+
+  return {
+    id: quote.id || quote._id,
+    leadId: quote.leadId,
+    rawStatus: quote.status,
+    initials: getInitials(customerName),
+    name: customerName,
+    type: lead?.projectType || "Residential Project",
+    location: [lead?.installationAddress?.city, lead?.installationAddress?.state].filter(Boolean).join(", ") || "Location pending",
+    systemSize: quote.system?.sizeKw ? `${quote.system.sizeKw} kW` : "Assessment pending",
+    yourPrice: formatPrice(quote.pricing?.totalPrice),
+    status,
+    statusTone,
+    statusBg,
+    date: formatDate(quote.submittedAt || quote.createdAt),
+    submittedAt: quote.submittedAt || quote.createdAt,
+  };
+}
 
 function KpiIcon({ type, tone, bg }) {
   const base = {
@@ -138,6 +142,155 @@ function KpiIcon({ type, tone, bg }) {
 }
 
 export default function VendorQuotesPage() {
+  const location = useLocation();
+  const [quotes, setQuotes] = useState([]);
+  const [leads, setLeads] = useState([]);
+  const [activeTab, setActiveTab] = useState("All");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [page, setPage] = useState(1);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadQuotes() {
+      setIsLoading(true);
+      setError("");
+
+      try {
+        const [quotesResult, leadsResult] = await Promise.allSettled([quotesApi.listQuotes(), leadsApi.listLeads()]);
+        if (quotesResult.status === "rejected") {
+          throw quotesResult.reason;
+        }
+
+        if (!active) return;
+        setQuotes(quotesResult.value);
+        setLeads(leadsResult.status === "fulfilled" ? leadsResult.value : []);
+      } catch (apiError) {
+        if (active) setError(apiError?.response?.data?.message || "Could not load quotes.");
+      } finally {
+        if (active) setIsLoading(false);
+      }
+    }
+
+    loadQuotes();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    const incomingSearch = location.state?.portalSearch || "";
+    setSearchTerm(incomingSearch);
+    setPage(1);
+  }, [location.state]);
+
+  const leadById = useMemo(() => {
+    const map = new Map();
+    leads.forEach((lead) => map.set(String(lead.id || lead._id), lead));
+    return map;
+  }, [leads]);
+  const quoteRows = useMemo(
+    () => quotes.map((quote) => toQuoteRow(quote, quote.lead || leadById.get(String(quote.leadId)))),
+    [leadById, quotes],
+  );
+  const filteredQuotes = useMemo(() => {
+    const normalizedSearch = searchTerm.trim().toLowerCase();
+    const rows = quoteRows.filter((quote) => {
+      if (activeTab === "Pending") return ["submitted", "shortlisted"].includes(quote.rawStatus);
+      if (activeTab === "Accepted") return quote.rawStatus === "accepted";
+      if (activeTab === "Rejected") return ["rejected", "withdrawn"].includes(quote.rawStatus);
+      return true;
+    }).filter((quote) => {
+      if (!normalizedSearch) return true;
+      return [quote.id, quote.leadId, quote.name, quote.type, quote.location, quote.systemSize, quote.yourPrice, quote.status]
+        .some((value) => String(value || "").toLowerCase().includes(normalizedSearch));
+    });
+
+    return [...rows].sort((a, b) => new Date(b.submittedAt || 0) - new Date(a.submittedAt || 0));
+  }, [activeTab, quoteRows, searchTerm]);
+  const totalPages = Math.max(1, Math.ceil(filteredQuotes.length / pageSize));
+  const visibleQuotes = filteredQuotes.slice((page - 1) * pageSize, page * pageSize);
+  const pageNumbers = useMemo(() => Array.from({ length: totalPages }, (_, index) => index + 1), [totalPages]);
+  const firstVisibleQuote = filteredQuotes.length ? (page - 1) * pageSize + 1 : 0;
+  const lastVisibleQuote = filteredQuotes.length ? firstVisibleQuote + visibleQuotes.length - 1 : 0;
+  const acceptedCount = quoteRows.filter((quote) => quote.rawStatus === "accepted").length;
+  const rejectedCount = quoteRows.filter((quote) => ["rejected", "withdrawn"].includes(quote.rawStatus)).length;
+  const pendingCount = quoteRows.filter((quote) => ["submitted", "shortlisted"].includes(quote.rawStatus)).length;
+  const acceptanceRate = quoteRows.length ? Math.round((acceptedCount / quoteRows.length) * 100) : 0;
+  const averageQuoteValue = quoteRows.length
+    ? Math.round(
+        quoteRows.reduce((sum, quote) => sum + Number(String(quote.yourPrice).replace(/[^\d.-]/g, "") || 0), 0) /
+          quoteRows.length,
+      )
+    : 0;
+  const topLocation = quoteRows
+    .map((quote) => quote.location)
+    .filter((value) => value && value !== "Location pending")
+    .sort((a, b) => quoteRows.filter((quote) => quote.location === b).length - quoteRows.filter((quote) => quote.location === a).length)[0];
+  const kpiCards = [
+    {
+      label: "Total Quotes",
+      value: String(quoteRows.length),
+      delta: `${acceptanceRate}%`,
+      icon: "file",
+      tone: "#4F89FF",
+      bg: "#EEF4FF",
+    },
+    {
+      label: "Pending",
+      value: String(pendingCount),
+      icon: "pending",
+      tone: "#4F89FF",
+      bg: "#EEF4FF",
+    },
+    {
+      label: "Accepted",
+      value: String(acceptedCount),
+      badge: "High Win Rate",
+      icon: "accepted",
+      tone: "#1FA453",
+      bg: "#E8FAEF",
+    },
+    {
+      label: "Rejected",
+      value: String(rejectedCount),
+      icon: "rejected",
+      tone: "#E05252",
+      bg: "#FDECEC",
+    },
+  ];
+
+  function updateTab(tab) {
+    setActiveTab(tab);
+    setPage(1);
+  }
+
+  function applySearch(value) {
+    setSearchTerm(value);
+    setPage(1);
+  }
+
+  function exportQuotes() {
+    const rows = [
+      ["Quote ID", "Lead ID", "Customer", "Location", "System Size", "Your Price", "Status", "Date"],
+      ...filteredQuotes.map((quote) => [
+        quote.id,
+        quote.leadId,
+        quote.name,
+        quote.location,
+        quote.systemSize,
+        quote.yourPrice,
+        quote.status,
+        quote.date,
+      ]),
+    ];
+
+    downloadFile(`sparkin-quotes-${new Date().toISOString().slice(0, 10)}.csv`, toCsv(rows));
+  }
+
   return (
     <Box sx={{ width: "100%" }}>
       <Stack
@@ -259,6 +412,12 @@ export default function VendorQuotesPage() {
         ))}
       </Box>
 
+      {error ? (
+        <Alert severity="error" sx={{ mb: 2, borderRadius: "0.9rem" }}>
+          {error}
+        </Alert>
+      ) : null}
+
       <Box
         sx={{
           borderRadius: "1.55rem",
@@ -280,12 +439,13 @@ export default function VendorQuotesPage() {
             {tabs.map((tab, index) => (
               <Button
                 key={tab}
+                onClick={() => updateTab(tab)}
                 sx={{
                   minHeight: 30,
                   px: 1.2,
                   borderRadius: "999px",
-                  bgcolor: index === 0 ? "#0E56C8" : "transparent",
-                  color: index === 0 ? "#FFFFFF" : "#556478",
+                  bgcolor: activeTab === tab ? "#0E56C8" : "transparent",
+                  color: activeTab === tab ? "#FFFFFF" : "#556478",
                   fontSize: "0.7rem",
                   fontWeight: 700,
                   textTransform: "none",
@@ -297,9 +457,25 @@ export default function VendorQuotesPage() {
           </Stack>
 
           <Stack direction="row" spacing={0.8} flexWrap="wrap">
+            <TextField
+              size="small"
+              value={searchTerm}
+              onChange={(event) => applySearch(event.target.value)}
+              placeholder="Search quotes"
+              sx={{
+                minWidth: { xs: "100%", md: 210 },
+                "& .MuiOutlinedInput-root": {
+                  height: 32,
+                  borderRadius: "0.8rem",
+                  bgcolor: "#FFFFFF",
+                  fontSize: "0.72rem",
+                },
+              }}
+            />
             <Button
               startIcon={<TuneRoundedIcon />}
               variant="outlined"
+              onClick={() => updateTab("All")}
               sx={{
                 minHeight: 32,
                 px: 1.2,
@@ -316,6 +492,8 @@ export default function VendorQuotesPage() {
             <Button
               startIcon={<FileDownloadOutlinedIcon />}
               variant="outlined"
+              onClick={exportQuotes}
+              disabled={isLoading}
               sx={{
                 minHeight: 32,
                 px: 1.2,
@@ -358,9 +536,26 @@ export default function VendorQuotesPage() {
         </Box>
 
         <Stack spacing={0} sx={{ px: { xs: 1.2, md: 1.7 }, pb: 1.1 }}>
-          {quotes.map((quote, index) => (
+          {isLoading ? (
+            <Box sx={{ py: 5, display: "grid", placeItems: "center" }}>
+              <CircularProgress size={28} />
+            </Box>
+          ) : null}
+
+          {!isLoading && !error && filteredQuotes.length === 0 ? (
+            <Box sx={{ py: 5, textAlign: "center" }}>
+              <Typography sx={{ color: "#223146", fontSize: "0.95rem", fontWeight: 700 }}>
+                No quotes available
+              </Typography>
+              <Typography sx={{ mt: 0.45, color: "#738094", fontSize: "0.78rem" }}>
+                Submitted quotes will appear here.
+              </Typography>
+            </Box>
+          ) : null}
+
+          {visibleQuotes.map((quote, index) => (
             <Box
-              key={quote.name}
+              key={quote.id}
               sx={{
                 borderTop: index === 0 ? "none" : "1px solid rgba(234,239,245,0.95)",
                 py: { xs: 1.45, md: 1.55 },
@@ -427,6 +622,8 @@ export default function VendorQuotesPage() {
 
                 <Stack direction="row" spacing={0.8} alignItems="center">
                   <Button
+                    component={RouterLink}
+                    to={`/vendor/leads/${quote.leadId}/quote`}
                     sx={{
                       minWidth: 30,
                       width: 30,
@@ -439,6 +636,8 @@ export default function VendorQuotesPage() {
                     <EditOutlinedIcon sx={{ fontSize: "0.9rem" }} />
                   </Button>
                   <Button
+                    component={RouterLink}
+                    to={`/vendor/leads/${quote.leadId}`}
                     variant="outlined"
                     sx={{
                       minHeight: 30,
@@ -537,6 +736,8 @@ export default function VendorQuotesPage() {
                       {quote.status}
                     </Box>
                     <Button
+                      component={RouterLink}
+                      to={`/vendor/leads/${quote.leadId}/quote`}
                       sx={{
                         minWidth: 30,
                         width: 30,
@@ -549,6 +750,8 @@ export default function VendorQuotesPage() {
                       <EditOutlinedIcon sx={{ fontSize: "0.9rem" }} />
                     </Button>
                     <Button
+                      component={RouterLink}
+                      to={`/vendor/leads/${quote.leadId}`}
                       variant="outlined"
                       sx={{
                         minHeight: 30,
@@ -583,11 +786,13 @@ export default function VendorQuotesPage() {
           }}
         >
           <Typography sx={{ color: "#738094", fontSize: "0.72rem", fontWeight: 500 }}>
-            Showing 1 to 4 of 128 quotes
+            Showing {firstVisibleQuote} to {lastVisibleQuote} of {filteredQuotes.length} quotes
           </Typography>
 
           <Stack direction="row" spacing={0.45} alignItems="center">
             <Button
+              onClick={() => setPage((currentPage) => Math.max(1, currentPage - 1))}
+              disabled={page === 1}
               sx={{
                 minWidth: 30,
                 width: 30,
@@ -600,26 +805,29 @@ export default function VendorQuotesPage() {
             >
               <KeyboardArrowLeftRoundedIcon sx={{ fontSize: "1rem" }} />
             </Button>
-            {[1, 2, 3].map((page) => (
+            {pageNumbers.map((pageNumber) => (
               <Button
-                key={page}
+                key={pageNumber}
+                onClick={() => setPage(pageNumber)}
                 sx={{
                   minWidth: 30,
                   width: 30,
                   height: 30,
                   borderRadius: "0.6rem",
                   p: 0,
-                  color: page === 1 ? "#FFFFFF" : "#223146",
-                  bgcolor: page === 1 ? "#0E56C8" : "#FFFFFF",
-                  border: page === 1 ? "none" : "1px solid rgba(225,232,241,0.96)",
+                  color: pageNumber === page ? "#FFFFFF" : "#223146",
+                  bgcolor: pageNumber === page ? "#0E56C8" : "#FFFFFF",
+                  border: pageNumber === page ? "none" : "1px solid rgba(225,232,241,0.96)",
                   fontSize: "0.7rem",
                   fontWeight: 700,
                 }}
               >
-                {page}
+                {pageNumber}
               </Button>
             ))}
             <Button
+              onClick={() => setPage((currentPage) => Math.min(totalPages, currentPage + 1))}
+              disabled={page === totalPages}
               sx={{
                 minWidth: 30,
                 width: 30,
@@ -663,11 +871,12 @@ export default function VendorQuotesPage() {
           >
             <Box sx={{ maxWidth: 280 }}>
               <Typography sx={{ color: "#5E6A7D", fontSize: "0.84rem", lineHeight: 1.7 }}>
-                Your conversion rate has increased by 15% this month compared
-                to the regional average. Try optimizing your pricing for Pune
-                region leads.
+                Your current quote acceptance rate is {acceptanceRate}% across {quoteRows.length} submitted quotes.
+                {topLocation ? ` ${topLocation} is your most active quote location.` : " Submit more quotes to build reliable regional insights."}
               </Typography>
               <Button
+                onClick={exportQuotes}
+                disabled={isLoading || quoteRows.length === 0}
                 sx={{
                   mt: 2,
                   px: 0,
@@ -734,10 +943,12 @@ export default function VendorQuotesPage() {
               lineHeight: 1.65,
             }}
           >
-            Current market trends suggest ₹ 3.9L - 4.1L for 5kW systems in
-            your area. Adjusting quotes could increase acceptance.
+            Your average submitted quote is {formatPrice(averageQuoteValue)}.
+            Review open leads and tune proposals using system size, warranty, and delivery timelines.
           </Typography>
           <Button
+            component={RouterLink}
+            to="/vendor/leads"
             variant="contained"
             sx={{
               mt: 2.2,

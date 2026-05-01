@@ -11,6 +11,19 @@ const addressSchema = new mongoose.Schema(
   { _id: false },
 );
 
+const projectDocumentSchema = new mongoose.Schema(
+  {
+    title: { type: String, trim: true, required: true },
+    fileName: { type: String, trim: true, required: true },
+    mimeType: { type: String, trim: true, required: true },
+    size: { type: Number, required: true, min: 0 },
+    url: { type: String, trim: true, required: true },
+    uploadedBy: { type: String, required: true },
+    uploadedAt: { type: Date, default: Date.now },
+  },
+  { timestamps: false },
+);
+
 const projectSchema = new mongoose.Schema(
   {
     leadId: { type: String, required: true, index: true },
@@ -77,6 +90,7 @@ const projectSchema = new mongoose.Schema(
       },
       completedAt: { type: Date, default: null },
     },
+    documents: [projectDocumentSchema],
     createdFromQuoteAt: { type: Date, default: Date.now },
   },
   {
