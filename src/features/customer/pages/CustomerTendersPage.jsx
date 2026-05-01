@@ -1,94 +1,140 @@
-import { Alert, Box, Button, CircularProgress, Stack, Typography } from "@mui/material";
+import {
+  Alert,
+  Box,
+  Button,
+  CircularProgress,
+  Stack,
+  Typography,
+} from "@mui/material";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
 import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
+import GavelRoundedIcon from "@mui/icons-material/GavelRounded";
+import CheckCircleOutlinedIcon from "@mui/icons-material/CheckCircleOutlined";
 import { useEffect, useMemo, useState } from "react";
 import { Link as RouterLink } from "react-router-dom";
 import { leadsApi, quotesApi } from "@/features/public/api/leadsApi";
 
-const tabs = [
-  { label: "Active", count: 4, active: true },
-  { label: "Closed", count: 12, active: false },
-];
-
-const tenders = [
-  {
-    title: "5kW Rooftop Solar System",
-    meta: "Gurgaon, Sector 45 - User Arjun Mehta",
-    bids: "12",
-    bestPrice: "\u20B92,85,000",
-    timeRemaining: "24h left",
-    status: "Bidding Live",
-    statusTone: "#239654",
-    statusBg: "#E8FAEF",
-    timeTone: "#223146",
-  },
-  {
-    title: "10kW Commercial Array",
-    meta: "Noida, Sector 62 - User Rajesh Kumar",
-    bids: "8",
-    bestPrice: "\u20B95,12,000",
-    timeRemaining: "3h left",
-    status: "Closing Soon",
-    statusTone: "#D92D20",
-    statusBg: "#FFF0EE",
-    timeTone: "#D92D20",
-  },
-  {
-    title: "3kW Residential Setup",
-    meta: "Bangalore, Indiranagar - User Ramesh",
-    bids: "21",
-    bestPrice: "\u20B91,95,000",
-    timeRemaining: "2d left",
-    status: "Bidding Live",
-    statusTone: "#239654",
-    statusBg: "#E8FAEF",
-    timeTone: "#223146",
-  },
-  {
-    title: "7kW Hybrid System",
-    meta: "Pune, Baner - User Rahul",
-    bids: "15",
-    bestPrice: "\u20B93,40,000",
-    timeRemaining: "18h left",
-    status: "Bidding Live",
-    statusTone: "#239654",
-    statusBg: "#E8FAEF",
-    timeTone: "#223146",
-  },
-];
+// ─── helpers ─────────────────────────────────────────────────────────────────
 
 function formatPrice(value) {
   return new Intl.NumberFormat("en-IN", {
     style: "currency",
     currency: "INR",
     maximumFractionDigits: 0,
-  }).format(value);
+  }).format(Number(value) || 0);
 }
 
-function toTenderCard(lead, quotes) {
-  const leadQuotes = quotes.filter((quote) => String(quote.leadId) === String(lead.id));
-  const bestPrice = leadQuotes.length
-    ? Math.min(...leadQuotes.map((quote) => Number(quote.pricing.totalPrice)))
+function formatDate(value) {
+  if (!value) return "—";
+  return new Intl.DateTimeFormat("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(value));
+}
+
+// Build a human-readable title from lead data — never shows "null kW"
+function buildTenderTitle(lead) {
+  const kw = lead.property?.sanctionedLoadKw;
+  const type = lead.property?.type;
+
+  const typeLabel =
+    {
+      independent_house: "Residential",
+      apartment: "Apartment",
+      commercial: "Commercial",
+    }[type] || "Solar";
+
+  if (kw) return `${kw}kW ${typeLabel} Solar System`;
+  return `${typeLabel} Solar System`;
+}
+
+// Status badge config for every possible lead status
+function getStatusConfig(status) {
+  switch (status) {
+    case "open_for_quotes":
+      return { label: "Bidding Live", tone: "#239654", bg: "#E8FAEF" };
+    case "quote_selected":
+      return { label: "Vendor Selected", tone: "#0E56C8", bg: "#EEF4FF" };
+    case "closed":
+      return { label: "Closed", tone: "#596579", bg: "#EEF2F6" };
+    case "reviewing":
+      return { label: "Under Review", tone: "#8B8600", bg: "#F4F1C9" };
+    default:
+      // submitted
+      return { label: "Submitted", tone: "#8F98A7", bg: "#F2F5F8" };
+  }
+}
+
+// Whether a lead counts as "active" for the tab filter
+function isActiveLead(lead) {
+  return lead.status !== "closed" && lead.status !== "quote_selected";
+}
+
+// Build the full card data object from raw API records
+function toTenderCard(lead, allQuotes) {
+  const leadQuotes = allQuotes.filter(
+    (q) => String(q.leadId) === String(lead.id),
+  );
+
+  // Only count non-withdrawn, non-rejected quotes as real bids
+  const activeBids = leadQuotes.filter(
+    (q) => q.status !== "withdrawn" && q.status !== "rejected",
+  );
+
+  const acceptedQuote = leadQuotes.find((q) => q.status === "accepted");
+
+  const bestPrice = activeBids.length
+    ? Math.min(...activeBids.map((q) => Number(q.pricing?.totalPrice) || 0))
     : null;
-  const live = lead.status === "open_for_quotes";
+
+  const statusConfig = getStatusConfig(lead.status);
+
+  // CTA destination — quote comparison for live tenders, projects for selected
+  let to = "/tenders/live";
+  if (lead.status === "open_for_quotes" && activeBids.length > 0) {
+    to = "/quotes/compare";
+  } else if (lead.status === "quote_selected" || lead.status === "closed") {
+    to = "/customer/projects";
+  }
+
+  const ctaLabel =
+    lead.status === "open_for_quotes" && activeBids.length > 0
+      ? "Compare Bids"
+      : lead.status === "quote_selected"
+        ? "Track Project"
+        : lead.status === "open_for_quotes"
+          ? "View Tender"
+          : "View Details";
 
   return {
     id: lead.id,
-    title: `${lead.property?.sanctionedLoadKw || "Solar"} kW Rooftop Solar System`,
-    meta: `${lead.installationAddress.city}, ${lead.installationAddress.state} - ${lead.contact.fullName}`,
-    bids: String(leadQuotes.length),
-    bestPrice: bestPrice ? formatPrice(bestPrice) : "Waiting",
-    timeRemaining: live ? "Live" : lead.status.replaceAll("_", " "),
-    status: live ? "Bidding Live" : lead.status === "quote_selected" ? "Vendor Selected" : "Request Active",
-    statusTone: live ? "#239654" : "#4F89FF",
-    statusBg: live ? "#E8FAEF" : "#EEF4FF",
-    timeTone: live ? "#223146" : "#4F89FF",
-    to: leadQuotes.length > 0 ? "/quotes/compare" : "/tenders/live",
+    title: buildTenderTitle(lead),
+    city: lead.installationAddress?.city || "",
+    state: lead.installationAddress?.state || "",
+    submittedAt: formatDate(lead.createdAt || lead.submittedAt),
+    bidCount: activeBids.length,
+    bestPrice,
+    acceptedVendor: acceptedQuote
+      ? acceptedQuote.vendorEmail?.split("@")[0] || "Assigned Vendor"
+      : null,
+    acceptedPrice: acceptedQuote
+      ? formatPrice(acceptedQuote.pricing?.totalPrice)
+      : null,
+    status: lead.status,
+    ...statusConfig,
+    to,
+    ctaLabel,
+    isPrimary:
+      lead.status === "open_for_quotes" || lead.status === "quote_selected",
   };
 }
 
-function TenderSunBadge() {
+// ─── sub-components ──────────────────────────────────────────────────────────
+
+// The sun orb icon used on each tender card
+function SunOrb() {
   return (
     <Box
       sx={{
@@ -97,7 +143,8 @@ function TenderSunBadge() {
         borderRadius: "50%",
         background:
           "radial-gradient(circle at 50% 50%, #FFD44C 0%, #FFAE18 28%, #FF6A00 52%, #682000 78%, #271002 100%)",
-        boxShadow: "inset 0 0 0 2px rgba(255,255,255,0.16), 0 10px 18px rgba(255,124,0,0.22)",
+        boxShadow:
+          "inset 0 0 0 2px rgba(255,255,255,0.16), 0 10px 18px rgba(255,124,0,0.22)",
         position: "relative",
         flexShrink: 0,
       }}
@@ -114,7 +161,7 @@ function TenderSunBadge() {
   );
 }
 
-function TenderMetric({ label, value, valueTone = "#223146" }) {
+function MetricBox({ label, value, valueTone = "#223146" }) {
   return (
     <Box
       sx={{
@@ -149,11 +196,233 @@ function TenderMetric({ label, value, valueTone = "#223146" }) {
   );
 }
 
+function TenderCard({ item }) {
+  const isSelected = item.status === "quote_selected";
+  const isClosed = item.status === "closed";
+
+  return (
+    <Box
+      sx={{
+        p: 1.5,
+        borderRadius: "1.35rem",
+        bgcolor: "#FFFFFF",
+        border: "1px solid rgba(225,232,241,0.96)",
+        boxShadow: "0 14px 28px rgba(16,29,51,0.04)",
+        transition: "box-shadow 0.18s",
+        "&:hover": { boxShadow: "0 18px 36px rgba(16,29,51,0.08)" },
+        opacity: isClosed ? 0.72 : 1,
+      }}
+    >
+      {/* Header row */}
+      <Stack
+        direction={{ xs: "column", sm: "row" }}
+        justifyContent="space-between"
+        alignItems={{ xs: "flex-start", sm: "center" }}
+        spacing={1.15}
+      >
+        <Stack
+          direction="row"
+          spacing={1.05}
+          alignItems="flex-start"
+          sx={{ minWidth: 0 }}
+        >
+          <SunOrb />
+          <Box sx={{ minWidth: 0 }}>
+            <Typography
+              sx={{
+                color: "#223146",
+                fontSize: "1.01rem",
+                fontWeight: 800,
+                lineHeight: 1.28,
+              }}
+            >
+              {item.title}
+            </Typography>
+            <Stack
+              direction="row"
+              spacing={0.35}
+              alignItems="center"
+              sx={{ mt: 0.28, color: "#7A8799" }}
+            >
+              <LocationOnOutlinedIcon sx={{ fontSize: "0.8rem" }} />
+              <Typography sx={{ fontSize: "0.7rem", lineHeight: 1.5 }}>
+                {item.city}, {item.state} · Submitted {item.submittedAt}
+              </Typography>
+            </Stack>
+          </Box>
+        </Stack>
+
+        <Box
+          sx={{
+            display: "inline-flex",
+            px: 0.88,
+            py: 0.38,
+            borderRadius: "999px",
+            bgcolor: item.bg,
+            color: item.tone,
+            fontSize: "0.58rem",
+            fontWeight: 800,
+            lineHeight: 1.1,
+            textTransform: "uppercase",
+            letterSpacing: "0.04em",
+            flexShrink: 0,
+          }}
+        >
+          {item.label}
+        </Box>
+      </Stack>
+
+      {/* Metrics */}
+      {isSelected && item.acceptedVendor ? (
+        // Vendor selected — show accepted vendor info instead of bid metrics
+        <Box
+          sx={{
+            mt: 1.25,
+            p: 1.1,
+            borderRadius: "1rem",
+            bgcolor: "#EEF4FF",
+            border: "1px solid rgba(14,86,200,0.1)",
+          }}
+        >
+          <Stack direction="row" spacing={0.7} alignItems="center">
+            <CheckCircleOutlinedIcon
+              sx={{ color: "#0E56C8", fontSize: "1rem" }}
+            />
+            <Box>
+              <Typography
+                sx={{ color: "#0E56C8", fontSize: "0.72rem", fontWeight: 800 }}
+              >
+                Vendor Selected: {item.acceptedVendor}
+              </Typography>
+              {item.acceptedPrice && (
+                <Typography
+                  sx={{ mt: 0.15, color: "#4F5F73", fontSize: "0.68rem" }}
+                >
+                  Accepted quote: {item.acceptedPrice}
+                </Typography>
+              )}
+            </Box>
+          </Stack>
+        </Box>
+      ) : (
+        <Box
+          sx={{
+            mt: 1.25,
+            display: "grid",
+            gridTemplateColumns: {
+              xs: "1fr 1fr",
+              sm: "repeat(3, minmax(0, 1fr))",
+            },
+            gap: 0.9,
+          }}
+        >
+          <MetricBox
+            label="Bids Received"
+            value={item.bidCount > 0 ? String(item.bidCount) : "Awaiting"}
+          />
+          <MetricBox
+            label="Best Price"
+            value={item.bestPrice ? formatPrice(item.bestPrice) : "Waiting"}
+            valueTone={item.bestPrice ? "#239654" : "#8F98A7"}
+          />
+          <MetricBox label="Status" value={item.label} valueTone={item.tone} />
+        </Box>
+      )}
+
+      {/* CTA */}
+      <Button
+        component={RouterLink}
+        to={item.to}
+        fullWidth
+        variant={item.isPrimary ? "contained" : "text"}
+        endIcon={<ArrowForwardRoundedIcon sx={{ fontSize: "0.95rem" }} />}
+        sx={{
+          mt: 1.3,
+          minHeight: 38,
+          borderRadius: "0.95rem",
+          bgcolor: item.isPrimary ? "#0E56C8" : "#E3E8EF",
+          color: item.isPrimary ? "#FFFFFF" : "#223146",
+          boxShadow: item.isPrimary
+            ? "0 12px 24px rgba(14,86,200,0.14)"
+            : "none",
+          fontSize: "0.78rem",
+          fontWeight: 700,
+          textTransform: "none",
+          "&:hover": {
+            bgcolor: item.isPrimary ? "#0B49AD" : "#D5DCE6",
+          },
+        }}
+      >
+        {item.ctaLabel}
+      </Button>
+    </Box>
+  );
+}
+
+// Tab bar — clickable, drives the filter
+function TabBar({ activeTab, onTabChange, activeCount, closedCount }) {
+  const tabs = [
+    { key: "active", label: "Active", count: activeCount },
+    { key: "closed", label: "Closed", count: closedCount },
+  ];
+
+  return (
+    <Stack direction="row" spacing={2.9} sx={{ mt: 2.05, pb: 0.55 }}>
+      {tabs.map((tab) => {
+        const isSelected = activeTab === tab.key;
+        return (
+          <Box
+            key={tab.key}
+            onClick={() => onTabChange(tab.key)}
+            sx={{ position: "relative", pb: 0.85, cursor: "pointer" }}
+          >
+            <Typography
+              sx={{
+                color: isSelected ? "#223146" : "#647387",
+                fontSize: "0.78rem",
+                fontWeight: isSelected ? 800 : 500,
+                userSelect: "none",
+              }}
+            >
+              {tab.label}{" "}
+              <Box
+                component="span"
+                sx={{
+                  color: isSelected ? "#0E56C8" : "#98A3B2",
+                  fontWeight: 700,
+                }}
+              >
+                ({tab.count})
+              </Box>
+            </Typography>
+            {isSelected && (
+              <Box
+                sx={{
+                  position: "absolute",
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  height: 2,
+                  borderRadius: "999px",
+                  bgcolor: "#0E56C8",
+                }}
+              />
+            )}
+          </Box>
+        );
+      })}
+    </Stack>
+  );
+}
+
+// ─── page ─────────────────────────────────────────────────────────────────────
+
 export default function CustomerTendersPage() {
   const [leads, setLeads] = useState([]);
   const [quotes, setQuotes] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+  const [activeTab, setActiveTab] = useState("active");
 
   useEffect(() => {
     let active = true;
@@ -168,34 +437,64 @@ export default function CustomerTendersPage() {
           quotesApi.listQuotes(),
         ]);
 
-        if (active) {
-          setLeads(leadResult);
-          setQuotes(quoteResult);
-        }
+        if (!active) return;
+        setLeads(leadResult);
+        setQuotes(quoteResult);
       } catch (apiError) {
-        if (active) setError(apiError?.response?.data?.message || "Could not load tenders.");
+        if (active) {
+          setError(
+            apiError?.response?.data?.message || "Could not load tenders.",
+          );
+        }
       } finally {
         if (active) setIsLoading(false);
       }
     }
 
     loadTenders();
-
     return () => {
       active = false;
     };
   }, []);
 
-  const tenderCards = useMemo(() => leads.map((lead) => toTenderCard(lead, quotes)), [leads, quotes]);
-  const activeCount = leads.filter((lead) => lead.status !== "closed").length;
-  const closedCount = leads.filter((lead) => lead.status === "closed").length;
-  const tabItems = [
-    { label: "Active", count: activeCount, active: true },
-    { label: "Closed", count: closedCount, active: false },
-  ];
+  // ── derived state ──────────────────────────────────────────────────────────
+
+  const allCards = useMemo(
+    () => leads.map((lead) => toTenderCard(lead, quotes)),
+    [leads, quotes],
+  );
+
+  const activeCards = useMemo(
+    () =>
+      allCards.filter((c) =>
+        isActiveLead(leads.find((l) => l.id === c.id) || {}),
+      ),
+    [allCards, leads],
+  );
+
+  const closedCards = useMemo(
+    () =>
+      allCards.filter(
+        (c) => !isActiveLead(leads.find((l) => l.id === c.id) || {}),
+      ),
+    [allCards, leads],
+  );
+
+  const visibleCards = activeTab === "active" ? activeCards : closedCards;
+
+  const totalBids = quotes.filter(
+    (q) => q.status !== "withdrawn" && q.status !== "rejected",
+  ).length;
+
+  const liveTenders = leads.filter(
+    (l) => l.status === "open_for_quotes",
+  ).length;
+
+  // ── render ─────────────────────────────────────────────────────────────────
 
   return (
     <Box sx={{ width: "100%" }}>
+      {/* Header */}
       <Stack
         direction={{ xs: "column", lg: "row" }}
         justifyContent="space-between"
@@ -222,7 +521,7 @@ export default function CustomerTendersPage() {
               lineHeight: 1.6,
             }}
           >
-            Track your ongoing and completed bidding processes
+            Track your live bidding processes and compare vendor proposals.
           </Typography>
         </Box>
 
@@ -243,182 +542,211 @@ export default function CustomerTendersPage() {
             textTransform: "none",
           }}
         >
-          Create New Tender
+          New Tender
         </Button>
       </Stack>
 
-      <Stack direction="row" spacing={2.9} sx={{ mt: 2.05, pb: 0.55 }}>
-        {tabItems.map((tab) => (
-          <Box
-            key={tab.label}
-            sx={{
-              position: "relative",
-              pb: 0.85,
-            }}
-          >
-            <Typography
+      {/* Summary strip — visible while loading too, shows zeros */}
+      {!error && (
+        <Box
+          sx={{
+            mt: 1.75,
+            display: "grid",
+            gridTemplateColumns: { xs: "1fr 1fr", sm: "repeat(4, 1fr)" },
+            gap: 1.2,
+          }}
+        >
+          {[
+            {
+              label: "Total Tenders",
+              value: String(leads.length).padStart(2, "0"),
+              tone: "#8B8600",
+              bg: "#F4F1C9",
+            },
+            {
+              label: "Live Bidding",
+              value: String(liveTenders).padStart(2, "0"),
+              tone: "#239654",
+              bg: "#E8FAEF",
+            },
+            {
+              label: "Total Bids",
+              value: String(totalBids).padStart(2, "0"),
+              tone: "#0E56C8",
+              bg: "#EEF4FF",
+            },
+            {
+              label: "Vendor Selected",
+              value: String(
+                leads.filter((l) => l.status === "quote_selected").length,
+              ).padStart(2, "0"),
+              tone: "#596579",
+              bg: "#EEF2F6",
+            },
+          ].map((stat) => (
+            <Box
+              key={stat.label}
               sx={{
-                color: tab.active ? "#223146" : "#647387",
-                fontSize: "0.78rem",
-                fontWeight: tab.active ? 800 : 500,
+                p: 1.35,
+                borderRadius: "1.1rem",
+                bgcolor: "#FFFFFF",
+                border: "1px solid rgba(225,232,241,0.96)",
+                boxShadow: "0 14px 28px rgba(16,29,51,0.04)",
               }}
             >
-              {tab.label} ({tab.count})
-            </Typography>
-            {tab.active && (
-              <Box
-                sx={{
-                  position: "absolute",
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  height: 2,
-                  borderRadius: "999px",
-                  bgcolor: "#0E56C8",
-                }}
-              />
-            )}
-          </Box>
-        ))}
-      </Stack>
-
-      <Box
-        sx={{
-          mt: 1.2,
-          display: "grid",
-          gridTemplateColumns: { xs: "1fr", xl: "repeat(2, minmax(0, 1fr))" },
-          gap: 1.55,
-        }}
-      >
-        {isLoading ? (
-          <Box sx={{ py: 5, display: "grid", placeItems: "center" }}>
-            <CircularProgress />
-          </Box>
-        ) : null}
-
-        {!isLoading && error ? (
-          <Alert severity="error" sx={{ borderRadius: "0.9rem" }}>
-            {error}
-          </Alert>
-        ) : null}
-
-        {!isLoading && !error && tenderCards.length === 0 ? (
-          <Alert severity="info" sx={{ borderRadius: "0.9rem" }}>
-            No tenders yet. Create a booking to broadcast your requirement to vendors.
-          </Alert>
-        ) : null}
-
-        {tenderCards.map((item) => (
-          <Box
-            key={item.id}
-            sx={{
-              p: 1.5,
-              borderRadius: "1.35rem",
-              bgcolor: "#FFFFFF",
-              border: "1px solid rgba(225,232,241,0.96)",
-              boxShadow: "0 14px 28px rgba(16,29,51,0.04)",
-            }}
-          >
-            <Stack
-              direction={{ xs: "column", sm: "row" }}
-              justifyContent="space-between"
-              alignItems={{ xs: "flex-start", sm: "center" }}
-              spacing={1.15}
-            >
-              <Stack direction="row" spacing={1.05} sx={{ minWidth: 0 }}>
-                <TenderSunBadge />
-                <Box sx={{ minWidth: 0 }}>
-                  <Typography
-                    sx={{
-                      color: "#223146",
-                      fontSize: "1.01rem",
-                      fontWeight: 800,
-                      lineHeight: 1.28,
-                    }}
-                  >
-                    {item.title}
-                  </Typography>
-                  <Stack
-                    direction="row"
-                    spacing={0.35}
-                    alignItems="center"
-                    sx={{ mt: 0.28, color: "#7A8799" }}
-                  >
-                    <LocationOnOutlinedIcon sx={{ fontSize: "0.8rem" }} />
-                    <Typography sx={{ fontSize: "0.7rem", lineHeight: 1.5 }}>
-                      {item.meta}
-                    </Typography>
-                  </Stack>
-                </Box>
-              </Stack>
-
               <Box
                 sx={{
                   display: "inline-flex",
-                  px: 0.88,
-                  py: 0.38,
+                  px: 0.7,
+                  py: 0.28,
                   borderRadius: "999px",
-                  bgcolor: item.statusBg,
-                  color: item.statusTone,
-                  fontSize: "0.58rem",
+                  bgcolor: stat.bg,
+                  color: stat.tone,
+                  fontSize: "0.52rem",
                   fontWeight: 800,
-                  lineHeight: 1.1,
+                  letterSpacing: "0.08em",
                   textTransform: "uppercase",
-                  letterSpacing: "0.04em",
+                  mb: 0.9,
                 }}
               >
-                {item.status}
+                {stat.label}
               </Box>
-            </Stack>
-
-            <Box
-              sx={{
-                mt: 1.25,
-                display: "grid",
-                gridTemplateColumns: { xs: "1fr", sm: "repeat(3, minmax(0, 1fr))" },
-                gap: 0.9,
-              }}
-            >
-              <TenderMetric label="Bids Received" value={item.bids} />
-              <TenderMetric label="Best Price" value={item.bestPrice} valueTone="#239654" />
-              <TenderMetric label="Time Remaining" value={item.timeRemaining} valueTone={item.timeTone} />
+              <Typography
+                sx={{
+                  color: "#18253A",
+                  fontSize: "1.65rem",
+                  fontWeight: 800,
+                  lineHeight: 1.05,
+                }}
+              >
+                {isLoading ? "—" : stat.value}
+              </Typography>
             </Box>
+          ))}
+        </Box>
+      )}
 
-            <Button
-              component={RouterLink}
-              to={item.to}
-              fullWidth
-              endIcon={<ArrowForwardRoundedIcon sx={{ fontSize: "0.95rem" }} />}
-              sx={{
-                mt: 1.3,
-                minHeight: 38,
-                borderRadius: "0.95rem",
-                bgcolor: "#E3E8EF",
-                color: "#223146",
-                fontSize: "0.78rem",
-                fontWeight: 700,
-                textTransform: "none",
-              }}
-            >
-              View Bids
-            </Button>
-          </Box>
-        ))}
-      </Box>
+      {/* Tab bar */}
+      <TabBar
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        activeCount={activeCards.length}
+        closedCount={closedCards.length}
+      />
 
-      <Button
-        sx={{
-          mt: 2.35,
-          mx: "auto",
-          display: "flex",
-          color: "#223146",
-          fontSize: "0.92rem",
-          fontWeight: 600,
-          textTransform: "none",
-        }}
-      >
-        Load More Tenders
-      </Button>
+      {/* Loading */}
+      {isLoading && (
+        <Box sx={{ py: 5, display: "grid", placeItems: "center" }}>
+          <CircularProgress size={32} />
+        </Box>
+      )}
+
+      {/* Error */}
+      {!isLoading && error && (
+        <Alert severity="error" sx={{ mt: 1.2, borderRadius: "0.9rem" }}>
+          {error}
+        </Alert>
+      )}
+
+      {/* Empty state */}
+      {!isLoading && !error && visibleCards.length === 0 && (
+        <Box
+          sx={{
+            mt: 1.2,
+            py: 5,
+            px: 2,
+            borderRadius: "1.2rem",
+            bgcolor: "#F8FAFD",
+            border: "1px solid rgba(225,232,241,0.9)",
+            textAlign: "center",
+          }}
+        >
+          {activeTab === "active" ? (
+            <>
+              <GavelRoundedIcon
+                sx={{ color: "#C8D0DC", fontSize: "2rem", mb: 1 }}
+              />
+              <Typography
+                sx={{ color: "#223146", fontSize: "1rem", fontWeight: 800 }}
+              >
+                No active tenders
+              </Typography>
+              <Typography
+                sx={{
+                  mt: 0.5,
+                  color: "#6F7D8F",
+                  fontSize: "0.84rem",
+                  lineHeight: 1.65,
+                  maxWidth: 340,
+                  mx: "auto",
+                }}
+              >
+                Create a booking to broadcast your solar requirement to our
+                verified vendor network.
+              </Typography>
+              <Button
+                variant="contained"
+                component={RouterLink}
+                to="/booking"
+                startIcon={<AddRoundedIcon />}
+                sx={{
+                  mt: 1.8,
+                  minHeight: 38,
+                  px: 1.65,
+                  borderRadius: "0.95rem",
+                  bgcolor: "#0E56C8",
+                  boxShadow: "0 12px 24px rgba(14,86,200,0.16)",
+                  fontSize: "0.75rem",
+                  fontWeight: 700,
+                  textTransform: "none",
+                }}
+              >
+                Create Booking
+              </Button>
+            </>
+          ) : (
+            <>
+              <CheckCircleOutlinedIcon
+                sx={{ color: "#C8D0DC", fontSize: "2rem", mb: 1 }}
+              />
+              <Typography
+                sx={{ color: "#223146", fontSize: "1rem", fontWeight: 800 }}
+              >
+                No closed tenders yet
+              </Typography>
+              <Typography
+                sx={{
+                  mt: 0.5,
+                  color: "#6F7D8F",
+                  fontSize: "0.84rem",
+                  lineHeight: 1.65,
+                  maxWidth: 340,
+                  mx: "auto",
+                }}
+              >
+                Tenders move here once a vendor is selected or the request is
+                closed.
+              </Typography>
+            </>
+          )}
+        </Box>
+      )}
+
+      {/* Tender grid */}
+      {!isLoading && !error && visibleCards.length > 0 && (
+        <Box
+          sx={{
+            mt: 1.2,
+            display: "grid",
+            gridTemplateColumns: { xs: "1fr", xl: "repeat(2, minmax(0, 1fr))" },
+            gap: 1.55,
+          }}
+        >
+          {visibleCards.map((item) => (
+            <TenderCard key={item.id} item={item} />
+          ))}
+        </Box>
+      )}
     </Box>
   );
 }

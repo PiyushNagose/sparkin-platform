@@ -1,32 +1,56 @@
 import { useEffect, useState } from "react";
-import { Alert, Box, Button, CircularProgress, Stack, TextField, Typography } from "@mui/material";
-import ContentCopyRoundedIcon from "@mui/icons-material/ContentCopyRounded";
-import WhatsAppIcon from "@mui/icons-material/WhatsApp";
-import CampaignRoundedIcon from "@mui/icons-material/CampaignRounded";
-import SolarPowerRoundedIcon from "@mui/icons-material/SolarPowerRounded";
+import {
+  Alert,
+  Box,
+  Button,
+  CircularProgress,
+  Stack,
+  TextField,
+  Typography,
+} from "@mui/material";
 import AccountBalanceWalletOutlinedIcon from "@mui/icons-material/AccountBalanceWalletOutlined";
-import EditNoteRoundedIcon from "@mui/icons-material/EditNoteRounded";
-import { NavLink } from "react-router-dom";
+import CampaignRoundedIcon from "@mui/icons-material/CampaignRounded";
+import ContentCopyRoundedIcon from "@mui/icons-material/ContentCopyRounded";
+import SolarPowerRoundedIcon from "@mui/icons-material/SolarPowerRounded";
+import WhatsAppIcon from "@mui/icons-material/WhatsApp";
+import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
+import { Link as RouterLink } from "react-router-dom";
 import { referralsApi } from "@/features/customer/api/referralsApi";
 import customerShareEarnHeroPlaceholder from "@/shared/assets/images/customer/referrals/customer-share-earn-hero-placeholder.png";
 
-const steps = [
+// ─── helpers ─────────────────────────────────────────────────────────────────
+
+function formatPrice(value) {
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(Number(value) || 0);
+}
+
+function isValidEmail(value) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+}
+
+// ─── static content ───────────────────────────────────────────────────────────
+
+const HOW_IT_WORKS = [
   {
-    icon: <CampaignRoundedIcon sx={{ fontSize: "1.1rem" }} />,
+    Icon: CampaignRoundedIcon,
     iconTone: "#0E56C8",
     title: "1. Send Invite",
     description:
       "Share your unique link via WhatsApp or email to your friends and family.",
   },
   {
-    icon: <SolarPowerRoundedIcon sx={{ fontSize: "1.1rem" }} />,
+    Icon: SolarPowerRoundedIcon,
     iconTone: "#0E56C8",
     title: "2. They Go Solar",
     description:
       "Once they book a site visit and complete the installation through Sparkin.",
   },
   {
-    icon: <AccountBalanceWalletOutlinedIcon sx={{ fontSize: "1.1rem" }} />,
+    Icon: AccountBalanceWalletOutlinedIcon,
     iconTone: "#177D45",
     title: "3. You Get Paid",
     description:
@@ -34,7 +58,9 @@ const steps = [
   },
 ];
 
-function StepCard({ item }) {
+// ─── sub-components ──────────────────────────────────────────────────────────
+
+function StepCard({ Icon, iconTone, title, description }) {
   return (
     <Box
       sx={{
@@ -44,33 +70,32 @@ function StepCard({ item }) {
         border: "1px solid rgba(225,232,241,0.9)",
       }}
     >
-      <Box
-        sx={{
-          color: item.iconTone,
-          display: "grid",
-          placeItems: "start",
-          mb: 1,
-        }}
-      >
-        {item.icon}
+      <Box sx={{ color: iconTone, mb: 1 }}>
+        <Icon sx={{ fontSize: "1.1rem" }} />
       </Box>
       <Typography
         sx={{ color: "#223146", fontSize: "0.92rem", fontWeight: 800 }}
       >
-        {item.title}
+        {title}
       </Typography>
       <Typography
         sx={{ mt: 0.5, color: "#647387", fontSize: "0.76rem", lineHeight: 1.7 }}
       >
-        {item.description}
+        {description}
       </Typography>
     </Box>
   );
 }
 
+// ─── page ─────────────────────────────────────────────────────────────────────
+
 export default function CustomerShareEarnPage() {
   const [summary, setSummary] = useState(null);
-  const [form, setForm] = useState({ fullName: "", email: "", phoneNumber: "" });
+  const [form, setForm] = useState({
+    fullName: "",
+    email: "",
+    phoneNumber: "",
+  });
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -85,60 +110,91 @@ export default function CustomerShareEarnPage() {
 
       try {
         const result = await referralsApi.getDashboard();
-        if (active) setSummary(result.summary);
+        if (!active) return;
+        setSummary(result.summary);
       } catch (apiError) {
-        if (active) setError(apiError?.response?.data?.message || "Could not load referral details.");
+        if (active)
+          setError(
+            apiError?.response?.data?.message ||
+              "Could not load referral details.",
+          );
       } finally {
         if (active) setIsLoading(false);
       }
     }
 
     loadSummary();
-
     return () => {
       active = false;
     };
   }, []);
 
   function updateField(field, value) {
-    setForm((current) => ({ ...current, [field]: value }));
+    setForm((prev) => ({ ...prev, [field]: value }));
   }
 
   async function copyReferralLink() {
     if (!summary?.referralLink) return;
-    await navigator.clipboard.writeText(summary.referralLink);
-    setSuccess("Referral link copied.");
+    try {
+      await navigator.clipboard.writeText(summary.referralLink);
+      setSuccess("Referral link copied to clipboard.");
+    } catch {
+      setSuccess("Could not copy — please copy the link manually.");
+    }
   }
 
   function shareOnWhatsApp() {
     if (!summary?.referralLink) return;
-    const message = `Go solar with Sparkin and use my referral link for a discount: ${summary.referralLink}`;
-    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer");
+    const msg = `Hey! I'm saving on electricity with Sparkin Solar. Use my referral link: ${summary.referralLink}`;
+    window.open(
+      `https://wa.me/?text=${encodeURIComponent(msg)}`,
+      "_blank",
+      "noopener,noreferrer",
+    );
   }
 
   async function submitReferral() {
-    setIsSubmitting(true);
     setError("");
     setSuccess("");
 
+    if (!form.fullName.trim()) {
+      setError("Please enter your friend's name.");
+      return;
+    }
+    if (!isValidEmail(form.email)) {
+      setError("Please enter a valid email address.");
+      return;
+    }
+
+    setIsSubmitting(true);
+
     try {
       const result = await referralsApi.createReferral({
-        fullName: form.fullName,
-        email: form.email,
-        phoneNumber: form.phoneNumber || null,
+        fullName: form.fullName.trim(),
+        email: form.email.trim(),
+        phoneNumber: form.phoneNumber.trim() || null,
       });
       setSummary(result.summary);
       setForm({ fullName: "", email: "", phoneNumber: "" });
-      setSuccess(`Referral invite created for ${result.referral.friend.fullName}.`);
+      setSuccess(`Invite sent to ${result.referral.friend.fullName}.`);
     } catch (apiError) {
-      setError(apiError?.response?.data?.message || "Could not create referral invite.");
+      setError(
+        apiError?.response?.data?.message ||
+          "Could not create referral invite.",
+      );
     } finally {
       setIsSubmitting(false);
     }
   }
 
+  const canSubmit =
+    form.fullName.trim().length > 0 &&
+    isValidEmail(form.email) &&
+    !isSubmitting;
+
   return (
     <Box sx={{ width: "100%" }}>
+      {/* Hero */}
       <Box
         sx={{
           display: "grid",
@@ -174,17 +230,35 @@ export default function CustomerShareEarnPage() {
             Invite friends using your referral link and help them transition to
             clean energy while you earn rewards.
           </Typography>
+          <Button
+            component={RouterLink}
+            to="/customer/referrals/earnings"
+            endIcon={<ArrowForwardRoundedIcon sx={{ fontSize: "0.9rem" }} />}
+            sx={{
+              mt: 1.5,
+              minHeight: 36,
+              px: 1.35,
+              borderRadius: "0.9rem",
+              bgcolor: "#EEF4FF",
+              color: "#0E56C8",
+              fontSize: "0.76rem",
+              fontWeight: 700,
+              textTransform: "none",
+            }}
+          >
+            View Earnings History
+          </Button>
         </Box>
 
         <Box
           component="img"
           src={customerShareEarnHeroPlaceholder}
-          alt="Share and earn solar placeholder"
+          alt="Share and earn"
           sx={{
             width: "100%",
             maxWidth: 470,
             justifySelf: { xs: "stretch", lg: "end" },
-            height: { xs: 240, md: 300 },
+            height: { xs: 220, md: 280 },
             objectFit: "cover",
             borderRadius: "1.35rem",
             boxShadow: "0 18px 32px rgba(16,29,51,0.12)",
@@ -192,365 +266,345 @@ export default function CustomerShareEarnPage() {
         />
       </Box>
 
-      {isLoading ? (
-        <Box sx={{ py: 5, display: "grid", placeItems: "center" }}>
-          <CircularProgress />
+      {/* Loading */}
+      {isLoading && (
+        <Box sx={{ mt: 2, py: 5, display: "grid", placeItems: "center" }}>
+          <CircularProgress size={32} />
         </Box>
-      ) : null}
+      )}
 
-      {!isLoading && error ? (
-        <Alert severity="error" sx={{ mt: 1.5, borderRadius: "0.9rem" }}>
+      {/* Alerts */}
+      {error && (
+        <Alert
+          severity="error"
+          sx={{ mt: 1.5, borderRadius: "0.9rem" }}
+          onClose={() => setError("")}
+        >
           {error}
         </Alert>
-      ) : null}
-
-      {!isLoading && success ? (
-        <Alert severity="success" sx={{ mt: 1.5, borderRadius: "0.9rem" }} onClose={() => setSuccess("")}>
+      )}
+      {success && (
+        <Alert
+          severity="success"
+          sx={{ mt: 1.5, borderRadius: "0.9rem" }}
+          onClose={() => setSuccess("")}
+        >
           {success}
         </Alert>
-      ) : null}
+      )}
 
-      {!isLoading ? (
-      <>
-      <Box
-        sx={{
-          mt: 2,
-          display: "grid",
-          gridTemplateColumns: { xs: "1fr", xl: "1.45fr 0.95fr" },
-          gap: 1.55,
-        }}
-      >
-        <Box
-          sx={{
-            p: 1.45,
-            borderRadius: "1.3rem",
-            bgcolor: "#FFFFFF",
-            border: "1px solid rgba(225,232,241,0.96)",
-            boxShadow: "0 14px 28px rgba(16,29,51,0.04)",
-          }}
-        >
-          <Typography
+      {!isLoading && (
+        <>
+          {/* Unique link */}
+          <Box
             sx={{
-              color: "#7F8A9B",
-              fontSize: "0.6rem",
-              fontWeight: 800,
-              letterSpacing: "0.08em",
-              textTransform: "uppercase",
+              mt: 2,
+              p: 1.45,
+              borderRadius: "1.3rem",
+              bgcolor: "#FFFFFF",
+              border: "1px solid rgba(225,232,241,0.96)",
+              boxShadow: "0 14px 28px rgba(16,29,51,0.04)",
             }}
-          >
-            Your Unique Link
-          </Typography>
-
-          <Stack
-            direction={{ xs: "column", md: "row" }}
-            spacing={1}
-            alignItems={{ xs: "stretch", md: "center" }}
-            justifyContent="space-between"
-            sx={{ mt: 1.1 }}
           >
             <Typography
               sx={{
-                color: "#0E56C8",
-                fontSize: { xs: "1.15rem", md: "1.5rem" },
+                color: "#7F8A9B",
+                fontSize: "0.6rem",
                 fontWeight: 800,
-                lineHeight: 1.2,
-                wordBreak: "break-all",
+                letterSpacing: "0.08em",
+                textTransform: "uppercase",
               }}
             >
-              {summary?.referralLink?.replace("https://", "") || "Referral link unavailable"}
+              Your Unique Referral Link
             </Typography>
 
-            <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
-              <Button
-                startIcon={<ContentCopyRoundedIcon />}
-                onClick={copyReferralLink}
+            <Stack
+              direction={{ xs: "column", md: "row" }}
+              spacing={1}
+              alignItems={{ xs: "stretch", md: "center" }}
+              justifyContent="space-between"
+              sx={{ mt: 1.1 }}
+            >
+              <Typography
                 sx={{
-                  minHeight: 38,
-                  px: 1.35,
-                  borderRadius: "0.9rem",
-                  bgcolor: "#EEF2F6",
-                  color: "#223146",
-                  fontSize: "0.76rem",
-                  fontWeight: 700,
-                  textTransform: "none",
+                  color: "#0E56C8",
+                  fontSize: { xs: "1rem", md: "1.35rem" },
+                  fontWeight: 800,
+                  lineHeight: 1.2,
+                  wordBreak: "break-all",
+                  flex: 1,
                 }}
               >
-                Copy Link
-              </Button>
-              <Button
-                variant="contained"
-                startIcon={<WhatsAppIcon />}
-                onClick={shareOnWhatsApp}
-                sx={{
-                  minHeight: 38,
-                  px: 1.35,
-                  borderRadius: "0.9rem",
-                  bgcolor: "#2FD45E",
-                  boxShadow: "0 12px 24px rgba(47,212,94,0.18)",
-                  fontSize: "0.76rem",
-                  fontWeight: 700,
-                  textTransform: "none",
-                }}
+                {summary?.referralLink?.replace("https://", "") ||
+                  "Referral link unavailable"}
+              </Typography>
+
+              <Stack
+                direction={{ xs: "column", sm: "row" }}
+                spacing={1}
+                sx={{ flexShrink: 0 }}
               >
-                WhatsApp Share
-              </Button>
+                <Button
+                  startIcon={<ContentCopyRoundedIcon />}
+                  onClick={copyReferralLink}
+                  disabled={!summary?.referralLink}
+                  sx={{
+                    minHeight: 38,
+                    px: 1.35,
+                    borderRadius: "0.9rem",
+                    bgcolor: "#EEF2F6",
+                    color: "#223146",
+                    fontSize: "0.76rem",
+                    fontWeight: 700,
+                    textTransform: "none",
+                  }}
+                >
+                  Copy Link
+                </Button>
+                <Button
+                  variant="contained"
+                  startIcon={<WhatsAppIcon />}
+                  onClick={shareOnWhatsApp}
+                  disabled={!summary?.referralLink}
+                  sx={{
+                    minHeight: 38,
+                    px: 1.35,
+                    borderRadius: "0.9rem",
+                    bgcolor: "#25D366",
+                    boxShadow: "0 12px 24px rgba(37,211,102,0.18)",
+                    fontSize: "0.76rem",
+                    fontWeight: 700,
+                    textTransform: "none",
+                    "&:hover": { bgcolor: "#1EB85A" },
+                  }}
+                >
+                  Share on WhatsApp
+                </Button>
+              </Stack>
             </Stack>
-          </Stack>
-        </Box>
-      </Box>
+          </Box>
 
-      <Box
-        sx={{
-          mt: 1.55,
-          p: 1.45,
-          borderRadius: "1.3rem",
-          bgcolor: "#FFFFFF",
-          border: "1px solid rgba(225,232,241,0.96)",
-          boxShadow: "0 14px 28px rgba(16,29,51,0.04)",
-        }}
-      >
-        <Typography sx={{ color: "#223146", fontSize: "1rem", fontWeight: 800 }}>
-          Create Referral Invite
-        </Typography>
-        <Stack direction={{ xs: "column", md: "row" }} spacing={1} sx={{ mt: 1.1 }}>
-          <TextField
-            label="Friend name"
-            value={form.fullName}
-            onChange={(event) => updateField("fullName", event.target.value)}
-            size="small"
-            fullWidth
-          />
-          <TextField
-            label="Friend email"
-            value={form.email}
-            onChange={(event) => updateField("email", event.target.value)}
-            size="small"
-            fullWidth
-          />
-          <TextField
-            label="Phone optional"
-            value={form.phoneNumber}
-            onChange={(event) => updateField("phoneNumber", event.target.value)}
-            size="small"
-            fullWidth
-          />
-          <Button
-            variant="contained"
-            disabled={isSubmitting || !form.fullName.trim() || !form.email.trim()}
-            onClick={submitReferral}
+          {/* Create invite form */}
+          <Box
             sx={{
-              minHeight: 40,
-              px: 1.55,
-              borderRadius: "0.9rem",
-              bgcolor: "#0E56C8",
-              fontSize: "0.76rem",
-              fontWeight: 700,
-              textTransform: "none",
-              whiteSpace: "nowrap",
+              mt: 1.55,
+              p: 1.45,
+              borderRadius: "1.3rem",
+              bgcolor: "#FFFFFF",
+              border: "1px solid rgba(225,232,241,0.96)",
+              boxShadow: "0 14px 28px rgba(16,29,51,0.04)",
             }}
-          >
-            {isSubmitting ? "Creating..." : "Create Invite"}
-          </Button>
-        </Stack>
-      </Box>
-
-      <Box
-        sx={{
-          mt: 1.55,
-          display: "grid",
-          gridTemplateColumns: { xs: "1fr", xl: "1.2fr 0.85fr" },
-          gap: 1.55,
-        }}
-      >
-        <Box
-          sx={{
-            p: 1.45,
-            borderRadius: "1.3rem",
-            bgcolor: "#FFFFFF",
-            border: "1px solid rgba(225,232,241,0.96)",
-            boxShadow: "0 14px 28px rgba(16,29,51,0.04)",
-          }}
-        >
-          <Stack
-            direction="row"
-            justifyContent="space-between"
-            alignItems="center"
           >
             <Typography
               sx={{ color: "#223146", fontSize: "1rem", fontWeight: 800 }}
             >
-              Personalize Message
+              Create Referral Invite
             </Typography>
-            <EditNoteRoundedIcon sx={{ color: "#647387", fontSize: "1rem" }} />
-          </Stack>
+            <Typography sx={{ mt: 0.3, color: "#7A8799", fontSize: "0.76rem" }}>
+              Send a direct invite — your friend will receive an email with your
+              referral link.
+            </Typography>
 
-          <Box
-            sx={{
-              mt: 1.1,
-              p: 1.3,
-              minHeight: 120,
-              borderRadius: "1rem",
-              bgcolor: "#F3F6FB",
-              color: "#5C687B",
-              fontSize: "0.84rem",
-              lineHeight: 1.72,
-            }}
-          >
-            Hey! I'm saving thousands on my electricity bills with Sparkin
-            Solar. You should check them out and get a referral discount too!
+            <Stack
+              direction={{ xs: "column", md: "row" }}
+              spacing={1}
+              sx={{ mt: 1.2 }}
+            >
+              <TextField
+                label="Friend's name"
+                value={form.fullName}
+                onChange={(e) => updateField("fullName", e.target.value)}
+                size="small"
+                fullWidth
+                sx={{ "& .MuiOutlinedInput-root": { borderRadius: "0.75rem" } }}
+              />
+              <TextField
+                label="Friend's email"
+                type="email"
+                value={form.email}
+                onChange={(e) => updateField("email", e.target.value)}
+                size="small"
+                fullWidth
+                error={form.email.length > 0 && !isValidEmail(form.email)}
+                helperText={
+                  form.email.length > 0 && !isValidEmail(form.email)
+                    ? "Enter a valid email"
+                    : ""
+                }
+                sx={{ "& .MuiOutlinedInput-root": { borderRadius: "0.75rem" } }}
+              />
+              <TextField
+                label="Phone (optional)"
+                value={form.phoneNumber}
+                onChange={(e) => updateField("phoneNumber", e.target.value)}
+                size="small"
+                fullWidth
+                sx={{ "& .MuiOutlinedInput-root": { borderRadius: "0.75rem" } }}
+              />
+              <Button
+                variant="contained"
+                disabled={!canSubmit}
+                onClick={submitReferral}
+                sx={{
+                  minHeight: 40,
+                  px: 1.55,
+                  flexShrink: 0,
+                  borderRadius: "0.9rem",
+                  bgcolor: "#0E56C8",
+                  fontSize: "0.76rem",
+                  fontWeight: 700,
+                  textTransform: "none",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {isSubmitting ? "Sending…" : "Send Invite"}
+              </Button>
+            </Stack>
           </Box>
 
-          <Typography sx={{ mt: 0.9, color: "#8A95A5", fontSize: "0.68rem" }}>
-            Click above to edit the message before sharing.
-          </Typography>
-        </Box>
-
-        <Box
-          sx={{
-            p: 1.5,
-            borderRadius: "1.3rem",
-            bgcolor: "#0E56C8",
-            color: "#FFFFFF",
-            boxShadow: "0 16px 30px rgba(14,86,200,0.18)",
-          }}
-        >
-          <Box
-            sx={{
-              width: 32,
-              height: 32,
-              borderRadius: "0.82rem",
-              bgcolor: "rgba(255,255,255,0.16)",
-              display: "grid",
-              placeItems: "center",
-            }}
-          >
-            <CampaignRoundedIcon sx={{ fontSize: "0.95rem" }} />
-          </Box>
-
-          <Typography sx={{ mt: 1.15, fontSize: "1.45rem", fontWeight: 800 }}>
-            Referral Rewards
-          </Typography>
-          <Typography
-            sx={{
-              mt: 0.45,
-              maxWidth: 250,
-              color: "rgba(255,255,255,0.8)",
-              fontSize: "0.76rem",
-              lineHeight: 1.68,
-            }}
-          >
-            {
-              `Earn ${new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(summary?.rewardAmount || 5000)} for every successful solar installation referred by you.`
-            }
-          </Typography>
-
+          {/* Reward info */}
           <Box
             sx={{
               mt: 1.55,
-              mb: 1.15,
-              height: 1,
-              bgcolor: "rgba(255,255,255,0.16)",
+              p: 1.5,
+              borderRadius: "1.3rem",
+              bgcolor: "#0E56C8",
+              color: "#FFFFFF",
+              boxShadow: "0 16px 30px rgba(14,86,200,0.18)",
+              position: "relative",
+              overflow: "hidden",
             }}
-          />
-
-          <Stack
-            direction="row"
-            justifyContent="space-between"
-            alignItems="flex-end"
-            spacing={1}
           >
-            <Box>
-              <Typography
-                sx={{
-                  color: "rgba(255,255,255,0.62)",
-                  fontSize: "0.56rem",
-                  fontWeight: 800,
-                  letterSpacing: "0.1em",
-                  textTransform: "uppercase",
-                }}
-              >
-                Total Earned
-              </Typography>
-              <Typography
-                sx={{
-                  mt: 0.3,
-                  fontSize: "2rem",
-                  fontWeight: 800,
-                  lineHeight: 1.02,
-                }}
-              >
-                {new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(summary?.totalEarnings || 0)}
-              </Typography>
-            </Box>
             <Box
               sx={{
-                display: "inline-flex",
-                px: 0.78,
-                py: 0.34,
-                borderRadius: "999px",
-                bgcolor: "#E7F318",
-                color: "#6C7300",
-                fontSize: "0.56rem",
-                fontWeight: 800,
-                textTransform: "uppercase",
-                lineHeight: 1,
+                position: "absolute",
+                inset: 0,
+                background:
+                  "radial-gradient(circle at 85% 50%, rgba(255,255,255,0.08), transparent 40%)",
+                pointerEvents: "none",
               }}
+            />
+            <Stack
+              direction={{ xs: "column", sm: "row" }}
+              justifyContent="space-between"
+              alignItems={{ xs: "flex-start", sm: "center" }}
+              spacing={1.5}
+              sx={{ position: "relative", zIndex: 1 }}
             >
-              {summary?.successfulReferrals || 0} Referrals
-            </Box>
-          </Stack>
-          <Button
-            component={NavLink}
-            to="/customer/referrals/earnings"
-            variant="contained"
+              <Box>
+                <Box
+                  sx={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: "0.82rem",
+                    bgcolor: "rgba(255,255,255,0.16)",
+                    display: "grid",
+                    placeItems: "center",
+                    mb: 1,
+                  }}
+                >
+                  <CampaignRoundedIcon sx={{ fontSize: "0.95rem" }} />
+                </Box>
+                <Typography sx={{ fontSize: "1.35rem", fontWeight: 800 }}>
+                  Referral Rewards
+                </Typography>
+                <Typography
+                  sx={{
+                    mt: 0.45,
+                    maxWidth: 380,
+                    color: "rgba(255,255,255,0.8)",
+                    fontSize: "0.76rem",
+                    lineHeight: 1.68,
+                  }}
+                >
+                  Earn {formatPrice(summary?.rewardAmount || 5000)} for every
+                  successful solar installation referred by you. Credited within
+                  15 days of activation.
+                </Typography>
+              </Box>
+
+              <Box
+                sx={{ textAlign: { xs: "left", sm: "right" }, flexShrink: 0 }}
+              >
+                <Typography
+                  sx={{
+                    color: "rgba(255,255,255,0.62)",
+                    fontSize: "0.56rem",
+                    fontWeight: 800,
+                    letterSpacing: "0.1em",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  Total Earned
+                </Typography>
+                <Typography
+                  sx={{
+                    mt: 0.3,
+                    fontSize: "2rem",
+                    fontWeight: 800,
+                    lineHeight: 1.02,
+                  }}
+                >
+                  {formatPrice(summary?.totalEarnings)}
+                </Typography>
+                <Box
+                  sx={{
+                    mt: 0.5,
+                    display: "inline-flex",
+                    px: 0.78,
+                    py: 0.34,
+                    borderRadius: "999px",
+                    bgcolor: "#E7F318",
+                    color: "#6C7300",
+                    fontSize: "0.56rem",
+                    fontWeight: 800,
+                    textTransform: "uppercase",
+                    lineHeight: 1,
+                  }}
+                >
+                  {summary?.successfulReferrals ?? 0} successful
+                </Box>
+              </Box>
+            </Stack>
+          </Box>
+
+          {/* How it works */}
+          <Box
             sx={{
-              mt: 1.15,
-              minHeight: 34,
-              px: 1.25,
-              alignSelf: "flex-start",
-              borderRadius: "0.8rem",
-              bgcolor: "#FFFFFF",
-              color: "#0E56C8",
-              boxShadow: "none",
-              fontSize: "0.72rem",
-              fontWeight: 700,
-              textTransform: "none",
-              "&:hover": { bgcolor: "#FFFFFF", boxShadow: "none" },
+              mt: 1.75,
+              display: "grid",
+              gridTemplateColumns: {
+                xs: "1fr",
+                md: "repeat(3, minmax(0, 1fr))",
+              },
+              gap: 1.35,
             }}
           >
-            View Earnings History
-          </Button>
-        </Box>
-      </Box>
+            {HOW_IT_WORKS.map((item) => (
+              <StepCard key={item.title} {...item} />
+            ))}
+          </Box>
 
-      <Box
-        sx={{
-          mt: 1.75,
-          display: "grid",
-          gridTemplateColumns: { xs: "1fr", md: "repeat(3, minmax(0, 1fr))" },
-          gap: 1.35,
-        }}
-      >
-        {steps.map((item) => (
-          <StepCard key={item.title} item={item} />
-        ))}
-      </Box>
-
-      <Typography
-        sx={{
-          mt: 2.1,
-          textAlign: "center",
-          color: "#6F7D8F",
-          fontSize: "0.74rem",
-        }}
-      >
-        Have questions? Check our{" "}
-        <Box component="span" sx={{ color: "#0E56C8", fontWeight: 600 }}>
-          Referral Terms & Conditions
-        </Box>
-      </Typography>
-      </>
-      ) : null}
+          {/* Terms note */}
+          <Typography
+            sx={{
+              mt: 2.1,
+              textAlign: "center",
+              color: "#6F7D8F",
+              fontSize: "0.74rem",
+            }}
+          >
+            Have questions?{" "}
+            <Box
+              component={RouterLink}
+              to="/faq"
+              sx={{ color: "#0E56C8", fontWeight: 600, textDecoration: "none" }}
+            >
+              Check our Referral FAQ
+            </Box>
+          </Typography>
+        </>
+      )}
     </Box>
   );
 }
