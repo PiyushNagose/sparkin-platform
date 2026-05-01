@@ -4,6 +4,7 @@ import {
   Box,
   Button,
   Container,
+  Drawer,
   IconButton,
   InputAdornment,
   Menu,
@@ -27,6 +28,8 @@ import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import NotificationsNoneRoundedIcon from "@mui/icons-material/NotificationsNoneRounded";
 import HelpOutlineRoundedIcon from "@mui/icons-material/HelpOutlineRounded";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
+import MenuRoundedIcon from "@mui/icons-material/MenuRounded";
+import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import { useEffect, useMemo, useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { portalNavigation } from "@/shared/config/navigation";
@@ -93,6 +96,7 @@ export function PortalLayout({ portal }) {
   const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [notificationAnchor, setNotificationAnchor] = useState(null);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [vendorSummary, setVendorSummary] = useState({
     openLeads: 0,
     activeProjects: 0,
@@ -178,21 +182,149 @@ export function PortalLayout({ portal }) {
     setNotificationAnchor(null);
   }
 
+  // Shared sidebar nav content used in both desktop aside and mobile Drawer
+  function SidebarContent({ onNavClick }) {
+    return (
+      <>
+        <Box sx={{ textAlign: "center", mb: 1.35 }}>
+          <Box
+            component="img"
+            src={logoPlaceholder}
+            alt="Sparkin logo"
+            sx={{ width: 72, height: 72, objectFit: "contain", mx: "auto", display: "block" }}
+          />
+          {portalLabel ? (
+            <Typography
+              sx={{
+                mt: 0.05,
+                color: "#7D8797",
+                fontSize: "0.54rem",
+                fontWeight: 700,
+                letterSpacing: "0.16em",
+                textTransform: "uppercase",
+              }}
+            >
+              {portalLabel}
+            </Typography>
+          ) : null}
+        </Box>
+
+        <Stack spacing={0.6}>
+          {navItems.map((item) => {
+            const Icon = navIconMap[item.label] || DashboardRoundedIcon;
+            return (
+              <Button
+                key={item.label}
+                component={NavLink}
+                to={item.href}
+                end
+                variant="text"
+                color="inherit"
+                onClick={onNavClick}
+                sx={{
+                  justifyContent: "flex-start",
+                  gap: 0.9,
+                  minHeight: 40,
+                  px: 1.05,
+                  width: "100%",
+                  borderRadius: "0.7rem",
+                  color: "#647387",
+                  fontSize: "0.82rem",
+                  fontWeight: 600,
+                  textTransform: "none",
+                  whiteSpace: "nowrap",
+                  transition: "all 0.15s cubic-bezier(0.4,0,0.2,1)",
+                  "&:hover": { bgcolor: "#F4F7FF", color: "#0E56C8" },
+                  "&.active": {
+                    bgcolor: "#EEF4FF",
+                    color: "#0E56C8",
+                    boxShadow: "inset 0 0 0 1px rgba(14,86,200,0.12)",
+                  },
+                }}
+              >
+                <Icon sx={{ fontSize: "1rem" }} />
+                {item.label}
+              </Button>
+            );
+          })}
+        </Stack>
+
+        <Box sx={{ mt: "auto", pt: 2 }}>
+          {portal === "vendor" ? (
+            <Button
+              component={NavLink}
+              to="/vendor/projects"
+              state={{ openCreateProject: true }}
+              variant="contained"
+              startIcon={<AddRoundedIcon />}
+              onClick={onNavClick}
+              sx={{
+                width: "100%",
+                minHeight: 40,
+                borderRadius: "0.8rem",
+                textTransform: "none",
+                fontSize: "0.78rem",
+                fontWeight: 700,
+                bgcolor: "#0E56C8",
+                boxShadow: "0 6px 16px rgba(14,86,200,0.2)",
+                transition: "all 0.15s cubic-bezier(0.4,0,0.2,1)",
+                "&:hover": {
+                  bgcolor: "#0B49AD",
+                  boxShadow: "0 10px 22px rgba(14,86,200,0.28)",
+                  transform: "translateY(-1px)",
+                },
+              }}
+            >
+              Create Project
+            </Button>
+          ) : null}
+        </Box>
+      </>
+    );
+  }
+
   return (
-    <Box
-      sx={{
-        minHeight: "100vh",
-        bgcolor: "#F4F7F2",
-        display: "flex",
-        flexDirection: "column",
-      }}
-    >
-      <Box sx={{ flex: 1, minHeight: 0, display: "flex" }}>
+    <Box sx={{ minHeight: "100vh", bgcolor: "#F0F3F8", display: "flex", flexDirection: "column" }}>
+      {/* Mobile Drawer */}
+      <Drawer
+        anchor="left"
+        open={mobileNavOpen}
+        onClose={() => setMobileNavOpen(false)}
+        sx={{
+          display: { xs: "block", lg: "none" },
+          "& .MuiDrawer-paper": {
+            width: 220,
+            bgcolor: "#FFFFFF",
+            px: 1.45,
+            py: 1.2,
+            display: "flex",
+            flexDirection: "column",
+            borderRight: "none",
+            boxShadow: "4px 0 24px rgba(16,29,51,0.12)",
+          },
+        }}
+        SlideProps={{ timeout: 280 }}
+      >
+        <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 0.5 }}>
+          <IconButton
+            onClick={() => setMobileNavOpen(false)}
+            size="small"
+            sx={{ color: "#647387" }}
+          >
+            <CloseRoundedIcon sx={{ fontSize: "1.1rem" }} />
+          </IconButton>
+        </Box>
+        <SidebarContent onNavClick={() => setMobileNavOpen(false)} />
+      </Drawer>
+
+      <Box sx={{ flex: 1, minHeight: 0, display: "flex", gap: 1.5, p: { xs: 0, lg: 1.5 }, pb: 0, alignItems: "stretch" }}>
+        {/* Desktop sidebar */}
         <Box
           component="aside"
           sx={{
             width: sidebarWidth,
-            borderRight: "1px solid rgba(218,226,236,0.9)",
+            borderRadius: "1.35rem",
+            border: "1px solid rgba(218,226,236,0.9)",
             bgcolor: "#FFFFFF",
             px: 1.45,
             py: 0.95,
@@ -200,102 +332,13 @@ export function PortalLayout({ portal }) {
             flexDirection: "column",
             alignItems: "stretch",
             flexShrink: 0,
+            position: "sticky",
+            top: 12,
+            height: "calc(100vh - 24px)",
+            overflowY: "auto",
           }}
         >
-          <Box sx={{ textAlign: "center", mb: 1.35 }}>
-            <Box
-              component="img"
-              src={logoPlaceholder}
-              alt="Sparkin logo"
-              sx={{
-                width: 72,
-                height: 72,
-                objectFit: "contain",
-                mx: "auto",
-                display: "block",
-              }}
-            />
-            {portalLabel ? (
-              <Typography
-                sx={{
-                  mt: 0.05,
-                  color: "#7D8797",
-                  fontSize: "0.54rem",
-                  fontWeight: 700,
-                  letterSpacing: "0.16em",
-                  textTransform: "uppercase",
-                }}
-              >
-                {portalLabel}
-              </Typography>
-            ) : null}
-          </Box>
-
-          <Stack spacing={0.6}>
-            {navItems.map((item) => {
-              const Icon = navIconMap[item.label] || DashboardRoundedIcon;
-
-              return (
-                <Button
-                  key={item.label}
-                  component={NavLink}
-                  to={item.href}
-                  end
-                  variant="text"
-                  color="inherit"
-                  sx={{
-                    justifyContent: "flex-start",
-                    gap: 0.9,
-                    minHeight: 36,
-                    px: 1.05,
-                    width: "100%",
-                    borderRadius: "0.7rem",
-                    color: "#647387",
-                    fontSize: "0.74rem",
-                    fontWeight: 600,
-                    textTransform: "none",
-                    whiteSpace: "nowrap",
-                    "&.active": {
-                      bgcolor: "#F3F6FF",
-                      color: "#0E56C8",
-                      boxShadow: "inset 0 0 0 1px rgba(14,86,200,0.08)",
-                    },
-                  }}
-                >
-                  <Icon sx={{ fontSize: "0.92rem" }} />
-                  {item.label}
-                </Button>
-              );
-            })}
-          </Stack>
-
-          <Box sx={{ mt: "auto", pt: 2 }}>
-            {portal === "vendor" ? (
-              <Stack spacing={0.65}>
-                <Button
-                  component={NavLink}
-                  to="/vendor/projects"
-                  state={{ openCreateProject: true }}
-                  variant="contained"
-                  startIcon={<AddRoundedIcon />}
-                  sx={{
-                    width: "100%",
-                    minHeight: 38,
-                    borderRadius: "0.8rem",
-                    textTransform: "none",
-                    fontSize: "0.74rem",
-                    fontWeight: 700,
-                    bgcolor: "#0E56C8",
-                    boxShadow: "none",
-                  }}
-                >
-                  Create Project
-                </Button>
-              </Stack>
-            ) : (
-              <Box />
-            )}
-          </Box>
+          <SidebarContent onNavClick={undefined} />
         </Box>
 
         <Box
@@ -309,19 +352,35 @@ export function PortalLayout({ portal }) {
           <Box
             component="header"
             sx={{
-              px: { xs: 1.8, md: 2.2 },
+              px: { xs: 1.4, md: 2.2 },
               py: 1.45,
               borderBottom: "1px solid rgba(220,228,238,0.92)",
               display: "flex",
               alignItems: "center",
-              gap: 1.8,
-              bgcolor: "rgba(255,255,255,0.84)",
+              gap: { xs: 1, md: 1.8 },
+              bgcolor: "rgba(255,255,255,0.92)",
               backdropFilter: "blur(14px)",
               position: "sticky",
               top: 0,
               zIndex: 10,
+              borderRadius: { lg: "1.35rem 1.35rem 0 0" },
+              borderTop: { lg: "1px solid rgba(220,228,238,0.92)" },
+              borderLeft: { lg: "1px solid rgba(220,228,238,0.92)" },
+              borderRight: { lg: "1px solid rgba(220,228,238,0.92)" },
             }}
           >
+            {/* Hamburger — mobile only */}
+            <IconButton
+              onClick={() => setMobileNavOpen(true)}
+              aria-label="Open navigation"
+              sx={{
+                display: { xs: "flex", lg: "none" },
+                color: "#647387",
+                mr: 0.5,
+              }}
+            >
+              <MenuRoundedIcon sx={{ fontSize: "1.3rem" }} />
+            </IconButton>
             <Box component="form" onSubmit={handleSearchSubmit} sx={{ flex: 1, maxWidth: 610 }}>
               <TextField
                 fullWidth
@@ -489,6 +548,12 @@ export function PortalLayout({ portal }) {
               px: { xs: 2.2, md: 3.6, lg: 4.2 },
               ml: 0,
               mr: "auto",
+              flex: 1,
+              bgcolor: "#FFFFFF",
+              borderLeft: { lg: "1px solid rgba(220,228,238,0.92)" },
+              borderRight: { lg: "1px solid rgba(220,228,238,0.92)" },
+              borderBottom: { lg: "1px solid rgba(220,228,238,0.92)" },
+              borderRadius: { lg: "0 0 1.35rem 1.35rem" },
             }}
           >
             <Box

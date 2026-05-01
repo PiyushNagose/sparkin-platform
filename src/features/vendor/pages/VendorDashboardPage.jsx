@@ -428,17 +428,73 @@ function KpiCard({ card }) {
   const Icon = card.icon;
 
   return (
-    <Box sx={{ p: 2.1, minHeight: 114, borderRadius: "1.35rem", bgcolor: "#FFFFFF", border: "1px solid rgba(225,232,241,0.96)", boxShadow: "0 14px 28px rgba(16,29,51,0.04)" }}>
+    <Box
+      sx={{
+        p: 2.1,
+        minHeight: 114,
+        borderRadius: "1.35rem",
+        bgcolor: "#FFFFFF",
+        border: "1px solid rgba(225,232,241,0.96)",
+        boxShadow: "0 4px 16px rgba(16,29,51,0.06)",
+        transition: "all 0.18s cubic-bezier(0.4,0,0.2,1)",
+        "&:hover": {
+          boxShadow: "0 8px 24px rgba(16,29,51,0.1)",
+          transform: "translateY(-2px)",
+        },
+      }}
+    >
       <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-        <Box sx={{ width: 30, height: 30, borderRadius: "0.8rem", bgcolor: card.bg, color: card.color, display: "grid", placeItems: "center" }}>
-          <Icon sx={{ fontSize: "0.95rem" }} />
+        <Box
+          sx={{
+            width: 32,
+            height: 32,
+            borderRadius: "0.85rem",
+            bgcolor: card.bg,
+            color: card.color,
+            display: "grid",
+            placeItems: "center",
+          }}
+        >
+          <Icon sx={{ fontSize: "1rem" }} />
         </Box>
-        <Typography sx={{ color: "#3DAB62", fontSize: "0.66rem", fontWeight: 800 }}>{card.delta}</Typography>
+        <Box
+          sx={{
+            px: 0.7,
+            py: 0.25,
+            borderRadius: "999px",
+            bgcolor: "#EDFAF3",
+            color: "#1A9B57",
+            fontSize: "0.62rem",
+            fontWeight: 800,
+            display: "flex",
+            alignItems: "center",
+            gap: 0.2,
+          }}
+        >
+          ↑ {card.delta}
+        </Box>
       </Stack>
-      <Typography sx={{ mt: 1.5, color: "#8B97A8", fontSize: "0.67rem", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+      <Typography
+        sx={{
+          mt: 1.5,
+          color: "#8B97A8",
+          fontSize: "0.67rem",
+          fontWeight: 700,
+          letterSpacing: "0.08em",
+          textTransform: "uppercase",
+        }}
+      >
         {card.label}
       </Typography>
-      <Typography sx={{ mt: 0.55, color: "#18253A", fontSize: "1.55rem", fontWeight: 800, lineHeight: 1.06 }}>
+      <Typography
+        sx={{
+          mt: 0.55,
+          color: "#18253A",
+          fontSize: "1.65rem",
+          fontWeight: 800,
+          lineHeight: 1.06,
+        }}
+      >
         {card.value}
       </Typography>
     </Box>
@@ -447,15 +503,54 @@ function KpiCard({ card }) {
 
 function ActiveLeadsPanel({ leads }) {
   return (
-    <Box sx={{ p: 2.2, borderRadius: "1.45rem", bgcolor: "#FFFFFF", border: "1px solid rgba(225,232,241,0.96)", boxShadow: "0 14px 28px rgba(16,29,51,0.04)" }}>
+    <Box
+      sx={{
+        p: 2.2,
+        borderRadius: "1.45rem",
+        bgcolor: "#FFFFFF",
+        border: "1px solid rgba(225,232,241,0.96)",
+        boxShadow: "0 4px 16px rgba(16,29,51,0.06)",
+      }}
+    >
       <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
         <Typography sx={{ color: "#18253A", fontSize: "1.12rem", fontWeight: 800 }}>Active Leads</Typography>
-        <Typography sx={{ color: "#223146", fontSize: "0.78rem", fontWeight: 700 }}>All Leads</Typography>
+        <Button
+          component={RouterLink}
+          to="/vendor/leads"
+          sx={{
+            color: "#0E56C8",
+            fontSize: "0.74rem",
+            fontWeight: 700,
+            textTransform: "none",
+            px: 1,
+            borderRadius: "999px",
+            "&:hover": { bgcolor: "#EEF4FF" },
+          }}
+        >
+          All Leads
+        </Button>
       </Stack>
 
-      <Box sx={{ display: { xs: "none", md: "grid" }, gridTemplateColumns: "1.35fr 1fr 0.78fr 0.9fr 0.9fr 0.55fr", gap: 1, px: 0.4, mb: 1.1 }}>
+      <Box
+        sx={{
+          display: { xs: "none", md: "grid" },
+          gridTemplateColumns: "1.35fr 1fr 0.78fr 0.9fr 0.9fr 0.55fr",
+          gap: 1,
+          px: 0.4,
+          mb: 1.1,
+        }}
+      >
         {["Customer Name", "Location", "System Size", "Budget", "Status", "Actions"].map((label) => (
-          <Typography key={label} sx={{ color: "#8B97A8", fontSize: "0.61rem", fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase" }}>
+          <Typography
+            key={label}
+            sx={{
+              color: "#8B97A8",
+              fontSize: "0.61rem",
+              fontWeight: 800,
+              letterSpacing: "0.1em",
+              textTransform: "uppercase",
+            }}
+          >
             {label}
           </Typography>
         ))}
@@ -467,26 +562,84 @@ function ActiveLeadsPanel({ leads }) {
             const status = getStatusMeta(lead.status);
 
             return (
-              <Box key={lead.id} sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "1.35fr 1fr 0.78fr 0.9fr 0.9fr 0.55fr" }, gap: 1, alignItems: "center", px: 0.4, py: 1.15, borderRadius: "0.95rem", "&:hover": { bgcolor: "#F8FAFD" } }}>
+              <Box
+                key={lead.id}
+                sx={{
+                  display: "grid",
+                  gridTemplateColumns: { xs: "1fr", md: "1.35fr 1fr 0.78fr 0.9fr 0.9fr 0.55fr" },
+                  gap: 1,
+                  alignItems: "center",
+                  px: 0.4,
+                  py: 1.15,
+                  borderRadius: "0.95rem",
+                  transition: "background 0.15s",
+                  "&:hover": { bgcolor: "#F4F7FF" },
+                }}
+              >
                 <Stack direction="row" spacing={1} alignItems="center">
-                  <Avatar sx={{ width: 28, height: 28, bgcolor: "#EFF3F9", color: "#18253A", fontSize: "0.7rem", fontWeight: 800 }}>
+                  <Avatar
+                    sx={{
+                      width: 28,
+                      height: 28,
+                      bgcolor: "#EFF3F9",
+                      color: "#18253A",
+                      fontSize: "0.7rem",
+                      fontWeight: 800,
+                    }}
+                  >
                     {getInitials(lead.contact.fullName)}
                   </Avatar>
                   <Typography sx={{ color: "#223146", fontSize: "0.79rem", fontWeight: 700 }}>
                     {lead.contact.fullName}
                   </Typography>
                 </Stack>
-                <Typography sx={{ color: "#4E5C70", fontSize: "0.79rem" }}>{formatLocation(lead.installationAddress)}</Typography>
-                <Typography sx={{ color: "#223146", fontSize: "0.79rem" }}>{getLeadSystem(lead)}</Typography>
-                <Typography sx={{ color: "#223146", fontSize: "0.79rem" }}>{getLeadBudget(lead)}</Typography>
-                <Box sx={{ justifySelf: "start", px: 1, py: 0.42, borderRadius: "999px", bgcolor: status.bg, color: status.tone, fontSize: "0.66rem", fontWeight: 800, lineHeight: 1 }}>
+                <Typography sx={{ color: "#4E5C70", fontSize: "0.79rem" }}>
+                  {formatLocation(lead.installationAddress)}
+                </Typography>
+                <Typography sx={{ color: "#223146", fontSize: "0.79rem" }}>
+                  {getLeadSystem(lead)}
+                </Typography>
+                <Typography sx={{ color: "#223146", fontSize: "0.79rem" }}>
+                  {getLeadBudget(lead)}
+                </Typography>
+                <Box
+                  sx={{
+                    justifySelf: "start",
+                    px: 1,
+                    py: 0.42,
+                    borderRadius: "999px",
+                    bgcolor: status.bg,
+                    color: status.tone,
+                    fontSize: "0.66rem",
+                    fontWeight: 800,
+                    lineHeight: 1,
+                  }}
+                >
                   {status.label}
                 </Box>
                 <Stack direction="row" spacing={0.6} alignItems="center">
-                  <Button component={RouterLink} to={`/vendor/leads/${lead.id}`} sx={{ minWidth: 0, p: 0.25, color: "#93A0B3" }}>
+                  <Button
+                    component={RouterLink}
+                    to={`/vendor/leads/${lead.id}`}
+                    sx={{
+                      minWidth: 0,
+                      p: 0.25,
+                      color: "#93A0B3",
+                      "&:hover": { color: "#0E56C8" },
+                    }}
+                  >
                     <VisibilityOutlinedIcon sx={{ fontSize: "0.9rem" }} />
                   </Button>
-                  <Button component={RouterLink} to={`/vendor/leads/${lead.id}/quote`} sx={{ minWidth: 0, p: 0.25, color: "#93A0B3" }}>
+                  <Button
+                    component={RouterLink}
+                    to={`/vendor/leads/${lead.id}/quote`}
+                    sx={{
+                      minWidth: 0,
+                      p: 0.25,
+                      color: "#93A0B3",
+                      "&:hover": { color: "#0E56C8" },
+                    }}
+                  >
                     <MailOutlineRoundedIcon sx={{ fontSize: "0.9rem" }} />
                   </Button>
                 </Stack>
@@ -498,7 +651,21 @@ function ActiveLeadsPanel({ leads }) {
         <EmptyState text="No active leads are available yet." />
       )}
 
-      <Button component={RouterLink} to="/vendor/leads" fullWidth sx={{ mt: 1.8, color: "#0E56C8", fontSize: "0.76rem", fontWeight: 700, textTransform: "none" }}>
+      <Button
+        component={RouterLink}
+        to="/vendor/leads"
+        fullWidth
+        sx={{
+          mt: 1.8,
+          color: "#0E56C8",
+          fontSize: "0.76rem",
+          fontWeight: 700,
+          textTransform: "none",
+          borderRadius: "0.95rem",
+          py: 1,
+          "&:hover": { bgcolor: "#EEF4FF" },
+        }}
+      >
         View all active leads
       </Button>
     </Box>
@@ -507,16 +674,40 @@ function ActiveLeadsPanel({ leads }) {
 
 function ActivityPanel({ activity }) {
   return (
-    <Box sx={{ p: 2.2, borderRadius: "1.45rem", bgcolor: "#FFFFFF", border: "1px solid rgba(225,232,241,0.96)", boxShadow: "0 14px 28px rgba(16,29,51,0.04)" }}>
-      <Typography sx={{ color: "#18253A", fontSize: "1.12rem", fontWeight: 800, mb: 1.8 }}>Recent Activity</Typography>
+    <Box
+      sx={{
+        p: 2.2,
+        borderRadius: "1.45rem",
+        bgcolor: "#FFFFFF",
+        border: "1px solid rgba(225,232,241,0.96)",
+        boxShadow: "0 4px 16px rgba(16,29,51,0.06)",
+      }}
+    >
+      <Typography sx={{ color: "#18253A", fontSize: "1.12rem", fontWeight: 800, mb: 1.8 }}>
+        Recent Activity
+      </Typography>
       {activity.length ? (
         <Stack spacing={1.4}>
           {activity.map((item) => (
             <Stack key={`${item.title}-${item.at}`} direction="row" spacing={1} alignItems="flex-start">
-              <Box sx={{ width: 9, height: 9, borderRadius: "50%", bgcolor: item.color, mt: 0.52, flexShrink: 0 }} />
+              <Box
+                sx={{
+                  width: 9,
+                  height: 9,
+                  borderRadius: "50%",
+                  bgcolor: item.color,
+                  mt: 0.52,
+                  flexShrink: 0,
+                  boxShadow: `0 0 0 3px ${item.color}22`,
+                }}
+              />
               <Box>
-                <Typography sx={{ color: "#223146", fontSize: "0.79rem", lineHeight: 1.45 }}>{item.title}</Typography>
-                <Typography sx={{ mt: 0.25, color: "#8B97A8", fontSize: "0.71rem" }}>{timeAgo(item.at)}</Typography>
+                <Typography sx={{ color: "#223146", fontSize: "0.79rem", lineHeight: 1.45 }}>
+                  {item.title}
+                </Typography>
+                <Typography sx={{ mt: 0.25, color: "#8B97A8", fontSize: "0.71rem" }}>
+                  {timeAgo(item.at)}
+                </Typography>
               </Box>
             </Stack>
           ))}
@@ -525,7 +716,25 @@ function ActivityPanel({ activity }) {
         <EmptyState text="Activity will appear as leads, quotes, projects, and payments move." />
       )}
 
-      <Button component={RouterLink} to="/vendor/projects" fullWidth variant="outlined" sx={{ mt: 2.1, minHeight: 40, borderRadius: "0.95rem", borderColor: "rgba(222,228,236,0.96)", color: "#556478", bgcolor: "#F7F9FC", textTransform: "none", fontSize: "0.76rem", fontWeight: 700 }}>
+      <Button
+        component={RouterLink}
+        to="/vendor/projects"
+        fullWidth
+        variant="outlined"
+        sx={{
+          mt: 2.1,
+          minHeight: 40,
+          borderRadius: "0.95rem",
+          borderColor: "rgba(222,228,236,0.96)",
+          color: "#556478",
+          bgcolor: "#F7F9FC",
+          textTransform: "none",
+          fontSize: "0.76rem",
+          fontWeight: 700,
+          transition: "all 0.15s",
+          "&:hover": { bgcolor: "#EEF4FF", borderColor: "#0E56C8", color: "#0E56C8" },
+        }}
+      >
         View Projects
       </Button>
     </Box>

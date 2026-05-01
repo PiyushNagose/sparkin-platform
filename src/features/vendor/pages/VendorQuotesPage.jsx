@@ -22,6 +22,8 @@ import FileDownloadOutlinedIcon from "@mui/icons-material/FileDownloadOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
+import RequestQuoteOutlinedIcon from "@mui/icons-material/RequestQuoteOutlined";
+import HourglassEmptyRoundedIcon from "@mui/icons-material/HourglassEmptyRounded";
 import { Link as RouterLink, useLocation, useNavigate } from "react-router-dom";
 import { leadsApi, quotesApi } from "@/features/public/api/leadsApi";
 import {
@@ -161,35 +163,30 @@ function toQuoteRow(quote, lead) {
 }
 
 function KpiIcon({ type, tone, bg }) {
-  const base = {
-    width: 30,
-    height: 30,
-    borderRadius: "0.8rem",
-    bgcolor: bg,
-    color: tone,
-    display: "grid",
-    placeItems: "center",
-    fontSize: "0.95rem",
-    fontWeight: 800,
+  const iconMap = {
+    file: RequestQuoteOutlinedIcon,
+    pending: HourglassEmptyRoundedIcon,
+    accepted: CheckRoundedIcon,
+    rejected: CloseRoundedIcon,
   };
+  const Icon = iconMap[type] || RequestQuoteOutlinedIcon;
 
-  if (type === "accepted") {
-    return (
-      <Box sx={base}>
-        <CheckRoundedIcon sx={{ fontSize: "0.95rem" }} />
-      </Box>
-    );
-  }
-
-  if (type === "rejected") {
-    return (
-      <Box sx={base}>
-        <CloseRoundedIcon sx={{ fontSize: "0.95rem" }} />
-      </Box>
-    );
-  }
-
-  return <Box sx={base}>□</Box>;
+  return (
+    <Box
+      sx={{
+        width: 36,
+        height: 36,
+        borderRadius: "0.85rem",
+        bgcolor: bg,
+        color: tone,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <Icon sx={{ fontSize: "1.15rem" }} />
+    </Box>
+  );
 }
 
 function QuoteFormSection({ title, children }) {
@@ -818,7 +815,12 @@ export default function VendorQuotesPage() {
               borderRadius: "1.15rem",
               bgcolor: "#FFFFFF",
               border: "1px solid rgba(225,232,241,0.96)",
-              boxShadow: "0 14px 28px rgba(16,29,51,0.04)",
+              boxShadow: "0 4px 16px rgba(16,29,51,0.06)",
+              transition: "all 0.18s cubic-bezier(0.4,0,0.2,1)",
+              "&:hover": {
+                boxShadow: "0 8px 24px rgba(16,29,51,0.1)",
+                transform: "translateY(-2px)",
+              },
             }}
           >
             <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
@@ -986,6 +988,9 @@ export default function VendorQuotesPage() {
               sx={{
                 borderTop: index === 0 ? "none" : "1px solid rgba(234,239,245,0.95)",
                 py: { xs: 1.45, md: 1.55 },
+                borderRadius: "0.75rem",
+                transition: "background 0.15s",
+                "&:hover": { bgcolor: "#F4F7FF" },
               }}
             >
               <Box

@@ -770,6 +770,9 @@ export default function VendorLeadsPage() {
               sx={{
                 borderTop: index === 0 ? "none" : "1px solid rgba(234,239,245,0.95)",
                 py: { xs: 1.45, md: 1.6 },
+                transition: "background 0.15s",
+                borderRadius: "0.75rem",
+                "&:hover": { bgcolor: "#F4F7FF" },
               }}
             >
               <Box sx={{ display: { xs: "none", lg: "grid" }, gridTemplateColumns: "1.35fr 1fr 0.7fr 0.82fr 0.8fr 0.88fr 0.9fr", gap: 1, alignItems: "center" }}>
@@ -809,31 +812,42 @@ export default function VendorLeadsPage() {
                   {lead.timeReceived}
                 </Typography>
 
-                <Stack spacing={0.7} alignItems="flex-start">
-                  <Typography sx={{ color: "#0E56C8", fontSize: "0.73rem", fontWeight: 700 }}>
-                    <Box
-                      component={RouterLink}
-                      to={lead.detailPath}
-                      sx={{ color: "inherit", textDecoration: "none" }}
-                    >
-                      {lead.detailAction}
-                    </Box>
-                  </Typography>
+                <Stack spacing={0.55} alignItems="flex-start">
+                  <Button
+                    component={RouterLink}
+                    to={lead.detailPath}
+                    sx={{
+                      minHeight: 0,
+                      px: 0,
+                      py: 0,
+                      color: "#0E56C8",
+                      fontSize: "0.72rem",
+                      fontWeight: 700,
+                      textTransform: "none",
+                      "&:hover": { bgcolor: "transparent", textDecoration: "underline" },
+                    }}
+                  >
+                    View Details
+                  </Button>
                   <Button
                     component={RouterLink}
                     to={lead.quotePath}
                     variant="contained"
                     sx={{
-                      minHeight: 34,
-                      px: 1.25,
+                      minHeight: 30,
+                      px: 1.2,
                       borderRadius: "999px",
                       bgcolor: "#0E56C8",
-                      borderColor: "rgba(225,232,241,0.96)",
-                      color: "#FFFFFF",
-                      boxShadow: "0 10px 20px rgba(14,86,200,0.16)",
-                      fontSize: "0.68rem",
+                      boxShadow: "0 6px 14px rgba(14,86,200,0.2)",
+                      fontSize: "0.66rem",
                       fontWeight: 700,
                       textTransform: "none",
+                      transition: "all 0.15s",
+                      "&:hover": {
+                        bgcolor: "#0B49AD",
+                        boxShadow: "0 8px 18px rgba(14,86,200,0.28)",
+                        transform: "translateY(-1px)",
+                      },
                     }}
                   >
                     {lead.primaryAction}

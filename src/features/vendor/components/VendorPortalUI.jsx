@@ -7,15 +7,16 @@ export const vendorUi = {
     border: "rgba(225,232,241,0.96)",
     primary: "#0E56C8",
     surface: "#FFFFFF",
-    softSurface: "#F4F6FA",
+    softSurface: "#F0F3F8",
   },
-  shadow: "0 16px 30px rgba(16,29,51,0.04)",
-  primaryShadow: "0 12px 24px rgba(14,86,200,0.16)",
+  shadow: "0 4px 16px rgba(16,29,51,0.06)",
+  primaryShadow: "0 8px 20px rgba(14,86,200,0.18)",
   radius: {
     panel: "1.35rem",
     button: "0.95rem",
     pill: "999px",
   },
+  transition: "all 0.18s cubic-bezier(0.4,0,0.2,1)",
 };
 
 export function VendorPageShell({ children, sx }) {
@@ -73,10 +74,13 @@ export function VendorPrimaryButton({ sx, ...props }) {
         fontSize: "0.75rem",
         fontWeight: 700,
         textTransform: "none",
+        transition: vendorUi.transition,
         "&:hover": {
           bgcolor: "#0B49AD",
-          boxShadow: "0 14px 28px rgba(14,86,200,0.2)",
+          boxShadow: "0 14px 28px rgba(14,86,200,0.26)",
+          transform: "translateY(-1px)",
         },
+        "&:active": { transform: "translateY(0)" },
         ...sx,
       }}
     />
@@ -98,10 +102,13 @@ export function VendorSecondaryButton({ sx, ...props }) {
         fontSize: "0.75rem",
         fontWeight: 700,
         textTransform: "none",
+        transition: vendorUi.transition,
         "&:hover": {
           borderColor: "rgba(184,196,212,0.98)",
           bgcolor: "#F8FAFD",
+          transform: "translateY(-1px)",
         },
+        "&:active": { transform: "translateY(0)" },
         ...sx,
       }}
     />
@@ -116,6 +123,7 @@ export function VendorPanel({ children, sx }) {
         bgcolor: vendorUi.colors.surface,
         border: `1px solid ${vendorUi.colors.border}`,
         boxShadow: vendorUi.shadow,
+        transition: vendorUi.transition,
         ...sx,
       }}
     >
@@ -130,7 +138,7 @@ export function VendorFilterPanel({ children, sx }) {
       sx={{
         p: { xs: 1.4, md: 1.7 },
         borderRadius: vendorUi.radius.panel,
-        bgcolor: vendorUi.colors.softSurface,
+        bgcolor: "#F0F3F8",
         border: "1px solid rgba(229,234,241,0.95)",
         mb: { xs: 2.2, md: 2.5 },
         ...sx,
