@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Accordion,
   AccordionDetails,
@@ -231,6 +231,102 @@ function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);
 }
 
+function useCountUp(target, { duration = 1200, decimals = 0, started = true } = {}) {
+  const [value, setValue] = useState(0);
+
+  useEffect(() => {
+    if (!started) return;
+    let frameId;
+    const start = performance.now();
+
+    const animate = (time) => {
+      const progress = clamp((time - start) / duration, 0, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      const nextValue = target * eased;
+      setValue(Number(nextValue.toFixed(decimals)));
+
+      if (progress < 1) {
+        frameId = requestAnimationFrame(animate);
+      }
+    };
+
+    frameId = requestAnimationFrame(animate);
+
+    return () => cancelAnimationFrame(frameId);
+  }, [target, duration, decimals, started]);
+
+  return value;
+}
+
+function useInView(options = {}) {
+  const ref = useRef(null);
+  const [inView, setInView] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setInView(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.2, ...options },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  return [ref, inView];
+}
+
+function CountUpValue({
+  target,
+  prefix = "",
+  suffix = "",
+  decimals = 0,
+  compact = false,
+  suffixSx,
+  started = true,
+}) {
+  const value = useCountUp(target, { decimals, started });
+  const formatted = compact
+    ? value.toLocaleString("en-IN", {
+        maximumFractionDigits: decimals,
+        minimumFractionDigits: decimals,
+      })
+    : value.toLocaleString("en-IN", {
+        maximumFractionDigits: decimals,
+        minimumFractionDigits: decimals,
+      });
+
+  return (
+    <>
+      {prefix}
+      {formatted}
+      {suffix ? (
+        <Box component="span" sx={suffixSx}>
+          {suffix}
+        </Box>
+      ) : null}
+    </>
+  );
+}
+
+function formatTimer(totalSeconds) {
+  const safeSeconds = Math.max(totalSeconds, 0);
+  const hours = Math.floor(safeSeconds / 3600);
+  const minutes = Math.floor((safeSeconds % 3600) / 60);
+  const seconds = safeSeconds % 60;
+
+  return [
+    [String(hours).padStart(2, "0"), "Hours"],
+    [String(minutes).padStart(2, "0"), "Mins"],
+    [String(seconds).padStart(2, "0"), "Secs"],
+  ];
+}
+
 function SectionTitle({ title, highlight, subtitle, centered = true }) {
   return (
     <Stack
@@ -302,6 +398,250 @@ function ImagePlaceholder({
   );
 }
 
+function StatsSection() {
+  const [ref, inView] = useInView();
+  return (
+    <Grid ref={ref} container spacing={{ xs: 2.5, md: 3 }}>
+      {[
+        ["Verified Users", "Homes powered across 20 cities", false],
+        ["Satisfaction", "Average customer satisfaction", true],
+        ["Energy Yield", "Total installed capacity", false],
+      ].map(([label, subtitle, dark]) => (
+        <Grid key={label} size={{ xs: 12, md: 4 }}>
+          <Box
+            className={styles.animatedSurface}
+            sx={{
+              p: { xs: 2.5, md: 2.7 },
+              minHeight: 212,
+              borderRadius: "2rem",
+              border: dark ? "none" : "1px solid #E7EDF5",
+              bgcolor: dark ? "#10192F" : "white",
+              color: dark ? "white" : "#10192F",
+              boxShadow: dark
+                ? "0 18px 40px rgba(16,25,47,0.12)"
+                : "0 0 0 1px rgba(16,25,47,0.02)",
+              position: "relative",
+              overflow: "hidden",
+            }}
+          >
+            {!dark ? (
+              <Box
+                sx={{
+                  position: "absolute",
+                  top: -18,
+                  right: -18,
+                  width: 110,
+                  height: 110,
+                  borderRadius: "50%",
+                  bgcolor:
+                    label === "Verified Users"
+                      ? "rgba(231,239,250,0.8)"
+                      : "rgba(223,246,238,0.8)",
+                }}
+              />
+            ) : (
+              <Box
+                sx={{
+                  position: "absolute",
+                  inset: 0,
+                  background:
+                    "radial-gradient(circle at bottom left, rgba(23,204,143,0.12), transparent 34%)",
+                }}
+              />
+            )}
+            <Stack
+              direction="row"
+              justifyContent="space-between"
+              alignItems="center"
+              sx={{ position: "relative", zIndex: 1 }}
+            >
+              <Stack direction="row" spacing={1.25} alignItems="center">
+                <Box
+                  sx={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: "50%",
+                    bgcolor: dark ? "rgba(23,204,143,0.12)" : "#EFF4FE",
+                    color: dark ? "#22D490" : "#0E56C8",
+                    display: "grid",
+                    placeItems: "center",
+                    flexShrink: 0,
+                  }}
+                >
+                  {label === "Verified Users" ? (
+                    <HomeWorkOutlinedIcon sx={{ fontSize: "1.1rem" }} />
+                  ) : label === "Satisfaction" ? (
+                    <VerifiedOutlinedIcon sx={{ fontSize: "1rem" }} />
+                  ) : (
+                    <BoltRoundedIcon sx={{ fontSize: "1rem" }} />
+                  )}
+                </Box>
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: dark ? "#8DA4C5" : "#97A4B8",
+                    letterSpacing: 2.1,
+                    fontWeight: 700,
+                    textTransform: "uppercase",
+                  }}
+                >
+                  {label}
+                </Typography>
+              </Stack>
+              {dark ? (
+                <Chip
+                  label="Live"
+                  size="small"
+                  sx={{
+                    height: 24,
+                    bgcolor: "rgba(23,204,143,0.12)",
+                    color: "#22D490",
+                    borderRadius: "999px",
+                    fontWeight: 700,
+                    "& .MuiChip-label": {
+                      px: 1.1,
+                      textTransform: "uppercase",
+                      letterSpacing: 1,
+                    },
+                  }}
+                />
+              ) : null}
+            </Stack>
+            <Typography
+              sx={{
+                mt: 4,
+                position: "relative",
+                zIndex: 1,
+                fontSize: { xs: "3.1rem", md: "3.35rem" },
+                lineHeight: 0.95,
+                fontWeight: 800,
+              }}
+            >
+              {label === "Satisfaction" ? (
+                <CountUpValue
+                  target={4.8}
+                  decimals={1}
+                  suffix=" /5"
+                  suffixSx={{ color: "#22D490", fontSize: "2.3rem" }}
+                  started={inView}
+                />
+              ) : label === "Energy Yield" ? (
+                <CountUpValue
+                  target={2.5}
+                  decimals={1}
+                  suffix=" GW+"
+                  suffixSx={{ color: "#22D490", fontSize: "2.1rem" }}
+                  started={inView}
+                />
+              ) : (
+                <CountUpValue target={50000} suffix="+" started={inView} />
+              )}
+            </Typography>
+            <Typography
+              sx={{
+                mt: 1.35,
+                position: "relative",
+                zIndex: 1,
+                color: dark ? "rgba(255,255,255,0.76)" : "text.secondary",
+                textTransform: "uppercase",
+                letterSpacing: 0.6,
+                fontWeight: 700,
+                fontSize: "0.82rem",
+              }}
+            >
+              {subtitle}
+            </Typography>
+          </Box>
+        </Grid>
+      ))}
+    </Grid>
+  );
+}
+
+function ReferralStatsSection() {
+  const [ref, inView] = useInView();
+  return (
+    <Grid ref={ref} container spacing={{ xs: 2.5, md: 3 }}>
+      {[
+        [14500, "₹", "", "Total Rewards Earned", "Updated 2m ago"],
+        [1200, "", "+", "Active Ambassadors", "Growing Daily"],
+        [5000, "₹", "", "Per Referral Bonus", "Guaranteed payout and earn extra ₹10,000 for 4 successful referrals"],
+      ].map(([target, prefix, suffix, title, foot]) => (
+        <Grid key={title} size={{ xs: 12, md: 4 }}>
+          <Box
+            sx={{
+              p: { xs: 2.3, md: 2.5 },
+              minHeight: 154,
+              borderRadius: "2rem",
+              bgcolor: "rgba(255,255,255,0.05)",
+              border: "1px solid rgba(255,255,255,0.06)",
+              boxShadow: "inset 0 1px 0 rgba(255,255,255,0.02)",
+            }}
+          >
+            <Typography
+              variant="caption"
+              sx={{
+                color:
+                  title === "Total Rewards Earned"
+                    ? "#26D08E"
+                    : title === "Active Ambassadors"
+                      ? "#1C8DFF"
+                      : "rgba(255,255,255,0.58)",
+                letterSpacing: 1.8,
+                fontWeight: 700,
+                textTransform: "uppercase",
+              }}
+            >
+              {title}
+            </Typography>
+            <Typography
+              sx={{ mt: 1.25, fontSize: "1.95rem", fontWeight: 800 }}
+            >
+              <CountUpValue target={target} prefix={prefix} suffix={suffix} started={inView} />
+            </Typography>
+            <Typography
+              variant="body2"
+              sx={{
+                mt: 1.45,
+                color: "rgba(255,255,255,0.46)",
+                fontSize: "0.82rem",
+                textTransform:
+                  foot === "Updated 2m ago" || foot === "Growing Daily"
+                    ? "uppercase"
+                    : "none",
+                letterSpacing:
+                  foot === "Updated 2m ago" || foot === "Growing Daily"
+                    ? 1
+                    : 0,
+              }}
+            >
+              {foot === "Updated 2m ago" ? (
+                <>
+                  <Box
+                    component="span"
+                    sx={{
+                      display: "inline-block",
+                      width: 7,
+                      height: 7,
+                      borderRadius: "50%",
+                      bgcolor: "#20D08D",
+                      mr: 0.8,
+                      verticalAlign: "middle",
+                    }}
+                  />
+                  {foot}
+                </>
+              ) : (
+                foot
+              )}
+            </Typography>
+          </Box>
+        </Grid>
+      ))}
+    </Grid>
+  );
+}
+
 function HomePage() {
   const primaryBlueGradient =
     "linear-gradient(180deg, #1A66E8 0%, #0E56C8 100%)";
@@ -309,6 +649,19 @@ function HomePage() {
   const [roofArea, setRoofArea] = useState(800);
   const [pinCode, setPinCode] = useState("560001");
   const [systemType, setSystemType] = useState(systemTypes[0]);
+  const [saleSecondsLeft, setSaleSecondsLeft] = useState(
+    14 * 60 * 60 + 42 * 60 + 58,
+  );
+
+  useEffect(() => {
+    const timerId = window.setInterval(() => {
+      setSaleSecondsLeft((seconds) =>
+        seconds > 0 ? seconds - 1 : 14 * 60 * 60 + 42 * 60 + 58,
+      );
+    }, 1000);
+
+    return () => window.clearInterval(timerId);
+  }, []);
 
   const estimate = useMemo(() => {
     const monthlySavings = monthlyBill * 0.68;
@@ -505,8 +858,8 @@ function HomePage() {
                           fontSize: "0.98rem",
                           borderRadius: "0.8rem",
                           background:
-                            "linear-gradient(90deg, #1798FF 0%, #08C76F 100%)",
-                          boxShadow: "0 16px 34px rgba(8,151,255,0.26)",
+                            primaryBlueGradient,
+                          boxShadow: "0 16px 34px rgba(14,86,200,0.26)",
                         }}
                       >
                         Calculate Savings
@@ -1268,11 +1621,7 @@ function HomePage() {
                     }
                     sx={{ mt: 3.2 }}
                   >
-                    {[
-                      ["14", "Hours"],
-                      ["42", "Mins"],
-                      ["58", "Secs"],
-                    ].map(([value, label]) => (
+                    {formatTimer(saleSecondsLeft).map(([value, label]) => (
                       <Box key={label} sx={{ flex: 1 }}>
                         <Typography
                           sx={{
@@ -1651,169 +2000,7 @@ function HomePage() {
           disableGutters
           className={styles.contentContainer}
         >
-          <Grid container spacing={{ xs: 2.5, md: 3 }}>
-            {[
-              [
-                "Verified Users",
-                "50,000+",
-                "Homes powered across 20 cities",
-                false,
-              ],
-              ["Satisfaction", "4.8 /5", "Average customer satisfaction", true],
-              ["Energy Yield", "2.5 GW+", "Total installed capacity", false],
-            ].map(([label, value, subtitle, dark]) => (
-              <Grid key={label} size={{ xs: 12, md: 4 }}>
-                <Box
-                  className={styles.animatedSurface}
-                  sx={{
-                    p: { xs: 2.5, md: 2.7 },
-                    minHeight: 212,
-                    borderRadius: "2rem",
-                    border: dark ? "none" : "1px solid #E7EDF5",
-                    bgcolor: dark ? "#10192F" : "white",
-                    color: dark ? "white" : "#10192F",
-                    boxShadow: dark
-                      ? "0 18px 40px rgba(16,25,47,0.12)"
-                      : "0 0 0 1px rgba(16,25,47,0.02)",
-                    position: "relative",
-                    overflow: "hidden",
-                  }}
-                >
-                  {!dark ? (
-                    <Box
-                      sx={{
-                        position: "absolute",
-                        top: -18,
-                        right: -18,
-                        width: 110,
-                        height: 110,
-                        borderRadius: "50%",
-                        bgcolor:
-                          label === "Verified Users"
-                            ? "rgba(231,239,250,0.8)"
-                            : "rgba(223,246,238,0.8)",
-                      }}
-                    />
-                  ) : (
-                    <Box
-                      sx={{
-                        position: "absolute",
-                        inset: 0,
-                        background:
-                          "radial-gradient(circle at bottom left, rgba(23,204,143,0.12), transparent 34%)",
-                      }}
-                    />
-                  )}
-                  <Stack
-                    direction="row"
-                    justifyContent="space-between"
-                    alignItems="center"
-                    sx={{ position: "relative", zIndex: 1 }}
-                  >
-                    <Stack direction="row" spacing={1.25} alignItems="center">
-                      <Box
-                        sx={{
-                          width: 40,
-                          height: 40,
-                          borderRadius: "50%",
-                          bgcolor: dark ? "rgba(23,204,143,0.12)" : "#EFF4FE",
-                          color: dark ? "#22D490" : "#0E56C8",
-                          display: "grid",
-                          placeItems: "center",
-                          flexShrink: 0,
-                        }}
-                      >
-                        {label === "Verified Users" ? (
-                          <HomeWorkOutlinedIcon sx={{ fontSize: "1.1rem" }} />
-                        ) : label === "Satisfaction" ? (
-                          <VerifiedOutlinedIcon sx={{ fontSize: "1rem" }} />
-                        ) : (
-                          <BoltRoundedIcon sx={{ fontSize: "1rem" }} />
-                        )}
-                      </Box>
-                      <Typography
-                        variant="caption"
-                        sx={{
-                          color: dark ? "#8DA4C5" : "#97A4B8",
-                          letterSpacing: 2.1,
-                          fontWeight: 700,
-                          textTransform: "uppercase",
-                        }}
-                      >
-                        {label}
-                      </Typography>
-                    </Stack>
-                    {dark ? (
-                      <Chip
-                        label="Live"
-                        size="small"
-                        sx={{
-                          height: 24,
-                          bgcolor: "rgba(23,204,143,0.12)",
-                          color: "#22D490",
-                          borderRadius: "999px",
-                          fontWeight: 700,
-                          "& .MuiChip-label": {
-                            px: 1.1,
-                            textTransform: "uppercase",
-                            letterSpacing: 1,
-                          },
-                        }}
-                      />
-                    ) : null}
-                  </Stack>
-                  <Typography
-                    sx={{
-                      mt: 4,
-                      position: "relative",
-                      zIndex: 1,
-                      fontSize: { xs: "3.1rem", md: "3.35rem" },
-                      lineHeight: 0.95,
-                      fontWeight: 800,
-                    }}
-                  >
-                    {label === "Satisfaction" ? (
-                      <>
-                        4.8{" "}
-                        <Box
-                          component="span"
-                          sx={{ color: "#22D490", fontSize: "2.3rem" }}
-                        >
-                          /5
-                        </Box>
-                      </>
-                    ) : label === "Energy Yield" ? (
-                      <>
-                        2.5{" "}
-                        <Box
-                          component="span"
-                          sx={{ color: "#22D490", fontSize: "2.1rem" }}
-                        >
-                          GW+
-                        </Box>
-                      </>
-                    ) : (
-                      value
-                    )}
-                  </Typography>
-                  <Typography
-                    sx={{
-                      mt: 1.35,
-                      position: "relative",
-                      zIndex: 1,
-                      color: dark ? "rgba(255,255,255,0.76)" : "text.secondary",
-                      textTransform: "uppercase",
-                      letterSpacing: 0.6,
-                      fontWeight: 700,
-                      fontSize: "0.82rem",
-                    }}
-                  >
-                    {subtitle}
-                  </Typography>
-                </Box>
-              </Grid>
-            ))}
-          </Grid>
+          <StatsSection />
         </Container>
       </Box>
 
@@ -1922,88 +2109,7 @@ function HomePage() {
               sx={{ flex: 1, height: 1, bgcolor: "rgba(255,255,255,0.08)" }}
             />
           </Stack>
-          <Grid container spacing={{ xs: 2.5, md: 3 }}>
-            {[
-              ["\u20B914,500", "Total Rewards Earned", "Updated 2m ago"],
-              ["1,200+", "Active Ambassadors", "Growing Daily"],
-              [
-                "\u20B95,000",
-                "Per Referral Bonus",
-                "Guaranteed payout and earn extra \u20B910,000 for 4 successful referrals",
-              ],
-            ].map(([value, title, foot]) => (
-              <Grid key={title} size={{ xs: 12, md: 4 }}>
-                <Box
-                  sx={{
-                    p: { xs: 2.3, md: 2.5 },
-                    minHeight: 154,
-                    borderRadius: "2rem",
-                    bgcolor: "rgba(255,255,255,0.05)",
-                    border: "1px solid rgba(255,255,255,0.06)",
-                    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.02)",
-                  }}
-                >
-                  <Typography
-                    variant="caption"
-                    sx={{
-                      color:
-                        title === "Total Rewards Earned"
-                          ? "#26D08E"
-                          : title === "Active Ambassadors"
-                            ? "#1C8DFF"
-                            : "rgba(255,255,255,0.58)",
-                      letterSpacing: 1.8,
-                      fontWeight: 700,
-                      textTransform: "uppercase",
-                    }}
-                  >
-                    {title}
-                  </Typography>
-                  <Typography
-                    sx={{ mt: 1.25, fontSize: "1.95rem", fontWeight: 800 }}
-                  >
-                    {value}
-                  </Typography>
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      mt: 1.45,
-                      color: "rgba(255,255,255,0.46)",
-                      fontSize: "0.82rem",
-                      textTransform:
-                        foot === "Updated 2m ago" || foot === "Growing Daily"
-                          ? "uppercase"
-                          : "none",
-                      letterSpacing:
-                        foot === "Updated 2m ago" || foot === "Growing Daily"
-                          ? 1
-                          : 0,
-                    }}
-                  >
-                    {foot === "Updated 2m ago" ? (
-                      <>
-                        <Box
-                          component="span"
-                          sx={{
-                            display: "inline-block",
-                            width: 7,
-                            height: 7,
-                            borderRadius: "50%",
-                            bgcolor: "#20D08D",
-                            mr: 0.8,
-                            verticalAlign: "middle",
-                          }}
-                        />
-                        {foot}
-                      </>
-                    ) : (
-                      foot
-                    )}
-                  </Typography>
-                </Box>
-              </Grid>
-            ))}
-          </Grid>
+          <ReferralStatsSection />
         </Container>
       </Box>
 
