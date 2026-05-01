@@ -45,6 +45,17 @@
   gap: 8px;
 }
 
+.mobileMenuButton {
+  flex-shrink: 0;
+}
+
+.mobileDrawer {
+  width: min(86vw, 340px);
+  border-radius: 20px 0 0 20px;
+  background: linear-gradient(180deg, #ffffff 0%, #f7faff 100%);
+  box-shadow: -22px 0 44px rgba(16, 29, 51, 0.16);
+}
+
 .footerContainer {
   width: 100%;
   max-width: 1360px;

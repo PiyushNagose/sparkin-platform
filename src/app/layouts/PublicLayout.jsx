@@ -3,11 +3,15 @@ import {
   Box,
   Button,
   Container,
+  IconButton,
   Stack,
   Toolbar,
   Typography,
+  Drawer,
 } from "@mui/material";
-import { useEffect } from "react";
+import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
+import MenuRoundedIcon from "@mui/icons-material/MenuRounded";
+import { useEffect, useState } from "react";
 import { Link as RouterLink, Outlet, useLocation } from "react-router-dom";
 import { publicPrimaryNav } from "@/shared/config/navigation";
 import logoPlaceholder from "@/shared/assets/logo-placeholder.png";
@@ -16,9 +20,11 @@ import { AppFooter } from "@/shared/components/AppFooter";
 
 export function PublicLayout() {
   const { pathname } = useLocation();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    setMobileMenuOpen(false);
   }, [pathname]);
 
   return (
@@ -135,9 +141,114 @@ export function PublicLayout() {
                 Get a Quote
               </Button>
             </Stack>
+
+            <IconButton
+              aria-label="Open navigation menu"
+              onClick={() => setMobileMenuOpen(true)}
+              className={styles.mobileMenuButton}
+              sx={{
+                display: { xs: "inline-flex", md: "none" },
+                ml: "auto",
+                width: 42,
+                height: 42,
+                borderRadius: "0.75rem",
+                color: "#0E56C8",
+                bgcolor: "rgba(14,86,200,0.08)",
+                border: "1px solid rgba(14,86,200,0.12)",
+              }}
+            >
+              <MenuRoundedIcon />
+            </IconButton>
           </Container>
         </Toolbar>
       </AppBar>
+
+      <Drawer
+        anchor="right"
+        open={mobileMenuOpen}
+        onClose={() => setMobileMenuOpen(false)}
+        PaperProps={{ className: styles.mobileDrawer }}
+      >
+        <Stack spacing={2.4} sx={{ p: 2.4, height: "100%" }}>
+          <Stack direction="row" alignItems="center" justifyContent="space-between">
+            <Box
+              component="img"
+              src={logoPlaceholder}
+              alt="Sparkin logo"
+              sx={{ width: 108, height: 56, objectFit: "contain" }}
+            />
+            <IconButton
+              aria-label="Close navigation menu"
+              onClick={() => setMobileMenuOpen(false)}
+              sx={{
+                width: 40,
+                height: 40,
+                borderRadius: "0.75rem",
+                color: "#10192F",
+                bgcolor: "#F2F6FC",
+              }}
+            >
+              <CloseRoundedIcon />
+            </IconButton>
+          </Stack>
+
+          <Stack spacing={0.7}>
+            {publicPrimaryNav.map((item) => (
+              <Typography
+                key={item.label}
+                component={RouterLink}
+                to={item.href}
+                sx={{
+                  px: 1.35,
+                  py: 1.2,
+                  borderRadius: "0.85rem",
+                  color: pathname === item.href ? "#0E56C8" : "#10192F",
+                  bgcolor:
+                    pathname === item.href ? "rgba(14,86,200,0.08)" : "transparent",
+                  fontSize: "0.96rem",
+                  fontWeight: 800,
+                  textDecoration: "none",
+                }}
+              >
+                {item.label}
+              </Typography>
+            ))}
+          </Stack>
+
+          <Stack spacing={1.1} sx={{ mt: "auto" }}>
+            <Button
+              component={RouterLink}
+              to="/auth/login"
+              variant="outlined"
+              sx={{
+                minHeight: 46,
+                borderRadius: "0.85rem",
+                borderColor: "#0E56C8",
+                color: "#10192F",
+                fontWeight: 800,
+                textTransform: "none",
+              }}
+            >
+              Login
+            </Button>
+            <Button
+              component={RouterLink}
+              to="/booking"
+              variant="contained"
+              sx={{
+                minHeight: 46,
+                borderRadius: "0.85rem",
+                background: "linear-gradient(180deg, #1A66E8 0%, #0E56C8 100%)",
+                fontWeight: 800,
+                textTransform: "none",
+                boxShadow: "0 14px 28px rgba(14,86,200,0.22)",
+              }}
+            >
+              Get a Quote
+            </Button>
+          </Stack>
+        </Stack>
+      </Drawer>
 
       <Outlet />
       <AppFooter />
