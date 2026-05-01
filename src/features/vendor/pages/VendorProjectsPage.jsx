@@ -20,6 +20,10 @@ import KeyboardArrowRightRoundedIcon from "@mui/icons-material/KeyboardArrowRigh
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import TuneRoundedIcon from "@mui/icons-material/TuneRounded";
 import SortRoundedIcon from "@mui/icons-material/SortRounded";
+import AssignmentOutlinedIcon from "@mui/icons-material/AssignmentOutlined";
+import BuildOutlinedIcon from "@mui/icons-material/BuildOutlined";
+import PendingActionsOutlinedIcon from "@mui/icons-material/PendingActionsOutlined";
+import CheckCircleOutlineRoundedIcon from "@mui/icons-material/CheckCircleOutlineRounded";
 import { Link as RouterLink, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import { projectsApi } from "@/features/public/api/projectsApi";
@@ -35,28 +39,28 @@ const kpiCards = [
     value: "24",
     tone: "#4F89FF",
     bg: "#EEF4FF",
-    icon: "□",
+    Icon: AssignmentOutlinedIcon,
   },
   {
     label: "Installation in Progress",
     value: "8",
     tone: "#7D7B00",
     bg: "#F4F1C9",
-    icon: "◌",
+    Icon: BuildOutlinedIcon,
   },
   {
     label: "Pending Start",
     value: "6",
     tone: "#8F98A7",
     bg: "#F2F5F8",
-    icon: "◔",
+    Icon: PendingActionsOutlinedIcon,
   },
   {
     label: "Completed",
     value: "112",
     tone: "#239654",
     bg: "#E4F7EA",
-    icon: "✓",
+    Icon: CheckCircleOutlineRoundedIcon,
   },
 ];
 
@@ -161,22 +165,21 @@ function toVendorProject(project) {
   };
 }
 
-function KpiIcon({ tone, bg, icon }) {
+function KpiIcon({ tone, bg, Icon }) {
   return (
     <Box
       sx={{
-        width: 30,
-        height: 30,
-        borderRadius: "0.75rem",
+        width: 36,
+        height: 36,
+        borderRadius: "0.85rem",
         bgcolor: bg,
         color: tone,
-        display: "grid",
-        placeItems: "center",
-        fontSize: "0.88rem",
-        fontWeight: 800,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
       }}
     >
-      {icon}
+      <Icon sx={{ fontSize: "1.15rem" }} />
     </Box>
   );
 }
@@ -773,10 +776,15 @@ export default function VendorProjectsPage() {
               borderRadius: "1.15rem",
               bgcolor: "#FFFFFF",
               border: "1px solid rgba(225,232,241,0.96)",
-              boxShadow: "0 14px 28px rgba(16,29,51,0.04)",
+              boxShadow: "0 4px 16px rgba(16,29,51,0.06)",
+              transition: "all 0.18s cubic-bezier(0.4,0,0.2,1)",
+              "&:hover": {
+                boxShadow: "0 8px 24px rgba(16,29,51,0.1)",
+                transform: "translateY(-2px)",
+              },
             }}
           >
-            <KpiIcon tone={card.tone} bg={card.bg} icon={card.icon} />
+            <KpiIcon tone={card.tone} bg={card.bg} Icon={card.Icon} />
             <Typography
               sx={{
                 mt: 1.1,
@@ -946,6 +954,9 @@ export default function VendorProjectsPage() {
               sx={{
                 borderTop: index === 0 ? "none" : "1px solid rgba(234,239,245,0.95)",
                 py: { xs: 1.45, md: 1.55 },
+                borderRadius: "0.75rem",
+                transition: "background 0.15s",
+                "&:hover": { bgcolor: "#F4F7FF" },
               }}
             >
               <Box sx={{ display: { xs: "none", lg: "block" } }}>
