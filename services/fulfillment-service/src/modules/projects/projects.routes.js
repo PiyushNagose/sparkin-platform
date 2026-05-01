@@ -4,6 +4,7 @@ import { validate } from "../../common/middleware/validate.js";
 import { asyncHandler } from "../../common/utils/async-handler.js";
 import { projectsController } from "./projects.controller.js";
 import {
+  createManualProjectSchema,
   createProjectSchema,
   submitProjectOnboardingSchema,
   updateProjectMilestoneSchema,
@@ -14,6 +15,7 @@ export const projectsRouter = Router();
 
 projectsRouter.use(requireAuth);
 projectsRouter.get("/", asyncHandler(projectsController.list));
+projectsRouter.post("/manual", validate(createManualProjectSchema), asyncHandler(projectsController.createManual));
 projectsRouter.get("/:projectId", asyncHandler(projectsController.getById));
 projectsRouter.patch(
   "/:projectId/milestone",

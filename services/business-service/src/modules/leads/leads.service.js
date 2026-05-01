@@ -3,17 +3,27 @@ import { leadsRepository } from "./leads.repository.js";
 import mongoose from "mongoose";
 
 export const leadsService = {
-  async createLead(customer, input) {
-    if (customer.role !== "customer" && customer.role !== "admin") {
-      throw new AppError(403, "Only customers can create booking requests");
+  async createLead(user, input) {
+    if (!["customer", "vendor", "admin"].includes(user.role)) {
+      throw new AppError(403, "You do not have permission to create leads");
     }
 
-    return leadsRepository.createLead({
+    const isVendorCreated = user.role === "vendor";
+
+    const lead = await leadsRepository.createLead({
       ...input,
-      customerId: customer.userId,
+      customerId: isVendorCreated ? `manual:${user.userId}` : user.userId,
+      createdByVendorId: isVendorCreated ? user.userId : null,
+      source: isVendorCreated ? "vendor_manual" : "customer_booking",
       status: "submitted",
       submittedAt: new Date(),
     });
+
+    if (isVendorCreated) {
+      return leadsRepository.updateStatus(lead.id, "reviewing");
+    }
+
+    return lead;
   },
 
   async listLeads(user) {

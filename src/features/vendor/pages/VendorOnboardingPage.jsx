@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Alert, Box, Button, Grid, Stack, TextField, Typography } from "@mui/material";
+import { Alert, Box, Button, Grid, Slider, Stack, TextField, Typography } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import VerifiedUserOutlinedIcon from "@mui/icons-material/VerifiedUserOutlined";
 import BoltRoundedIcon from "@mui/icons-material/BoltRounded";
 import UploadFileRoundedIcon from "@mui/icons-material/UploadFileRounded";
 import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
 import { vendorsApi } from "@/features/vendor/api/vendorsApi";
+import { AppFooter } from "@/shared/components/AppFooter";
 
 const defaultCompany = {
   name: "",
@@ -43,6 +44,18 @@ function getCompletion(company, documents) {
   ];
 
   return Math.round((checks.filter(Boolean).length / checks.length) * 100);
+}
+
+function getMissingRequiredFields(company, documents) {
+  const missing = [];
+
+  if (!company.name?.trim()) missing.push("Legal company name");
+  if (!company.businessType?.trim()) missing.push("Business type");
+  if (!company.address?.trim()) missing.push("Business address");
+  if (!documents.some((document) => document.type === "company")) missing.push("Electrical license");
+  if (!documents.some((document) => document.type === "certification")) missing.push("Liability insurance");
+
+  return missing;
 }
 
 function OnboardingField({ label, value, onChange, placeholder, type = "text", multiline = false }) {
@@ -95,6 +108,9 @@ export default function VendorOnboardingPage() {
         setCompany({ ...defaultCompany, ...(profile.company || {}) });
         setDocuments(profile.documents || []);
         setStatus(profile.verificationStatus || "draft");
+        if (profile.verificationStatus && profile.verificationStatus !== "draft") {
+          navigate("/vendor", { replace: true });
+        }
       } catch (apiError) {
         if (active) setError(apiError?.response?.data?.message || "Could not load onboarding profile.");
       } finally {
@@ -107,7 +123,7 @@ export default function VendorOnboardingPage() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [navigate]);
 
   const completion = useMemo(() => getCompletion(company, documents), [company, documents]);
   const tierCards = [
@@ -199,8 +215,9 @@ export default function VendorOnboardingPage() {
     const saved = await saveCompany();
     if (!saved) return;
 
-    if (getCompletion(saved.company || company, saved.documents || documents) < 80) {
-      setError("Please complete at least 80% of your onboarding before submitting.");
+    const missing = getMissingRequiredFields(saved.company || company, saved.documents || documents);
+    if (missing.length) {
+      setError(`Please complete: ${missing.join(", ")}.`);
       return;
     }
 
@@ -208,8 +225,9 @@ export default function VendorOnboardingPage() {
     setError("");
 
     try {
-      await vendorsApi.submitApplication();
-      navigate("/vendor/profile", { replace: true });
+      const submittedProfile = await vendorsApi.submitApplication();
+      window.dispatchEvent(new CustomEvent("sparkin:vendor-profile-updated", { detail: submittedProfile }));
+      navigate("/vendor", { replace: true });
     } catch (apiError) {
       setError(apiError?.response?.data?.message || "Could not submit application.");
     } finally {
@@ -262,7 +280,9 @@ export default function VendorOnboardingPage() {
   }
 
   return (
-    <Box sx={{ maxWidth: 1120, mx: "auto" }}>
+    <Box sx={{ minHeight: "100vh", bgcolor: "#F4F8F5", display: "flex", flexDirection: "column" }}>
+      <Box component="main" sx={{ flex: 1, px: { xs: 2, md: 4 }, py: { xs: 3.2, md: 4.2 } }}>
+        <Box sx={{ maxWidth: 1120, mx: "auto" }}>
       <Box sx={{ textAlign: "center", mb: { xs: 3.5, md: 4.25 } }}>
         <Typography sx={{ color: "#18253A", fontSize: { xs: "2rem", md: "2.45rem" }, fontWeight: 800, lineHeight: 1.04 }}>
           Vendor Onboarding
@@ -319,12 +339,6 @@ export default function VendorOnboardingPage() {
             <Grid size={12}>
               <OnboardingField label="Business Address" value={company.address} onChange={(value) => updateCompany("address", value)} placeholder="Street Address, Suite, City, State, ZIP" multiline />
             </Grid>
-            <Grid size={{ xs: 12, md: 6 }}>
-              <OnboardingField label="City" value={company.city} onChange={(value) => updateCompany("city", value)} placeholder="Mumbai" />
-            </Grid>
-            <Grid size={{ xs: 12, md: 6 }}>
-              <OnboardingField label="State" value={company.state} onChange={(value) => updateCompany("state", value)} placeholder="Maharashtra" />
-            </Grid>
           </Grid>
         </Box>
 
@@ -339,14 +353,65 @@ export default function VendorOnboardingPage() {
         <Box sx={{ p: { xs: 2.3, md: 2.8 }, borderRadius: "1.7rem", bgcolor: "rgba(255,255,255,0.96)", border: "1px solid rgba(223,231,241,0.92)", boxShadow: "0 16px 34px rgba(16,29,51,0.06)" }}>
           <StepTitle number="3" title="Professional Experience" />
           <Grid container spacing={{ xs: 2, md: 2.4 }} alignItems="center">
-            <Grid size={{ xs: 12, md: 4 }}>
-              <OnboardingField label="Years of Solar Experience" value={company.experienceYears} type="number" onChange={(value) => updateCompany("experienceYears", value)} />
+            <Grid size={{ xs: 12, md: 5 }}>
+              <Typography sx={{ mb: 1.1, color: "#3B4658", fontSize: "0.76rem", fontWeight: 700 }}>
+                Years of Solar Experience
+              </Typography>
+              <Stack direction="row" spacing={1.2}>
+                {[
+                  { label: "1-3", value: 3 },
+                  { label: "4-7", value: 7 },
+                  { label: "8+", value: 8 },
+                ].map((option) => {
+                  const isSelected = Number(company.experienceYears) === option.value;
+
+                  return (
+                    <Button
+                      key={option.label}
+                      variant={isSelected ? "contained" : "text"}
+                      onClick={() => updateCompany("experienceYears", option.value)}
+                      sx={{
+                        minWidth: 92,
+                        minHeight: 42,
+                        borderRadius: "0.75rem",
+                        bgcolor: isSelected ? "#EEF3FF" : "#F1F3F6",
+                        color: isSelected ? "#0E56C8" : "#5F6C7D",
+                        border: isSelected ? "1px solid #0E56C8" : "1px solid transparent",
+                        boxShadow: "none",
+                        fontSize: "0.82rem",
+                        fontWeight: 800,
+                        textTransform: "none",
+                        "&:hover": { bgcolor: isSelected ? "#EEF3FF" : "#E9EDF3", boxShadow: "none" },
+                      }}
+                    >
+                      {option.label}
+                    </Button>
+                  );
+                })}
+              </Stack>
             </Grid>
-            <Grid size={{ xs: 12, md: 4 }}>
-              <OnboardingField label="Projects Completed" value={company.projectsCompleted} type="number" onChange={(value) => updateCompany("projectsCompleted", value)} />
-            </Grid>
-            <Grid size={{ xs: 12, md: 4 }}>
-              <OnboardingField label="Coverage Area" value={company.coverageArea} onChange={(value) => updateCompany("coverageArea", value)} placeholder="Pan India" />
+            <Grid size={{ xs: 12, md: 7 }}>
+              <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 0.6 }}>
+                <Typography sx={{ color: "#3B4658", fontSize: "0.76rem", fontWeight: 700 }}>
+                  Projects Completed
+                </Typography>
+                <Typography sx={{ color: "#0E56C8", fontSize: "0.76rem", fontWeight: 800 }}>
+                  {Number(company.projectsCompleted) || 0}+
+                </Typography>
+              </Stack>
+              <Slider
+                value={Number(company.projectsCompleted) || 0}
+                min={0}
+                max={50}
+                step={1}
+                onChange={(_, value) => updateCompany("projectsCompleted", value)}
+                sx={{
+                  color: "#0E56C8",
+                  "& .MuiSlider-rail": { bgcolor: "#D8DDE5", opacity: 1 },
+                  "& .MuiSlider-track": { border: 0 },
+                  "& .MuiSlider-thumb": { width: 14, height: 14 },
+                }}
+              />
             </Grid>
             <Grid size={{ xs: 12, md: 4 }}>
               <OnboardingField label="Total Capacity MW" value={company.totalCapacityMw} type="number" onChange={(value) => updateCompany("totalCapacityMw", value)} />
@@ -395,6 +460,9 @@ export default function VendorOnboardingPage() {
           </Button>
         </Stack>
       </Box>
+        </Box>
+      </Box>
+      <AppFooter />
     </Box>
   );
 }

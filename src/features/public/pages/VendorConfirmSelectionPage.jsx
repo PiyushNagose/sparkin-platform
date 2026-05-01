@@ -102,10 +102,10 @@ export default function VendorConfirmSelectionPage() {
     try {
       const result = await quotesApi.acceptQuote(quoteId);
       if (result.project?.id) {
-        navigate(`/vendors/onboarding?projectId=${result.project.id}`, { replace: true });
+        navigate(`/project/installation?projectId=${result.project.id}`, { replace: true });
         return;
       }
-      navigate("/vendors/onboarding", { replace: true });
+      navigate("/project/installation", { replace: true });
     } catch (apiError) {
       setError(apiError?.response?.data?.message || "Could not confirm this vendor.");
     } finally {
@@ -347,8 +347,7 @@ export default function VendorConfirmSelectionPage() {
                         }}
                       >
                         Once confirmed, this quote will be marked accepted, competing quotes for
-                        the same booking will be closed, and you will review vendor onboarding
-                        before the project tracker opens.
+                        the same booking will be closed, and your project tracker will open.
                       </Typography>
                     </Stack>
                   </Box>

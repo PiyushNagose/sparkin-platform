@@ -1,6 +1,25 @@
 const ACCESS_TOKEN_KEY = "sparkin.accessToken";
 const REFRESH_TOKEN_KEY = "sparkin.refreshToken";
 const USER_KEY = "sparkin.user";
+const STORAGE_MODE_KEY = "sparkin.storageMode";
+
+function getStorage() {
+  if (window.localStorage.getItem(STORAGE_MODE_KEY) === "session") {
+    return window.sessionStorage;
+  }
+
+  if (window.sessionStorage.getItem(ACCESS_TOKEN_KEY)) {
+    return window.sessionStorage;
+  }
+
+  return window.localStorage;
+}
+
+function clearStorage(storage) {
+  storage.removeItem(ACCESS_TOKEN_KEY);
+  storage.removeItem(REFRESH_TOKEN_KEY);
+  storage.removeItem(USER_KEY);
+}
 
 function decodeJwtPayload(token) {
   try {
@@ -19,11 +38,11 @@ function decodeJwtPayload(token) {
 
 export const authStorage = {
   getAccessToken() {
-    return window.localStorage.getItem(ACCESS_TOKEN_KEY);
+    return getStorage().getItem(ACCESS_TOKEN_KEY);
   },
 
   getRefreshToken() {
-    return window.localStorage.getItem(REFRESH_TOKEN_KEY);
+    return getStorage().getItem(REFRESH_TOKEN_KEY);
   },
 
   isAccessTokenExpired(skewSeconds = 30) {
@@ -43,7 +62,7 @@ export const authStorage = {
   },
 
   getUser() {
-    const value = window.localStorage.getItem(USER_KEY);
+    const value = getStorage().getItem(USER_KEY);
 
     if (!value) {
       return null;
@@ -57,19 +76,26 @@ export const authStorage = {
     }
   },
 
-  setSession({ user, tokens }) {
-    window.localStorage.setItem(ACCESS_TOKEN_KEY, tokens.accessToken);
-    window.localStorage.setItem(REFRESH_TOKEN_KEY, tokens.refreshToken);
-    window.localStorage.setItem(USER_KEY, JSON.stringify(user));
+  setSession({ user, tokens }, options = {}) {
+    const persist = options.persist ?? true;
+    const storage = persist ? window.localStorage : window.sessionStorage;
+
+    clearStorage(window.localStorage);
+    clearStorage(window.sessionStorage);
+    window.localStorage.setItem(STORAGE_MODE_KEY, persist ? "local" : "session");
+
+    storage.setItem(ACCESS_TOKEN_KEY, tokens.accessToken);
+    storage.setItem(REFRESH_TOKEN_KEY, tokens.refreshToken);
+    storage.setItem(USER_KEY, JSON.stringify(user));
   },
 
   updateUser(user) {
-    window.localStorage.setItem(USER_KEY, JSON.stringify(user));
+    getStorage().setItem(USER_KEY, JSON.stringify(user));
   },
 
   clearSession() {
-    window.localStorage.removeItem(ACCESS_TOKEN_KEY);
-    window.localStorage.removeItem(REFRESH_TOKEN_KEY);
-    window.localStorage.removeItem(USER_KEY);
+    clearStorage(window.localStorage);
+    clearStorage(window.sessionStorage);
+    window.localStorage.removeItem(STORAGE_MODE_KEY);
   },
 };

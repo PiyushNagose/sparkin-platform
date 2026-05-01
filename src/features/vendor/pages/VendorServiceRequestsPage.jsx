@@ -15,6 +15,7 @@ import ManageSearchRoundedIcon from "@mui/icons-material/ManageSearchRounded";
 import SupportAgentRoundedIcon from "@mui/icons-material/SupportAgentRounded";
 import { useLocation } from "react-router-dom";
 import { serviceRequestsApi } from "@/features/public/api/serviceRequestsApi";
+import { VendorPageHeader, VendorPageShell } from "@/features/vendor/components/VendorPortalUI";
 
 const statusOptions = [
   { value: "requested", label: "Requested" },
@@ -298,30 +299,12 @@ export default function VendorServiceRequestsPage() {
   }
 
   return (
-    <Box sx={{ width: "100%" }}>
-      <Stack
-        direction={{ xs: "column", lg: "row" }}
-        justifyContent="space-between"
-        alignItems={{ xs: "flex-start", lg: "center" }}
-        spacing={2}
-      >
-        <Box>
-          <Typography
-            sx={{
-              color: "#18253A",
-              fontSize: { xs: "1.95rem", md: "2.05rem" },
-              fontWeight: 800,
-              lineHeight: 1.08,
-              letterSpacing: "-0.04em",
-            }}
-          >
-            Service Requests
-          </Typography>
-          <Typography sx={{ mt: 0.4, color: "#4F5F73", fontSize: "0.92rem", lineHeight: 1.7, maxWidth: 520 }}>
-            Manage customer service tickets attached to your active Sparkin projects.
-          </Typography>
-        </Box>
-      </Stack>
+    <VendorPageShell>
+      <VendorPageHeader
+        title="Service Requests"
+        subtitle="Manage customer service tickets attached to your active Sparkin projects."
+        sx={{ mb: 0 }}
+      />
 
       <Box
         sx={{
@@ -462,6 +445,6 @@ export default function VendorServiceRequestsPage() {
           </Stack>
         ) : null}
       </Stack>
-    </Box>
+    </VendorPageShell>
   );
 }

@@ -1,4 +1,3 @@
-import { Navigate } from "react-router-dom";
 import VendorDashboardPage from "@/features/vendor/pages/VendorDashboardPage";
 import VendorLeadsPage from "@/features/vendor/pages/VendorLeadsPage";
 import VendorLeadDetailPage from "@/features/vendor/pages/VendorLeadDetailPage";
@@ -17,10 +16,6 @@ export const vendorRoutes = [
   {
     index: true,
     element: <VendorDashboardPage />,
-  },
-  {
-    path: "onboarding",
-    element: <Navigate to="/vendor/profile" replace />,
   },
   {
     path: "leads",

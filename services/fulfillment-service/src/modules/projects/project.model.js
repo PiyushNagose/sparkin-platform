@@ -28,6 +28,12 @@ const projectSchema = new mongoose.Schema(
   {
     leadId: { type: String, required: true, index: true },
     quoteId: { type: String, required: true, unique: true, index: true },
+    source: {
+      type: String,
+      enum: ["accepted_quote", "vendor_manual"],
+      default: "accepted_quote",
+      index: true,
+    },
     customerId: { type: String, required: true, index: true },
     vendorId: { type: String, required: true, index: true },
     vendorEmail: { type: String, trim: true, lowercase: true, default: null },

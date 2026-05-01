@@ -4,7 +4,12 @@ import {
   Box,
   Button,
   CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   LinearProgress,
+  MenuItem,
   Stack,
   TextField,
   Typography,
@@ -15,9 +20,14 @@ import KeyboardArrowRightRoundedIcon from "@mui/icons-material/KeyboardArrowRigh
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import TuneRoundedIcon from "@mui/icons-material/TuneRounded";
 import SortRoundedIcon from "@mui/icons-material/SortRounded";
-import { Link as RouterLink, useLocation } from "react-router-dom";
+import { Link as RouterLink, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import { projectsApi } from "@/features/public/api/projectsApi";
+import {
+  VendorPageHeader,
+  VendorPageShell,
+  VendorPrimaryButton,
+} from "@/features/vendor/components/VendorPortalUI";
 
 const kpiCards = [
   {
@@ -61,6 +71,24 @@ const columns = [
 ];
 
 const pageSize = 8;
+const emptyManualProjectForm = {
+  fullName: "",
+  phoneNumber: "",
+  email: "",
+  street: "",
+  landmark: "",
+  city: "",
+  state: "",
+  pincode: "",
+  sizeKw: "",
+  panelType: "monocrystalline",
+  inverterType: "",
+  totalPrice: "",
+  equipmentCost: "",
+  laborCost: "",
+  permittingCost: "",
+  installationWindow: "4_6_weeks",
+};
 
 function getInitials(name) {
   return name
@@ -150,6 +178,76 @@ function KpiIcon({ tone, bg, icon }) {
     >
       {icon}
     </Box>
+  );
+}
+
+function ManualProjectSection({ title, children }) {
+  return (
+    <Box>
+      <Typography sx={{ mb: 1.1, color: "#18253A", fontSize: "0.9rem", fontWeight: 800 }}>
+        {title}
+      </Typography>
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: { xs: "1fr", md: "repeat(3, minmax(0, 1fr))" },
+          gap: 1.2,
+        }}
+      >
+        {children}
+      </Box>
+    </Box>
+  );
+}
+
+function ManualProjectField({ label, value, onChange, required = false, type = "text", wide = false }) {
+  return (
+    <TextField
+      label={required ? `${label} *` : label}
+      value={value}
+      type={type}
+      onChange={(event) => onChange(event.target.value)}
+      sx={{
+        gridColumn: wide ? { xs: "auto", md: "1 / -1" } : "auto",
+        "& .MuiOutlinedInput-root": {
+          borderRadius: "0.85rem",
+          bgcolor: "#FFFFFF",
+          fontSize: "0.82rem",
+        },
+        "& .MuiInputLabel-root": {
+          fontSize: "0.78rem",
+          fontWeight: 700,
+        },
+      }}
+    />
+  );
+}
+
+function ManualProjectSelect({ label, value, onChange, options }) {
+  return (
+    <TextField
+      select
+      label={label}
+      value={value}
+      onChange={(event) => onChange(event.target.value)}
+      sx={{
+        "& .MuiOutlinedInput-root": {
+          borderRadius: "0.85rem",
+          bgcolor: "#FFFFFF",
+          fontSize: "0.82rem",
+        },
+        "& .MuiInputLabel-root": {
+          fontSize: "0.78rem",
+          fontWeight: 700,
+        },
+      }}
+    >
+      {options.map(([optionValue, optionLabel]) => (
+        <MenuItem key={optionValue} value={optionValue}>
+          {optionLabel}
+        </MenuItem>
+      ))}
+    </TextField>
   );
 }
 
@@ -375,46 +473,32 @@ function ProjectRow({ project, mobile = false }) {
 
 export default function VendorProjectsPage() {
   const location = useLocation();
+  const navigate = useNavigate();
   const [projectRecords, setProjectRecords] = useState([]);
   const [activeTab, setActiveTab] = useState("All");
   const [sortNewestFirst, setSortNewestFirst] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
+  const [isCreateProjectOpen, setIsCreateProjectOpen] = useState(false);
+  const [manualProjectForm, setManualProjectForm] = useState(emptyManualProjectForm);
+  const [isCreatingProject, setIsCreatingProject] = useState(false);
+  const [manualProjectError, setManualProjectError] = useState("");
   const [error, setError] = useState("");
 
   useEffect(() => {
-    let active = true;
-
-    async function loadProjects() {
-      setIsLoading(true);
-      setError("");
-
-      try {
-        const result = await projectsApi.listProjects();
-        if (active) {
-          setProjectRecords(result);
-          setPage(1);
-        }
-      } catch (apiError) {
-        if (active) setError(apiError?.response?.data?.message || "Could not load projects.");
-      } finally {
-        if (active) setIsLoading(false);
-      }
-    }
-
     loadProjects();
-
-    return () => {
-      active = false;
-    };
   }, []);
 
   useEffect(() => {
     const incomingSearch = location.state?.portalSearch || "";
     setSearchTerm(incomingSearch);
     setPage(1);
-  }, [location.state]);
+    if (location.state?.openCreateProject) {
+      setIsCreateProjectOpen(true);
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location.pathname, location.state, navigate]);
 
   const projects = useMemo(() => projectRecords.map(toVendorProject), [projectRecords]);
   const filteredProjects = useMemo(() => {
@@ -484,58 +568,193 @@ export default function VendorProjectsPage() {
     setPage(1);
   }
 
-  return (
-    <Box sx={{ width: "100%" }}>
-      <Stack
-        direction={{ xs: "column", lg: "row" }}
-        justifyContent="space-between"
-        alignItems={{ xs: "flex-start", lg: "center" }}
-        spacing={2}
-        sx={{ mb: { xs: 2.4, md: 2.8 } }}
-      >
-        <Box>
-          <Typography
-            sx={{
-              color: "#18253A",
-              fontSize: { xs: "1.95rem", md: "2.1rem" },
-              fontWeight: 800,
-              lineHeight: 1.05,
-              letterSpacing: "-0.04em",
-            }}
-          >
-            Projects
-          </Typography>
-          <Typography
-            sx={{
-              mt: 0.45,
-              color: "#6F7D8F",
-              fontSize: "0.92rem",
-              lineHeight: 1.6,
-            }}
-          >
-            Manage your ongoing solar installations
-          </Typography>
-        </Box>
+  async function loadProjects() {
+    setIsLoading(true);
+    setError("");
 
-        <Button
-          component={RouterLink}
-          to="/vendor/quotes"
-          variant="contained"
+    try {
+      const result = await projectsApi.listProjects();
+      setProjectRecords(result);
+      setPage(1);
+    } catch (apiError) {
+      setError(apiError?.response?.data?.message || "Could not load projects.");
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  function updateManualProject(field, value) {
+    setManualProjectForm((current) => ({ ...current, [field]: value }));
+  }
+
+  function closeCreateProjectDialog() {
+    if (isCreatingProject) return;
+    setIsCreateProjectOpen(false);
+    setManualProjectError("");
+  }
+
+  function validateManualProject() {
+    const requiredFields = [
+      ["fullName", "Customer name"],
+      ["phoneNumber", "Phone number"],
+      ["street", "Street address"],
+      ["city", "City"],
+      ["state", "State"],
+      ["pincode", "Pincode"],
+      ["sizeKw", "System size"],
+      ["inverterType", "Inverter type"],
+      ["totalPrice", "Project value"],
+    ];
+    const missing = requiredFields
+      .filter(([field]) => !String(manualProjectForm[field] || "").trim())
+      .map(([, label]) => label);
+
+    if (manualProjectForm.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(manualProjectForm.email.trim())) {
+      missing.push("Valid email");
+    }
+
+    return missing;
+  }
+
+  function numberOrNull(value) {
+    return value === "" ? null : Number(value);
+  }
+
+  function buildManualProjectPayload() {
+    return {
+      customer: {
+        fullName: manualProjectForm.fullName.trim(),
+        phoneNumber: manualProjectForm.phoneNumber.trim(),
+        email: manualProjectForm.email.trim() || null,
+      },
+      installationAddress: {
+        street: manualProjectForm.street.trim(),
+        landmark: manualProjectForm.landmark.trim() || null,
+        city: manualProjectForm.city.trim(),
+        state: manualProjectForm.state.trim(),
+        pincode: manualProjectForm.pincode.trim(),
+      },
+      system: {
+        sizeKw: Number(manualProjectForm.sizeKw),
+        panelType: manualProjectForm.panelType,
+        inverterType: manualProjectForm.inverterType.trim(),
+      },
+      pricing: {
+        totalPrice: Number(manualProjectForm.totalPrice),
+        equipmentCost: numberOrNull(manualProjectForm.equipmentCost),
+        laborCost: numberOrNull(manualProjectForm.laborCost),
+        permittingCost: numberOrNull(manualProjectForm.permittingCost),
+      },
+      timeline: {
+        installationWindow: manualProjectForm.installationWindow,
+      },
+    };
+  }
+
+  async function createManualProject() {
+    const missing = validateManualProject();
+
+    if (missing.length) {
+      setManualProjectError(`Please complete: ${missing.join(", ")}.`);
+      return;
+    }
+
+    setIsCreatingProject(true);
+    setManualProjectError("");
+
+    try {
+      const project = await projectsApi.createManualProject(buildManualProjectPayload());
+      setManualProjectForm(emptyManualProjectForm);
+      setIsCreateProjectOpen(false);
+      await loadProjects();
+      navigate(`/vendor/projects/${project.id}`);
+    } catch (apiError) {
+      setManualProjectError(apiError?.response?.data?.message || "Could not create project.");
+    } finally {
+      setIsCreatingProject(false);
+    }
+  }
+
+  return (
+    <VendorPageShell>
+      <VendorPageHeader
+        title="Projects"
+        subtitle="Manage your ongoing solar installations"
+        actions={
+          <VendorPrimaryButton
           startIcon={<AddRoundedIcon />}
-          sx={{
-            minHeight: 38,
-            px: 1.7,
-            borderRadius: "0.95rem",
-            bgcolor: "#0E56C8",
-            boxShadow: "0 12px 24px rgba(14,86,200,0.16)",
-            fontSize: "0.75rem",
-            fontWeight: 700,
-            textTransform: "none",
-          }}
+          onClick={() => setIsCreateProjectOpen(true)}
+          disabled={isLoading || isCreatingProject}
         >
-          View Accepted Quotes
-        </Button>
-      </Stack>
+          Create New Project
+          </VendorPrimaryButton>
+        }
+      />
+
+      <Dialog
+        open={isCreateProjectOpen}
+        onClose={closeCreateProjectDialog}
+        fullWidth
+        maxWidth="md"
+        PaperProps={{
+          sx: {
+            borderRadius: "1.35rem",
+            border: "1px solid rgba(225,232,241,0.96)",
+            boxShadow: "0 22px 48px rgba(16,29,51,0.16)",
+          },
+        }}
+      >
+        <DialogTitle sx={{ color: "#18253A", fontSize: "1.35rem", fontWeight: 800 }}>
+          Create New Project
+        </DialogTitle>
+        <DialogContent dividers sx={{ borderColor: "rgba(229,234,241,0.95)" }}>
+          <Stack spacing={2.2} sx={{ pt: 0.5 }}>
+            {manualProjectError ? (
+              <Alert severity="error" sx={{ borderRadius: "0.9rem" }}>
+                {manualProjectError}
+              </Alert>
+            ) : null}
+
+            <ManualProjectSection title="Customer Details">
+              <ManualProjectField label="Customer Name" value={manualProjectForm.fullName} onChange={(value) => updateManualProject("fullName", value)} required />
+              <ManualProjectField label="Phone Number" value={manualProjectForm.phoneNumber} onChange={(value) => updateManualProject("phoneNumber", value)} required />
+              <ManualProjectField label="Email" value={manualProjectForm.email} onChange={(value) => updateManualProject("email", value)} type="email" />
+            </ManualProjectSection>
+
+            <ManualProjectSection title="Installation Address">
+              <ManualProjectField label="Street Address" value={manualProjectForm.street} onChange={(value) => updateManualProject("street", value)} required wide />
+              <ManualProjectField label="Landmark" value={manualProjectForm.landmark} onChange={(value) => updateManualProject("landmark", value)} />
+              <ManualProjectField label="City" value={manualProjectForm.city} onChange={(value) => updateManualProject("city", value)} required />
+              <ManualProjectField label="State" value={manualProjectForm.state} onChange={(value) => updateManualProject("state", value)} required />
+              <ManualProjectField label="Pincode" value={manualProjectForm.pincode} onChange={(value) => updateManualProject("pincode", value)} required />
+            </ManualProjectSection>
+
+            <ManualProjectSection title="System & Pricing">
+              <ManualProjectField label="System Size (kW)" value={manualProjectForm.sizeKw} onChange={(value) => updateManualProject("sizeKw", value)} type="number" required />
+              <ManualProjectSelect label="Panel Type" value={manualProjectForm.panelType} onChange={(value) => updateManualProject("panelType", value)} options={[["monocrystalline", "Monocrystalline"], ["polycrystalline", "Polycrystalline"], ["bifacial", "Bifacial"]]} />
+              <ManualProjectField label="Inverter Type" value={manualProjectForm.inverterType} onChange={(value) => updateManualProject("inverterType", value)} required />
+              <ManualProjectField label="Project Value" value={manualProjectForm.totalPrice} onChange={(value) => updateManualProject("totalPrice", value)} type="number" required />
+              <ManualProjectField label="Equipment Cost" value={manualProjectForm.equipmentCost} onChange={(value) => updateManualProject("equipmentCost", value)} type="number" />
+              <ManualProjectField label="Labor Cost" value={manualProjectForm.laborCost} onChange={(value) => updateManualProject("laborCost", value)} type="number" />
+              <ManualProjectField label="Permitting Cost" value={manualProjectForm.permittingCost} onChange={(value) => updateManualProject("permittingCost", value)} type="number" />
+              <ManualProjectSelect label="Installation Window" value={manualProjectForm.installationWindow} onChange={(value) => updateManualProject("installationWindow", value)} options={[["2_4_weeks", "2-4 Weeks"], ["4_6_weeks", "4-6 Weeks"], ["6_8_weeks", "6-8 Weeks"]]} />
+            </ManualProjectSection>
+          </Stack>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, py: 2 }}>
+          <Button onClick={closeCreateProjectDialog} disabled={isCreatingProject} sx={{ textTransform: "none", fontWeight: 700 }}>
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            onClick={createManualProject}
+            disabled={isCreatingProject}
+            sx={{ minHeight: 38, borderRadius: "999px", px: 2.3, bgcolor: "#0E56C8", textTransform: "none", fontWeight: 800 }}
+          >
+            {isCreatingProject ? "Creating..." : "Create Project"}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <Box
         sx={{
@@ -715,7 +934,7 @@ export default function VendorProjectsPage() {
         {!isLoading && !error && filteredProjects.length === 0 ? (
           <Box sx={{ px: { xs: 1.2, md: 1.7 }, py: 4 }}>
             <Alert severity="info" sx={{ borderRadius: "0.9rem" }}>
-              No assigned projects yet. Projects will appear here when customers accept your quotes.
+              No assigned projects yet. Create a manual project or wait for customers to accept your quotes.
             </Alert>
           </Box>
         ) : null}
@@ -895,6 +1114,6 @@ export default function VendorProjectsPage() {
           </Box>
         </Box>
       </Box>
-    </Box>
+    </VendorPageShell>
   );
 }

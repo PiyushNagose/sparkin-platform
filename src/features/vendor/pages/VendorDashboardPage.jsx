@@ -15,6 +15,14 @@ import vendorHeatmapPlaceholder from "@/shared/assets/images/vendor/dashboard/ve
 import { leadsApi, quotesApi } from "@/features/public/api/leadsApi";
 import { projectsApi } from "@/features/public/api/projectsApi";
 import { paymentsApi } from "@/features/public/api/paymentsApi";
+import {
+  VendorErrorState,
+  VendorLoadingState,
+  VendorPageHeader,
+  VendorPageShell,
+  VendorPrimaryButton,
+  VendorSecondaryButton,
+} from "@/features/vendor/components/VendorPortalUI";
 
 function formatPrice(value) {
   return new Intl.NumberFormat("en-IN", {
@@ -275,58 +283,37 @@ export default function VendorDashboardPage() {
   }
 
   return (
-    <Box sx={{ width: "100%" }}>
-      <Stack
-        direction={{ xs: "column", lg: "row" }}
-        justifyContent="space-between"
-        alignItems={{ xs: "flex-start", lg: "center" }}
-        spacing={2}
+    <VendorPageShell>
+      <VendorPageHeader
+        title="Vendor Dashboard"
+        subtitle="Real-time overview of your leads, quotes, installation projects, and payments."
         sx={{ mb: { xs: 2.8, md: 3.2 } }}
-      >
-        <Box>
-          <Typography
-            sx={{
-              color: "#18253A",
-              fontSize: { xs: "2rem", md: "2.2rem" },
-              fontWeight: 800,
-              lineHeight: 1.03,
-            }}
-          >
-            Vendor Dashboard
-          </Typography>
-          <Typography sx={{ mt: 0.6, maxWidth: 430, color: "#6F7D8F", fontSize: "0.92rem", lineHeight: 1.62 }}>
-            Real-time overview of your leads, quotes, installation projects, and payments.
-          </Typography>
-        </Box>
-
-        <Stack direction="row" spacing={1.1}>
-          <Button
+        actions={
+          <>
+          <VendorSecondaryButton
             onClick={exportReport}
-            variant="outlined"
             startIcon={<FileDownloadOutlinedIcon />}
             disabled={isLoading}
-            sx={{ minHeight: 36, px: 1.8, borderRadius: "999px", borderColor: "rgba(208,216,226,0.95)", color: "#223146", fontSize: "0.75rem", fontWeight: 700, textTransform: "none" }}
+            sx={{ minHeight: 36, px: 1.8, borderRadius: "999px" }}
           >
             Export Report
-          </Button>
-          <Button
+          </VendorSecondaryButton>
+          <VendorPrimaryButton
             onClick={downloadLeads}
-            variant="contained"
             startIcon={<FileDownloadOutlinedIcon />}
             disabled={isLoading}
-            sx={{ minHeight: 36, px: 1.8, borderRadius: "999px", bgcolor: "#0E56C8", boxShadow: "none", fontSize: "0.75rem", fontWeight: 700, textTransform: "none" }}
+            sx={{ minHeight: 36, px: 1.8, borderRadius: "999px", boxShadow: "none" }}
           >
             Download Leads
-          </Button>
-        </Stack>
-      </Stack>
+          </VendorPrimaryButton>
+          </>
+        }
+      />
 
-      {error ? <Alert severity="error" sx={{ mb: 2, borderRadius: "0.9rem" }}>{error}</Alert> : null}
+      {error ? <VendorErrorState>{error}</VendorErrorState> : null}
 
       {isLoading ? (
-        <Box sx={{ minHeight: 360, display: "grid", placeItems: "center" }}>
-          <CircularProgress />
-        </Box>
+        <VendorLoadingState />
       ) : null}
 
       {!isLoading ? (
@@ -433,7 +420,7 @@ export default function VendorDashboardPage() {
           </Box>
         </>
       ) : null}
-    </Box>
+    </VendorPageShell>
   );
 }
 

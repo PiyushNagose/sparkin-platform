@@ -84,16 +84,16 @@ export function AuthProvider({ children }) {
     };
   }, []);
 
-  const register = React.useCallback(async (payload) => {
+  const register = React.useCallback(async (payload, options = {}) => {
     const session = await authApi.register(payload);
-    authStorage.setSession(session);
+    authStorage.setSession(session, options);
     setUser(session.user);
     return session.user;
   }, []);
 
-  const login = React.useCallback(async (payload) => {
+  const login = React.useCallback(async (payload, options = {}) => {
     const session = await authApi.login(payload);
-    authStorage.setSession(session);
+    authStorage.setSession(session, options);
     setUser(session.user);
     return session.user;
   }, []);

@@ -1,12 +1,38 @@
-import { Alert, Avatar, Box, Button, CircularProgress, MenuItem, Stack, TextField, Typography } from "@mui/material";
+import {
+  Alert,
+  Avatar,
+  Box,
+  Button,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  MenuItem,
+  Stack,
+  TextField,
+  Typography,
+} from "@mui/material";
 import FileDownloadOutlinedIcon from "@mui/icons-material/FileDownloadOutlined";
 import TuneRoundedIcon from "@mui/icons-material/TuneRounded";
 import KeyboardArrowLeftRoundedIcon from "@mui/icons-material/KeyboardArrowLeftRounded";
 import KeyboardArrowRightRoundedIcon from "@mui/icons-material/KeyboardArrowRightRounded";
-import RefreshRoundedIcon from "@mui/icons-material/RefreshRounded";
+import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import { Link as RouterLink, useLocation } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import { leadsApi, quotesApi } from "@/features/public/api/leadsApi";
+import {
+  VendorEmptyState,
+  VendorErrorState,
+  VendorFilterPanel,
+  VendorLoadingState,
+  VendorPageHeader,
+  VendorPageShell,
+  VendorPanel,
+  VendorPrimaryButton,
+  VendorSecondaryButton,
+  VendorStatusPill,
+} from "@/features/vendor/components/VendorPortalUI";
 
 const columns = [
   "Customer Name",
@@ -19,6 +45,30 @@ const columns = [
 ];
 
 const pageSize = 8;
+const emptyManualLeadForm = {
+  fullName: "",
+  phoneNumber: "",
+  email: "",
+  street: "",
+  landmark: "",
+  city: "",
+  state: "",
+  pincode: "",
+  propertyType: "independent_house",
+  roofType: "flat",
+  ownership: "owned",
+  distributionCompany: "",
+  connectionType: "single_phase",
+  consumerNumber: "",
+  sanctionedLoadKw: "",
+  roofSizeRange: "500_1000",
+  shadow: "partial",
+  condition: "average",
+  preferredDate: "",
+  preferredTimeSlot: "",
+  notes: "",
+  specialInstructions: "",
+};
 
 function FilterSelect({ label, value, onChange, options }) {
   return (
@@ -69,6 +119,79 @@ function FilterSelect({ label, value, onChange, options }) {
         ))}
       </TextField>
     </Stack>
+  );
+}
+
+function ManualLeadSection({ title, children }) {
+  return (
+    <Box>
+      <Typography sx={{ mb: 1.1, color: "#18253A", fontSize: "0.9rem", fontWeight: 800 }}>
+        {title}
+      </Typography>
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: { xs: "1fr", md: "repeat(3, minmax(0, 1fr))" },
+          gap: 1.2,
+        }}
+      >
+        {children}
+      </Box>
+    </Box>
+  );
+}
+
+function ManualLeadField({ label, value, onChange, required = false, type = "text", wide = false, multiline = false }) {
+  return (
+    <TextField
+      label={required ? `${label} *` : label}
+      value={value}
+      type={type}
+      multiline={multiline}
+      minRows={multiline ? 3 : undefined}
+      onChange={(event) => onChange(event.target.value)}
+      InputLabelProps={type === "date" ? { shrink: true } : undefined}
+      sx={{
+        gridColumn: wide ? { xs: "auto", md: "1 / -1" } : "auto",
+        "& .MuiOutlinedInput-root": {
+          borderRadius: "0.85rem",
+          bgcolor: "#FFFFFF",
+          fontSize: "0.82rem",
+        },
+        "& .MuiInputLabel-root": {
+          fontSize: "0.78rem",
+          fontWeight: 700,
+        },
+      }}
+    />
+  );
+}
+
+function ManualLeadSelect({ label, value, onChange, options }) {
+  return (
+    <TextField
+      select
+      label={label}
+      value={value}
+      onChange={(event) => onChange(event.target.value)}
+      sx={{
+        "& .MuiOutlinedInput-root": {
+          borderRadius: "0.85rem",
+          bgcolor: "#FFFFFF",
+          fontSize: "0.82rem",
+        },
+        "& .MuiInputLabel-root": {
+          fontSize: "0.78rem",
+          fontWeight: 700,
+        },
+      }}
+    >
+      {options.map(([optionValue, optionLabel]) => (
+        <MenuItem key={optionValue} value={optionValue}>
+          {optionLabel}
+        </MenuItem>
+      ))}
+    </TextField>
   );
 }
 
@@ -208,6 +331,10 @@ export default function VendorLeadsPage() {
   const [systemFilter, setSystemFilter] = useState("all");
   const [sortBy, setSortBy] = useState("newest");
   const [page, setPage] = useState(1);
+  const [isManualLeadOpen, setIsManualLeadOpen] = useState(false);
+  const [manualLeadForm, setManualLeadForm] = useState(emptyManualLeadForm);
+  const [isCreatingLead, setIsCreatingLead] = useState(false);
+  const [manualLeadError, setManualLeadError] = useState("");
 
   async function loadLeads(active = true) {
     setIsLoading(true);
@@ -234,7 +361,7 @@ export default function VendorLeadsPage() {
 
   useEffect(() => {
     let active = true;
-    loadLeads();
+    loadLeads(active);
 
     return () => {
       active = false;
@@ -317,88 +444,198 @@ export default function VendorLeadsPage() {
     setPage(1);
   }
 
-  return (
-    <Box sx={{ width: "100%" }}>
-      <Stack
-        direction={{ xs: "column", lg: "row" }}
-        justifyContent="space-between"
-        alignItems={{ xs: "flex-start", lg: "center" }}
-        spacing={2}
-        sx={{ mb: { xs: 2.4, md: 2.8 } }}
-      >
-        <Box>
-          <Typography
-            sx={{
-              color: "#18253A",
-              fontSize: { xs: "1.95rem", md: "2.1rem" },
-              fontWeight: 800,
-              lineHeight: 1.05,
-              letterSpacing: "-0.04em",
-            }}
-          >
-            Leads
-          </Typography>
-          <Typography
-            sx={{
-              mt: 0.45,
-              color: "#6F7D8F",
-              fontSize: "0.92rem",
-              lineHeight: 1.6,
-            }}
-          >
-            Manage and track your potential solar installations.
-          </Typography>
-        </Box>
+  function updateManualLead(field, value) {
+    setManualLeadForm((current) => ({ ...current, [field]: value }));
+  }
 
-        <Stack direction="row" spacing={1.05} sx={{ flexWrap: "wrap" }}>
-          <Button
-            variant="outlined"
+  function closeManualLeadDialog() {
+    if (isCreatingLead) return;
+    setIsManualLeadOpen(false);
+    setManualLeadError("");
+  }
+
+  function validateManualLead() {
+    const requiredFields = [
+      ["fullName", "Customer name"],
+      ["phoneNumber", "Phone number"],
+      ["street", "Street address"],
+      ["city", "City"],
+      ["state", "State"],
+      ["pincode", "Pincode"],
+    ];
+    const missing = requiredFields
+      .filter(([field]) => !String(manualLeadForm[field] || "").trim())
+      .map(([, label]) => label);
+
+    if (manualLeadForm.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(manualLeadForm.email.trim())) {
+      missing.push("Valid email");
+    }
+
+    return missing;
+  }
+
+  function buildManualLeadPayload() {
+    return {
+      contact: {
+        fullName: manualLeadForm.fullName.trim(),
+        phoneNumber: manualLeadForm.phoneNumber.trim(),
+        email: manualLeadForm.email.trim() || null,
+      },
+      installationAddress: {
+        street: manualLeadForm.street.trim(),
+        landmark: manualLeadForm.landmark.trim() || null,
+        city: manualLeadForm.city.trim(),
+        state: manualLeadForm.state.trim(),
+        pincode: manualLeadForm.pincode.trim(),
+      },
+      inspection: {
+        preferredDate: manualLeadForm.preferredDate || null,
+        preferredTimeSlot: manualLeadForm.preferredTimeSlot || null,
+      },
+      property: {
+        type: manualLeadForm.propertyType,
+        roofType: manualLeadForm.roofType,
+        ownership: manualLeadForm.ownership,
+        distributionCompany: manualLeadForm.distributionCompany.trim() || null,
+        connectionType: manualLeadForm.connectionType || null,
+        consumerNumber: manualLeadForm.consumerNumber.trim() || null,
+        sanctionedLoadKw: manualLeadForm.sanctionedLoadKw === "" ? null : Number(manualLeadForm.sanctionedLoadKw),
+      },
+      roof: {
+        sizeRange: manualLeadForm.roofSizeRange,
+        shadow: manualLeadForm.shadow,
+        condition: manualLeadForm.condition,
+      },
+      notes: manualLeadForm.notes.trim() || null,
+      specialInstructions: manualLeadForm.specialInstructions.trim() || null,
+    };
+  }
+
+  async function createManualLead() {
+    const missing = validateManualLead();
+
+    if (missing.length) {
+      setManualLeadError(`Please complete: ${missing.join(", ")}.`);
+      return;
+    }
+
+    setIsCreatingLead(true);
+    setManualLeadError("");
+
+    try {
+      await leadsApi.createLead(buildManualLeadPayload());
+      setManualLeadForm(emptyManualLeadForm);
+      setIsManualLeadOpen(false);
+      await loadLeads();
+    } catch (apiError) {
+      setManualLeadError(apiError?.response?.data?.message || "Could not create manual lead.");
+    } finally {
+      setIsCreatingLead(false);
+    }
+  }
+
+  return (
+    <VendorPageShell>
+      <VendorPageHeader
+        title="Leads"
+        subtitle="Manage and track your potential solar installations."
+        actions={
+          <>
+          <VendorSecondaryButton
             startIcon={<FileDownloadOutlinedIcon />}
             onClick={exportCsv}
             disabled={isLoading}
-            sx={{
-              minHeight: 38,
-              px: 1.65,
-              borderRadius: "999px",
-              borderColor: "rgba(208,216,226,0.95)",
-              color: "#223146",
-              fontSize: "0.75rem",
-              fontWeight: 700,
-              textTransform: "none",
-            }}
+            sx={{ borderRadius: "999px" }}
           >
             Export CSV
+          </VendorSecondaryButton>
+          <VendorPrimaryButton
+            startIcon={<AddRoundedIcon />}
+            onClick={() => setIsManualLeadOpen(true)}
+            disabled={isLoading || isCreatingLead}
+            sx={{ borderRadius: "999px" }}
+          >
+            Manual Lead
+          </VendorPrimaryButton>
+          </>
+        }
+      />
+
+      <Dialog
+        open={isManualLeadOpen}
+        onClose={closeManualLeadDialog}
+        fullWidth
+        maxWidth="md"
+        PaperProps={{
+          sx: {
+            borderRadius: "1.35rem",
+            border: "1px solid rgba(225,232,241,0.96)",
+            boxShadow: "0 22px 48px rgba(16,29,51,0.16)",
+          },
+        }}
+      >
+        <DialogTitle sx={{ color: "#18253A", fontSize: "1.35rem", fontWeight: 800 }}>
+          Create Manual Lead
+        </DialogTitle>
+        <DialogContent dividers sx={{ borderColor: "rgba(229,234,241,0.95)" }}>
+          <Stack spacing={2.2} sx={{ pt: 0.5 }}>
+            {manualLeadError ? (
+              <Alert severity="error" sx={{ borderRadius: "0.9rem" }}>
+                {manualLeadError}
+              </Alert>
+            ) : null}
+
+            <ManualLeadSection title="Customer Details">
+              <ManualLeadField label="Customer Name" value={manualLeadForm.fullName} onChange={(value) => updateManualLead("fullName", value)} required />
+              <ManualLeadField label="Phone Number" value={manualLeadForm.phoneNumber} onChange={(value) => updateManualLead("phoneNumber", value)} required />
+              <ManualLeadField label="Email" value={manualLeadForm.email} onChange={(value) => updateManualLead("email", value)} type="email" />
+            </ManualLeadSection>
+
+            <ManualLeadSection title="Installation Address">
+              <ManualLeadField label="Street Address" value={manualLeadForm.street} onChange={(value) => updateManualLead("street", value)} required wide />
+              <ManualLeadField label="Landmark" value={manualLeadForm.landmark} onChange={(value) => updateManualLead("landmark", value)} />
+              <ManualLeadField label="City" value={manualLeadForm.city} onChange={(value) => updateManualLead("city", value)} required />
+              <ManualLeadField label="State" value={manualLeadForm.state} onChange={(value) => updateManualLead("state", value)} required />
+              <ManualLeadField label="Pincode" value={manualLeadForm.pincode} onChange={(value) => updateManualLead("pincode", value)} required />
+            </ManualLeadSection>
+
+            <ManualLeadSection title="Property & Roof">
+              <ManualLeadSelect label="Property Type" value={manualLeadForm.propertyType} onChange={(value) => updateManualLead("propertyType", value)} options={[["independent_house", "Independent House"], ["apartment", "Apartment"], ["commercial", "Commercial"]]} />
+              <ManualLeadSelect label="Roof Type" value={manualLeadForm.roofType} onChange={(value) => updateManualLead("roofType", value)} options={[["flat", "Flat"], ["sloped", "Sloped"]]} />
+              <ManualLeadSelect label="Ownership" value={manualLeadForm.ownership} onChange={(value) => updateManualLead("ownership", value)} options={[["owned", "Owned"], ["rented", "Rented"]]} />
+              <ManualLeadSelect label="Connection Type" value={manualLeadForm.connectionType} onChange={(value) => updateManualLead("connectionType", value)} options={[["single_phase", "Single Phase"], ["three_phase", "Three Phase"]]} />
+              <ManualLeadField label="Sanctioned Load (kW)" value={manualLeadForm.sanctionedLoadKw} onChange={(value) => updateManualLead("sanctionedLoadKw", value)} type="number" />
+              <ManualLeadField label="Distribution Company" value={manualLeadForm.distributionCompany} onChange={(value) => updateManualLead("distributionCompany", value)} />
+              <ManualLeadField label="Consumer Number" value={manualLeadForm.consumerNumber} onChange={(value) => updateManualLead("consumerNumber", value)} />
+              <ManualLeadSelect label="Roof Size" value={manualLeadForm.roofSizeRange} onChange={(value) => updateManualLead("roofSizeRange", value)} options={[["under_500", "Under 500 sq ft"], ["500_1000", "500-1000 sq ft"], ["over_1000", "Over 1000 sq ft"]]} />
+              <ManualLeadSelect label="Shadow" value={manualLeadForm.shadow} onChange={(value) => updateManualLead("shadow", value)} options={[["none", "None"], ["partial", "Partial"], ["heavy", "Heavy"]]} />
+              <ManualLeadSelect label="Roof Condition" value={manualLeadForm.condition} onChange={(value) => updateManualLead("condition", value)} options={[["excellent", "Excellent"], ["average", "Average"], ["needs_repair", "Needs Repair"]]} />
+            </ManualLeadSection>
+
+            <ManualLeadSection title="Inspection & Notes">
+              <ManualLeadField label="Preferred Date" value={manualLeadForm.preferredDate} onChange={(value) => updateManualLead("preferredDate", value)} type="date" />
+              <ManualLeadSelect label="Preferred Time" value={manualLeadForm.preferredTimeSlot} onChange={(value) => updateManualLead("preferredTimeSlot", value)} options={[["", "No Preference"], ["morning", "Morning"], ["afternoon", "Afternoon"], ["evening", "Evening"]]} />
+              <ManualLeadField label="Notes" value={manualLeadForm.notes} onChange={(value) => updateManualLead("notes", value)} wide multiline />
+              <ManualLeadField label="Special Instructions" value={manualLeadForm.specialInstructions} onChange={(value) => updateManualLead("specialInstructions", value)} wide multiline />
+            </ManualLeadSection>
+          </Stack>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, py: 2 }}>
+          <Button onClick={closeManualLeadDialog} disabled={isCreatingLead} sx={{ textTransform: "none", fontWeight: 700 }}>
+            Cancel
           </Button>
           <Button
             variant="contained"
-            startIcon={<RefreshRoundedIcon />}
-            onClick={() => loadLeads()}
-            disabled={isLoading}
-            sx={{
-              minHeight: 38,
-              px: 1.7,
-              borderRadius: "999px",
-              bgcolor: "#0E56C8",
-              boxShadow: "0 12px 24px rgba(14,86,200,0.16)",
-              fontSize: "0.75rem",
-              fontWeight: 700,
-              textTransform: "none",
-            }}
+            onClick={createManualLead}
+            disabled={isCreatingLead}
+            sx={{ minHeight: 38, borderRadius: "999px", px: 2.3, bgcolor: "#0E56C8", textTransform: "none", fontWeight: 800 }}
           >
-            Refresh Leads
+            {isCreatingLead ? "Creating..." : "Create Lead"}
           </Button>
-        </Stack>
-      </Stack>
+        </DialogActions>
+      </Dialog>
 
-      <Box
-        sx={{
-          p: { xs: 1.4, md: 1.7 },
-          borderRadius: "1.35rem",
-          bgcolor: "#F4F6FA",
-          border: "1px solid rgba(229,234,241,0.95)",
-          mb: { xs: 2.2, md: 2.5 },
-        }}
-      >
+      <VendorFilterPanel>
         <Stack
           direction={{ xs: "column", lg: "row" }}
           justifyContent="space-between"
@@ -483,17 +720,9 @@ export default function VendorLeadsPage() {
             </TextField>
           </Stack>
         </Stack>
-      </Box>
+      </VendorFilterPanel>
 
-      <Box
-        sx={{
-          borderRadius: "1.7rem",
-          bgcolor: "#FFFFFF",
-          border: "1px solid rgba(225,232,241,0.96)",
-          boxShadow: "0 16px 30px rgba(16,29,51,0.04)",
-          overflow: "hidden",
-        }}
-      >
+      <VendorPanel sx={{ borderRadius: "1.7rem", overflow: "hidden" }}>
         <Box sx={{ display: { xs: "none", lg: "block" }, px: 2.4, pt: 1.7, pb: 1.1 }}>
           <Box
             sx={{
@@ -521,26 +750,18 @@ export default function VendorLeadsPage() {
 
         <Stack spacing={0} sx={{ px: { xs: 1.2, md: 2.4 }, pb: 1.25 }}>
           {isLoading ? (
-            <Box sx={{ py: 5, display: "grid", placeItems: "center" }}>
-              <CircularProgress size={28} />
-            </Box>
+            <VendorLoadingState minHeight={140} />
           ) : null}
 
           {error ? (
-            <Alert severity="error" sx={{ my: 2, borderRadius: "0.9rem" }}>
-              {error}
-            </Alert>
+            <VendorErrorState sx={{ my: 2 }}>{error}</VendorErrorState>
           ) : null}
 
           {!isLoading && !error && filteredRows.length === 0 ? (
-            <Box sx={{ py: 5, textAlign: "center" }}>
-              <Typography sx={{ color: "#223146", fontSize: "0.95rem", fontWeight: 700 }}>
-                No matching leads
-              </Typography>
-              <Typography sx={{ mt: 0.45, color: "#738094", fontSize: "0.78rem" }}>
-                Adjust the filters or refresh to check for new customer booking requests.
-              </Typography>
-            </Box>
+            <VendorEmptyState
+              title="No matching leads"
+              subtitle="Adjust the filters or create a manual lead for an offline customer enquiry."
+            />
           ) : null}
 
           {visibleRows.map((lead, index) => (
@@ -581,21 +802,9 @@ export default function VendorLeadsPage() {
                 <Typography sx={{ color: "#223146", fontSize: "0.78rem", fontWeight: 600 }}>
                   {lead.budget}
                 </Typography>
-                <Box
-                  sx={{
-                    justifySelf: "start",
-                    px: 1,
-                    py: 0.38,
-                    borderRadius: "999px",
-                    bgcolor: lead.statusBg,
-                    color: lead.statusTone,
-                    fontSize: "0.64rem",
-                    fontWeight: 800,
-                    lineHeight: 1,
-                  }}
-                >
+                <VendorStatusPill tone={lead.statusTone} bg={lead.statusBg}>
                   {lead.status}
-                </Box>
+                </VendorStatusPill>
                 <Typography sx={{ color: "#5E6A7D", fontSize: "0.78rem", lineHeight: 1.35 }}>
                   {lead.timeReceived}
                 </Typography>
@@ -797,7 +1006,7 @@ export default function VendorLeadsPage() {
             </Button>
           </Stack>
         </Stack>
-      </Box>
-    </Box>
+      </VendorPanel>
+    </VendorPageShell>
   );
 }
