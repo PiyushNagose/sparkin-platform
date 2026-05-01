@@ -58,8 +58,8 @@
 
 .footerContainer {
   width: 100%;
-  max-width: 1360px;
-  padding-inline: 40px;
+  max-width: 1440px;
+  padding-inline: 56px;
   box-sizing: border-box;
   margin: 0 auto;
 }
@@ -155,7 +155,7 @@
 
   .footerContainer {
     max-width: 100%;
-    padding-inline: 28px;
+    padding-inline: 36px;
   }
 
   .publicContentContainer {
@@ -201,7 +201,7 @@
   }
 
   .footerContainer {
-    padding-inline: 20px;
+    padding-inline: 24px;
   }
 
   .publicContentContainer {

@@ -3,7 +3,6 @@ import {
   Badge,
   Box,
   Button,
-  Container,
   Drawer,
   IconButton,
   InputAdornment,
@@ -13,34 +12,41 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+import AddRoundedIcon from "@mui/icons-material/AddRounded";
+import AssignmentOutlinedIcon from "@mui/icons-material/AssignmentOutlined";
+import BoltOutlinedIcon from "@mui/icons-material/BoltOutlined";
+import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
+import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import DashboardRoundedIcon from "@mui/icons-material/DashboardRounded";
 import Groups2OutlinedIcon from "@mui/icons-material/Groups2Outlined";
-import RequestQuoteOutlinedIcon from "@mui/icons-material/RequestQuoteOutlined";
-import AssignmentOutlinedIcon from "@mui/icons-material/AssignmentOutlined";
-import PaymentsOutlinedIcon from "@mui/icons-material/PaymentsOutlined";
-import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
-import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
-import BoltOutlinedIcon from "@mui/icons-material/BoltOutlined";
-import SavingsOutlinedIcon from "@mui/icons-material/SavingsOutlined";
-import RedeemOutlinedIcon from "@mui/icons-material/RedeemOutlined";
-import PersonOutlineOutlinedIcon from "@mui/icons-material/PersonOutlineOutlined";
-import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
-import NotificationsNoneRoundedIcon from "@mui/icons-material/NotificationsNoneRounded";
 import HelpOutlineRoundedIcon from "@mui/icons-material/HelpOutlineRounded";
-import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import MenuRoundedIcon from "@mui/icons-material/MenuRounded";
-import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
-import { useEffect, useMemo, useState } from "react";
+import NotificationsNoneRoundedIcon from "@mui/icons-material/NotificationsNoneRounded";
+import PaymentsOutlinedIcon from "@mui/icons-material/PaymentsOutlined";
+import PersonOutlineOutlinedIcon from "@mui/icons-material/PersonOutlineOutlined";
+import RedeemOutlinedIcon from "@mui/icons-material/RedeemOutlined";
+import RequestQuoteOutlinedIcon from "@mui/icons-material/RequestQuoteOutlined";
+import SavingsOutlinedIcon from "@mui/icons-material/SavingsOutlined";
+import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
+import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { portalNavigation } from "@/shared/config/navigation";
 import logoPlaceholder from "@/shared/assets/logo-placeholder.png";
 import { AppFooter } from "@/shared/components/AppFooter";
 import { useAuth } from "@/features/auth/AuthProvider";
-import { leadsApi } from "@/features/public/api/leadsApi";
+import { leadsApi, quotesApi } from "@/features/public/api/leadsApi";
 import { projectsApi } from "@/features/public/api/projectsApi";
 import { paymentsApi } from "@/features/public/api/paymentsApi";
+import { serviceRequestsApi } from "@/features/public/api/serviceRequestsApi";
 
-const vendorNavIcons = {
+// ─── constants ────────────────────────────────────────────────────────────────
+
+const IDENTITY_ORIGIN = (
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:4001/api/v1"
+).replace(/\/api\/v1\/?$/, "");
+
+const VENDOR_NAV_ICONS = {
   Dashboard: DashboardRoundedIcon,
   Leads: Groups2OutlinedIcon,
   Quotes: RequestQuoteOutlinedIcon,
@@ -50,7 +56,7 @@ const vendorNavIcons = {
   Settings: SettingsOutlinedIcon,
 };
 
-const customerNavIcons = {
+const CUSTOMER_NAV_ICONS = {
   Dashboard: DashboardRoundedIcon,
   "My Bookings": CalendarMonthOutlinedIcon,
   "My Tenders": RequestQuoteOutlinedIcon,
@@ -61,235 +67,412 @@ const customerNavIcons = {
   Profile: PersonOutlineOutlinedIcon,
 };
 
-const vendorSearchRoutes = [
-  { terms: ["lead", "leads", "customer", "booking", "quote request"], path: "/vendor/leads" },
+const VENDOR_SEARCH_ROUTES = [
+  {
+    terms: ["lead", "leads", "customer", "booking", "quote request"],
+    path: "/vendor/leads",
+  },
   { terms: ["quote", "quotes", "proposal", "bid"], path: "/vendor/quotes" },
-  { terms: ["project", "projects", "install", "installation", "milestone"], path: "/vendor/projects" },
-  { terms: ["service", "services", "ticket", "support", "repair"], path: "/vendor/services" },
-  { terms: ["payment", "payments", "transaction", "invoice", "payout"], path: "/vendor/payments" },
-  { terms: ["setting", "settings", "notification", "logout"], path: "/vendor/settings" },
-  { terms: ["profile", "business", "company", "document"], path: "/vendor/profile" },
+  {
+    terms: ["project", "projects", "install", "installation", "milestone"],
+    path: "/vendor/projects",
+  },
+  {
+    terms: ["service", "services", "ticket", "support", "repair"],
+    path: "/vendor/services",
+  },
+  {
+    terms: ["payment", "payments", "transaction", "invoice", "payout"],
+    path: "/vendor/payments",
+  },
+  { terms: ["setting", "settings", "notification"], path: "/vendor/settings" },
+  {
+    terms: ["profile", "business", "company", "document"],
+    path: "/vendor/profile",
+  },
 ];
 
-function resolvePortalSearchPath(portal, query) {
-  const normalizedQuery = query.trim().toLowerCase();
+const CUSTOMER_SEARCH_ROUTES = [
+  {
+    terms: ["project", "projects", "install", "installation", "milestone"],
+    path: "/customer/projects",
+  },
+  {
+    terms: [
+      "service",
+      "services",
+      "ticket",
+      "support",
+      "repair",
+      "maintenance",
+    ],
+    path: "/customer/services",
+  },
+  {
+    terms: ["saving", "savings", "co2", "carbon", "energy"],
+    path: "/customer/savings",
+  },
+  {
+    terms: ["tender", "tenders", "quote", "quotes", "bid", "bidding"],
+    path: "/customer/tenders",
+  },
+  { terms: ["booking", "bookings", "request"], path: "/customer/bookings" },
+  {
+    terms: ["referral", "referrals", "refer", "earn", "reward"],
+    path: "/customer/referrals",
+  },
+  {
+    terms: ["profile", "account", "password", "photo"],
+    path: "/customer/profile",
+  },
+];
 
-  if (!normalizedQuery) {
-    return `/${portal}`;
-  }
+// ─── helpers ─────────────────────────────────────────────────────────────────
 
-  if (portal === "vendor") {
-    return vendorSearchRoutes.find((route) => route.terms.some((term) => normalizedQuery.includes(term)))?.path || "/vendor/leads";
-  }
+function resolveSearchPath(portal, query) {
+  const q = query.trim().toLowerCase();
+  if (!q) return `/${portal}`;
 
-  if (normalizedQuery.includes("project")) return "/customer/projects";
-  if (normalizedQuery.includes("service") || normalizedQuery.includes("support")) return "/customer/services";
-  if (normalizedQuery.includes("saving")) return "/customer/savings";
-  if (normalizedQuery.includes("tender") || normalizedQuery.includes("quote")) return "/customer/tenders";
-  if (normalizedQuery.includes("booking")) return "/customer/bookings";
-
-  return "/customer";
+  const routes =
+    portal === "vendor" ? VENDOR_SEARCH_ROUTES : CUSTOMER_SEARCH_ROUTES;
+  return (
+    routes.find((r) => r.terms.some((t) => q.includes(t)))?.path || `/${portal}`
+  );
 }
+
+function getAvatarSrc(user) {
+  if (!user?.avatarUrl) return null;
+  if (user.avatarUrl.startsWith("http")) return user.avatarUrl;
+  return `${IDENTITY_ORIGIN}${user.avatarUrl}`;
+}
+
+// ─── component ────────────────────────────────────────────────────────────────
 
 export function PortalLayout({ portal }) {
   const navigate = useNavigate();
   const { user } = useAuth();
+
   const [searchTerm, setSearchTerm] = useState("");
   const [notificationAnchor, setNotificationAnchor] = useState(null);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+
+  // Vendor summary for notification badge
   const [vendorSummary, setVendorSummary] = useState({
     openLeads: 0,
     activeProjects: 0,
     pendingPayments: 0,
   });
+
+  // Customer summary for notification badge
+  const [customerSummary, setCustomerSummary] = useState({
+    pendingQuotes: 0,
+    activeServiceRequests: 0,
+    activeProjects: 0,
+  });
+
   const navItems = portalNavigation[portal];
+  const navIconMap =
+    portal === "customer" ? CUSTOMER_NAV_ICONS : VENDOR_NAV_ICONS;
   const sidebarWidth = 158;
-  const navIconMap = portal === "customer" ? customerNavIcons : vendorNavIcons;
-  const portalLabel = portal === "customer" ? "" : "Vendor Portal";
+
   const profileName = user?.fullName || "Sparkin User";
   const profileRole =
-    user?.role === "vendor" ? "Solar Lead Partner" : user?.role === "admin" ? "Administrator" : "Residential User";
+    user?.role === "vendor"
+      ? "Solar Lead Partner"
+      : user?.role === "admin"
+        ? "Administrator"
+        : "Residential User";
   const profileInitial = profileName.trim().charAt(0).toUpperCase() || "S";
-  const notificationCount = portal === "vendor"
-    ? vendorSummary.openLeads + vendorSummary.activeProjects + vendorSummary.pendingPayments
-    : 0;
-  const notificationItems = useMemo(
-    () => [
-      {
-        label: `${vendorSummary.openLeads} open leads need review`,
-        caption: "Review new customer opportunities",
-        path: "/vendor/leads",
-      },
-      {
-        label: `${vendorSummary.activeProjects} active projects`,
-        caption: "Track installation milestones",
-        path: "/vendor/projects",
-      },
-      {
-        label: `${vendorSummary.pendingPayments} pending payments`,
-        caption: "Check payment schedules and invoices",
-        path: "/vendor/payments",
-      },
-    ],
-    [vendorSummary],
-  );
+  const avatarSrc = getAvatarSrc(user);
+
+  // ── notification data ──────────────────────────────────────────────────────
 
   useEffect(() => {
     if (portal !== "vendor") return undefined;
-
     let active = true;
 
     async function loadVendorSummary() {
-      const [leadsResult, projectsResult, paymentsResult] = await Promise.allSettled([
+      const [leadsRes, projectsRes, paymentsRes] = await Promise.allSettled([
         leadsApi.listLeads(),
         projectsApi.listProjects(),
         paymentsApi.listPayments(),
       ]);
-
       if (!active) return;
 
-      const leads = leadsResult.status === "fulfilled" ? leadsResult.value : [];
-      const projects = projectsResult.status === "fulfilled" ? projectsResult.value : [];
-      const payments = paymentsResult.status === "fulfilled" ? paymentsResult.value : [];
+      const leads = leadsRes.status === "fulfilled" ? leadsRes.value : [];
+      const projects =
+        projectsRes.status === "fulfilled" ? projectsRes.value : [];
+      const payments =
+        paymentsRes.status === "fulfilled" ? paymentsRes.value : [];
 
       setVendorSummary({
-        openLeads: leads.filter((lead) => !["accepted", "closed", "cancelled"].includes(lead.status)).length,
-        activeProjects: projects.filter((project) => !["completed", "cancelled"].includes(project.status)).length,
-        pendingPayments: payments.filter((payment) => payment.status === "pending").length,
+        openLeads: leads.filter(
+          (l) => !["accepted", "closed", "cancelled"].includes(l.status),
+        ).length,
+        activeProjects: projects.filter(
+          (p) => !["completed", "cancelled"].includes(p.status),
+        ).length,
+        pendingPayments: payments.filter((p) => p.status === "pending").length,
       });
     }
 
     loadVendorSummary();
-
     return () => {
       active = false;
     };
   }, [portal]);
 
+  useEffect(() => {
+    if (portal !== "customer") return undefined;
+    let active = true;
+
+    async function loadCustomerSummary() {
+      const [quotesRes, serviceRes, projectsRes] = await Promise.allSettled([
+        quotesApi.listQuotes(),
+        serviceRequestsApi.listRequests(),
+        projectsApi.listProjects(),
+      ]);
+      if (!active) return;
+
+      const quotes = quotesRes.status === "fulfilled" ? quotesRes.value : [];
+      const services =
+        serviceRes.status === "fulfilled" ? serviceRes.value : [];
+      const projects =
+        projectsRes.status === "fulfilled" ? projectsRes.value : [];
+
+      setCustomerSummary({
+        pendingQuotes: quotes.filter((q) => q.status === "submitted").length,
+        activeServiceRequests: services.filter(
+          (s) => s.status !== "resolved" && s.status !== "cancelled",
+        ).length,
+        activeProjects: projects.filter(
+          (p) => p.status !== "completed" && p.status !== "cancelled",
+        ).length,
+      });
+    }
+
+    loadCustomerSummary();
+    return () => {
+      active = false;
+    };
+  }, [portal]);
+
+  // ── notification config ────────────────────────────────────────────────────
+
+  const notificationCount =
+    portal === "vendor"
+      ? vendorSummary.openLeads +
+        vendorSummary.activeProjects +
+        vendorSummary.pendingPayments
+      : customerSummary.pendingQuotes +
+        customerSummary.activeServiceRequests +
+        customerSummary.activeProjects;
+
+  const notificationItems = useMemo(() => {
+    if (portal === "vendor") {
+      return [
+        {
+          label: `${vendorSummary.openLeads} open lead${vendorSummary.openLeads === 1 ? "" : "s"} need review`,
+          caption: "Review new customer opportunities",
+          path: "/vendor/leads",
+        },
+        {
+          label: `${vendorSummary.activeProjects} active project${vendorSummary.activeProjects === 1 ? "" : "s"}`,
+          caption: "Track installation milestones",
+          path: "/vendor/projects",
+        },
+        {
+          label: `${vendorSummary.pendingPayments} pending payment${vendorSummary.pendingPayments === 1 ? "" : "s"}`,
+          caption: "Check payment schedules and invoices",
+          path: "/vendor/payments",
+        },
+      ];
+    }
+
+    return [
+      {
+        label: `${customerSummary.pendingQuotes} new quote${customerSummary.pendingQuotes === 1 ? "" : "s"} received`,
+        caption: "Compare vendor proposals on your tenders",
+        path: "/customer/tenders",
+      },
+      {
+        label: `${customerSummary.activeProjects} active project${customerSummary.activeProjects === 1 ? "" : "s"}`,
+        caption: "Track your solar installation progress",
+        path: "/customer/projects",
+      },
+      {
+        label: `${customerSummary.activeServiceRequests} open service request${customerSummary.activeServiceRequests === 1 ? "" : "s"}`,
+        caption: "Check status of your support tickets",
+        path: "/customer/services",
+      },
+    ];
+  }, [portal, vendorSummary, customerSummary]);
+
+  // ── handlers ──────────────────────────────────────────────────────────────
+
   function handleSearchSubmit(event) {
     event.preventDefault();
     const query = searchTerm.trim();
-    const path = resolvePortalSearchPath(portal, query);
-
-    navigate(path, { state: query ? { portalSearch: query } : undefined });
+    navigate(resolveSearchPath(portal, query), {
+      state: query ? { portalSearch: query } : undefined,
+    });
   }
 
-  function openNotifications(event) {
-    setNotificationAnchor(event.currentTarget);
-  }
+  const closeMobileNav = useCallback(() => setMobileNavOpen(false), []);
 
-  function closeNotifications() {
-    setNotificationAnchor(null);
-  }
+  // ── sidebar content — defined outside render to avoid remount ─────────────
 
-  // Shared sidebar nav content used in both desktop aside and mobile Drawer
-  function SidebarContent({ onNavClick }) {
-    return (
-      <>
-        <Box sx={{ textAlign: "center", mb: 1.35 }}>
-          <Box
-            component="img"
-            src={logoPlaceholder}
-            alt="Sparkin logo"
-            sx={{ width: 72, height: 72, objectFit: "contain", mx: "auto", display: "block" }}
-          />
-          {portalLabel ? (
-            <Typography
+  const SidebarContent = useCallback(
+    function SidebarContent({ onNavClick }) {
+      return (
+        <>
+          <Box sx={{ textAlign: "center", mb: 1.35 }}>
+            <Box
+              component="img"
+              src={logoPlaceholder}
+              alt="Sparkin"
               sx={{
-                mt: 0.05,
-                color: "#7D8797",
-                fontSize: "0.54rem",
-                fontWeight: 700,
-                letterSpacing: "0.16em",
-                textTransform: "uppercase",
+                width: 72,
+                height: 72,
+                objectFit: "contain",
+                mx: "auto",
+                display: "block",
               }}
-            >
-              {portalLabel}
-            </Typography>
-          ) : null}
-        </Box>
+            />
+            {portal === "vendor" && (
+              <Typography
+                sx={{
+                  mt: 0.05,
+                  color: "#7D8797",
+                  fontSize: "0.54rem",
+                  fontWeight: 700,
+                  letterSpacing: "0.16em",
+                  textTransform: "uppercase",
+                }}
+              >
+                Vendor Portal
+              </Typography>
+            )}
+          </Box>
 
-        <Stack spacing={0.6}>
-          {navItems.map((item) => {
-            const Icon = navIconMap[item.label] || DashboardRoundedIcon;
-            return (
+          <Stack spacing={0.6}>
+            {navItems.map((item) => {
+              const Icon = navIconMap[item.label] || DashboardRoundedIcon;
+              return (
+                <Button
+                  key={item.label}
+                  component={NavLink}
+                  to={item.href}
+                  end={item.href === `/${portal}`}
+                  variant="text"
+                  color="inherit"
+                  onClick={onNavClick}
+                  sx={{
+                    justifyContent: "flex-start",
+                    gap: 0.9,
+                    minHeight: 40,
+                    px: 1.05,
+                    width: "100%",
+                    borderRadius: "0.7rem",
+                    color: "#647387",
+                    fontSize: "0.82rem",
+                    fontWeight: 600,
+                    textTransform: "none",
+                    whiteSpace: "nowrap",
+                    transition: "all 0.15s cubic-bezier(0.4,0,0.2,1)",
+                    "&:hover": { bgcolor: "#F4F7FF", color: "#0E56C8" },
+                    "&.active": {
+                      bgcolor: "#EEF4FF",
+                      color: "#0E56C8",
+                      boxShadow: "inset 0 0 0 1px rgba(14,86,200,0.12)",
+                    },
+                  }}
+                >
+                  <Icon sx={{ fontSize: "1rem" }} />
+                  {item.label}
+                </Button>
+              );
+            })}
+          </Stack>
+
+          <Box sx={{ mt: "auto", pt: 2 }}>
+            {portal === "vendor" ? (
               <Button
-                key={item.label}
                 component={NavLink}
-                to={item.href}
-                end
-                variant="text"
-                color="inherit"
+                to="/vendor/projects"
+                state={{ openCreateProject: true }}
+                variant="contained"
+                startIcon={<AddRoundedIcon />}
                 onClick={onNavClick}
                 sx={{
-                  justifyContent: "flex-start",
-                  gap: 0.9,
-                  minHeight: 40,
-                  px: 1.05,
                   width: "100%",
-                  borderRadius: "0.7rem",
-                  color: "#647387",
-                  fontSize: "0.82rem",
-                  fontWeight: 600,
+                  minHeight: 40,
+                  borderRadius: "0.8rem",
                   textTransform: "none",
-                  whiteSpace: "nowrap",
+                  fontSize: "0.78rem",
+                  fontWeight: 700,
+                  bgcolor: "#0E56C8",
+                  boxShadow: "0 6px 16px rgba(14,86,200,0.2)",
                   transition: "all 0.15s cubic-bezier(0.4,0,0.2,1)",
-                  "&:hover": { bgcolor: "#F4F7FF", color: "#0E56C8" },
-                  "&.active": {
-                    bgcolor: "#EEF4FF",
-                    color: "#0E56C8",
-                    boxShadow: "inset 0 0 0 1px rgba(14,86,200,0.12)",
+                  "&:hover": {
+                    bgcolor: "#0B49AD",
+                    boxShadow: "0 10px 22px rgba(14,86,200,0.28)",
+                    transform: "translateY(-1px)",
                   },
                 }}
               >
-                <Icon sx={{ fontSize: "1rem" }} />
-                {item.label}
+                Create Project
               </Button>
-            );
-          })}
-        </Stack>
+            ) : (
+              <Button
+                component={NavLink}
+                to="/booking"
+                variant="contained"
+                startIcon={<AddRoundedIcon />}
+                onClick={onNavClick}
+                sx={{
+                  width: "100%",
+                  minHeight: 40,
+                  borderRadius: "0.8rem",
+                  textTransform: "none",
+                  fontSize: "0.78rem",
+                  fontWeight: 700,
+                  bgcolor: "#0E56C8",
+                  boxShadow: "0 6px 16px rgba(14,86,200,0.2)",
+                  transition: "all 0.15s cubic-bezier(0.4,0,0.2,1)",
+                  "&:hover": {
+                    bgcolor: "#0B49AD",
+                    boxShadow: "0 10px 22px rgba(14,86,200,0.28)",
+                    transform: "translateY(-1px)",
+                  },
+                }}
+              >
+                New Booking
+              </Button>
+            )}
+          </Box>
+        </>
+      );
+    },
+    [navItems, navIconMap, portal],
+  );
 
-        <Box sx={{ mt: "auto", pt: 2 }}>
-          {portal === "vendor" ? (
-            <Button
-              component={NavLink}
-              to="/vendor/projects"
-              state={{ openCreateProject: true }}
-              variant="contained"
-              startIcon={<AddRoundedIcon />}
-              onClick={onNavClick}
-              sx={{
-                width: "100%",
-                minHeight: 40,
-                borderRadius: "0.8rem",
-                textTransform: "none",
-                fontSize: "0.78rem",
-                fontWeight: 700,
-                bgcolor: "#0E56C8",
-                boxShadow: "0 6px 16px rgba(14,86,200,0.2)",
-                transition: "all 0.15s cubic-bezier(0.4,0,0.2,1)",
-                "&:hover": {
-                  bgcolor: "#0B49AD",
-                  boxShadow: "0 10px 22px rgba(14,86,200,0.28)",
-                  transform: "translateY(-1px)",
-                },
-              }}
-            >
-              Create Project
-            </Button>
-          ) : null}
-        </Box>
-      </>
-    );
-  }
+  // ── render ─────────────────────────────────────────────────────────────────
 
   return (
-    <Box sx={{ minHeight: "100vh", bgcolor: "#F0F3F8", display: "flex", flexDirection: "column" }}>
-      {/* Mobile Drawer */}
+    <Box
+      sx={{
+        minHeight: "100vh",
+        bgcolor: "#F0F3F8",
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
+      {/* Mobile drawer */}
       <Drawer
         anchor="left"
         open={mobileNavOpen}
-        onClose={() => setMobileNavOpen(false)}
+        onClose={closeMobileNav}
         sx={{
           display: { xs: "block", lg: "none" },
           "& .MuiDrawer-paper": {
@@ -307,17 +490,27 @@ export function PortalLayout({ portal }) {
       >
         <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 0.5 }}>
           <IconButton
-            onClick={() => setMobileNavOpen(false)}
+            onClick={closeMobileNav}
             size="small"
             sx={{ color: "#647387" }}
           >
             <CloseRoundedIcon sx={{ fontSize: "1.1rem" }} />
           </IconButton>
         </Box>
-        <SidebarContent onNavClick={() => setMobileNavOpen(false)} />
+        <SidebarContent onNavClick={closeMobileNav} />
       </Drawer>
 
-      <Box sx={{ flex: 1, minHeight: 0, display: "flex", gap: 1.5, p: { xs: 0, lg: 1.5 }, pb: 0, alignItems: "stretch" }}>
+      <Box
+        sx={{
+          flex: 1,
+          minHeight: 0,
+          display: "flex",
+          gap: 1.5,
+          p: { xs: 0, lg: 1.5 },
+          pb: 0,
+          alignItems: "stretch",
+        }}
+      >
         {/* Desktop sidebar */}
         <Box
           component="aside"
@@ -349,6 +542,7 @@ export function PortalLayout({ portal }) {
             flexDirection: "column",
           }}
         >
+          {/* Topbar */}
           <Box
             component="header"
             sx={{
@@ -381,13 +575,23 @@ export function PortalLayout({ portal }) {
             >
               <MenuRoundedIcon sx={{ fontSize: "1.3rem" }} />
             </IconButton>
-            <Box component="form" onSubmit={handleSearchSubmit} sx={{ flex: 1, maxWidth: 610 }}>
+
+            {/* Search */}
+            <Box
+              component="form"
+              onSubmit={handleSearchSubmit}
+              sx={{ flex: 1, maxWidth: 610 }}
+            >
               <TextField
                 fullWidth
                 size="small"
                 value={searchTerm}
-                onChange={(event) => setSearchTerm(event.target.value)}
-                placeholder={portal === "vendor" ? "Search leads, projects..." : "Search bookings, projects..."}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder={
+                  portal === "vendor"
+                    ? "Search leads, projects, payments…"
+                    : "Search bookings, projects, savings…"
+                }
                 sx={{
                   "& .MuiOutlinedInput-root": {
                     height: 40,
@@ -408,15 +612,17 @@ export function PortalLayout({ portal }) {
               />
             </Box>
 
+            {/* Right actions */}
             <Stack
               direction="row"
               spacing={1.15}
               alignItems="center"
               sx={{ ml: "auto" }}
             >
+              {/* Notifications */}
               <IconButton
-                onClick={openNotifications}
-                aria-label="Open notifications"
+                onClick={(e) => setNotificationAnchor(e.currentTarget)}
+                aria-label="Notifications"
                 sx={{ color: "#6D7A8D" }}
               >
                 <Badge
@@ -428,10 +634,11 @@ export function PortalLayout({ portal }) {
                   <NotificationsNoneRoundedIcon sx={{ fontSize: "1.05rem" }} />
                 </Badge>
               </IconButton>
+
               <Menu
                 anchorEl={notificationAnchor}
                 open={Boolean(notificationAnchor)}
-                onClose={closeNotifications}
+                onClose={() => setNotificationAnchor(null)}
                 PaperProps={{
                   sx: {
                     mt: 1,
@@ -443,65 +650,110 @@ export function PortalLayout({ portal }) {
                 }}
               >
                 <Box sx={{ px: 1.5, py: 1.1 }}>
-                  <Typography sx={{ color: "#18253A", fontSize: "0.86rem", fontWeight: 800 }}>
+                  <Typography
+                    sx={{
+                      color: "#18253A",
+                      fontSize: "0.86rem",
+                      fontWeight: 800,
+                    }}
+                  >
                     Notifications
                   </Typography>
-                  <Typography sx={{ mt: 0.2, color: "#7A8799", fontSize: "0.7rem" }}>
-                    Live vendor activity summary
+                  <Typography
+                    sx={{ mt: 0.2, color: "#7A8799", fontSize: "0.7rem" }}
+                  >
+                    {portal === "vendor"
+                      ? "Live vendor activity summary"
+                      : "Your account activity"}
                   </Typography>
                 </Box>
-                {portal === "vendor" ? (
-                  notificationItems.map((item) => (
-                    <MenuItem
-                      key={item.path}
-                      component={NavLink}
-                      to={item.path}
-                      onClick={closeNotifications}
-                      sx={{ alignItems: "flex-start", py: 1.05, whiteSpace: "normal" }}
-                    >
-                      <Box>
-                        <Typography sx={{ color: "#223146", fontSize: "0.78rem", fontWeight: 800 }}>
-                          {item.label}
-                        </Typography>
-                        <Typography sx={{ mt: 0.15, color: "#7A8799", fontSize: "0.68rem" }}>
-                          {item.caption}
-                        </Typography>
-                      </Box>
-                    </MenuItem>
-                  ))
-                ) : (
-                  <MenuItem onClick={closeNotifications}>
+
+                {notificationItems.every((item) => {
+                  const count = parseInt(item.label.split(" ")[0], 10);
+                  return count === 0;
+                }) ? (
+                  <MenuItem onClick={() => setNotificationAnchor(null)}>
                     <Typography sx={{ color: "#7A8799", fontSize: "0.76rem" }}>
-                      No notifications right now.
+                      No new notifications.
                     </Typography>
                   </MenuItem>
+                ) : (
+                  notificationItems
+                    .filter(
+                      (item) => parseInt(item.label.split(" ")[0], 10) > 0,
+                    )
+                    .map((item) => (
+                      <MenuItem
+                        key={item.path}
+                        component={NavLink}
+                        to={item.path}
+                        onClick={() => setNotificationAnchor(null)}
+                        sx={{
+                          alignItems: "flex-start",
+                          py: 1.05,
+                          whiteSpace: "normal",
+                        }}
+                      >
+                        <Box>
+                          <Typography
+                            sx={{
+                              color: "#223146",
+                              fontSize: "0.78rem",
+                              fontWeight: 800,
+                            }}
+                          >
+                            {item.label}
+                          </Typography>
+                          <Typography
+                            sx={{
+                              mt: 0.15,
+                              color: "#7A8799",
+                              fontSize: "0.68rem",
+                            }}
+                          >
+                            {item.caption}
+                          </Typography>
+                        </Box>
+                      </MenuItem>
+                    ))
                 )}
               </Menu>
+
+              {/* Support */}
               <Stack
                 component={NavLink}
-                to={portal === "vendor" ? "/vendor/services" : "/customer/services"}
+                to={
+                  portal === "vendor" ? "/vendor/services" : "/service-support"
+                }
                 direction="row"
                 spacing={0.5}
                 alignItems="center"
-                sx={{ color: "#6D7A8D" }}
-                style={{ textDecoration: "none" }}
+                sx={{ color: "#6D7A8D", textDecoration: "none" }}
               >
                 <HelpOutlineRoundedIcon sx={{ fontSize: "0.95rem" }} />
-                <Typography sx={{ fontSize: "0.77rem", fontWeight: 600 }}>
+                <Typography
+                  sx={{
+                    fontSize: "0.77rem",
+                    fontWeight: 600,
+                    display: { xs: "none", sm: "block" },
+                  }}
+                >
                   Support
                 </Typography>
               </Stack>
+
+              {/* Profile */}
               <Stack
                 direction="row"
                 spacing={1}
                 alignItems="center"
-                sx={{ pl: 0.4 }}
+                sx={{ pl: 0.4, textDecoration: "none" }}
                 component={NavLink}
                 to={`/${portal}/profile`}
                 color="inherit"
-                style={{ textDecoration: "none" }}
               >
                 <Avatar
+                  src={avatarSrc || undefined}
                   sx={{
                     width: 34,
                     height: 34,
@@ -509,7 +761,7 @@ export function PortalLayout({ portal }) {
                     bgcolor: "#132C58",
                   }}
                 >
-                  {profileInitial}
+                  {!avatarSrc ? profileInitial : undefined}
                 </Avatar>
                 <Box sx={{ display: { xs: "none", md: "block" } }}>
                   <Typography
@@ -539,15 +791,12 @@ export function PortalLayout({ portal }) {
             </Stack>
           </Box>
 
-          <Container
-            maxWidth={false}
+          {/* Page content */}
+          <Box
             sx={{
               width: "100%",
-              maxWidth: "none",
               py: { xs: 3.8, md: 4.6 },
               px: { xs: 2.2, md: 3.6, lg: 4.2 },
-              ml: 0,
-              mr: "auto",
               flex: 1,
               bgcolor: "#FFFFFF",
               borderLeft: { lg: "1px solid rgba(220,228,238,0.92)" },
@@ -556,29 +805,8 @@ export function PortalLayout({ portal }) {
               borderRadius: { lg: "0 0 1.35rem 1.35rem" },
             }}
           >
-            <Box
-              sx={{
-                width: "100%",
-                "& > .MuiBox-root, & > .MuiStack-root": {
-                  "& > .MuiStack-root:first-of-type": {
-                    mb: { xs: 2.8, md: 3.4 },
-                  },
-                  "& > .MuiBox-root + .MuiBox-root, & > .MuiBox-root + .MuiStack-root, & > .MuiStack-root + .MuiBox-root, & > .MuiStack-root + .MuiStack-root":
-                    {
-                      mt: { xs: 2.3, md: 3 },
-                    },
-                  "& > .MuiTypography-root + .MuiTypography-root": {
-                    mt: 0.75,
-                  },
-                  "& .MuiTypography-body1, & .MuiTypography-body2": {
-                    lineHeight: 1.72,
-                  },
-                },
-              }}
-            >
-              <Outlet />
-            </Box>
-          </Container>
+            <Outlet />
+          </Box>
         </Box>
       </Box>
 

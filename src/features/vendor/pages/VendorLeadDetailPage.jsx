@@ -1,4 +1,11 @@
-import { Alert, Box, Button, CircularProgress, Stack, Typography } from "@mui/material";
+import {
+  Alert,
+  Box,
+  Button,
+  CircularProgress,
+  Stack,
+  Typography,
+} from "@mui/material";
 import PlaceOutlinedIcon from "@mui/icons-material/PlaceOutlined";
 import AccessTimeRoundedIcon from "@mui/icons-material/AccessTimeRounded";
 import PhoneOutlinedIcon from "@mui/icons-material/PhoneOutlined";
@@ -60,10 +67,18 @@ function getBudgetEstimate(lead) {
 }
 
 function getMapUrl(address) {
-  const query = [address?.street, address?.landmark, address?.city, address?.state, address?.pincode]
+  const query = [
+    address?.street,
+    address?.landmark,
+    address?.city,
+    address?.state,
+    address?.pincode,
+  ]
     .filter(Boolean)
     .join(", ");
-  return query ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}` : "";
+  return query
+    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`
+    : "";
 }
 
 function getInitials(name) {
@@ -82,10 +97,14 @@ function formatTimeReceived(value) {
     return "Recently";
   }
 
-  const diffHours = Math.max(0, Math.floor((Date.now() - createdAt.getTime()) / (1000 * 60 * 60)));
+  const diffHours = Math.max(
+    0,
+    Math.floor((Date.now() - createdAt.getTime()) / (1000 * 60 * 60)),
+  );
 
   if (diffHours < 1) return "Just now";
-  if (diffHours < 24) return `${diffHours} hour${diffHours === 1 ? "" : "s"} ago`;
+  if (diffHours < 24)
+    return `${diffHours} hour${diffHours === 1 ? "" : "s"} ago`;
 
   const diffDays = Math.floor(diffHours / 24);
   return `${diffDays} day${diffDays === 1 ? "" : "s"} ago`;
@@ -114,13 +133,19 @@ export default function VendorLeadDetailPage() {
       setError("");
 
       try {
-        const [result, quote] = await Promise.all([leadsApi.getLead(leadId), quotesApi.getMyQuoteForLead(leadId)]);
+        const [result, quote] = await Promise.all([
+          leadsApi.getLead(leadId),
+          quotesApi.getMyQuoteForLead(leadId),
+        ]);
         if (active) {
           setLead(result);
           setExistingQuote(quote);
         }
       } catch (apiError) {
-        if (active) setError(apiError?.response?.data?.message || "Could not load lead details.");
+        if (active)
+          setError(
+            apiError?.response?.data?.message || "Could not load lead details.",
+          );
       } finally {
         if (active) setIsLoading(false);
       }
@@ -140,14 +165,18 @@ export default function VendorLeadDetailPage() {
       {
         icon: BoltRoundedIcon,
         label: "Sanctioned Load",
-        value: lead.property?.sanctionedLoadKw ? `${lead.property.sanctionedLoadKw} kW` : "Assessment pending",
+        value: lead.property?.sanctionedLoadKw
+          ? `${lead.property.sanctionedLoadKw} kW`
+          : "Assessment pending",
         tone: "#2F73FF",
         bg: "#EEF4FF",
       },
       {
         icon: CurrencyRupeeRoundedIcon,
         label: "Budget Range",
-        value: existingQuote?.pricing?.totalPrice ? formatPrice(existingQuote.pricing.totalPrice) : getBudgetEstimate(lead),
+        value: existingQuote?.pricing?.totalPrice
+          ? formatPrice(existingQuote.pricing.totalPrice)
+          : getBudgetEstimate(lead),
         tone: "#239654",
         bg: "#EAF7EF",
       },
@@ -175,9 +204,14 @@ export default function VendorLeadDetailPage() {
       {
         icon: CalendarMonthOutlinedIcon,
         label: "Inspection Slot",
-        value: [lead.inspection?.preferredDate, labels[lead.inspection?.preferredTimeSlot] || lead.inspection?.preferredTimeSlot]
-          .filter(Boolean)
-          .join(", ") || "Flexible",
+        value:
+          [
+            lead.inspection?.preferredDate,
+            labels[lead.inspection?.preferredTimeSlot] ||
+              lead.inspection?.preferredTimeSlot,
+          ]
+            .filter(Boolean)
+            .join(", ") || "Flexible",
         tone: "#2F73FF",
         bg: "#EEF4FF",
       },
@@ -188,25 +222,45 @@ export default function VendorLeadDetailPage() {
     if (!lead) return verificationRows;
 
     return [
-      { label: "Ownership Status", value: labels[lead.property?.ownership] || "Pending", tone: "#2A9656", bg: "#E8F7EC" },
+      {
+        label: "Ownership Status",
+        value: labels[lead.property?.ownership] || "Pending",
+        tone: "#2A9656",
+        bg: "#E8F7EC",
+      },
       { label: "Phone Verified", value: "", iconOnly: true },
-      { label: "Location Accuracy", value: lead.installationAddress?.pincode ? "High" : "Pending" },
-      { label: "Roof Condition", value: labels[lead.roof?.condition] || "Pending" },
-      { label: "Connection Type", value: labels[lead.property?.connectionType] || "Pending" },
+      {
+        label: "Location Accuracy",
+        value: lead.installationAddress?.pincode ? "High" : "Pending",
+      },
+      {
+        label: "Roof Condition",
+        value: labels[lead.roof?.condition] || "Pending",
+      },
+      {
+        label: "Connection Type",
+        value: labels[lead.property?.connectionType] || "Pending",
+      },
     ];
   }, [lead]);
 
   async function handleSaveForLater() {
+    const targetLeadId = lead?.id || lead?._id || leadId;
     setIsSaving(true);
     setError("");
     setSuccess("");
 
     try {
-      const updatedLead = await leadsApi.updateLeadStatus(resolvedLeadId, { status: "reviewing" });
+      const updatedLead = await leadsApi.updateLeadStatus(targetLeadId, {
+        status: "reviewing",
+      });
       setLead(updatedLead);
       setSuccess("Lead saved for review.");
     } catch (apiError) {
-      setError(apiError?.response?.data?.message || "Could not save this lead for later.");
+      setError(
+        apiError?.response?.data?.message ||
+          "Could not save this lead for later.",
+      );
     } finally {
       setIsSaving(false);
     }
@@ -229,7 +283,12 @@ export default function VendorLeadDetailPage() {
   }
 
   const customerName = lead.contact?.fullName || "Customer";
-  const location = [lead.installationAddress?.city, lead.installationAddress?.state].filter(Boolean).join(", ");
+  const location = [
+    lead.installationAddress?.city,
+    lead.installationAddress?.state,
+  ]
+    .filter(Boolean)
+    .join(", ");
   const initials = getInitials(customerName) || "CU";
   const resolvedLeadId = lead.id || lead._id || leadId;
   const mapUrl = getMapUrl(lead.installationAddress);
@@ -303,15 +362,24 @@ export default function VendorLeadDetailPage() {
                 </Box>
               </Stack>
 
-              <Stack direction="row" spacing={1.6} alignItems="center" sx={{ mt: 0.5, flexWrap: "wrap" }}>
+              <Stack
+                direction="row"
+                spacing={1.6}
+                alignItems="center"
+                sx={{ mt: 0.5, flexWrap: "wrap" }}
+              >
                 <Stack direction="row" spacing={0.45} alignItems="center">
-                  <PlaceOutlinedIcon sx={{ color: "#7D8797", fontSize: "0.95rem" }} />
+                  <PlaceOutlinedIcon
+                    sx={{ color: "#7D8797", fontSize: "0.95rem" }}
+                  />
                   <Typography sx={{ color: "#5E6A7D", fontSize: "0.88rem" }}>
                     {location || "Location pending"}
                   </Typography>
                 </Stack>
                 <Stack direction="row" spacing={0.45} alignItems="center">
-                  <AccessTimeRoundedIcon sx={{ color: "#7D8797", fontSize: "0.95rem" }} />
+                  <AccessTimeRoundedIcon
+                    sx={{ color: "#7D8797", fontSize: "0.95rem" }}
+                  />
                   <Typography sx={{ color: "#5E6A7D", fontSize: "0.88rem" }}>
                     {formatTimeReceived(lead.createdAt)}
                   </Typography>
@@ -322,14 +390,30 @@ export default function VendorLeadDetailPage() {
 
           <Stack direction="row" spacing={0.9} flexWrap="wrap">
             {[
-              { icon: PhoneOutlinedIcon, component: "a", href: `tel:${lead.contact?.phoneNumber || ""}` },
-              { icon: MailOutlineRoundedIcon, component: "a", href: lead.contact?.email ? `mailto:${lead.contact.email}` : undefined },
+              {
+                icon: PhoneOutlinedIcon,
+                component: "a",
+                href: `tel:${lead.contact?.phoneNumber || ""}`,
+              },
+              {
+                icon: MailOutlineRoundedIcon,
+                component: "a",
+                href: lead.contact?.email
+                  ? `mailto:${lead.contact.email}`
+                  : undefined,
+              },
               {
                 icon: ShareOutlinedIcon,
                 onClick: () => {
                   const text = `${customerName} - ${location || "Lead"} - ${window.location.href}`;
                   if (navigator.share) {
-                    navigator.share({ title: "Sparkin lead", text, url: window.location.href }).catch(() => {});
+                    navigator
+                      .share({
+                        title: "Sparkin lead",
+                        text,
+                        url: window.location.href,
+                      })
+                      .catch(() => {});
                   } else {
                     navigator.clipboard?.writeText(text);
                     setSuccess("Lead link copied.");
@@ -494,7 +578,9 @@ export default function VendorLeadDetailPage() {
                   </Typography>
 
                   {row.iconOnly ? (
-                    <CheckCircleRoundedIcon sx={{ color: "#239654", fontSize: "1rem" }} />
+                    <CheckCircleRoundedIcon
+                      sx={{ color: "#239654", fontSize: "1rem" }}
+                    />
                   ) : row.tone ? (
                     <Box
                       sx={{
@@ -512,7 +598,13 @@ export default function VendorLeadDetailPage() {
                       {row.value}
                     </Box>
                   ) : (
-                    <Typography sx={{ color: "#18253A", fontSize: "0.8rem", fontWeight: 700 }}>
+                    <Typography
+                      sx={{
+                        color: "#18253A",
+                        fontSize: "0.8rem",
+                        fontWeight: 700,
+                      }}
+                    >
                       {row.value}
                     </Typography>
                   )}
@@ -556,7 +648,9 @@ export default function VendorLeadDetailPage() {
               alignItems="center"
               sx={{ px: 1.2, py: 0.9 }}
             >
-              <Typography sx={{ color: "#5E6A7D", fontSize: "0.76rem", fontWeight: 500 }}>
+              <Typography
+                sx={{ color: "#5E6A7D", fontSize: "0.76rem", fontWeight: 500 }}
+              >
                 Location Preview
               </Typography>
               <Button
@@ -613,7 +707,9 @@ export default function VendorLeadDetailPage() {
             maxWidth: 560,
           }}
         >
-          {lead.notes || lead.specialInstructions || "No special customer notes were added for this request."}
+          {lead.notes ||
+            lead.specialInstructions ||
+            "No special customer notes were added for this request."}
         </Typography>
         <Typography
           sx={{
@@ -657,9 +753,18 @@ export default function VendorLeadDetailPage() {
             >
               Estimated Value
             </Typography>
-            <Stack direction="row" spacing={0.6} alignItems="baseline" sx={{ mt: 0.35 }}>
-              <Typography sx={{ color: "#118A44", fontSize: "1.8rem", fontWeight: 800 }}>
-                {existingQuote?.pricing?.totalPrice ? formatPrice(existingQuote.pricing.totalPrice) : getBudgetEstimate(lead)}
+            <Stack
+              direction="row"
+              spacing={0.6}
+              alignItems="baseline"
+              sx={{ mt: 0.35 }}
+            >
+              <Typography
+                sx={{ color: "#118A44", fontSize: "1.8rem", fontWeight: 800 }}
+              >
+                {existingQuote?.pricing?.totalPrice
+                  ? formatPrice(existingQuote.pricing.totalPrice)
+                  : getBudgetEstimate(lead)}
               </Typography>
               <Typography sx={{ color: "#5E6A7D", fontSize: "0.82rem" }}>
                 Quote Value
