@@ -7,7 +7,7 @@ import { authRoutes } from "@/features/auth/routes";
 import { customerRoutes } from "@/features/customer/routes";
 import { publicRoutes } from "@/features/public/routes";
 import { vendorRoutes } from "@/features/vendor/routes";
-import { VendorProfileCompletionGate } from "@/features/vendor/VendorProfileCompletionGate";
+import VendorOnboardingPage from "@/features/vendor/pages/VendorOnboardingPage";
 
 const RootOutlet = () => <Outlet />;
 
@@ -40,13 +40,12 @@ export const appRouter = createBrowserRouter([
         element: <RequireAuth allowedRoles={["vendor", "admin"]} />,
         children: [
           {
-            element: <VendorProfileCompletionGate />,
-            children: [
-              {
-                element: <PortalLayout portal="vendor" />,
-                children: vendorRoutes,
-              },
-            ],
+            path: "onboarding",
+            element: <VendorOnboardingPage />,
+          },
+          {
+            element: <PortalLayout portal="vendor" />,
+            children: vendorRoutes,
           },
         ],
       },

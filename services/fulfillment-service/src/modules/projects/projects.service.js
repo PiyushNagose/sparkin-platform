@@ -135,6 +135,7 @@ export const projectsService = {
     const project = await projectsRepository.createProject({
       leadId: lead.id,
       quoteId: quote.id,
+      source: "accepted_quote",
       customerId: lead.customerId,
       vendorId: quote.vendorId,
       vendorEmail: quote.vendorEmail ?? null,
@@ -149,6 +150,42 @@ export const projectsService = {
       pricing: quote.pricing,
       timeline: {
         installationWindow: quote.timeline.installationWindow,
+        siteAuditDueAt: getSiteAuditDueAt(),
+      },
+      milestones: initialMilestones,
+      createdFromQuoteAt: new Date(),
+    });
+
+    await paymentsService.createScheduleForProject(project);
+
+    return project;
+  },
+
+  async createManualProject(user, input) {
+    if (user.role !== "vendor" && user.role !== "admin") {
+      throw new AppError(403, "Only vendors can create manual projects");
+    }
+
+    const now = Date.now();
+    const manualProjectKey = `manual:${user.userId}:${now}`;
+    const project = await projectsRepository.createProject({
+      leadId: manualProjectKey,
+      quoteId: manualProjectKey,
+      source: "vendor_manual",
+      customerId: `manual:${user.userId}:${input.customer.phoneNumber}`,
+      vendorId: user.userId,
+      vendorEmail: user.email ?? null,
+      customer: {
+        fullName: input.customer.fullName,
+        phoneNumber: input.customer.phoneNumber,
+        email: input.customer.email ?? null,
+      },
+      installationAddress: input.installationAddress,
+      status: "site_audit_pending",
+      system: input.system,
+      pricing: input.pricing,
+      timeline: {
+        installationWindow: input.timeline.installationWindow,
         siteAuditDueAt: getSiteAuditDueAt(),
       },
       milestones: initialMilestones,

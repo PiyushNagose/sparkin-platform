@@ -14,6 +14,13 @@ const addressSchema = new mongoose.Schema(
 const leadSchema = new mongoose.Schema(
   {
     customerId: { type: String, required: true, index: true },
+    createdByVendorId: { type: String, default: null, index: true },
+    source: {
+      type: String,
+      enum: ["customer_booking", "vendor_manual"],
+      default: "customer_booking",
+      index: true,
+    },
     status: {
       type: String,
       enum: ["submitted", "reviewing", "open_for_quotes", "quote_selected", "closed"],

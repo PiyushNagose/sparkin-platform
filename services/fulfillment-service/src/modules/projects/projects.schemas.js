@@ -40,6 +40,29 @@ export const createProjectSchema = z.object({
   }),
 });
 
+export const createManualProjectSchema = z.object({
+  customer: z.object({
+    fullName: z.string().trim().min(2).max(120),
+    phoneNumber: z.string().trim().min(6).max(20),
+    email: z.string().trim().email().nullable().optional(),
+  }),
+  installationAddress: addressSchema,
+  system: z.object({
+    sizeKw: z.coerce.number().positive(),
+    panelType: z.string().trim().min(1).max(80),
+    inverterType: z.string().trim().min(1).max(80),
+  }),
+  pricing: z.object({
+    totalPrice: z.coerce.number().nonnegative(),
+    equipmentCost: z.coerce.number().nonnegative().nullable().optional(),
+    laborCost: z.coerce.number().nonnegative().nullable().optional(),
+    permittingCost: z.coerce.number().nonnegative().nullable().optional(),
+  }),
+  timeline: z.object({
+    installationWindow: z.string().trim().min(1).max(80),
+  }),
+});
+
 export const updateProjectMilestoneSchema = z.object({
   milestoneKey: z.enum(["site_visit", "design_approval", "installation", "inspection", "activation"]),
   status: z.enum(["pending", "in_progress", "completed"]),

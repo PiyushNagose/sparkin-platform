@@ -22,11 +22,12 @@ import WorkspacePremiumOutlinedIcon from "@mui/icons-material/WorkspacePremiumOu
 import CheckBoxRoundedIcon from "@mui/icons-material/CheckBoxRounded";
 import CloudUploadOutlinedIcon from "@mui/icons-material/CloudUploadOutlined";
 import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { authApi } from "@/features/auth/authApi";
 import { vendorsApi } from "@/features/vendor/api/vendorsApi";
 import { getVendorProfileCompletion, getVendorProfileRequirements, isVendorProfileComplete } from "@/features/vendor/VendorProfileCompletionGate";
+import { VendorPageHeader, VendorPrimaryButton } from "@/features/vendor/components/VendorPortalUI";
 import vendorProfileAvatar from "@/shared/assets/images/vendor/profile/vendor-profile-avatar-placeholder.svg";
 
 const tabs = ["Profile", "Business Details"];
@@ -148,13 +149,12 @@ function readFileAsDataUrl(file) {
 }
 
 export default function VendorProfilePage() {
-  const location = useLocation();
   const navigate = useNavigate();
   const { user, updateUserAvatar, updateUserProfile } = useAuth();
   const avatarInputRef = useRef(null);
   const companyDocumentRef = useRef(null);
   const certificationDocumentRef = useRef(null);
-  const [activeTab, setActiveTab] = useState(location.state?.needsBusinessProfile ? "Business Details" : "Profile");
+  const [activeTab, setActiveTab] = useState("Profile");
   const [vendorProfile, setVendorProfile] = useState(null);
   const [form, setForm] = useState(() => mergeProfileIntoForm(null, user));
   const [isLoading, setIsLoading] = useState(true);
@@ -442,43 +442,22 @@ export default function VendorProfilePage() {
       </Stack>
 
       {error ? <Alert severity="error" sx={{ mt: 1.4, borderRadius: "0.9rem" }}>{error}</Alert> : null}
-      {location.state?.needsBusinessProfile ? (
-        <Alert severity="info" sx={{ mt: 1.4, borderRadius: "0.9rem" }}>
-          Complete all required business details before accessing vendor tools.
-        </Alert>
-      ) : null}
       {success ? (
         <Alert severity="success" sx={{ mt: 1.4, borderRadius: "0.9rem" }} onClose={() => setSuccess("")}>
           {success}
         </Alert>
       ) : null}
 
-      <Stack
-        direction={{ xs: "column", lg: "row" }}
-        justifyContent="space-between"
-        alignItems={{ xs: "flex-start", lg: "center" }}
-        spacing={1.4}
-        sx={{ mt: 2.3 }}
-      >
-        <Box>
-          <Typography
-            sx={{
-              color: "#18253A",
-              fontSize: { xs: "1.95rem", md: "2.1rem" },
-              fontWeight: 800,
-              lineHeight: 1.05,
-            }}
-          >
-            {activeTab === "Profile" ? "Vendor Profile" : "Business Details"}
-          </Typography>
-          <Typography sx={{ mt: 0.45, color: "#6F7D8F", fontSize: "0.92rem", lineHeight: 1.6 }}>
-            {activeTab === "Profile"
-              ? "Manage your business identity and account security settings."
-              : "Manage your commercial profile and operational certificates."}
-          </Typography>
-        </Box>
-
-        <Stack direction="row" spacing={1} flexWrap="wrap">
+      <VendorPageHeader
+        title={activeTab === "Profile" ? "Vendor Profile" : "Business Details"}
+        subtitle={
+          activeTab === "Profile"
+            ? "Manage your business identity and account security settings."
+            : "Manage your commercial profile and operational certificates."
+        }
+        sx={{ mt: 2.3, mb: 2.4 }}
+        actions={
+          <>
           <Button
             variant="text"
             onClick={resetForm}
@@ -486,23 +465,13 @@ export default function VendorProfilePage() {
           >
             Cancel
           </Button>
-          <Button
-            variant="contained"
+          <VendorPrimaryButton
             disabled={isSaving || isLoading || form.account.fullName.trim().length < 2}
             onClick={saveChanges}
-            sx={{
-              minHeight: 38,
-              px: 2,
-              borderRadius: "0.95rem",
-              bgcolor: "#0E56C8",
-              boxShadow: "0 12px 24px rgba(14,86,200,0.16)",
-              fontSize: "0.75rem",
-              fontWeight: 700,
-              textTransform: "none",
-            }}
+            sx={{ px: 2 }}
           >
             {isSaving ? "Saving..." : "Save Changes"}
-          </Button>
+          </VendorPrimaryButton>
           {isComplete ? (
             <Button
               variant="contained"
@@ -521,8 +490,9 @@ export default function VendorProfilePage() {
               Continue to Dashboard
             </Button>
           ) : null}
-        </Stack>
-      </Stack>
+          </>
+        }
+      />
 
       {!isComplete ? (
         <CompletionChecklist completion={completion} missingRequirements={missingRequirements} />

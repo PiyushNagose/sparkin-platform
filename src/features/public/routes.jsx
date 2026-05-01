@@ -1,4 +1,5 @@
 import { ScreenPlaceholder } from "@/shared/ui/placeholder/ScreenPlaceholder";
+import { Navigate } from "react-router-dom";
 import CalculatorPage from "@/features/public/pages/CalculatorPage";
 import CalculatorProcessingPage from "@/features/public/pages/CalculatorProcessingPage";
 import CalculatorResultsPage from "@/features/public/pages/CalculatorResultsPage";
@@ -12,7 +13,6 @@ import LiveBiddingPage from "@/features/public/pages/LiveBiddingPage";
 import QuoteComparisonPage from "@/features/public/pages/QuoteComparisonPage";
 import VendorTataPowerPage from "@/features/public/pages/VendorTataPowerPage";
 import VendorConfirmSelectionPage from "@/features/public/pages/VendorConfirmSelectionPage";
-import CustomerVendorOnboardingPage from "@/features/public/pages/CustomerVendorOnboardingPage";
 import SolarInstallationProjectPage from "@/features/public/pages/SolarInstallationProjectPage";
 import ServiceSupportPage from "@/features/public/pages/ServiceSupportPage";
 import CreateServiceRequestPage from "@/features/public/pages/CreateServiceRequestPage";
@@ -176,7 +176,7 @@ export const publicRoutes = [
   },
   {
     path: "vendors/onboarding",
-    element: protectedCustomerPage(<CustomerVendorOnboardingPage />),
+    element: <Navigate to="/project/installation" replace />,
   },
   {
     path: "project/installation",

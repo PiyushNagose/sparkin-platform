@@ -15,6 +15,12 @@ import CalendarTodayOutlinedIcon from "@mui/icons-material/CalendarTodayOutlined
 import { Link as RouterLink, useLocation } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import { paymentsApi } from "@/features/vendor/api/paymentsApi";
+import {
+  VendorPageHeader,
+  VendorPageShell,
+  VendorPrimaryButton,
+  VendorSecondaryButton,
+} from "@/features/vendor/components/VendorPortalUI";
 
 const kpiCards = [
   {
@@ -335,76 +341,30 @@ export default function VendorPaymentsPage() {
   }
 
   return (
-    <Box sx={{ width: "100%" }}>
-      <Stack
-        direction={{ xs: "column", lg: "row" }}
-        justifyContent="space-between"
-        alignItems={{ xs: "flex-start", lg: "center" }}
-        spacing={2}
-        sx={{ mb: { xs: 2.4, md: 2.8 } }}
-      >
-        <Box>
-          <Typography
-            sx={{
-              color: "#18253A",
-              fontSize: { xs: "1.95rem", md: "2.1rem" },
-              fontWeight: 800,
-              lineHeight: 1.05,
-              letterSpacing: "-0.04em",
-            }}
-          >
-            Payments
-          </Typography>
-          <Typography
-            sx={{
-              mt: 0.45,
-              color: "#6F7D8F",
-              fontSize: "0.92rem",
-              lineHeight: 1.6,
-            }}
-          >
-            Track your earnings and payouts
-          </Typography>
-        </Box>
-
-        <Stack direction="row" spacing={1.05} sx={{ flexWrap: "wrap" }}>
-          <Button
-            variant="outlined"
+    <VendorPageShell>
+      <VendorPageHeader
+        title="Payments"
+        subtitle="Track your earnings and payouts"
+        actions={
+          <>
+          <VendorSecondaryButton
             startIcon={<FileDownloadOutlinedIcon />}
             onClick={downloadStatement}
             disabled={isLoading || payments.length === 0}
-            sx={{
-              minHeight: 38,
-              px: 1.55,
-              borderRadius: "0.95rem",
-              borderColor: "rgba(208,216,226,0.95)",
-              color: "#223146",
-              fontSize: "0.75rem",
-              fontWeight: 700,
-              textTransform: "none",
-            }}
+            sx={{ px: 1.55 }}
           >
             Statement
-          </Button>
-          <Button
-            variant="contained"
+          </VendorSecondaryButton>
+          <VendorPrimaryButton
             startIcon={<PaymentsOutlinedIcon />}
             onClick={handleWithdraw}
-            sx={{
-              minHeight: 38,
-              px: 1.65,
-              borderRadius: "0.95rem",
-              bgcolor: "#0E56C8",
-              boxShadow: "0 12px 24px rgba(14,86,200,0.16)",
-              fontSize: "0.75rem",
-              fontWeight: 700,
-              textTransform: "none",
-            }}
+            sx={{ px: 1.65 }}
           >
             Withdraw Funds
-          </Button>
-        </Stack>
-      </Stack>
+          </VendorPrimaryButton>
+          </>
+        }
+      />
 
       {notice ? (
         <Alert severity="info" sx={{ mb: 2, borderRadius: "0.9rem" }}>
@@ -910,6 +870,6 @@ export default function VendorPaymentsPage() {
           </Button>
         </Box>
       </Box>
-    </Box>
+    </VendorPageShell>
   );
 }

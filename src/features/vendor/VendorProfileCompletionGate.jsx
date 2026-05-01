@@ -1,9 +1,3 @@
-import { useEffect, useMemo, useState } from "react";
-import { Box, CircularProgress } from "@mui/material";
-import { Navigate, Outlet, useLocation } from "react-router-dom";
-import { useAuth } from "@/features/auth/AuthProvider";
-import { vendorsApi } from "@/features/vendor/api/vendorsApi";
-
 export function getVendorProfileRequirements(profile) {
   const companyDocuments = profile?.documents?.filter((document) => document.type === "company") || [];
   const certificationDocuments = profile?.documents?.filter((document) => document.type === "certification") || [];
@@ -35,63 +29,4 @@ export function getVendorProfileCompletion(profile) {
 
 export function isVendorProfileComplete(profile) {
   return getVendorProfileRequirements(profile).every((item) => item.complete);
-}
-
-export function VendorProfileCompletionGate() {
-  const location = useLocation();
-  const { user } = useAuth();
-  const [profile, setProfile] = useState(null);
-  const [isLoading, setIsLoading] = useState(user?.role === "vendor");
-
-  useEffect(() => {
-    let active = true;
-
-    async function loadProfile() {
-      if (user?.role !== "vendor") {
-        setIsLoading(false);
-        return;
-      }
-
-      setIsLoading(true);
-
-      try {
-        const result = await vendorsApi.getMyProfile();
-        if (active) setProfile(result);
-      } catch {
-        if (active) setProfile(null);
-      } finally {
-        if (active) setIsLoading(false);
-      }
-    }
-
-    loadProfile();
-
-    function handleProfileUpdated(event) {
-      if (active) setProfile(event.detail);
-    }
-
-    window.addEventListener("sparkin:vendor-profile-updated", handleProfileUpdated);
-
-    return () => {
-      active = false;
-      window.removeEventListener("sparkin:vendor-profile-updated", handleProfileUpdated);
-    };
-  }, [user?.role]);
-
-  const isComplete = useMemo(() => isVendorProfileComplete(profile), [profile]);
-  const isProfilePage = location.pathname.startsWith("/vendor/profile");
-
-  if (isLoading) {
-    return (
-      <Box sx={{ minHeight: "100vh", display: "grid", placeItems: "center", bgcolor: "#F4F7F2" }}>
-        <CircularProgress />
-      </Box>
-    );
-  }
-
-  if (user?.role === "vendor" && !isComplete && !isProfilePage) {
-    return <Navigate to="/vendor/profile" replace state={{ needsBusinessProfile: true, from: location }} />;
-  }
-
-  return <Outlet />;
 }

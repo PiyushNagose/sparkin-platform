@@ -6,6 +6,11 @@ export const projectsController = {
     res.status(201).json({ project });
   },
 
+  async createManual(req, res) {
+    const project = await projectsService.createManualProject(req.auth, req.body);
+    res.status(201).json({ project });
+  },
+
   async list(req, res) {
     const projects = await projectsService.listProjects(req.auth);
     res.status(200).json({ projects });

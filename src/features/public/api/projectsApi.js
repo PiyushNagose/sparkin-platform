@@ -14,6 +14,11 @@ export const projectsApi = {
     return data.projects;
   },
 
+  async createManualProject(payload) {
+    const { data } = await fulfillmentClient.post("/projects/manual", payload);
+    return data.project;
+  },
+
   async getProject(projectId) {
     const { data } = await fulfillmentClient.get(`/projects/${requireId(projectId, "Project id")}`);
     return data.project;

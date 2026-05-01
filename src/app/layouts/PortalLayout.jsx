@@ -274,7 +274,8 @@ export function PortalLayout({ portal }) {
               <Stack spacing={0.65}>
                 <Button
                   component={NavLink}
-                  to="/vendor/quotes"
+                  to="/vendor/projects"
+                  state={{ openCreateProject: true }}
                   variant="contained"
                   startIcon={<AddRoundedIcon />}
                   sx={{
@@ -288,7 +289,7 @@ export function PortalLayout({ portal }) {
                     boxShadow: "none",
                   }}
                 >
-                  View Quotes
+                  Create Project
                 </Button>
               </Stack>
             ) : (

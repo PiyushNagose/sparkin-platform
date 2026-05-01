@@ -19,6 +19,13 @@ import KeyboardArrowRightRoundedIcon from "@mui/icons-material/KeyboardArrowRigh
 import { Link as RouterLink, useLocation } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import { paymentsApi } from "@/features/vendor/api/paymentsApi";
+import {
+  VendorFilterPanel,
+  VendorPageHeader,
+  VendorPageShell,
+  VendorPanel,
+  VendorPrimaryButton,
+} from "@/features/vendor/components/VendorPortalUI";
 
 const columns = [
   "Transaction ID",
@@ -241,40 +248,10 @@ export default function VendorTransactionsPage() {
   }
 
   return (
-    <Box sx={{ width: "100%" }}>
-      <Box>
-        <Typography
-          sx={{
-            color: "#18253A",
-            fontSize: { xs: "1.95rem", md: "2.1rem" },
-            fontWeight: 800,
-            lineHeight: 1.05,
-            letterSpacing: "-0.04em",
-          }}
-        >
-          Transactions
-        </Typography>
-        <Typography
-          sx={{
-            mt: 0.45,
-            color: "#6F7D8F",
-            fontSize: "0.92rem",
-            lineHeight: 1.6,
-          }}
-        >
-          View and manage all your payment transactions
-        </Typography>
-      </Box>
+    <VendorPageShell>
+      <VendorPageHeader title="Transactions" subtitle="View and manage all your payment transactions" />
 
-      <Box
-        sx={{
-          mt: 2.3,
-          p: 1.35,
-          borderRadius: "1.2rem",
-          bgcolor: "#F4F6FA",
-          border: "1px solid rgba(229,234,241,0.95)",
-        }}
-      >
+      <VendorFilterPanel sx={{ mt: 0, p: 1.35, borderRadius: "1.2rem" }}>
         <Stack
           direction={{ xs: "column", lg: "row" }}
           spacing={1}
@@ -283,37 +260,17 @@ export default function VendorTransactionsPage() {
           <FilterField label="Search Customer" value={query} onChange={(value) => { setQuery(value); setPage(1); }} wide search />
           <FilterField label="Status" value={statusFilter} onChange={(value) => { setStatusFilter(value.toLowerCase()); setPage(1); }} />
           <FilterField label="Date Range" value="All Dates" calendar />
-          <Button
-            variant="contained"
+          <VendorPrimaryButton
             startIcon={<TuneRoundedIcon />}
             onClick={exportTransactions}
-            sx={{
-              minHeight: 38,
-              px: 1.65,
-              borderRadius: "0.95rem",
-              bgcolor: "#0E56C8",
-              boxShadow: "0 12px 24px rgba(14,86,200,0.16)",
-              fontSize: "0.75rem",
-              fontWeight: 700,
-              textTransform: "none",
-              whiteSpace: "nowrap",
-            }}
+            sx={{ px: 1.65, whiteSpace: "nowrap" }}
           >
             Export
-          </Button>
+          </VendorPrimaryButton>
         </Stack>
-      </Box>
+      </VendorFilterPanel>
 
-      <Box
-        sx={{
-          mt: 1.7,
-          borderRadius: "1.55rem",
-          bgcolor: "#FFFFFF",
-          border: "1px solid rgba(225,232,241,0.96)",
-          boxShadow: "0 16px 30px rgba(16,29,51,0.04)",
-          overflow: "hidden",
-        }}
-      >
+      <VendorPanel sx={{ mt: 1.7, borderRadius: "1.55rem", overflow: "hidden" }}>
         <Box sx={{ display: { xs: "none", lg: "block" }, px: 1.7, pt: 1.5, pb: 1 }}>
           <Box
             sx={{
@@ -653,7 +610,7 @@ export default function VendorTransactionsPage() {
             </Button>
           </Stack>
         </Stack>
-      </Box>
+      </VendorPanel>
 
       <Box
         sx={{
@@ -778,6 +735,6 @@ export default function VendorTransactionsPage() {
           </Stack>
         </Box>
       </Box>
-    </Box>
+    </VendorPageShell>
   );
 }

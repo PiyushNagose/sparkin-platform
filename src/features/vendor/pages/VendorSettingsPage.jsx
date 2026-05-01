@@ -7,6 +7,7 @@ import SupportAgentOutlinedIcon from "@mui/icons-material/SupportAgentOutlined";
 import { useEffect, useState } from "react";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
 import { useAuth } from "@/features/auth/AuthProvider";
+import { VendorPageHeader, VendorPageShell } from "@/features/vendor/components/VendorPortalUI";
 
 const settingsStorageKey = "sparkin_vendor_settings";
 
@@ -100,50 +101,32 @@ export default function VendorSettingsPage() {
   }
 
   return (
-    <Box sx={{ width: "100%" }}>
-      <Stack
-        direction={{ xs: "column", md: "row" }}
-        justifyContent="space-between"
-        alignItems={{ xs: "flex-start", md: "center" }}
-        spacing={2}
+    <VendorPageShell>
+      <VendorPageHeader
+        title="Settings"
+        subtitle="Manage account preferences, notifications, and secure sign out."
         sx={{ mb: 2.4 }}
-      >
-        <Box>
-          <Typography
+        actions={
+          <Button
+            variant="contained"
+            color="error"
+            startIcon={<LogoutOutlinedIcon />}
+            onClick={handleLogout}
+            disabled={isLoggingOut}
             sx={{
-              color: "#18253A",
-              fontSize: { xs: "1.95rem", md: "2.1rem" },
+              minHeight: 40,
+              px: 1.8,
+              borderRadius: "0.95rem",
+              boxShadow: "none",
+              fontSize: "0.76rem",
               fontWeight: 800,
-              lineHeight: 1.05,
-              letterSpacing: "-0.04em",
+              textTransform: "none",
             }}
           >
-            Settings
-          </Typography>
-          <Typography sx={{ mt: 0.45, color: "#6F7D8F", fontSize: "0.92rem", lineHeight: 1.6 }}>
-            Manage account preferences, notifications, and secure sign out.
-          </Typography>
-        </Box>
-
-        <Button
-          variant="contained"
-          color="error"
-          startIcon={<LogoutOutlinedIcon />}
-          onClick={handleLogout}
-          disabled={isLoggingOut}
-          sx={{
-            minHeight: 40,
-            px: 1.8,
-            borderRadius: "0.95rem",
-            boxShadow: "none",
-            fontSize: "0.76rem",
-            fontWeight: 800,
-            textTransform: "none",
-          }}
-        >
-          {isLoggingOut ? "Logging out..." : "Logout"}
-        </Button>
-      </Stack>
+            {isLoggingOut ? "Logging out..." : "Logout"}
+          </Button>
+        }
+      />
 
       {notice ? (
         <Alert severity="success" sx={{ mb: 2, borderRadius: "0.9rem" }} onClose={() => setNotice("")}>
@@ -260,6 +243,6 @@ export default function VendorSettingsPage() {
           </Stack>
         </SectionCard>
       </Box>
-    </Box>
+    </VendorPageShell>
   );
 }
