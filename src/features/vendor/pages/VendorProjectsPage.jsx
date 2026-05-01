@@ -31,6 +31,7 @@ import {
   VendorPageHeader,
   VendorPageShell,
   VendorPrimaryButton,
+  VendorStatusPill,
 } from "@/features/vendor/components/VendorPortalUI";
 
 const kpiCards = [
@@ -109,10 +110,10 @@ function getStatusMeta(status) {
   }
 
   if (["installation_scheduled", "installation_in_progress", "inspection_pending"].includes(status)) {
-    return { label: "In Progress", tone: "#239654", bg: "#DDF8E7" };
+    return { label: "In Progress", tone: "#1FA453", bg: "#E8FAEF" };
   }
 
-  if (status === "design_approval_pending") {
+  if (["design_approval_pending", "site_audit_pending", "site_audit_scheduled"].includes(status)) {
     return { label: "Active", tone: "#7C7A00", bg: "#F2F08E" };
   }
 
@@ -321,21 +322,9 @@ function ProjectRow({ project, mobile = false }) {
   );
 
   const statusBlock = (
-    <Box
-      sx={{
-        display: "inline-flex",
-        px: 0.88,
-        py: 0.34,
-        borderRadius: "999px",
-        bgcolor: project.statusBg,
-        color: project.statusTone,
-        fontSize: "0.62rem",
-        fontWeight: 800,
-        lineHeight: 1,
-      }}
-    >
+    <VendorStatusPill tone={project.statusTone} bg={project.statusBg}>
       {project.status}
-    </Box>
+    </VendorStatusPill>
   );
 
   const progressBlock = (
@@ -527,7 +516,13 @@ export default function VendorProjectsPage() {
   }, [activeTab, projects, searchTerm, sortNewestFirst]);
   const totalPages = Math.max(1, Math.ceil(filteredProjects.length / pageSize));
   const visibleProjects = filteredProjects.slice((page - 1) * pageSize, page * pageSize);
-  const pageNumbers = useMemo(() => Array.from({ length: totalPages }, (_, index) => index + 1), [totalPages]);
+  const pageNumbers = useMemo(() => {
+    if (totalPages <= 5) return Array.from({ length: totalPages }, (_, i) => i + 1);
+    const pages = new Set([1, totalPages, page]);
+    if (page > 1) pages.add(page - 1);
+    if (page < totalPages) pages.add(page + 1);
+    return [...pages].sort((a, b) => a - b);
+  }, [totalPages, page]);
   const firstVisibleProject = filteredProjects.length ? (page - 1) * pageSize + 1 : 0;
   const lastVisibleProject = filteredProjects.length ? firstVisibleProject + visibleProjects.length - 1 : 0;
   const dashboardKpis = useMemo(
@@ -822,44 +817,27 @@ export default function VendorProjectsPage() {
         }}
       >
         <Stack
-          direction={{ xs: "column", md: "row" }}
+          direction="row"
           justifyContent="space-between"
-          alignItems={{ xs: "stretch", md: "center" }}
-          spacing={1.2}
-          sx={{ px: 1.7, pt: 1.5 }}
+          alignItems="center"
+          sx={{ px: 1.7, pt: 1.5, borderBottom: "1px solid rgba(234,239,245,0.95)" }}
         >
-          <Stack direction="row" spacing={0.7} flexWrap="wrap">
-            <TextField
-              size="small"
-              value={searchTerm}
-              onChange={(event) => {
-                setSearchTerm(event.target.value);
-                setPage(1);
-              }}
-              placeholder="Search projects"
-              sx={{
-                minWidth: { xs: "100%", md: 220 },
-                "& .MuiOutlinedInput-root": {
-                  height: 30,
-                  borderRadius: "999px",
-                  bgcolor: "#FFFFFF",
-                  fontSize: "0.72rem",
-                },
-              }}
-            />
-            {tabs.map((tab, index) => (
+          <Stack direction="row" spacing={0}>
+            {tabs.map((tab) => (
               <Button
                 key={tab}
                 onClick={() => updateTab(tab)}
                 sx={{
-                  minHeight: 30,
-                  px: 1.18,
-                  borderRadius: "999px",
-                  bgcolor: activeTab === tab ? "#0E56C8" : "transparent",
-                  color: activeTab === tab ? "#FFFFFF" : "#556478",
-                  fontSize: "0.7rem",
-                  fontWeight: 700,
+                  minHeight: 38,
+                  px: 1.4,
+                  borderRadius: 0,
+                  borderBottom: activeTab === tab ? "2px solid #0E56C8" : "2px solid transparent",
+                  color: activeTab === tab ? "#0E56C8" : "#6F7D8F",
+                  fontSize: "0.76rem",
+                  fontWeight: activeTab === tab ? 800 : 600,
                   textTransform: "none",
+                  mb: "-1px",
+                  "&:hover": { bgcolor: "transparent", color: "#0E56C8" },
                 }}
               >
                 {tab}
@@ -867,16 +845,17 @@ export default function VendorProjectsPage() {
             ))}
           </Stack>
 
-          <Stack direction="row" spacing={0.7} alignItems="center" justifyContent="flex-end">
+          <Stack direction="row" spacing={0.5} alignItems="center">
             <Button
               onClick={resetFilters}
               sx={{
-                minWidth: 28,
-                width: 28,
-                height: 28,
+                minWidth: 30,
+                width: 30,
+                height: 30,
                 p: 0,
-                borderRadius: "50%",
+                borderRadius: "0.6rem",
                 color: "#7A8799",
+                border: "1px solid rgba(225,232,241,0.96)",
               }}
             >
               <TuneRoundedIcon sx={{ fontSize: "0.88rem" }} />
@@ -887,12 +866,13 @@ export default function VendorProjectsPage() {
                 setPage(1);
               }}
               sx={{
-                minWidth: 28,
-                width: 28,
-                height: 28,
+                minWidth: 30,
+                width: 30,
+                height: 30,
                 p: 0,
-                borderRadius: "50%",
+                borderRadius: "0.6rem",
                 color: "#7A8799",
+                border: "1px solid rgba(225,232,241,0.96)",
               }}
             >
               <SortRoundedIcon sx={{ fontSize: "0.92rem" }} />
@@ -900,7 +880,7 @@ export default function VendorProjectsPage() {
           </Stack>
         </Stack>
 
-        <Box sx={{ display: { xs: "none", lg: "block" }, px: 1.7, pt: 1.45, pb: 1 }}>
+        <Box sx={{ display: { xs: "none", lg: "block" }, px: 1.7, pt: 1.3, pb: 0.6 }}>
           <Box
             sx={{
               display: "grid",
@@ -1001,26 +981,34 @@ export default function VendorProjectsPage() {
             >
               <KeyboardArrowLeftRoundedIcon sx={{ fontSize: "1rem" }} />
             </Button>
-            {pageNumbers.map((pageNumber) => (
-              <Button
-                key={pageNumber}
-                onClick={() => setPage(pageNumber)}
-                sx={{
-                  minWidth: 30,
-                  width: 30,
-                  height: 30,
-                  borderRadius: "0.6rem",
-                  p: 0,
-                  color: pageNumber === page ? "#FFFFFF" : "#223146",
-                  bgcolor: pageNumber === page ? "#0E56C8" : "#FFFFFF",
-                  border: pageNumber === page ? "none" : "1px solid rgba(225,232,241,0.96)",
-                  fontSize: "0.7rem",
-                  fontWeight: 700,
-                }}
-              >
-                {pageNumber}
-              </Button>
-            ))}
+            {pageNumbers.map((pageNumber, idx) => {
+              const prev = pageNumbers[idx - 1];
+              const showEllipsis = prev && pageNumber - prev > 1;
+              return (
+                <Box key={pageNumber} sx={{ display: "flex", alignItems: "center", gap: 0.45 }}>
+                  {showEllipsis && (
+                    <Typography sx={{ color: "#8B97A8", fontSize: "0.7rem", px: 0.3 }}>…</Typography>
+                  )}
+                  <Button
+                    onClick={() => setPage(pageNumber)}
+                    sx={{
+                      minWidth: 30,
+                      width: 30,
+                      height: 30,
+                      borderRadius: "0.6rem",
+                      p: 0,
+                      color: pageNumber === page ? "#FFFFFF" : "#223146",
+                      bgcolor: pageNumber === page ? "#0E56C8" : "#FFFFFF",
+                      border: pageNumber === page ? "none" : "1px solid rgba(225,232,241,0.96)",
+                      fontSize: "0.7rem",
+                      fontWeight: 700,
+                    }}
+                  >
+                    {pageNumber}
+                  </Button>
+                </Box>
+              );
+            })}
             <Button
               onClick={() => setPage((currentPage) => Math.min(totalPages, currentPage + 1))}
               disabled={page === totalPages}
