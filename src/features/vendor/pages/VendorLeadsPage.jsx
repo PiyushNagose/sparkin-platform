@@ -18,6 +18,7 @@ import TuneRoundedIcon from "@mui/icons-material/TuneRounded";
 import KeyboardArrowLeftRoundedIcon from "@mui/icons-material/KeyboardArrowLeftRounded";
 import KeyboardArrowRightRoundedIcon from "@mui/icons-material/KeyboardArrowRightRounded";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
+import Groups2RoundedIcon from "@mui/icons-material/Groups2Rounded";
 import { Link as RouterLink, useLocation } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import { leadsApi, quotesApi } from "@/features/public/api/leadsApi";
@@ -759,8 +760,11 @@ export default function VendorLeadsPage() {
 
           {!isLoading && !error && filteredRows.length === 0 ? (
             <VendorEmptyState
+              icon={Groups2RoundedIcon}
               title="No matching leads"
               subtitle="Adjust the filters or create a manual lead for an offline customer enquiry."
+              actionLabel="Create Manual Lead"
+              actionOnClick={() => setIsManualLeadOpen(true)}
             />
           ) : null}
 

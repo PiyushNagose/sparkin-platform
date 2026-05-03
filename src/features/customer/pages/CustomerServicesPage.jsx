@@ -21,6 +21,7 @@ import { Link as RouterLink } from "react-router-dom";
 import { serviceRequestsApi } from "@/features/public/api/serviceRequestsApi";
 import { projectsApi } from "@/features/public/api/projectsApi";
 import customerServicesGuidePlaceholder from "@/shared/assets/images/customer/services/customer-services-guide-placeholder.png";
+import { CustomerErrorBlock, CustomerLoadingBlock } from "@/features/customer/components/CustomerPageStates";
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -344,35 +345,31 @@ export default function CustomerServicesPage() {
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState("active");
 
+  async function loadData(active = true) {
+    setIsLoading(true);
+    setError("");
+
+    try {
+      const [requestResult, projectResult] = await Promise.all([
+        serviceRequestsApi.listRequests(),
+        projectsApi.listProjects(),
+      ]);
+
+      if (!active) return;
+      setRequests(requestResult);
+      setProjects(projectResult);
+    } catch (apiError) {
+      if (active) {
+        setError(apiError?.response?.data?.message || "Could not load service requests.");
+      }
+    } finally {
+      if (active) setIsLoading(false);
+    }
+  }
+
   useEffect(() => {
     let active = true;
-
-    async function loadData() {
-      setIsLoading(true);
-      setError("");
-
-      try {
-        const [requestResult, projectResult] = await Promise.all([
-          serviceRequestsApi.listRequests(),
-          projectsApi.listProjects(),
-        ]);
-
-        if (!active) return;
-        setRequests(requestResult);
-        setProjects(projectResult);
-      } catch (apiError) {
-        if (active) {
-          setError(
-            apiError?.response?.data?.message ||
-              "Could not load service requests.",
-          );
-        }
-      } finally {
-        if (active) setIsLoading(false);
-      }
-    }
-
-    loadData();
+    loadData(active);
     return () => {
       active = false;
     };
@@ -469,18 +466,10 @@ export default function CustomerServicesPage() {
       </Stack>
 
       {/* Loading */}
-      {isLoading && (
-        <Box sx={{ mt: 2, py: 5, display: "grid", placeItems: "center" }}>
-          <CircularProgress size={32} />
-        </Box>
-      )}
+      {isLoading && <CustomerLoadingBlock />}
 
       {/* Error */}
-      {!isLoading && error && (
-        <Alert severity="error" sx={{ mt: 2, borderRadius: "0.9rem" }}>
-          {error}
-        </Alert>
-      )}
+      {!isLoading && error && <CustomerErrorBlock message={error} onRetry={() => loadData(true)} mt={2} />}
 
       {/* Cards grid */}
       {!isLoading && !error && (

@@ -7,6 +7,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+import { useState } from "react";
 import CallOutlinedIcon from "@mui/icons-material/CallOutlined";
 import EmailOutlinedIcon from "@mui/icons-material/EmailOutlined";
 import PlaceOutlinedIcon from "@mui/icons-material/PlaceOutlined";
@@ -45,6 +46,48 @@ const contactCards = [
 ];
 
 export default function ContactPage() {
+  const [form, setForm] = useState({
+    fullName: "",
+    email: "",
+    phone: "",
+    message: "",
+  });
+  const [errors, setErrors] = useState({});
+  const [statusMessage, setStatusMessage] = useState("");
+
+  function updateField(field, value) {
+    setForm((current) => ({ ...current, [field]: value }));
+    setErrors((current) => ({ ...current, [field]: "" }));
+    setStatusMessage("");
+  }
+
+  function validateForm() {
+    const nextErrors = {};
+    if (!form.fullName.trim()) nextErrors.fullName = "Full name is required.";
+    if (!form.email.trim()) {
+      nextErrors.email = "Email is required.";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
+      nextErrors.email = "Enter a valid email address.";
+    }
+    if (!form.message.trim()) nextErrors.message = "Message is required.";
+    setErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  }
+
+  function handleSubmit(event) {
+    event.preventDefault();
+    if (!validateForm()) return;
+
+    const subject = encodeURIComponent(`Contact request from ${form.fullName.trim()}`);
+    const body = encodeURIComponent(
+      `Name: ${form.fullName.trim()}\nEmail: ${form.email.trim()}\nPhone: ${form.phone.trim() || "N/A"}\n\nMessage:\n${form.message.trim()}`,
+    );
+    window.location.href = `mailto:hello@sparkin.io?subject=${subject}&body=${body}`;
+
+    setStatusMessage("Thanks! Your message is ready to send from your email app.");
+    setForm({ fullName: "", email: "", phone: "", message: "" });
+  }
+
   return (
     <Box
       sx={{
@@ -173,7 +216,7 @@ export default function ContactPage() {
                 Send a Message
               </Typography>
 
-              <Stack spacing={1.65} sx={{ mt: 2.35 }}>
+              <Stack component="form" onSubmit={handleSubmit} spacing={1.65} sx={{ mt: 2.35 }}>
                 <Box>
                   <Typography
                     sx={{
@@ -188,6 +231,10 @@ export default function ContactPage() {
                   <TextField
                     fullWidth
                     placeholder="John Doe"
+                    value={form.fullName}
+                    onChange={(event) => updateField("fullName", event.target.value)}
+                    error={Boolean(errors.fullName)}
+                    helperText={errors.fullName || " "}
                     InputProps={{
                       sx: {
                         height: 48,
@@ -213,6 +260,10 @@ export default function ContactPage() {
                     <TextField
                       fullWidth
                       placeholder="john@example.com"
+                      value={form.email}
+                      onChange={(event) => updateField("email", event.target.value)}
+                      error={Boolean(errors.email)}
+                      helperText={errors.email || " "}
                       InputProps={{
                         sx: {
                           height: 48,
@@ -236,6 +287,9 @@ export default function ContactPage() {
                     <TextField
                       fullWidth
                       placeholder="+91 00000 00000"
+                      value={form.phone}
+                      onChange={(event) => updateField("phone", event.target.value)}
+                      helperText=" "
                       InputProps={{
                         sx: {
                           height: 48,
@@ -263,6 +317,10 @@ export default function ContactPage() {
                     multiline
                     minRows={4}
                     placeholder="Tell us about your solar project..."
+                    value={form.message}
+                    onChange={(event) => updateField("message", event.target.value)}
+                    error={Boolean(errors.message)}
+                    helperText={errors.message || " "}
                     InputProps={{
                       sx: {
                         borderRadius: "0.95rem",
@@ -274,6 +332,7 @@ export default function ContactPage() {
                 </Box>
 
                 <Button
+                  type="submit"
                   variant="contained"
                   sx={{
                     mt: 0.4,
@@ -289,6 +348,11 @@ export default function ContactPage() {
                 >
                   Send Message
                 </Button>
+                {statusMessage ? (
+                  <Typography sx={{ color: "#14824D", fontSize: "0.82rem", fontWeight: 600 }}>
+                    {statusMessage}
+                  </Typography>
+                ) : null}
               </Stack>
             </Box>
           </Grid>
@@ -468,7 +532,7 @@ export default function ContactPage() {
             </Button>
             <Button
               component={RouterLink}
-              to="/quotes/compare"
+              to="/vendors"
               variant="contained"
               sx={{
                 minWidth: 140,
@@ -483,7 +547,7 @@ export default function ContactPage() {
                 boxShadow: "none",
               }}
             >
-              View Pricing
+              Explore Vendors
             </Button>
           </Stack>
         </Box>

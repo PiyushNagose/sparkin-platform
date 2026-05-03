@@ -7,6 +7,9 @@ import { updateVendorProfileSchema, uploadVendorDocumentSchema } from "./vendors
 
 export const vendorsRouter = Router();
 
+vendorsRouter.get("/public/featured", asyncHandler(vendorsController.listFeatured));
+vendorsRouter.get("/:vendorId", asyncHandler(vendorsController.getByVendorId));
+
 vendorsRouter.use(requireAuth);
 vendorsRouter.get("/me", asyncHandler(vendorsController.getMe));
 vendorsRouter.patch("/me", validate(updateVendorProfileSchema), asyncHandler(vendorsController.updateMe));
@@ -17,4 +20,3 @@ vendorsRouter.post(
 );
 vendorsRouter.delete("/me/documents/:documentId", asyncHandler(vendorsController.deleteDocument));
 vendorsRouter.post("/me/submit", asyncHandler(vendorsController.submitApplication));
-vendorsRouter.get("/:vendorId", asyncHandler(vendorsController.getByVendorId));

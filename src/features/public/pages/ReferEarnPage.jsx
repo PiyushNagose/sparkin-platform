@@ -33,8 +33,8 @@ const steps = [
 ];
 
 const rewards = [
-  { value: "₹2,500", label: "successful home referral" },
-  { value: "₹10,000", label: "society bulk referral" },
+  { value: "Rs 2,500", label: "successful home referral" },
+  { value: "Rs 10,000", label: "society bulk referral" },
   { value: "7 days", label: "average reward review" },
 ];
 
@@ -332,3 +332,4 @@ export default function ReferEarnPage() {
     </Box>
   );
 }
+

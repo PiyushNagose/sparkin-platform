@@ -16,10 +16,12 @@ import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import DownloadRoundedIcon from "@mui/icons-material/DownloadRounded";
 import KeyboardArrowLeftRoundedIcon from "@mui/icons-material/KeyboardArrowLeftRounded";
 import KeyboardArrowRightRoundedIcon from "@mui/icons-material/KeyboardArrowRightRounded";
+import ReceiptLongOutlinedIcon from "@mui/icons-material/ReceiptLongOutlined";
 import { Link as RouterLink, useLocation } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import { paymentsApi } from "@/features/vendor/api/paymentsApi";
 import {
+  VendorEmptyState,
   VendorFilterPanel,
   VendorPageHeader,
   VendorPageShell,
@@ -311,13 +313,15 @@ export default function VendorTransactionsPage() {
             </Box>
           ) : null}
 
-          {!isLoading && !error && filteredRows.length === 0 ? (
-            <Box sx={{ py: 4 }}>
-              <Alert severity="info" sx={{ borderRadius: "0.9rem" }}>
-                No payment transactions are available yet.
-              </Alert>
-            </Box>
-          ) : null}
+        {!isLoading && !error && filteredRows.length === 0 ? (
+          <Box sx={{ py: 2.2 }}>
+            <VendorEmptyState
+              icon={ReceiptLongOutlinedIcon}
+              title="No payment transactions yet"
+              subtitle="Transactions will appear once project milestone payments are recorded."
+            />
+          </Box>
+        ) : null}
 
           {visibleRows.map((item, index) => (
             <Box

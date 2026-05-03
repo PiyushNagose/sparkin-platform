@@ -1,4 +1,5 @@
 import { Alert, Box, Button, CircularProgress, Stack, Typography } from "@mui/material";
+import InboxOutlinedIcon from "@mui/icons-material/InboxOutlined";
 
 export const vendorUi = {
   colors: {
@@ -198,12 +199,62 @@ export function VendorErrorState({ children, sx }) {
   );
 }
 
-export function VendorEmptyState({ title, subtitle, sx }) {
+export function VendorEmptyState({
+  title,
+  subtitle,
+  icon,
+  actionLabel,
+  actionOnClick,
+  sx,
+}) {
+  const Icon = icon || InboxOutlinedIcon;
+
   return (
-    <Box sx={{ py: 5, textAlign: "center", ...sx }}>
-      <Typography sx={{ color: "#223146", fontSize: "0.95rem", fontWeight: 700 }}>{title}</Typography>
+    <Box
+      sx={{
+        py: 5,
+        px: 2,
+        borderRadius: "1.2rem",
+        bgcolor: "#F8FAFD",
+        border: "1px solid rgba(225,232,241,0.9)",
+        textAlign: "center",
+        ...sx,
+      }}
+    >
+      <Icon sx={{ color: "#C8D0DC", fontSize: "2rem", mb: 1 }} />
+      <Typography sx={{ color: "#223146", fontSize: "1rem", fontWeight: 800 }}>{title}</Typography>
       {subtitle ? (
-        <Typography sx={{ mt: 0.45, color: "#738094", fontSize: "0.78rem" }}>{subtitle}</Typography>
+        <Typography
+          sx={{
+            mt: 0.5,
+            color: "#6F7D8F",
+            fontSize: "0.84rem",
+            lineHeight: 1.65,
+            maxWidth: 360,
+            mx: "auto",
+          }}
+        >
+          {subtitle}
+        </Typography>
+      ) : null}
+      {actionLabel && actionOnClick ? (
+        <Button
+          variant="contained"
+          onClick={actionOnClick}
+          sx={{
+            mt: 1.8,
+            minHeight: 38,
+            px: 1.65,
+            borderRadius: "0.95rem",
+            bgcolor: "#0E56C8",
+            boxShadow: "0 12px 24px rgba(14,86,200,0.16)",
+            fontSize: "0.75rem",
+            fontWeight: 700,
+            textTransform: "none",
+          }}
+        >
+          {actionLabel}
+        </Button>
       ) : null}
     </Box>
   );

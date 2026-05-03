@@ -12,10 +12,12 @@ import AccountBalanceWalletOutlinedIcon from "@mui/icons-material/AccountBalance
 import PaymentsOutlinedIcon from "@mui/icons-material/PaymentsOutlined";
 import CheckCircleOutlineRoundedIcon from "@mui/icons-material/CheckCircleOutlineRounded";
 import CalendarTodayOutlinedIcon from "@mui/icons-material/CalendarTodayOutlined";
+import ReceiptLongOutlinedIcon from "@mui/icons-material/ReceiptLongOutlined";
 import { Link as RouterLink, useLocation } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import { paymentsApi } from "@/features/vendor/api/paymentsApi";
 import {
+  VendorEmptyState,
   VendorPageHeader,
   VendorPageShell,
   VendorPrimaryButton,
@@ -679,10 +681,12 @@ export default function VendorPaymentsPage() {
         ) : null}
 
         {!isLoading && !error && recentTransactions.length === 0 ? (
-          <Box sx={{ px: { xs: 1.2, md: 1.7 }, py: 4 }}>
-            <Alert severity="info" sx={{ borderRadius: "0.9rem" }}>
-              Payments will appear here after customers accept your quotes and projects are created.
-            </Alert>
+          <Box sx={{ px: { xs: 1.2, md: 1.7 }, py: 2.2 }}>
+            <VendorEmptyState
+              icon={ReceiptLongOutlinedIcon}
+              title="No transactions yet"
+              subtitle="Payments will appear here after customers accept your quotes and projects are created."
+            />
           </Box>
         ) : null}
 

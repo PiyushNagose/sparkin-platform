@@ -34,6 +34,7 @@ import {
   publicPageSpacing,
   publicTypography,
 } from "@/features/public/pages/publicPageStyles";
+import { publicVendorsApi } from "@/features/public/api/vendorsApi";
 import heroBackgroundImage from "@/shared/assets/images/public/home/hero-background-placeholder.png";
 import animeshAvatarPlaceholder from "@/shared/assets/images/public/home/avatar-animesh-placeholder.svg";
 import priyaAvatarPlaceholder from "@/shared/assets/images/public/home/avatar-priya-placeholder.svg";
@@ -42,13 +43,13 @@ import serviceMaintenancePlaceholder from "@/shared/assets/images/public/home/se
 import servicePanelCleaningPlaceholder from "@/shared/assets/images/public/home/service-panel-cleaning-placeholder.png";
 import serviceRepairsPlaceholder from "@/shared/assets/images/public/home/service-repairs-placeholder.png";
 
-const heroStats = [
+const baseHeroStats = [
   {
     icon: <VerifiedOutlinedIcon />,
     value: "4.8\u2605",
     label: "Customer Rating",
   },
-  { icon: <HomeWorkOutlinedIcon />, value: "350+", label: "Verified Vendors" },
+  { icon: <HomeWorkOutlinedIcon />, value: "300+", label: "Verified Vendors" },
   {
     icon: <PaidOutlinedIcon />,
     value: "\u20B92.8L",
@@ -56,7 +57,7 @@ const heroStats = [
   },
 ];
 
-const bidCards = [
+const fallbackBidCards = [
   {
     initials: "TP",
     name: "Tata Power Solar",
@@ -229,6 +230,22 @@ function formatInr(value) {
 
 function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);
+}
+
+function toInitials(name = "") {
+  return name
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("") || "VP";
+}
+
+function estimateVendorPrice(company = {}) {
+  const completed = Number(company.projectsCompleted) || 0;
+  const experience = Number(company.experienceYears) || 0;
+  const estimated = 265000 + experience * 2500 + Math.min(completed, 300) * 180;
+  return `\u20B9${Math.round(estimated / 1000)}K`;
 }
 
 function useCountUp(target, { duration = 1200, decimals = 0, started = true } = {}) {
@@ -652,6 +669,7 @@ function HomePage() {
   const [saleSecondsLeft, setSaleSecondsLeft] = useState(
     14 * 60 * 60 + 42 * 60 + 58,
   );
+  const [featuredVendors, setFeaturedVendors] = useState([]);
 
   useEffect(() => {
     const timerId = window.setInterval(() => {
@@ -662,6 +680,60 @@ function HomePage() {
 
     return () => window.clearInterval(timerId);
   }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadFeaturedVendors() {
+      try {
+        const result = await publicVendorsApi.listFeaturedVendors();
+        if (!active) return;
+        setFeaturedVendors(Array.isArray(result) ? result : []);
+      } catch {
+        if (active) setFeaturedVendors([]);
+      }
+    }
+
+    loadFeaturedVendors();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const heroStats = useMemo(() => {
+    const vendorValue = featuredVendors.length
+      ? `${Math.max(featuredVendors.length * 25, 120)}+`
+      : baseHeroStats[1].value;
+
+    return baseHeroStats.map((stat, index) =>
+      index === 1 ? { ...stat, value: vendorValue } : stat,
+    );
+  }, [featuredVendors]);
+
+  const bidCards = useMemo(() => {
+    if (!featuredVendors.length) {
+      return fallbackBidCards;
+    }
+
+    return featuredVendors.slice(0, 3).map((vendor, index) => {
+      const companyName = vendor.company?.name || "Verified Partner";
+      const statusTag =
+        vendor.verificationStatus === "verified"
+          ? "Verified"
+          : index === 0
+            ? "Featured"
+            : "Popular";
+      const tone = ["#E7F0FF", "#FFF0DF", "#DDFBEF"][index % 3];
+
+      return {
+        initials: toInitials(companyName),
+        name: companyName,
+        price: estimateVendorPrice(vendor.company),
+        tag: statusTag,
+        tone,
+      };
+    });
+  }, [featuredVendors]);
 
   const estimate = useMemo(() => {
     const monthlySavings = monthlyBill * 0.68;
@@ -2449,7 +2521,7 @@ function HomePage() {
                       right: { xs: 18, md: 28 },
                       bottom: { xs: 18, md: 28 },
                       p: { xs: 1.85, md: 2 },
-                      minHeight: { xs: 182, md: 178 },
+                      minHeight: { xs: 212, md: 218 },
                       borderRadius: "1.45rem",
                       color: "white",
                       bgcolor: "rgba(255,255,255,0.12)",
@@ -2457,48 +2529,52 @@ function HomePage() {
                       backdropFilter: "blur(20px)",
                       display: "flex",
                       flexDirection: "column",
-                      justifyContent: "space-between",
                     }}
                   >
-                    <Box>
-                      <Box
-                        sx={{
-                          width: 42,
-                          height: 42,
-                          borderRadius: "50%",
-                          bgcolor: "rgba(255,255,255,0.16)",
-                          border: "1px solid rgba(255,255,255,0.28)",
-                          display: "grid",
-                          placeItems: "center",
-                          mb: 1.55,
-                        }}
-                      >
-                        {card.icon}
-                      </Box>
-                      <Typography
-                        variant="h4"
-                        sx={{ fontSize: "1.08rem", mb: 0.8, maxWidth: 220 }}
-                      >
-                        {card.title}
-                      </Typography>
-                      <Typography
-                        sx={{
-                          color: "rgba(255,255,255,0.76)",
-                          lineHeight: 1.55,
-                          fontSize: "0.82rem",
-                          maxWidth: 235,
-                          minHeight: 62,
-                        }}
-                      >
-                        {card.text}
-                      </Typography>
+                    <Box
+                      sx={{
+                        width: 42,
+                        height: 42,
+                        borderRadius: "50%",
+                        bgcolor: "rgba(255,255,255,0.16)",
+                        border: "1px solid rgba(255,255,255,0.28)",
+                        display: "grid",
+                        placeItems: "center",
+                        mb: 1.2,
+                      }}
+                    >
+                      {card.icon}
                     </Box>
+                    <Typography
+                      variant="h4"
+                      sx={{
+                        fontSize: "1.08rem",
+                        mb: 0.8,
+                        maxWidth: 220,
+                        minHeight: "2.45em",
+                        lineHeight: 1.15,
+                        display: "flex",
+                        alignItems: "flex-start",
+                      }}
+                    >
+                      {card.title}
+                    </Typography>
+                    <Typography
+                      sx={{
+                        color: "rgba(255,255,255,0.76)",
+                        lineHeight: 1.55,
+                        fontSize: "0.82rem",
+                        maxWidth: 235,
+                      }}
+                    >
+                      {card.text}
+                    </Typography>
                     <Button
                       component={RouterLink}
                       to={card.href}
                       endIcon={<ArrowForwardRoundedIcon />}
                       sx={{
-                        mt: 1.55,
+                        mt: "auto",
                         px: 0,
                         color: "white",
                         fontWeight: 800,

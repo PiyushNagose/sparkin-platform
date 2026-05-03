@@ -24,6 +24,7 @@ import AssignmentOutlinedIcon from "@mui/icons-material/AssignmentOutlined";
 import BuildOutlinedIcon from "@mui/icons-material/BuildOutlined";
 import PendingActionsOutlinedIcon from "@mui/icons-material/PendingActionsOutlined";
 import CheckCircleOutlineRoundedIcon from "@mui/icons-material/CheckCircleOutlineRounded";
+import ApartmentRoundedIcon from "@mui/icons-material/ApartmentRounded";
 import { Link as RouterLink, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import { projectsApi } from "@/features/public/api/projectsApi";
@@ -31,6 +32,7 @@ import {
   VendorPageHeader,
   VendorPageShell,
   VendorPrimaryButton,
+  VendorEmptyState,
   VendorStatusPill,
 } from "@/features/vendor/components/VendorPortalUI";
 
@@ -920,10 +922,14 @@ export default function VendorProjectsPage() {
         ) : null}
 
         {!isLoading && !error && filteredProjects.length === 0 ? (
-          <Box sx={{ px: { xs: 1.2, md: 1.7 }, py: 4 }}>
-            <Alert severity="info" sx={{ borderRadius: "0.9rem" }}>
-              No assigned projects yet. Create a manual project or wait for customers to accept your quotes.
-            </Alert>
+          <Box sx={{ px: { xs: 1.2, md: 1.7 }, py: 2.2 }}>
+            <VendorEmptyState
+              icon={ApartmentRoundedIcon}
+              title="No assigned projects yet"
+              subtitle="Create a manual project or wait for customers to accept your quotes."
+              actionLabel="Create New Project"
+              actionOnClick={() => setIsCreateProjectOpen(true)}
+            />
           </Box>
         ) : null}
 

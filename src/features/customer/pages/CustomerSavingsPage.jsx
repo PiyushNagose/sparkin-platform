@@ -18,6 +18,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link as RouterLink } from "react-router-dom";
 import { paymentsApi } from "@/features/public/api/paymentsApi";
 import { projectsApi } from "@/features/public/api/projectsApi";
+import { CustomerErrorBlock, CustomerLoadingBlock } from "@/features/customer/components/CustomerPageStates";
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -276,34 +277,31 @@ export default function CustomerSavingsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
+  async function loadSavings(active = true) {
+    setIsLoading(true);
+    setError("");
+
+    try {
+      const [projectResult, paymentResult] = await Promise.all([
+        projectsApi.listProjects(),
+        paymentsApi.listPayments(),
+      ]);
+
+      if (!active) return;
+      setProjects(projectResult);
+      setPayments(paymentResult);
+    } catch (apiError) {
+      if (active) {
+        setError(apiError?.response?.data?.message || "Could not load savings data.");
+      }
+    } finally {
+      if (active) setIsLoading(false);
+    }
+  }
+
   useEffect(() => {
     let active = true;
-
-    async function loadSavings() {
-      setIsLoading(true);
-      setError("");
-
-      try {
-        const [projectResult, paymentResult] = await Promise.all([
-          projectsApi.listProjects(),
-          paymentsApi.listPayments(),
-        ]);
-
-        if (!active) return;
-        setProjects(projectResult);
-        setPayments(paymentResult);
-      } catch (apiError) {
-        if (active) {
-          setError(
-            apiError?.response?.data?.message || "Could not load savings data.",
-          );
-        }
-      } finally {
-        if (active) setIsLoading(false);
-      }
-    }
-
-    loadSavings();
+    loadSavings(active);
     return () => {
       active = false;
     };
@@ -397,18 +395,10 @@ export default function CustomerSavingsPage() {
       </Stack>
 
       {/* Loading */}
-      {isLoading && (
-        <Box sx={{ mt: 2, py: 5, display: "grid", placeItems: "center" }}>
-          <CircularProgress size={32} />
-        </Box>
-      )}
+      {isLoading && <CustomerLoadingBlock />}
 
       {/* Error */}
-      {!isLoading && error && (
-        <Alert severity="error" sx={{ mt: 1.5, borderRadius: "0.9rem" }}>
-          {error}
-        </Alert>
-      )}
+      {!isLoading && error && <CustomerErrorBlock message={error} onRetry={() => loadSavings(true)} mt={1.5} />}
 
       {/* Empty state */}
       {!isLoading && !error && projects.length === 0 && (

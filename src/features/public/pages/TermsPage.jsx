@@ -91,7 +91,7 @@ export default function TermsPage() {
                 maxWidth: { xs: "100%", md: 440 },
               }}
             >
-              Last updated: October 2023. Please read these terms carefully before
+              Last updated: May 3, 2026. Please read these terms carefully before
               using our platform.
             </Typography>
           </Box>
@@ -408,3 +408,4 @@ export default function TermsPage() {
     </Box>
   );
 }
+
