@@ -78,16 +78,29 @@ async function ensureProfile(user) {
 }
 
 export const vendorsService = {
+  async listFeaturedVendors() {
+    const profiles = await vendorsRepository.listFeatured(6);
+
+    return profiles.map((profile) => ({
+      vendorId: profile.vendorId,
+      verificationStatus: profile.verificationStatus,
+      company: {
+        name: profile.company?.name || profile.account?.fullName || "Verified Partner",
+        city: profile.company?.city || "",
+        state: profile.company?.state || "",
+        experienceYears: profile.company?.experienceYears || 0,
+        projectsCompleted: profile.company?.projectsCompleted || 0,
+      },
+      services: profile.services,
+    }));
+  },
+
   async getMyProfile(user) {
     assertVendor(user);
     return ensureProfile(user);
   },
 
-  async getVendorProfile(user, vendorId) {
-    if (!user.userId) {
-      throw new AppError(401, "Authentication is required");
-    }
-
+  async getVendorProfile(_user, vendorId) {
     const profile = await vendorsRepository.findByVendorId(vendorId);
 
     if (!profile) {

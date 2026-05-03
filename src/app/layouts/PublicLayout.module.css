@@ -58,8 +58,8 @@
 
 .footerContainer {
   width: 100%;
-  max-width: 1440px;
-  padding-inline: 56px;
+  max-width: 100%;
+  padding-inline: clamp(24px, 4vw, 72px);
   box-sizing: border-box;
   margin: 0 auto;
 }
@@ -98,13 +98,13 @@
 
 .footerTop {
   display: grid;
-  grid-template-columns: 1.3fr 1fr 1fr 1fr;
+  grid-template-columns: minmax(280px, 1.2fr) repeat(3, minmax(180px, 1fr));
   gap: 64px;
   align-items: start;
 }
 
 .footerBrand {
-  max-width: 265px;
+  max-width: 340px;
 }
 
 .footerBottom {

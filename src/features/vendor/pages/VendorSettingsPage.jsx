@@ -199,16 +199,6 @@ export default function VendorSettingsPage() {
             Your session is managed with access and refresh tokens. Logging out clears the local session and asks the
             identity service to revoke the refresh token.
           </Typography>
-          <Button
-            variant="outlined"
-            color="error"
-            startIcon={<LogoutOutlinedIcon />}
-            onClick={handleLogout}
-            disabled={isLoggingOut}
-            sx={{ mt: 1.5, minHeight: 38, borderRadius: "0.9rem", textTransform: "none", fontWeight: 800 }}
-          >
-            Logout from this device
-          </Button>
         </SectionCard>
 
         <SectionCard

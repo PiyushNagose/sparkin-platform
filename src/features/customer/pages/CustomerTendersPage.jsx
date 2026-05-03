@@ -14,6 +14,7 @@ import CheckCircleOutlinedIcon from "@mui/icons-material/CheckCircleOutlined";
 import { useEffect, useMemo, useState } from "react";
 import { Link as RouterLink } from "react-router-dom";
 import { leadsApi, quotesApi } from "@/features/public/api/leadsApi";
+import { CustomerErrorBlock, CustomerLoadingBlock } from "@/features/customer/components/CustomerPageStates";
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -424,34 +425,31 @@ export default function CustomerTendersPage() {
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState("active");
 
+  async function loadTenders(active = true) {
+    setIsLoading(true);
+    setError("");
+
+    try {
+      const [leadResult, quoteResult] = await Promise.all([
+        leadsApi.listLeads(),
+        quotesApi.listQuotes(),
+      ]);
+
+      if (!active) return;
+      setLeads(leadResult);
+      setQuotes(quoteResult);
+    } catch (apiError) {
+      if (active) {
+        setError(apiError?.response?.data?.message || "Could not load tenders.");
+      }
+    } finally {
+      if (active) setIsLoading(false);
+    }
+  }
+
   useEffect(() => {
     let active = true;
-
-    async function loadTenders() {
-      setIsLoading(true);
-      setError("");
-
-      try {
-        const [leadResult, quoteResult] = await Promise.all([
-          leadsApi.listLeads(),
-          quotesApi.listQuotes(),
-        ]);
-
-        if (!active) return;
-        setLeads(leadResult);
-        setQuotes(quoteResult);
-      } catch (apiError) {
-        if (active) {
-          setError(
-            apiError?.response?.data?.message || "Could not load tenders.",
-          );
-        }
-      } finally {
-        if (active) setIsLoading(false);
-      }
-    }
-
-    loadTenders();
+    loadTenders(active);
     return () => {
       active = false;
     };
@@ -635,18 +633,10 @@ export default function CustomerTendersPage() {
       />
 
       {/* Loading */}
-      {isLoading && (
-        <Box sx={{ py: 5, display: "grid", placeItems: "center" }}>
-          <CircularProgress size={32} />
-        </Box>
-      )}
+      {isLoading && <CustomerLoadingBlock mt={0} />}
 
       {/* Error */}
-      {!isLoading && error && (
-        <Alert severity="error" sx={{ mt: 1.2, borderRadius: "0.9rem" }}>
-          {error}
-        </Alert>
-      )}
+      {!isLoading && error && <CustomerErrorBlock message={error} onRetry={() => loadTenders(true)} mt={1.2} />}
 
       {/* Empty state */}
       {!isLoading && !error && visibleCards.length === 0 && (

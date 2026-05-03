@@ -18,6 +18,17 @@ function normalizeVendorProfile(profile) {
 }
 
 export const vendorsRepository = {
+  async listFeatured(limit = 6) {
+    const profiles = await VendorProfileModel.find({
+      verificationStatus: { $in: ["submitted", "verified"] },
+    })
+      .sort({ updatedAt: -1, createdAt: -1 })
+      .limit(limit)
+      .lean({ virtuals: true });
+
+    return profiles.map((profile) => normalizeVendorProfile(profile));
+  },
+
   async findByVendorId(vendorId) {
     const profile = await VendorProfileModel.findOne({ vendorId }).lean({ virtuals: true });
     return normalizeVendorProfile(profile);

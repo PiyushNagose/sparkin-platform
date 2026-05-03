@@ -23,6 +23,7 @@ import bookingHouseModern from "@/shared/assets/images/customer/bookings/booking
 import bookingHouseClassic from "@/shared/assets/images/customer/bookings/booking-house-classic-placeholder.png";
 import bookingSolarFacility from "@/shared/assets/images/customer/bookings/booking-solar-facility-placeholder.png";
 import bookingHouseUnderConstruction from "@/shared/assets/images/customer/bookings/booking-house-underconstruction-placeholder.png";
+import { CustomerErrorBlock, CustomerLoadingBlock } from "@/features/customer/components/CustomerPageStates";
 
 // ─── constants ───────────────────────────────────────────────────────────────
 
@@ -516,36 +517,33 @@ export default function CustomerBookingsPage() {
   const [error, setError] = useState("");
   const [page, setPage] = useState(1);
 
+  async function loadBookings(active = true) {
+    setIsLoading(true);
+    setError("");
+
+    try {
+      const [leadResult, quoteResult, projectResult] = await Promise.all([
+        leadsApi.listLeads(),
+        quotesApi.listQuotes(),
+        projectsApi.listProjects(),
+      ]);
+
+      if (!active) return;
+      setLeads(leadResult);
+      setQuotes(quoteResult);
+      setProjects(projectResult);
+    } catch (apiError) {
+      if (active) {
+        setError(apiError?.response?.data?.message || "Could not load bookings.");
+      }
+    } finally {
+      if (active) setIsLoading(false);
+    }
+  }
+
   useEffect(() => {
     let active = true;
-
-    async function loadBookings() {
-      setIsLoading(true);
-      setError("");
-
-      try {
-        const [leadResult, quoteResult, projectResult] = await Promise.all([
-          leadsApi.listLeads(),
-          quotesApi.listQuotes(),
-          projectsApi.listProjects(),
-        ]);
-
-        if (!active) return;
-        setLeads(leadResult);
-        setQuotes(quoteResult);
-        setProjects(projectResult);
-      } catch (apiError) {
-        if (active) {
-          setError(
-            apiError?.response?.data?.message || "Could not load bookings.",
-          );
-        }
-      } finally {
-        if (active) setIsLoading(false);
-      }
-    }
-
-    loadBookings();
+    loadBookings(active);
     return () => {
       active = false;
     };
@@ -689,17 +687,9 @@ export default function CustomerBookingsPage() {
 
       {/* Booking list */}
       <Stack spacing={1.35} sx={{ mt: 1.8 }}>
-        {isLoading && (
-          <Box sx={{ py: 5, display: "grid", placeItems: "center" }}>
-            <CircularProgress size={32} />
-          </Box>
-        )}
+        {isLoading && <CustomerLoadingBlock mt={0} />}
 
-        {!isLoading && error && (
-          <Alert severity="error" sx={{ borderRadius: "0.9rem" }}>
-            {error}
-          </Alert>
-        )}
+        {!isLoading && error && <CustomerErrorBlock message={error} onRetry={() => loadBookings(true)} mt={0} />}
 
         {!isLoading && !error && allCards.length === 0 && (
           <Box

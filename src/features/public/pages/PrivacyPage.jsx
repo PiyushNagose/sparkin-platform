@@ -140,7 +140,7 @@ export default function PrivacyPage() {
                     pl: 2.1,
                     position: "relative",
                     "&::before": {
-                      content: '"◎"',
+                      content: '"-"',
                       position: "absolute",
                       left: 0,
                       top: -1,
@@ -233,8 +233,7 @@ export default function PrivacyPage() {
               }}
             >
               <Typography sx={{ color: "#506073", fontSize: { xs: "0.78rem", md: "0.82rem" }, lineHeight: 1.74 }}>
-                “We treat your energy footprint with the same sanctity as your
-                financial records.”
+                "We treat your energy footprint with the same sanctity as your financial records."
               </Typography>
             </Box>
           </Box>
@@ -329,3 +328,4 @@ export default function PrivacyPage() {
     </Box>
   );
 }
+

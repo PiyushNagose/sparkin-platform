@@ -36,7 +36,7 @@ const faqs = [
   {
     question: "How long does the typical installation process take?",
     answer:
-      "The physical installation of panels usually takes only 1-3 days depending on the size of your roof. However, the entire process—including site assessment, design, permitting, and final utility interconnection—typically takes between 4 to 8 weeks from the moment you sign your contract.",
+      "The physical installation of panels usually takes only 1-3 days depending on the size of your roof. However, the entire process - including site assessment, design, permitting, and final utility interconnection - typically takes between 4 to 8 weeks from the moment you sign your contract.",
     highlights: [
       { label: "Permitting", text: "Handled by your specialist team" },
       { label: "Grid Connect", text: "Final utility inspection required" },
@@ -410,3 +410,4 @@ export default function FaqPage() {
     </Box>
   );
 }
+

@@ -16,6 +16,7 @@ import { leadsApi, quotesApi } from "@/features/public/api/leadsApi";
 import { projectsApi } from "@/features/public/api/projectsApi";
 import { paymentsApi } from "@/features/public/api/paymentsApi";
 import {
+  VendorEmptyState,
   VendorErrorState,
   VendorLoadingState,
   VendorPageHeader,
@@ -374,7 +375,11 @@ export default function VendorDashboardPage() {
                 ))}
               </Box>
             ) : (
-              <EmptyState text="Customer feedback will appear after your first accepted project." />
+              <VendorEmptyState
+                icon={StarRoundedIcon}
+                title="No project feedback yet"
+                subtitle="Customer feedback will appear after your first accepted project."
+              />
             )}
           </Box>
 
@@ -648,7 +653,11 @@ function ActiveLeadsPanel({ leads }) {
           })}
         </Stack>
       ) : (
-        <EmptyState text="No active leads are available yet." />
+        <VendorEmptyState
+          icon={Groups2RoundedIcon}
+          title="No active leads yet"
+          subtitle="New customer enquiries will appear here once leads are assigned."
+        />
       )}
 
       <Button
@@ -713,7 +722,11 @@ function ActivityPanel({ activity }) {
           ))}
         </Stack>
       ) : (
-        <EmptyState text="Activity will appear as leads, quotes, projects, and payments move." />
+        <VendorEmptyState
+          icon={AccessTimeRoundedIcon}
+          title="No recent activity yet"
+          subtitle="Activity will appear as leads, quotes, projects, and payments move."
+        />
       )}
 
       <Button
@@ -741,10 +754,3 @@ function ActivityPanel({ activity }) {
   );
 }
 
-function EmptyState({ text }) {
-  return (
-    <Box sx={{ py: 3, px: 1.5, borderRadius: "1rem", bgcolor: "#F8FAFD", textAlign: "center", color: "#798698", fontSize: "0.82rem", fontWeight: 600 }}>
-      {text}
-    </Box>
-  );
-}

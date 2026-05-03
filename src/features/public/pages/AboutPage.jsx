@@ -16,7 +16,7 @@ import layoutStyles from "@/app/layouts/PublicLayout.module.css";
 const values = [
   {
     title: "Our Vision",
-    text: "To empower every Indian household with energy independence. We envision a future where energy is decentralized, clean.",
+    text: "To empower every Indian household with energy independence. We envision a future where energy is decentralized, clean, and reliable.",
     icon: <VerifiedOutlinedIcon sx={{ fontSize: "0.95rem" }} />,
     tone: { bg: "#EAF1FF", fg: "#285DDE" },
   },
@@ -128,7 +128,7 @@ export default function AboutPage() {
 
             <Button
               component={RouterLink}
-              to="/booking"
+              to="/calculator"
               variant="contained"
               sx={{
                 mt: 2.35,
@@ -142,7 +142,7 @@ export default function AboutPage() {
                 boxShadow: "0 14px 28px rgba(14,86,200,0.16)",
               }}
             >
-              Join the Movement
+              Start Your Solar Plan
             </Button>
           </Grid>
 
@@ -395,7 +395,7 @@ export default function AboutPage() {
             >
               Sparkin was founded with a simple but ambitious vision: to make
               clean energy adoption accessible, measurable, and trustworthy. We
-              set out to solve the market’s biggest pain points—opaque pricing,
+              set out to solve the market's biggest pain points - opaque pricing,
               delayed execution, and a fragmented installer network.
             </Typography>
             <Typography
@@ -545,3 +545,4 @@ export default function AboutPage() {
     </Box>
   );
 }
+

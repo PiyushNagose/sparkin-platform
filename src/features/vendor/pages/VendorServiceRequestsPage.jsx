@@ -13,9 +13,10 @@ import BuildOutlinedIcon from "@mui/icons-material/BuildOutlined";
 import CheckCircleOutlineRoundedIcon from "@mui/icons-material/CheckCircleOutlineRounded";
 import ManageSearchRoundedIcon from "@mui/icons-material/ManageSearchRounded";
 import SupportAgentRoundedIcon from "@mui/icons-material/SupportAgentRounded";
+import HandymanOutlinedIcon from "@mui/icons-material/HandymanOutlined";
 import { useLocation } from "react-router-dom";
 import { serviceRequestsApi } from "@/features/public/api/serviceRequestsApi";
-import { VendorPageHeader, VendorPageShell } from "@/features/vendor/components/VendorPortalUI";
+import { VendorEmptyState, VendorPageHeader, VendorPageShell } from "@/features/vendor/components/VendorPortalUI";
 
 const statusOptions = [
   { value: "requested", label: "Requested" },
@@ -403,9 +404,11 @@ export default function VendorServiceRequestsPage() {
         ) : null}
 
         {!isLoading && !error && filteredRequests.length === 0 ? (
-          <Alert severity="info" sx={{ borderRadius: "0.9rem" }}>
-            No service requests are attached to your projects yet.
-          </Alert>
+          <VendorEmptyState
+            icon={HandymanOutlinedIcon}
+            title="No service requests yet"
+            subtitle="Service tickets linked to your projects will appear here."
+          />
         ) : null}
 
         {visibleRequests.map((request) => (

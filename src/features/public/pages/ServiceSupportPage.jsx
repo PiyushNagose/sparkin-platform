@@ -139,9 +139,6 @@ export default function ServiceSupportPage() {
                   }}
                 >
                   Service & Support
-                  <Box component="span" sx={{ ml: 0.35 }}>
-                    🛠️
-                  </Box>
                 </Typography>
                 <Typography
                   sx={{
@@ -536,3 +533,4 @@ export default function ServiceSupportPage() {
     </Box>
   );
 }
+

@@ -18,8 +18,9 @@ import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
 import SupportAgentRoundedIcon from "@mui/icons-material/SupportAgentRounded";
 import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
 import { useEffect, useMemo, useState } from "react";
-import { Link as RouterLink } from "react-router-dom";
+import { Link as RouterLink, useNavigate } from "react-router-dom";
 import { projectsApi } from "@/features/public/api/projectsApi";
+import { CustomerEmptyCard, CustomerErrorBlock, CustomerLoadingBlock } from "@/features/customer/components/CustomerPageStates";
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -477,33 +478,31 @@ function PromoCard({
 // ─── page ─────────────────────────────────────────────────────────────────────
 
 export default function CustomerProjectsPage() {
+  const navigate = useNavigate();
   const [projectRecords, setProjectRecords] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
+  async function loadProjects(active = true) {
+    setIsLoading(true);
+    setError("");
+
+    try {
+      const result = await projectsApi.listProjects();
+      if (!active) return;
+      setProjectRecords(result);
+    } catch (apiError) {
+      if (active) {
+        setError(apiError?.response?.data?.message || "Could not load projects.");
+      }
+    } finally {
+      if (active) setIsLoading(false);
+    }
+  }
+
   useEffect(() => {
     let active = true;
-
-    async function loadProjects() {
-      setIsLoading(true);
-      setError("");
-
-      try {
-        const result = await projectsApi.listProjects();
-        if (!active) return;
-        setProjectRecords(result);
-      } catch (apiError) {
-        if (active) {
-          setError(
-            apiError?.response?.data?.message || "Could not load projects.",
-          );
-        }
-      } finally {
-        if (active) setIsLoading(false);
-      }
-    }
-
-    loadProjects();
+    loadProjects(active);
     return () => {
       active = false;
     };
@@ -589,73 +588,21 @@ export default function CustomerProjectsPage() {
       </Stack>
 
       {/* Loading */}
-      {isLoading && (
-        <Box sx={{ mt: 2, py: 5, display: "grid", placeItems: "center" }}>
-          <CircularProgress size={32} />
-        </Box>
-      )}
+      {isLoading && <CustomerLoadingBlock />}
 
       {/* Error */}
-      {!isLoading && error && (
-        <Alert severity="error" sx={{ mt: 1.85, borderRadius: "0.9rem" }}>
-          {error}
-        </Alert>
-      )}
+      {!isLoading && error && <CustomerErrorBlock message={error} onRetry={() => loadProjects(true)} mt={1.85} />}
 
       {/* Empty state */}
       {!isLoading && !error && projectCards.length === 0 && (
-        <Box
-          sx={{
-            mt: 1.85,
-            py: 5,
-            px: 2,
-            borderRadius: "1.2rem",
-            bgcolor: "#F8FAFD",
-            border: "1px solid rgba(225,232,241,0.9)",
-            textAlign: "center",
-          }}
-        >
-          <ApartmentRoundedIcon
-            sx={{ color: "#C8D0DC", fontSize: "2rem", mb: 1 }}
-          />
-          <Typography
-            sx={{ color: "#223146", fontSize: "1rem", fontWeight: 800 }}
-          >
-            No projects yet
-          </Typography>
-          <Typography
-            sx={{
-              mt: 0.5,
-              color: "#6F7D8F",
-              fontSize: "0.84rem",
-              lineHeight: 1.65,
-              maxWidth: 360,
-              mx: "auto",
-            }}
-          >
-            Projects are created automatically when you accept a vendor quote
-            from your tenders.
-          </Typography>
-          <Button
-            variant="contained"
-            component={RouterLink}
-            to="/customer/tenders"
-            endIcon={<ArrowForwardRoundedIcon sx={{ fontSize: "0.9rem" }} />}
-            sx={{
-              mt: 1.8,
-              minHeight: 38,
-              px: 1.65,
-              borderRadius: "0.95rem",
-              bgcolor: "#0E56C8",
-              boxShadow: "0 12px 24px rgba(14,86,200,0.16)",
-              fontSize: "0.75rem",
-              fontWeight: 700,
-              textTransform: "none",
-            }}
-          >
-            View My Tenders
-          </Button>
-        </Box>
+        <CustomerEmptyCard
+          icon={ApartmentRoundedIcon}
+          title="No projects yet"
+          description="Projects are created automatically when you accept a vendor quote from your tenders."
+          actionLabel="View My Tenders"
+          action={() => navigate("/customer/tenders")}
+          mt={1.85}
+        />
       )}
 
       {/* Project cards */}

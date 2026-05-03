@@ -620,23 +620,17 @@ export default function VendorQuotesPage() {
           />
 
           {quoteEligibleLeads.length === 0 ? (
-            <Box sx={{ py: 4, textAlign: "center" }}>
-              <Typography sx={{ color: "#223146", fontSize: "0.95rem", fontWeight: 800 }}>
-                No eligible leads available
-              </Typography>
-              <Typography sx={{ mt: 0.45, color: "#738094", fontSize: "0.78rem", lineHeight: 1.6 }}>
-                Create a manual quote with customer details or review leads that do not already have your quote.
-              </Typography>
-              <Button
-                variant="contained"
-                onClick={() => {
+            <Box sx={{ py: 2.2 }}>
+              <VendorEmptyState
+                icon={RequestQuoteOutlinedIcon}
+                title="No eligible leads available"
+                subtitle="Create a manual quote with customer details or review leads that do not already have your quote."
+                actionLabel="Create Manual Quote"
+                actionOnClick={() => {
                   setIsLeadPickerOpen(false);
                   setIsManualQuoteOpen(true);
                 }}
-                sx={{ mt: 1.4, mr: 1, borderRadius: "999px", bgcolor: "#0E56C8", textTransform: "none", fontWeight: 800 }}
-              >
-                Create Manual Quote
-              </Button>
+              />
               <Button
                 component={RouterLink}
                 to="/vendor/leads"
@@ -971,7 +965,13 @@ export default function VendorQuotesPage() {
           ) : null}
 
           {!isLoading && !error && filteredQuotes.length === 0 ? (
-            <VendorEmptyState title="No quotes available" subtitle="Submitted quotes will appear here." />
+            <VendorEmptyState
+              icon={RequestQuoteOutlinedIcon}
+              title="No quotes available"
+              subtitle="Create your first quote from active leads to start tracking performance."
+              actionLabel="Create New Quote"
+              actionOnClick={() => setIsLeadPickerOpen(true)}
+            />
           ) : null}
 
           {visibleQuotes.map((quote, index) => (

@@ -9,6 +9,11 @@ function requireId(id, label) {
 }
 
 export const publicVendorsApi = {
+  async listFeaturedVendors() {
+    const { data } = await businessClient.get("/vendors/public/featured");
+    return data.vendors;
+  },
+
   async getVendorProfile(vendorId) {
     const { data } = await businessClient.get(`/vendors/${requireId(vendorId, "Vendor id")}`);
     return data.vendorProfile;

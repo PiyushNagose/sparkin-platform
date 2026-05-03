@@ -22,6 +22,7 @@ import { leadsApi, quotesApi } from "@/features/public/api/leadsApi";
 import { projectsApi } from "@/features/public/api/projectsApi";
 import { serviceRequestsApi } from "@/features/public/api/serviceRequestsApi";
 import customerSolarTipPlaceholder from "@/shared/assets/images/customer/dashboard/customer-solar-tip-placeholder.png";
+import { CustomerErrorBlock, CustomerLoadingBlock } from "@/features/customer/components/CustomerPageStates";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -226,39 +227,36 @@ export default function CustomerDashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
+  async function loadDashboard(active = true) {
+    setIsLoading(true);
+    setError("");
+
+    try {
+      const [leadResult, quoteResult, projectResult, serviceResult] =
+        await Promise.all([
+          leadsApi.listLeads(),
+          quotesApi.listQuotes(),
+          projectsApi.listProjects(),
+          serviceRequestsApi.listRequests(),
+        ]);
+
+      if (!active) return;
+      setLeads(leadResult);
+      setQuotes(quoteResult);
+      setProjects(projectResult);
+      setServiceRequests(serviceResult);
+    } catch (apiError) {
+      if (active) {
+        setError(apiError?.response?.data?.message || "Could not load dashboard.");
+      }
+    } finally {
+      if (active) setIsLoading(false);
+    }
+  }
+
   useEffect(() => {
     let active = true;
-
-    async function loadDashboard() {
-      setIsLoading(true);
-      setError("");
-
-      try {
-        const [leadResult, quoteResult, projectResult, serviceResult] =
-          await Promise.all([
-            leadsApi.listLeads(),
-            quotesApi.listQuotes(),
-            projectsApi.listProjects(),
-            serviceRequestsApi.listRequests(),
-          ]);
-
-        if (!active) return;
-        setLeads(leadResult);
-        setQuotes(quoteResult);
-        setProjects(projectResult);
-        setServiceRequests(serviceResult);
-      } catch (apiError) {
-        if (active) {
-          setError(
-            apiError?.response?.data?.message || "Could not load dashboard.",
-          );
-        }
-      } finally {
-        if (active) setIsLoading(false);
-      }
-    }
-
-    loadDashboard();
+    loadDashboard(active);
     return () => {
       active = false;
     };
@@ -343,18 +341,10 @@ export default function CustomerDashboardPage() {
       </Box>
 
       {/* Loading */}
-      {isLoading && (
-        <Box sx={{ mt: 2, py: 4, display: "grid", placeItems: "center" }}>
-          <CircularProgress size={32} />
-        </Box>
-      )}
+      {isLoading && <CustomerLoadingBlock py={4} />}
 
       {/* Error */}
-      {!isLoading && error && (
-        <Alert severity="error" sx={{ mt: 1.5, borderRadius: "0.9rem" }}>
-          {error}
-        </Alert>
-      )}
+      {!isLoading && error && <CustomerErrorBlock message={error} onRetry={() => loadDashboard(true)} mt={1.5} />}
 
       {/* Content — only render once data is ready */}
       {!isLoading && !error && (
