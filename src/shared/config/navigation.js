@@ -33,6 +33,7 @@ export const portalNavigation = {
     { label: "Vendors", href: "/admin/vendors" },
     { label: "Bidding", href: "/admin/bidding" },
     { label: "Customers/Projects", href: "/admin/customers-projects" },
+    { label: "Services", href: "/admin/services" },
     { label: "Reports", href: "/admin/reports" },
     { label: "Settings", href: "/admin/settings" },
     { label: "Notifications", href: "/admin/notifications" },
