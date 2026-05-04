@@ -48,3 +48,7 @@ export const uploadVendorDocumentSchema = z.object({
   mimeType: z.enum(["application/pdf", "image/jpeg", "image/png", "image/webp"]),
   data: z.string().min(100),
 });
+
+export const updateVendorStatusSchema = z.object({
+  verificationStatus: z.enum(["draft", "submitted", "verified", "rejected"]),
+});

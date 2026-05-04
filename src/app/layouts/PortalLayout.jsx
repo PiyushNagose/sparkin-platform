@@ -23,6 +23,7 @@ import DashboardRoundedIcon from "@mui/icons-material/DashboardRounded";
 import GavelOutlinedIcon from "@mui/icons-material/GavelOutlined";
 import Groups2OutlinedIcon from "@mui/icons-material/Groups2Outlined";
 import HelpOutlineRoundedIcon from "@mui/icons-material/HelpOutlineRounded";
+import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
 import MenuRoundedIcon from "@mui/icons-material/MenuRounded";
 import NotificationsNoneRoundedIcon from "@mui/icons-material/NotificationsNoneRounded";
 import PaymentsOutlinedIcon from "@mui/icons-material/PaymentsOutlined";
@@ -183,7 +184,7 @@ function getAvatarSrc(user) {
 
 export function PortalLayout({ portal }) {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
 
   const [searchTerm, setSearchTerm] = useState("");
   const [notificationAnchor, setNotificationAnchor] = useState(null);
@@ -422,6 +423,21 @@ export function PortalLayout({ portal }) {
 
   const closeMobileNav = useCallback(() => setMobileNavOpen(false), []);
 
+  const helpCenterPath =
+    portal === "admin"
+      ? "/admin/notifications"
+      : portal === "vendor"
+        ? "/vendor/services"
+        : "/service-support";
+
+  const handleSidebarLogout = useCallback(async (onNavClick) => {
+    onNavClick?.();
+    await logout();
+    navigate(portal === "admin" ? "/auth/admin-login" : "/auth/login", {
+      replace: true,
+    });
+  }, [logout, navigate, portal]);
+
   // ── sidebar content — defined outside render to avoid remount ─────────────
 
   const SidebarContent = useCallback(
@@ -577,11 +593,65 @@ export function PortalLayout({ portal }) {
                 New Booking
               </Button>
             )}
+
+            <Box
+              sx={{
+                mt: 2,
+                pt: 1.5,
+                borderTop: "1px solid rgba(220,228,238,0.92)",
+              }}
+            >
+              <Stack spacing={0.35}>
+                <Button
+                  component={NavLink}
+                  to={helpCenterPath}
+                  variant="text"
+                  color="inherit"
+                  startIcon={<HelpOutlineRoundedIcon />}
+                  onClick={onNavClick}
+                  sx={{
+                    justifyContent: "flex-start",
+                    minHeight: 34,
+                    px: 0.8,
+                    borderRadius: "0.65rem",
+                    color: "#647387",
+                    fontSize: "0.75rem",
+                    fontWeight: 700,
+                    textTransform: "none",
+                    "&:hover": { bgcolor: "#F4F7FF", color: "#0E56C8" },
+                    "& .MuiButton-startIcon": { mr: 0.8 },
+                  }}
+                >
+                  Help Center
+                </Button>
+                <Button
+                  type="button"
+                  variant="text"
+                  color="inherit"
+                  startIcon={<LogoutRoundedIcon />}
+                  onClick={() => handleSidebarLogout(onNavClick)}
+                  sx={{
+                    justifyContent: "flex-start",
+                    minHeight: 34,
+                    px: 0.8,
+                    borderRadius: "0.65rem",
+                    color: "#647387",
+                    fontSize: "0.75rem",
+                    fontWeight: 700,
+                    textTransform: "none",
+                    "&:hover": { bgcolor: "#FFF1F1", color: "#D94444" },
+                    "& .MuiButton-startIcon": { mr: 0.8 },
+                  }}
+                >
+                  Logout
+                </Button>
+              </Stack>
+            </Box>
           </Box>
         </>
       );
     },
-    [navItems, navIconMap, portal],
+    [handleSidebarLogout, helpCenterPath, navItems, navIconMap, portal],
   );
 
   // ── render ─────────────────────────────────────────────────────────────────

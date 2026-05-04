@@ -9,6 +9,11 @@ export const adminVendorsApi = {
     const { data } = await businessClient.get("/vendors");
     return data.vendors;
   },
+
+  async updateVendorStatus(vendorId, payload) {
+    const { data } = await businessClient.patch(`/vendors/${vendorId}/status`, payload);
+    return data.vendorProfile;
+  },
 };
 
 export async function getAdminDashboardData() {
