@@ -11,7 +11,7 @@ function getRoleHome(role) {
   }
 
   if (role === "admin") {
-    return "/customer";
+    return "/admin";
   }
 
   return "/customer";

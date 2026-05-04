@@ -87,6 +87,10 @@ export const quotesService = {
       return attachLeads(await quotesRepository.findQuotesByVendor(user.userId));
     }
 
+    if (user.role === "admin") {
+      return attachLeads(await quotesRepository.findAll());
+    }
+
     const leads = await leadsRepository.findLeadsForCustomer(user.userId);
     const leadIds = leads.map((lead) => lead._id || lead.id).filter(Boolean);
     return attachLeads(await quotesRepository.findQuotesByCustomer(user.userId, leadIds));

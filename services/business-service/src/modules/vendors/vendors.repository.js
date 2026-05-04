@@ -29,6 +29,14 @@ export const vendorsRepository = {
     return profiles.map((profile) => normalizeVendorProfile(profile));
   },
 
+  async findAll() {
+    const profiles = await VendorProfileModel.find({})
+      .sort({ updatedAt: -1, createdAt: -1 })
+      .lean({ virtuals: true });
+
+    return profiles.map((profile) => normalizeVendorProfile(profile));
+  },
+
   async findByVendorId(vendorId) {
     const profile = await VendorProfileModel.findOne({ vendorId }).lean({ virtuals: true });
     return normalizeVendorProfile(profile);

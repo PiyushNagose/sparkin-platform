@@ -1,6 +1,11 @@
 import { vendorsService } from "./vendors.service.js";
 
 export const vendorsController = {
+  async list(req, res) {
+    const vendors = await vendorsService.listVendors(req.auth);
+    res.status(200).json({ vendors });
+  },
+
   async listFeatured(req, res) {
     const vendors = await vendorsService.listFeaturedVendors();
     res.status(200).json({ vendors });

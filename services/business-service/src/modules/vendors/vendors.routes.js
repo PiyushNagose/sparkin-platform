@@ -8,15 +8,17 @@ import { updateVendorProfileSchema, uploadVendorDocumentSchema } from "./vendors
 export const vendorsRouter = Router();
 
 vendorsRouter.get("/public/featured", asyncHandler(vendorsController.listFeatured));
-vendorsRouter.get("/:vendorId", asyncHandler(vendorsController.getByVendorId));
 
-vendorsRouter.use(requireAuth);
-vendorsRouter.get("/me", asyncHandler(vendorsController.getMe));
-vendorsRouter.patch("/me", validate(updateVendorProfileSchema), asyncHandler(vendorsController.updateMe));
+vendorsRouter.get("/", requireAuth, asyncHandler(vendorsController.list));
+vendorsRouter.get("/me", requireAuth, asyncHandler(vendorsController.getMe));
+vendorsRouter.patch("/me", requireAuth, validate(updateVendorProfileSchema), asyncHandler(vendorsController.updateMe));
 vendorsRouter.post(
   "/me/documents",
+  requireAuth,
   validate(uploadVendorDocumentSchema),
   asyncHandler(vendorsController.uploadDocument),
 );
-vendorsRouter.delete("/me/documents/:documentId", asyncHandler(vendorsController.deleteDocument));
-vendorsRouter.post("/me/submit", asyncHandler(vendorsController.submitApplication));
+vendorsRouter.delete("/me/documents/:documentId", requireAuth, asyncHandler(vendorsController.deleteDocument));
+vendorsRouter.post("/me/submit", requireAuth, asyncHandler(vendorsController.submitApplication));
+
+vendorsRouter.get("/:vendorId", asyncHandler(vendorsController.getByVendorId));

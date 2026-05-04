@@ -28,6 +28,11 @@ export const leadsRepository = {
     return normalizeLeads(leads);
   },
 
+  async findAll() {
+    const leads = await LeadModel.find({}).sort({ createdAt: -1 }).lean({ virtuals: true });
+    return normalizeLeads(leads);
+  },
+
   async findLeadById(id) {
     const lead = await LeadModel.findById(id).lean({ virtuals: true });
     return normalizeLead(lead);

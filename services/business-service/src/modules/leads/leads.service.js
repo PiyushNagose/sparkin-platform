@@ -27,7 +27,11 @@ export const leadsService = {
   },
 
   async listLeads(user) {
-    if (user.role === "vendor" || user.role === "admin") {
+    if (user.role === "admin") {
+      return leadsRepository.findAll();
+    }
+
+    if (user.role === "vendor") {
       return leadsRepository.findVendorVisibleLeads();
     }
 
