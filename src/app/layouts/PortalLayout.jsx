@@ -667,6 +667,9 @@ export function PortalLayout({ portal }) {
             minWidth: 0,
             display: "flex",
             flexDirection: "column",
+            height: { lg: "calc(100vh - 24px)" },
+            overflowY: { lg: "auto" },
+            borderRadius: { lg: "1.35rem" },
           }}
         >
           {/* Topbar */}
@@ -679,7 +682,7 @@ export function PortalLayout({ portal }) {
               display: "flex",
               alignItems: "center",
               gap: { xs: 1, md: 1.8 },
-              bgcolor: "rgba(255,255,255,0.92)",
+              bgcolor: "rgba(255,255,255,0.96)",
               backdropFilter: "blur(14px)",
               position: "sticky",
               top: 0,

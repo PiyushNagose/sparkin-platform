@@ -418,7 +418,13 @@ export default function VendorLeadsPage() {
   }, [leadRows, locationFilter, searchTerm, sortBy, statusFilter, systemFilter]);
   const totalPages = Math.max(1, Math.ceil(filteredRows.length / pageSize));
   const visibleRows = filteredRows.slice((page - 1) * pageSize, page * pageSize);
-  const pageNumbers = useMemo(() => Array.from({ length: totalPages }, (_, index) => index + 1), [totalPages]);
+  const pageNumbers = useMemo(() => {
+    if (totalPages <= 5) return Array.from({ length: totalPages }, (_, i) => i + 1);
+    const pages = new Set([1, totalPages, page]);
+    if (page > 1) pages.add(page - 1);
+    if (page < totalPages) pages.add(page + 1);
+    return [...pages].sort((a, b) => a - b);
+  }, [totalPages, page]);
   const firstVisibleLead = filteredRows.length ? (page - 1) * pageSize + 1 : 0;
   const lastVisibleLead = filteredRows.length ? firstVisibleLead + visibleRows.length - 1 : 0;
 
@@ -644,22 +650,6 @@ export default function VendorLeadsPage() {
           spacing={1.35}
         >
           <Stack direction={{ xs: "column", md: "row" }} spacing={1} flexWrap="wrap">
-            <TextField
-              size="small"
-              label="Search"
-              value={searchTerm}
-              onChange={(event) => updateFilter(setSearchTerm, event.target.value)}
-              sx={{
-                minWidth: { xs: "100%", md: 220 },
-                "& .MuiOutlinedInput-root": {
-                  height: 40,
-                  borderRadius: "999px",
-                  bgcolor: "#FFFFFF",
-                  fontSize: "0.74rem",
-                  fontWeight: 700,
-                },
-              }}
-            />
             <FilterSelect
               label="Status"
               value={statusFilter}
@@ -724,7 +714,7 @@ export default function VendorLeadsPage() {
       </VendorFilterPanel>
 
       <VendorPanel sx={{ borderRadius: "1.7rem", overflow: "hidden" }}>
-        <Box sx={{ display: { xs: "none", lg: "block" }, px: 2.4, pt: 1.7, pb: 1.1 }}>
+        <Box sx={{ display: { xs: "none", lg: "block" }, px: 2.4, pt: 2, pb: 1.2 }}>
           <Box
             sx={{
               display: "grid",
@@ -749,7 +739,7 @@ export default function VendorLeadsPage() {
           </Box>
         </Box>
 
-        <Stack spacing={0} sx={{ px: { xs: 1.2, md: 2.4 }, pb: 1.25 }}>
+        <Stack spacing={0} sx={{ px: { xs: 1.4, md: 2.4 }, pb: 1.25 }}>
           {isLoading ? (
             <VendorLoadingState minHeight={140} />
           ) : null}
@@ -773,30 +763,49 @@ export default function VendorLeadsPage() {
               key={lead.id || `${lead.name}-${index}`}
               sx={{
                 borderTop: index === 0 ? "none" : "1px solid rgba(234,239,245,0.95)",
-                py: { xs: 1.45, md: 1.6 },
+                py: { xs: 1.6, md: 2 },
                 transition: "background 0.15s",
                 borderRadius: "0.75rem",
                 "&:hover": { bgcolor: "#F4F7FF" },
               }}
             >
               <Box sx={{ display: { xs: "none", lg: "grid" }, gridTemplateColumns: "1.35fr 1fr 0.7fr 0.82fr 0.8fr 0.88fr 0.9fr", gap: 1, alignItems: "center" }}>
-                <Stack direction="row" spacing={1} alignItems="center">
+                <Stack direction="row" spacing={1.2} alignItems="center">
                   <Avatar
                     sx={{
-                      width: 30,
-                      height: 30,
+                      width: 36,
+                      height: 36,
                       bgcolor: "#EEF2F8",
                       color: "#667388",
-                      fontSize: "0.68rem",
+                      fontSize: "0.72rem",
                       fontWeight: 800,
                     }}
                   >
                     {lead.initials}
                   </Avatar>
                   <Box>
-                    <Typography sx={{ color: "#223146", fontSize: "0.92rem", fontWeight: 700, lineHeight: 1.18 }}>
+                    <Typography sx={{ color: "#223146", fontSize: "0.96rem", fontWeight: 700, lineHeight: 1.18 }}>
                       {lead.name}
                     </Typography>
+                    {lead.rawStatus === "submitted" && (
+                      <Box
+                        sx={{
+                          display: "inline-flex",
+                          mt: 0.3,
+                          px: 0.7,
+                          py: 0.15,
+                          borderRadius: "0.3rem",
+                          bgcolor: "#0E56C8",
+                          color: "#FFFFFF",
+                          fontSize: "0.5rem",
+                          fontWeight: 800,
+                          letterSpacing: "0.08em",
+                          textTransform: "uppercase",
+                        }}
+                      >
+                        NEW
+                      </Box>
+                    )}
                   </Box>
                 </Stack>
 
@@ -816,7 +825,7 @@ export default function VendorLeadsPage() {
                   {lead.timeReceived}
                 </Typography>
 
-                <Stack spacing={0.55} alignItems="flex-start">
+                <Stack spacing={0.7} alignItems="flex-start">
                   <Button
                     component={RouterLink}
                     to={lead.detailPath}
@@ -825,7 +834,7 @@ export default function VendorLeadsPage() {
                       px: 0,
                       py: 0,
                       color: "#0E56C8",
-                      fontSize: "0.72rem",
+                      fontSize: "0.76rem",
                       fontWeight: 700,
                       textTransform: "none",
                       "&:hover": { bgcolor: "transparent", textDecoration: "underline" },
@@ -838,15 +847,14 @@ export default function VendorLeadsPage() {
                     to={lead.quotePath}
                     variant="contained"
                     sx={{
-                      minHeight: 30,
-                      px: 1.2,
+                      minHeight: 34,
+                      px: 1.4,
                       borderRadius: "999px",
                       bgcolor: "#0E56C8",
                       boxShadow: "0 6px 14px rgba(14,86,200,0.2)",
-                      fontSize: "0.66rem",
+                      fontSize: "0.7rem",
                       fontWeight: 700,
                       textTransform: "none",
-                      transition: "all 0.15s",
                       "&:hover": {
                         bgcolor: "#0B49AD",
                         boxShadow: "0 8px 18px rgba(14,86,200,0.28)",
@@ -989,25 +997,34 @@ export default function VendorLeadsPage() {
             >
               <KeyboardArrowLeftRoundedIcon />
             </Button>
-            {pageNumbers.map((pageNumber) => (
-              <Button
-                key={pageNumber}
-                onClick={() => setPage(pageNumber)}
-                sx={{
-                  minWidth: 32,
-                  width: 32,
-                  height: 32,
-                  borderRadius: "50%",
-                  p: 0,
-                  color: pageNumber === page ? "#FFFFFF" : "#223146",
-                  bgcolor: pageNumber === page ? "#0E56C8" : "transparent",
-                  fontSize: "0.72rem",
-                  fontWeight: 700,
-                }}
-              >
-                {pageNumber}
-              </Button>
-            ))}
+            {pageNumbers.map((pageNumber, idx) => {
+              const prev = pageNumbers[idx - 1];
+              const showEllipsis = prev && pageNumber - prev > 1;
+              return (
+                <Box key={pageNumber} sx={{ display: "flex", alignItems: "center", gap: 0.45 }}>
+                  {showEllipsis && (
+                    <Typography sx={{ color: "#8B97A8", fontSize: "0.72rem", px: 0.2 }}>…</Typography>
+                  )}
+                  <Button
+                    onClick={() => setPage(pageNumber)}
+                    sx={{
+                      minWidth: 32,
+                      width: 32,
+                      height: 32,
+                      borderRadius: "50%",
+                      p: 0,
+                      color: pageNumber === page ? "#FFFFFF" : "#223146",
+                      bgcolor: pageNumber === page ? "#0E56C8" : "transparent",
+                      border: pageNumber === page ? "none" : "1px solid rgba(225,232,241,0.96)",
+                      fontSize: "0.72rem",
+                      fontWeight: 700,
+                    }}
+                  >
+                    {pageNumber}
+                  </Button>
+                </Box>
+              );
+            })}
             <Button
               onClick={() => setPage((currentPage) => Math.min(totalPages, currentPage + 1))}
               disabled={page === totalPages}

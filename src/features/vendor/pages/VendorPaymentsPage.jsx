@@ -196,20 +196,22 @@ function KpiCard({ card }) {
   return (
     <Box
       sx={{
-        p: 1.65,
-        minHeight: 106,
-        borderRadius: "1.15rem",
+        p: { xs: 2, md: 2.2 },
+        minHeight: 116,
+        borderRadius: "1.25rem",
         bgcolor: "#FFFFFF",
         border: "1px solid rgba(225,232,241,0.96)",
-        boxShadow: "0 14px 28px rgba(16,29,51,0.04)",
+        boxShadow: "0 4px 16px rgba(16,29,51,0.06)",
+        transition: "all 0.18s ease",
+        "&:hover": { transform: "translateY(-2px)", boxShadow: "0 8px 24px rgba(16,29,51,0.1)" },
       }}
     >
       <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
         <Box
           sx={{
-            width: 30,
-            height: 30,
-            borderRadius: "0.78rem",
+            width: 36,
+            height: 36,
+            borderRadius: "0.9rem",
             bgcolor: card.bg,
             color: card.tone,
             display: "grid",
@@ -219,35 +221,19 @@ function KpiCard({ card }) {
           {card.icon}
         </Box>
         {card.delta ? (
-          <Typography sx={{ color: "#239654", fontSize: "0.58rem", fontWeight: 800 }}>
+          <Typography sx={{ color: "#239654", fontSize: "0.66rem", fontWeight: 800 }}>
             {card.delta}
           </Typography>
         ) : card.note ? (
-          <Typography sx={{ color: "#778597", fontSize: "0.58rem", fontWeight: 700 }}>
+          <Typography sx={{ color: "#778597", fontSize: "0.66rem", fontWeight: 700 }}>
             {card.note}
           </Typography>
         ) : null}
       </Stack>
-
-      <Typography
-        sx={{
-          mt: 1.15,
-          color: "#6F7D8F",
-          fontSize: "0.76rem",
-          fontWeight: 500,
-        }}
-      >
+      <Typography sx={{ mt: 1.3, color: "#6F7D8F", fontSize: "0.78rem", fontWeight: 500 }}>
         {card.label}
       </Typography>
-      <Typography
-        sx={{
-          mt: 0.35,
-          color: "#18253A",
-          fontSize: "1.82rem",
-          fontWeight: 800,
-          lineHeight: 1.05,
-        }}
-      >
+      <Typography sx={{ mt: 0.4, color: "#18253A", fontSize: "1.9rem", fontWeight: 800, lineHeight: 1.05 }}>
         {card.value}
       </Typography>
     </Box>
@@ -397,8 +383,8 @@ export default function VendorPaymentsPage() {
       >
         <Box
           sx={{
-            p: 1.7,
-            borderRadius: "1.35rem",
+            p: { xs: 2, md: 2.4 },
+            borderRadius: "1.4rem",
             bgcolor: "#FFFFFF",
             border: "1px solid rgba(225,232,241,0.96)",
             boxShadow: "0 14px 28px rgba(16,29,51,0.04)",
@@ -406,7 +392,7 @@ export default function VendorPaymentsPage() {
         >
           <Stack direction="row" justifyContent="space-between" spacing={1} alignItems="flex-start">
             <Box>
-              <Typography sx={{ color: "#18253A", fontSize: "1rem", fontWeight: 800 }}>
+              <Typography sx={{ color: "#18253A", fontSize: "1.1rem", fontWeight: 800 }}>
                 Monthly Revenue Trend
               </Typography>
               <Typography sx={{ mt: 0.2, color: "#738094", fontSize: "0.72rem" }}>
@@ -432,7 +418,7 @@ export default function VendorPaymentsPage() {
             direction="row"
             alignItems="flex-end"
             spacing={0.45}
-            sx={{ mt: 3.2, height: 166 }}
+            sx={{ mt: 3.5, height: 180 }}
           >
             {dynamicChartBars.map((bar) => (
               <Box key={bar.month} sx={{ flex: 1, minWidth: 0 }}>
@@ -440,7 +426,7 @@ export default function VendorPaymentsPage() {
                   sx={{
                     width: "100%",
                     height: bar.height,
-                    borderRadius: "0.4rem 0.4rem 0 0",
+                    borderRadius: "0.5rem 0.5rem 0 0",
                     bgcolor: bar.tone,
                   }}
                 />
@@ -448,7 +434,7 @@ export default function VendorPaymentsPage() {
                   sx={{
                     mt: 0.8,
                     color: "#7A8799",
-                    fontSize: "0.58rem",
+                    fontSize: "0.62rem",
                     fontWeight: 800,
                     letterSpacing: "0.08em",
                     textTransform: "uppercase",
@@ -464,8 +450,8 @@ export default function VendorPaymentsPage() {
 
         <Box
           sx={{
-            p: 1.55,
-            borderRadius: "1.35rem",
+            p: { xs: 2, md: 2.2 },
+            borderRadius: "1.4rem",
             background:
               "linear-gradient(180deg, rgba(239,243,255,0.96) 0%, rgba(245,248,255,0.96) 100%)",
             border: "1px solid rgba(225,232,241,0.96)",
@@ -475,8 +461,8 @@ export default function VendorPaymentsPage() {
           <Stack direction="row" spacing={0.8} alignItems="center">
             <Box
               sx={{
-                width: 30,
-                height: 30,
+                width: 36,
+                height: 36,
                 borderRadius: "0.8rem",
                 bgcolor: "#FFFFFF",
                 color: "#0E56C8",
@@ -487,7 +473,7 @@ export default function VendorPaymentsPage() {
             >
               <PaymentsOutlinedIcon sx={{ fontSize: "0.95rem" }} />
             </Box>
-            <Typography sx={{ color: "#223146", fontSize: "1rem", fontWeight: 800 }}>
+            <Typography sx={{ color: "#223146", fontSize: "1.1rem", fontWeight: 800 }}>
               Payout Setup
             </Typography>
           </Stack>
@@ -504,7 +490,7 @@ export default function VendorPaymentsPage() {
             <Typography
               sx={{
                 color: "#7D8797",
-                fontSize: "0.56rem",
+                fontSize: "0.62rem",
                 fontWeight: 800,
                 letterSpacing: "0.09em",
                 textTransform: "uppercase",
@@ -528,8 +514,7 @@ export default function VendorPaymentsPage() {
                 >
                   ▣
                 </Box>
-                <Typography sx={{ color: "#223146", fontSize: "0.82rem", fontWeight: 700 }}>
-                  Bank account not connected
+                <Typography sx={{ color: "#223146", fontSize: "0.88rem", fontWeight: 700 }}>
                 </Typography>
               </Stack>
               <Box
@@ -551,18 +536,18 @@ export default function VendorPaymentsPage() {
 
             <Stack spacing={1} sx={{ mt: 1.35 }}>
               <Stack direction="row" justifyContent="space-between" spacing={1}>
-                <Typography sx={{ color: "#7A8799", fontSize: "0.72rem" }}>
+                <Typography sx={{ color: "#7A8799", fontSize: "0.8rem" }}>
                   Next payout date
                 </Typography>
-                <Typography sx={{ color: "#223146", fontSize: "0.72rem", fontWeight: 700 }}>
+                <Typography sx={{ color: "#223146", fontSize: "0.8rem", fontWeight: 700 }}>
                   {pendingAmount > 0 ? formatDate(new Date()) : "No payout pending"}
                 </Typography>
               </Stack>
               <Stack direction="row" justifyContent="space-between" spacing={1}>
-                <Typography sx={{ color: "#7A8799", fontSize: "0.72rem" }}>
+                <Typography sx={{ color: "#7A8799", fontSize: "0.8rem" }}>
                   Min withdrawal
                 </Typography>
-                <Typography sx={{ color: "#223146", fontSize: "0.72rem", fontWeight: 700 }}>
+                <Typography sx={{ color: "#223146", fontSize: "0.8rem", fontWeight: 700 }}>
                   \u20B910,000
                 </Typography>
               </Stack>
@@ -575,11 +560,11 @@ export default function VendorPaymentsPage() {
             onClick={handleWithdraw}
             sx={{
               mt: 1.45,
-              minHeight: 39,
+              minHeight: 44,
               borderRadius: "0.95rem",
               bgcolor: "#0E56C8",
               boxShadow: "0 12px 24px rgba(14,86,200,0.16)",
-              fontSize: "0.76rem",
+              fontSize: "0.84rem",
               fontWeight: 700,
               textTransform: "none",
             }}
@@ -591,7 +576,7 @@ export default function VendorPaymentsPage() {
             sx={{
               mt: 1.05,
               color: "#8A96A7",
-              fontSize: "0.62rem",
+              fontSize: "0.68rem",
               textAlign: "center",
             }}
           >
@@ -602,7 +587,7 @@ export default function VendorPaymentsPage() {
 
       <Box
         sx={{
-          borderRadius: "1.55rem",
+          borderRadius: "1.6rem",
           bgcolor: "#FFFFFF",
           border: "1px solid rgba(225,232,241,0.96)",
           boxShadow: "0 16px 30px rgba(16,29,51,0.04)",
@@ -616,7 +601,7 @@ export default function VendorPaymentsPage() {
           spacing={1.2}
           sx={{ px: 1.7, pt: 1.5 }}
         >
-          <Typography sx={{ color: "#18253A", fontSize: "1rem", fontWeight: 800 }}>
+          <Typography sx={{ color: "#18253A", fontSize: "1.1rem", fontWeight: 800 }}>
             Recent Transactions
           </Typography>
 
@@ -625,12 +610,12 @@ export default function VendorPaymentsPage() {
               <Button
                 key={tab}
                 sx={{
-                  minHeight: 28,
-                  px: 1,
+                  minHeight: 32,
+                  px: 1.2,
                   borderRadius: "999px",
                   bgcolor: index === 0 ? "#F4F7FB" : "transparent",
                   color: "#556478",
-                  fontSize: "0.64rem",
+                  fontSize: "0.7rem",
                   fontWeight: 700,
                   textTransform: "none",
                 }}
@@ -641,7 +626,7 @@ export default function VendorPaymentsPage() {
           </Stack>
         </Stack>
 
-        <Box sx={{ display: { xs: "none", lg: "block" }, px: 1.7, pt: 1.45, pb: 1 }}>
+        <Box sx={{ display: { xs: "none", lg: "block" }, px: 1.7, pt: 1.6, pb: 1.1 }}>
           <Box
             sx={{
               display: "grid",
@@ -654,7 +639,7 @@ export default function VendorPaymentsPage() {
                 key={column}
                 sx={{
                   color: "#8B97A8",
-                  fontSize: "0.56rem",
+                  fontSize: "0.6rem",
                   fontWeight: 800,
                   letterSpacing: "0.1em",
                   textTransform: "uppercase",
@@ -696,7 +681,7 @@ export default function VendorPaymentsPage() {
               key={item.id}
               sx={{
                 borderTop: index === 0 ? "none" : "1px solid rgba(234,239,245,0.95)",
-                py: { xs: 1.45, md: 1.55 },
+                py: { xs: 1.6, md: 1.9 },
               }}
             >
               <Box
@@ -710,43 +695,43 @@ export default function VendorPaymentsPage() {
                 <Stack direction="row" spacing={1} alignItems="center">
                   <Avatar
                     sx={{
-                      width: 30,
-                      height: 30,
+                      width: 36,
+                      height: 36,
                       bgcolor: "#EEF2F8",
                       color: "#667388",
-                      fontSize: "0.66rem",
+                      fontSize: "0.72rem",
                       fontWeight: 800,
                     }}
                   >
                     {item.initials}
                   </Avatar>
-                  <Typography sx={{ color: "#223146", fontSize: "0.82rem", fontWeight: 700 }}>
+                  <Typography sx={{ color: "#223146", fontSize: "0.9rem", fontWeight: 700 }}>
                     {item.name}
                   </Typography>
                 </Stack>
 
-                <Typography sx={{ color: "#5E6A7D", fontSize: "0.76rem" }}>
+                <Typography sx={{ color: "#5E6A7D", fontSize: "0.82rem" }}>
                   {item.project}
                 </Typography>
-                <Typography sx={{ color: "#18253A", fontSize: "0.8rem", fontWeight: 800 }}>
+                <Typography sx={{ color: "#18253A", fontSize: "0.88rem", fontWeight: 800 }}>
                   {item.amount}
                 </Typography>
                 <Box
                   sx={{
                     justifySelf: "start",
-                    px: 0.85,
-                    py: 0.34,
+                    px: 1,
+                    py: 0.4,
                     borderRadius: "999px",
                     bgcolor: item.statusBg,
                     color: item.statusTone,
-                    fontSize: "0.6rem",
+                    fontSize: "0.65rem",
                     fontWeight: 800,
                     lineHeight: 1,
                   }}
                 >
                   {item.status}
                 </Box>
-                <Typography sx={{ color: "#5E6A7D", fontSize: "0.76rem" }}>
+                <Typography sx={{ color: "#5E6A7D", fontSize: "0.82rem" }}>
                   {item.date}
                 </Typography>
                 <Button
@@ -865,7 +850,7 @@ export default function VendorPaymentsPage() {
               px: 0,
               minHeight: 28,
               color: "#0E56C8",
-              fontSize: "0.74rem",
+              fontSize: "0.82rem",
               fontWeight: 700,
               textTransform: "none",
             }}

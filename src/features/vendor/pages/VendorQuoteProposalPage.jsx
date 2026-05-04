@@ -24,33 +24,34 @@ const timelineOptions = [
 
 const sectionLabelSx = {
   color: "#18253A",
-  fontSize: "1.25rem",
+  fontSize: "1.3rem",
   fontWeight: 800,
   lineHeight: 1.15,
 };
 
 const sectionBodySx = {
-  mt: 0.45,
+  mt: 0.55,
   color: "#6F7D8F",
-  fontSize: "0.82rem",
+  fontSize: "0.84rem",
   lineHeight: 1.6,
   maxWidth: 240,
 };
 
 const fieldLabelSx = {
-  mb: 0.45,
+  mb: 0.55,
   color: "#667388",
-  fontSize: "0.62rem",
+  fontSize: "0.66rem",
   fontWeight: 700,
   letterSpacing: "0.04em",
+  textTransform: "uppercase",
 };
 
 const inputSx = {
   "& .MuiOutlinedInput-root": {
-    minHeight: 48,
+    minHeight: 50,
     borderRadius: "0.9rem",
     bgcolor: "#F5F7FB",
-    fontSize: "0.84rem",
+    fontSize: "0.88rem",
   },
 };
 
@@ -334,19 +335,19 @@ export default function VendorQuoteProposalPage() {
 
       <Box
         sx={{
-          p: { xs: 1.35, md: 1.55 },
-          borderRadius: "1.15rem",
+          p: { xs: 2, md: 2.4 },
+          borderRadius: "1.25rem",
           bgcolor: "#FFFFFF",
           border: "1px solid rgba(225,232,241,0.96)",
           boxShadow: "0 14px 28px rgba(16,29,51,0.04)",
-          mb: { xs: 2.25, md: 2.6 },
+          mb: { xs: 2.5, md: 3 },
         }}
       >
         <Box
           sx={{
             display: "grid",
             gridTemplateColumns: { xs: "1fr 1fr", md: "repeat(4, 1fr)" },
-            gap: 1.4,
+            gap: { xs: 2, md: 2.5 },
           }}
         >
           {summaryItems.map(([label, value]) => (
@@ -354,7 +355,7 @@ export default function VendorQuoteProposalPage() {
               <Typography
                 sx={{
                   color: "#8B97A8",
-                  fontSize: "0.58rem",
+                  fontSize: "0.62rem",
                   fontWeight: 700,
                   letterSpacing: "0.08em",
                   textTransform: "uppercase",
@@ -362,7 +363,7 @@ export default function VendorQuoteProposalPage() {
               >
                 {label}
               </Typography>
-              <Typography sx={{ mt: 0.42, color: "#18253A", fontSize: "0.96rem", fontWeight: 800 }}>
+              <Typography sx={{ mt: 0.5, color: "#18253A", fontSize: "1.05rem", fontWeight: 800 }}>
                 {value || "Pending"}
               </Typography>
             </Box>
@@ -370,8 +371,8 @@ export default function VendorQuoteProposalPage() {
         </Box>
       </Box>
 
-      <Stack spacing={3}>
-        <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: "180px 1fr" }, gap: { xs: 1.2, lg: 2.2 } }}>
+      <Stack spacing={4}>
+        <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: "180px 1fr" }, gap: { xs: 1.5, lg: 3 } }}>
           <Box>
             <Typography sx={sectionLabelSx}>01 Pricing</Typography>
             <Typography sx={sectionBodySx}>Define the total project cost and clear breakdown.</Typography>
@@ -396,7 +397,7 @@ export default function VendorQuoteProposalPage() {
           </Box>
         </Box>
 
-        <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: "180px 1fr" }, gap: { xs: 1.2, lg: 2.2 } }}>
+        <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: "180px 1fr" }, gap: { xs: 1.5, lg: 3 } }}>
           <Box>
             <Typography sx={sectionLabelSx}>02 Specifications</Typography>
             <Typography sx={sectionBodySx}>Technical details of the proposed hardware configuration.</Typography>
@@ -425,7 +426,7 @@ export default function VendorQuoteProposalPage() {
           </Box>
         </Box>
 
-        <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: "180px 1fr" }, gap: { xs: 1.2, lg: 2.2 } }}>
+        <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: "180px 1fr" }, gap: { xs: 1.5, lg: 3 } }}>
           <Box>
             <Typography sx={sectionLabelSx}>03 Timeline</Typography>
             <Typography sx={sectionBodySx}>Estimated duration from agreement to activation.</Typography>
@@ -469,7 +470,7 @@ export default function VendorQuoteProposalPage() {
           </Box>
         </Box>
 
-        <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: "180px 1fr" }, gap: { xs: 1.2, lg: 2.2 } }}>
+        <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: "180px 1fr" }, gap: { xs: 1.5, lg: 3 } }}>
           <Box>
             <Typography sx={sectionLabelSx}>04 Narrative</Typography>
             <Typography sx={sectionBodySx}>Add installation plan, warranties, and service inclusions.</Typography>
@@ -497,19 +498,82 @@ export default function VendorQuoteProposalPage() {
         </Box>
       </Stack>
 
-      <Stack direction="row" spacing={1.1} justifyContent="flex-end" sx={{ mt: { xs: 2.6, md: 3 } }}>
+      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: "180px 1fr" }, gap: { xs: 1.5, lg: 3 } }}>
+        <Box>
+          <Typography sx={sectionLabelSx}>05 Assets</Typography>
+          <Typography sx={sectionBodySx}>Upload formal documentation and data sheets.</Typography>
+        </Box>
+
+        <Box>
+          <Typography sx={fieldLabelSx}>Upload Detailed Quotation (PDF)</Typography>
+          <Box
+            sx={{
+              minHeight: 160,
+              borderRadius: "0.9rem",
+              bgcolor: "#F5F7FB",
+              border: "2px dashed rgba(225,232,241,0.96)",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 1,
+              cursor: "pointer",
+              transition: "border-color 0.15s",
+              "&:hover": { borderColor: "#0E56C8" },
+            }}
+          >
+            <Box
+              sx={{
+                width: 44,
+                height: 44,
+                borderRadius: "0.85rem",
+                bgcolor: "#EEF4FF",
+                color: "#0E56C8",
+                display: "grid",
+                placeItems: "center",
+                fontSize: "1.3rem",
+              }}
+            >
+              📄
+            </Box>
+            <Typography sx={{ color: "#223146", fontSize: "0.84rem", fontWeight: 700 }}>
+              Click to upload or drag and drop
+            </Typography>
+            <Typography sx={{ color: "#8B97A8", fontSize: "0.72rem" }}>
+              Maximum file size 10MB (PDF only)
+            </Typography>
+          </Box>
+        </Box>
+      </Box>
+
+      <Box
+        sx={{
+          position: "sticky",
+          bottom: 0,
+          mt: { xs: 3, md: 4 },
+          mx: { xs: -2.2, md: -3.6, lg: -4.2 },
+          px: { xs: 2.2, md: 3.6, lg: 4.2 },
+          py: 2,
+          bgcolor: "rgba(255,255,255,0.96)",
+          backdropFilter: "blur(12px)",
+          borderTop: "1px solid rgba(225,232,241,0.96)",
+          display: "flex",
+          justifyContent: "flex-end",
+          gap: 1.2,
+        }}
+      >
         <Button
           variant="outlined"
           onClick={handleSaveDraft}
           disabled={isSubmitting || existingQuote?.status === "accepted"}
           sx={{
-            minHeight: 40,
-            px: 1.8,
+            minHeight: 46,
+            px: 2.4,
             borderRadius: "0.95rem",
             borderColor: "rgba(220,228,238,0.96)",
             bgcolor: "#F5F7FB",
             color: "#556478",
-            fontSize: "0.8rem",
+            fontSize: "0.86rem",
             fontWeight: 700,
             textTransform: "none",
           }}
@@ -522,19 +586,19 @@ export default function VendorQuoteProposalPage() {
           onClick={handleSubmit}
           disabled={isSubmitting || existingQuote?.status === "accepted"}
           sx={{
-            minHeight: 40,
-            px: 2,
+            minHeight: 46,
+            px: 2.8,
             borderRadius: "0.95rem",
             bgcolor: "#0E56C8",
             boxShadow: "0 12px 24px rgba(14,86,200,0.16)",
-            fontSize: "0.8rem",
+            fontSize: "0.86rem",
             fontWeight: 700,
             textTransform: "none",
           }}
         >
           {isSubmitting ? "Saving..." : existingQuote ? "Update Quote" : "Submit Quote"}
         </Button>
-      </Stack>
+      </Box>
     </Box>
   );
 }
