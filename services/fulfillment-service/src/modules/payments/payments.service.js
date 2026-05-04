@@ -14,6 +14,12 @@ function buildInvoiceNumber(project, index) {
   return `SPK-${projectId.slice(-6).toUpperCase()}-${String(index + 1).padStart(2, "0")}`;
 }
 
+function buildManualInvoiceNumber(project) {
+  const projectId = project.id || project._id?.toString();
+  const suffix = Date.now().toString(36).toUpperCase().slice(-6);
+  return `SPK-${projectId.slice(-6).toUpperCase()}-${suffix}`;
+}
+
 function canViewPayment(user, payment) {
   return (
     user.role === "admin" ||
@@ -34,6 +40,44 @@ async function attachProjects(payments) {
 }
 
 export const paymentsService = {
+  async createInvoice(user, input) {
+    if (user.role !== "admin") {
+      throw new AppError(403, "Only admins can create invoices");
+    }
+
+    if (!mongoose.isValidObjectId(input.projectId)) {
+      throw new AppError(400, "Invalid project id");
+    }
+
+    const project = await projectsRepository.findById(input.projectId);
+
+    if (!project) {
+      throw new AppError(404, "Project not found");
+    }
+
+    return paymentsRepository.create({
+      projectId: project.id,
+      quoteId: project.quoteId,
+      customerId: project.customerId,
+      vendorId: project.vendorId,
+      customer: {
+        fullName: project.customer.fullName,
+        email: project.customer.email ?? null,
+      },
+      vendorEmail: project.vendorEmail ?? null,
+      invoiceNumber: buildManualInvoiceNumber(project),
+      milestone: {
+        key: "admin_invoice",
+        title: input.title,
+      },
+      amount: input.amount,
+      method: input.method,
+      status: "pending",
+      dueAt: input.dueAt ? new Date(input.dueAt) : addDays(7),
+      paidAt: null,
+    });
+  },
+
   async createScheduleForProject(project) {
     const existingPayments = await paymentsRepository.findForProject(project.id);
 

@@ -14,6 +14,11 @@ export const paymentsApi = {
     return data.payments;
   },
 
+  async createInvoice(payload) {
+    const { data } = await fulfillmentClient.post("/payments", payload);
+    return data.payment;
+  },
+
   async getPayment(paymentId) {
     const { data } = await fulfillmentClient.get(`/payments/${requireId(paymentId, "Payment id")}`);
     return data.payment;

@@ -43,8 +43,15 @@ export const leadsRepository = {
     return normalizeLeads(leads);
   },
 
-  async findVendorVisibleLeads() {
-    const leads = await LeadModel.find({ status: { $in: ["submitted", "reviewing", "open_for_quotes"] } })
+  async findVendorVisibleLeads(vendorId) {
+    const leads = await LeadModel.find({
+      status: { $in: ["submitted", "reviewing", "open_for_quotes"] },
+      $or: [
+        { assignedVendorIds: { $exists: false } },
+        { assignedVendorIds: { $size: 0 } },
+        { assignedVendorIds: vendorId },
+      ],
+    })
       .sort({ createdAt: -1 })
       .lean({ virtuals: true });
 
@@ -55,6 +62,22 @@ export const leadsRepository = {
     const lead = await LeadModel.findByIdAndUpdate(
       id,
       { $set: { status: "open_for_quotes" } },
+      { new: true },
+    ).lean({ virtuals: true });
+
+    return normalizeLead(lead);
+  },
+
+  async assignVendors(id, vendorIds) {
+    const lead = await LeadModel.findByIdAndUpdate(
+      id,
+      {
+        $set: {
+          assignedVendorIds: vendorIds,
+          vendorsAssignedAt: new Date(),
+          status: "open_for_quotes",
+        },
+      },
       { new: true },
     ).lean({ virtuals: true });
 

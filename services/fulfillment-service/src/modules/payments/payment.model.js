@@ -17,6 +17,11 @@ const paymentSchema = new mongoose.Schema(
       title: { type: String, required: true },
     },
     amount: { type: Number, required: true, min: 0 },
+    method: {
+      type: String,
+      enum: ["upi", "net_banking", "card", "bank_transfer", "cash", "not_recorded"],
+      default: "not_recorded",
+    },
     status: {
       type: String,
       enum: ["pending", "paid", "failed", "cancelled"],

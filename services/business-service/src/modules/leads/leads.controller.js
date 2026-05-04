@@ -20,4 +20,9 @@ export const leadsController = {
     const lead = await leadsService.updateLeadStatus(req.auth, req.params.leadId, req.body);
     res.status(200).json({ lead });
   },
+
+  async assignVendors(req, res) {
+    const lead = await leadsService.assignVendors(req.auth, req.params.leadId, req.body);
+    res.status(200).json({ lead });
+  },
 };

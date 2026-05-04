@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "node --watch src/server.js",
+    "seed:admin": "node scripts/seed-admin.js",
     "start": "node src/server.js"
   },
   "dependencies": {
