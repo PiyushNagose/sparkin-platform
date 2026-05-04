@@ -177,15 +177,15 @@ function downloadCsv(filename, csv) {
 
 function MetricCard({ icon: Icon, title, value, accent }) {
   return (
-    <AdminPanel sx={{ p: 2, display: "flex", alignItems: "center", gap: 1.6, minHeight: 86, bgcolor: "#F6F8FB" }}>
-      <Avatar sx={{ width: 48, height: 48, borderRadius: "0.8rem", bgcolor: `${accent}20`, color: accent }}>
-        <Icon />
+    <AdminPanel sx={{ p: { xs: 2, md: 2.4 }, display: "flex", alignItems: "center", gap: 2, minHeight: 96 }}>
+      <Avatar sx={{ width: 52, height: 52, borderRadius: "1rem", bgcolor: `${accent}18`, color: accent, flexShrink: 0 }}>
+        <Icon sx={{ fontSize: "1.4rem" }} />
       </Avatar>
       <Box>
-        <Typography sx={{ color: "#768296", fontSize: "0.66rem", fontWeight: 900, letterSpacing: "0.12em" }}>
+        <Typography sx={{ color: "#768296", fontSize: "0.64rem", fontWeight: 900, letterSpacing: "0.12em", textTransform: "uppercase" }}>
           {title}
         </Typography>
-        <Typography sx={{ mt: 0.35, color: "#17499F", fontSize: "1.28rem", fontWeight: 900 }}>
+        <Typography sx={{ mt: 0.4, color: "#17499F", fontSize: "1.4rem", fontWeight: 900 }}>
           {value}
         </Typography>
       </Box>
@@ -491,12 +491,13 @@ export default function AdminLeadsPage() {
 
       {state.error ? <AdminErrorState>{state.error}</AdminErrorState> : null}
 
-      <AdminPanel sx={{ p: { xs: 1.4, md: 1.7 }, mb: 2.6 }}>
-        <Grid container spacing={1.3} alignItems="center">
+      <AdminPanel sx={{ p: { xs: 1.6, md: 2 }, mb: 2.6 }}>
+        <Grid container spacing={1.5} alignItems="center">
           <Grid item xs={12} md={2.4}>
+            <Typography sx={{ mb: 0.5, color: "#8B97A8", fontSize: "0.6rem", fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase" }}>Status</Typography>
             <FormControl fullWidth size="small">
-              <InputLabel>Status</InputLabel>
-              <Select label="Status" value={filters.status} onChange={(e) => setFilters((current) => ({ ...current, status: e.target.value }))}>
+              <Select value={filters.status} onChange={(e) => setFilters((current) => ({ ...current, status: e.target.value }))}
+                sx={{ borderRadius: "0.75rem", bgcolor: "#F7F9FC", fontSize: "0.84rem" }}>
                 {statusOptions.map((option) => (
                   <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>
                 ))}
@@ -504,9 +505,10 @@ export default function AdminLeadsPage() {
             </FormControl>
           </Grid>
           <Grid item xs={12} md={2.4}>
+            <Typography sx={{ mb: 0.5, color: "#8B97A8", fontSize: "0.6rem", fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase" }}>Location</Typography>
             <FormControl fullWidth size="small">
-              <InputLabel>Location</InputLabel>
-              <Select label="Location" value={filters.location} onChange={(e) => setFilters((current) => ({ ...current, location: e.target.value }))}>
+              <Select value={filters.location} onChange={(e) => setFilters((current) => ({ ...current, location: e.target.value }))}
+                sx={{ borderRadius: "0.75rem", bgcolor: "#F7F9FC", fontSize: "0.84rem" }}>
                 <MenuItem value="all">All Regions</MenuItem>
                 {locations.map((location) => (
                   <MenuItem key={location} value={location}>{location}</MenuItem>
@@ -515,9 +517,10 @@ export default function AdminLeadsPage() {
             </FormControl>
           </Grid>
           <Grid item xs={12} md={2.4}>
+            <Typography sx={{ mb: 0.5, color: "#8B97A8", fontSize: "0.6rem", fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase" }}>Date Range</Typography>
             <FormControl fullWidth size="small">
-              <InputLabel>Date Range</InputLabel>
-              <Select label="Date Range" value={filters.dateRange} onChange={(e) => setFilters((current) => ({ ...current, dateRange: e.target.value }))}>
+              <Select value={filters.dateRange} onChange={(e) => setFilters((current) => ({ ...current, dateRange: e.target.value }))}
+                sx={{ borderRadius: "0.75rem", bgcolor: "#F7F9FC", fontSize: "0.84rem" }}>
                 {dateOptions.map((option) => (
                   <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>
                 ))}
@@ -525,9 +528,10 @@ export default function AdminLeadsPage() {
             </FormControl>
           </Grid>
           <Grid item xs={12} md={2.4}>
+            <Typography sx={{ mb: 0.5, color: "#8B97A8", fontSize: "0.6rem", fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase" }}>Payment Status</Typography>
             <FormControl fullWidth size="small">
-              <InputLabel>Payment Status</InputLabel>
-              <Select label="Payment Status" value={filters.payment} onChange={(e) => setFilters((current) => ({ ...current, payment: e.target.value }))}>
+              <Select value={filters.payment} onChange={(e) => setFilters((current) => ({ ...current, payment: e.target.value }))}
+                sx={{ borderRadius: "0.75rem", bgcolor: "#F7F9FC", fontSize: "0.84rem" }}>
                 {paymentOptions.map((option) => (
                   <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>
                 ))}
@@ -535,12 +539,14 @@ export default function AdminLeadsPage() {
             </FormControl>
           </Grid>
           <Grid item xs={12} md={2.4}>
+            <Typography sx={{ mb: 0.5, color: "#8B97A8", fontSize: "0.6rem", fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase" }}>&nbsp;</Typography>
             <TextField
               fullWidth
               size="small"
               value={filters.query}
               onChange={(e) => setFilters((current) => ({ ...current, query: e.target.value }))}
               placeholder="Search leads"
+              sx={{ "& .MuiOutlinedInput-root": { borderRadius: "0.75rem", bgcolor: "#F7F9FC", fontSize: "0.84rem" } }}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -573,26 +579,26 @@ export default function AdminLeadsPage() {
             <TableBody>
               {filteredRows.length ? (
                 filteredRows.map((row) => (
-                  <TableRow key={row.raw.id} hover sx={{ "& td": { borderColor: "#EEF2F6", py: 1.8 } }}>
+                  <TableRow key={row.raw.id} hover sx={{ "& td": { borderColor: "#EEF2F6", py: 2 } }}>
                     <TableCell>
-                      <Typography sx={{ color: "#0E56C8", fontSize: "0.78rem", fontWeight: 900 }}>{formatLeadId(row.raw)}</Typography>
+                      <Typography sx={{ color: "#0E56C8", fontSize: "0.82rem", fontWeight: 900 }}>{formatLeadId(row.raw)}</Typography>
                     </TableCell>
                     <TableCell>
-                      <Stack direction="row" spacing={1.1} alignItems="center">
-                        <Avatar sx={{ width: 30, height: 30, bgcolor: "#EEF2F6", color: "#667386", fontSize: "0.68rem", fontWeight: 900 }}>
+                      <Stack direction="row" spacing={1.3} alignItems="center">
+                        <Avatar sx={{ width: 36, height: 36, bgcolor: "#EEF2F6", color: "#667386", fontSize: "0.72rem", fontWeight: 900 }}>
                           {(row.raw.contact?.fullName || "C").slice(0, 2).toUpperCase()}
                         </Avatar>
                         <Box>
-                          <Typography sx={{ color: adminUi.colors.text, fontSize: "0.82rem", fontWeight: 850 }}>
+                          <Typography sx={{ color: adminUi.colors.text, fontSize: "0.88rem", fontWeight: 850 }}>
                             {row.raw.contact?.fullName || "Customer"}
                           </Typography>
-                          <Typography sx={{ color: "#8A96A8", fontSize: "0.66rem" }}>{row.raw.contact?.email || row.raw.contact?.phoneNumber}</Typography>
+                          <Typography sx={{ color: "#8A96A8", fontSize: "0.7rem" }}>{row.raw.contact?.email || row.raw.contact?.phoneNumber}</Typography>
                         </Box>
                       </Stack>
                     </TableCell>
-                    <TableCell sx={{ color: "#344155", fontSize: "0.78rem", fontWeight: 650 }}>{row.location}</TableCell>
+                    <TableCell sx={{ color: "#344155", fontSize: "0.82rem", fontWeight: 650 }}>{row.location}</TableCell>
                     <TableCell>
-                      <Box sx={{ display: "inline-flex", px: 0.8, py: 0.35, borderRadius: "999px", bgcolor: "#F0F5A8", color: "#526000", fontSize: "0.66rem", fontWeight: 900 }}>
+                      <Box sx={{ display: "inline-flex", px: 0.9, py: 0.4, borderRadius: "999px", bgcolor: "#F0F5A8", color: "#526000", fontSize: "0.7rem", fontWeight: 900 }}>
                         {row.systemSizeKw.toFixed(1)} kW
                       </Box>
                     </TableCell>
@@ -603,30 +609,32 @@ export default function AdminLeadsPage() {
                       <Box
                         sx={{
                           display: "inline-flex",
-                          px: 0.8,
-                          py: 0.42,
+                          px: 0.9,
+                          py: 0.45,
                           borderRadius: "0.5rem",
                           bgcolor: row.paymentStatus === "paid" ? "#E7F8EF" : row.paymentStatus === "pending" ? "#FFF4E6" : "#EEF2F6",
                           color: row.paymentStatus === "paid" ? "#10985E" : row.paymentStatus === "pending" ? "#B25E00" : "#657386",
-                          fontSize: "0.66rem",
+                          fontSize: "0.7rem",
                           fontWeight: 850,
                         }}
                       >
                         {row.paymentLabel}
                       </Box>
                     </TableCell>
-                    <TableCell sx={{ color: "#344155", fontSize: "0.74rem", fontWeight: 750, maxWidth: 180 }}>
+                    <TableCell sx={{ color: "#344155", fontSize: "0.78rem", fontWeight: 750, maxWidth: 180 }}>
                       {row.vendorLabel}
                     </TableCell>
                     <TableCell>
-                      <Stack direction="row" spacing={0.4}>
-                        <IconButton component={NavLink} to={`/admin/leads/${row.raw.id}`} size="small" aria-label="View lead">
+                      <Stack direction="row" spacing={0.5}>
+                        <IconButton component={NavLink} to={`/admin/leads/${row.raw.id}`} size="small" aria-label="View lead"
+                          sx={{ color: "#0E56C8", bgcolor: "#EEF4FF", borderRadius: "0.6rem", "&:hover": { bgcolor: "#DCE9FF" } }}>
                           <VisibilityOutlinedIcon sx={{ fontSize: "1rem" }} />
                         </IconButton>
                         <IconButton
                           size="small"
                           aria-label="Assign vendor"
                           onClick={() => navigate("/admin/vendor-assignment", { state: { leadId: row.raw.id } })}
+                          sx={{ color: "#10985E", bgcolor: "#E7F8EF", borderRadius: "0.6rem", "&:hover": { bgcolor: "#D0F2E3" } }}
                         >
                           <GroupAddOutlinedIcon sx={{ fontSize: "1rem" }} />
                         </IconButton>
@@ -644,16 +652,22 @@ export default function AdminLeadsPage() {
             </TableBody>
           </Table>
         </TableContainer>
-        <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" alignItems={{ xs: "flex-start", sm: "center" }} spacing={1.5} sx={{ px: 2, py: 1.6, borderTop: "1px solid #EEF2F6" }}>
-          <Typography sx={{ color: "#667386", fontSize: "0.78rem", fontWeight: 700 }}>
-            Showing {filteredRows.length} of {rows.length} leads
+        <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" alignItems={{ xs: "flex-start", sm: "center" }} spacing={1.5} sx={{ px: 2, py: 1.8, borderTop: "1px solid #EEF2F6" }}>
+          <Typography sx={{ color: "#667386", fontSize: "0.8rem", fontWeight: 700 }}>
+            Showing 1-{Math.min(10, filteredRows.length)} of {filteredRows.length} leads
           </Typography>
-          <Stack direction="row" spacing={0.8}>
-            {[1].map((page) => (
-              <Box key={page} sx={{ width: 36, height: 36, borderRadius: "0.7rem", bgcolor: "#0E56C8", color: "#FFFFFF", display: "grid", placeItems: "center", fontSize: "0.8rem", fontWeight: 900 }}>
-                {page}
+          <Stack direction="row" spacing={0.6} alignItems="center">
+            <Box sx={{ width: 32, height: 32, borderRadius: "0.6rem", border: "1px solid #E2E8F0", display: "grid", placeItems: "center", color: "#667386", cursor: "pointer", fontSize: "0.9rem" }}>‹</Box>
+            {[1, 2, 3].map((p) => (
+              <Box key={p} sx={{ width: 32, height: 32, borderRadius: "0.6rem", bgcolor: p === 1 ? "#0E56C8" : "#FFFFFF", border: p === 1 ? "none" : "1px solid #E2E8F0", color: p === 1 ? "#FFFFFF" : "#223146", display: "grid", placeItems: "center", fontSize: "0.8rem", fontWeight: 900, cursor: "pointer" }}>
+                {p}
               </Box>
             ))}
+            <Typography sx={{ color: "#8B97A8", fontSize: "0.8rem", px: 0.3 }}>…</Typography>
+            <Box sx={{ width: 32, height: 32, borderRadius: "0.6rem", border: "1px solid #E2E8F0", color: "#223146", display: "grid", placeItems: "center", fontSize: "0.8rem", fontWeight: 700, cursor: "pointer" }}>
+              {Math.max(1, Math.ceil(filteredRows.length / 10))}
+            </Box>
+            <Box sx={{ width: 32, height: 32, borderRadius: "0.6rem", border: "1px solid #E2E8F0", display: "grid", placeItems: "center", color: "#667386", cursor: "pointer", fontSize: "0.9rem" }}>›</Box>
           </Stack>
         </Stack>
       </AdminPanel>

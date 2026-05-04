@@ -6,7 +6,6 @@ import {
   DialogContent,
   DialogTitle,
   FormControl,
-  Grid,
   IconButton,
   InputAdornment,
   InputLabel,
@@ -142,20 +141,23 @@ function StatCard({ title, value, note, tone = "#0E56C8", dark = false }) {
   return (
     <AdminPanel
       sx={{
-        p: 2,
-        minHeight: 108,
+        p: { xs: 2, md: 2.4 },
+        minHeight: 120,
+        borderLeft: dark ? "none" : `4px solid ${tone === "#1F2C40" ? "#E2E8F0" : tone}`,
         bgcolor: dark ? "#0E56C8" : "#FFFFFF",
         color: dark ? "#FFFFFF" : adminUi.colors.text,
+        transition: "transform 0.18s ease",
+        "&:hover": { transform: "translateY(-2px)" },
       }}
     >
-      <Typography sx={{ color: dark ? "#CFE0FF" : "#596579", fontSize: "0.66rem", fontWeight: 900, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+      <Typography sx={{ color: dark ? "#CFE0FF" : "#596579", fontSize: "0.64rem", fontWeight: 900, letterSpacing: "0.08em", textTransform: "uppercase" }}>
         {title}
       </Typography>
-      <Typography sx={{ mt: 0.65, color: dark ? "#FFFFFF" : tone, fontSize: "1.55rem", fontWeight: 950, lineHeight: 1 }}>
+      <Typography sx={{ mt: 0.8, color: dark ? "#FFFFFF" : (tone === "#1F2C40" ? adminUi.colors.text : tone), fontSize: "1.7rem", fontWeight: 950, lineHeight: 1 }}>
         {value}
       </Typography>
       {note ? (
-        <Typography sx={{ mt: 0.9, color: dark ? "#CFE0FF" : "#007A4D", fontSize: "0.68rem", fontWeight: 850 }}>
+        <Typography sx={{ mt: 1, color: dark ? "#CFE0FF" : "#667386", fontSize: "0.72rem", fontWeight: 750 }}>
           {note}
         </Typography>
       ) : null}
@@ -356,74 +358,67 @@ export default function AdminPaymentsPage() {
 
       {state.error ? <AdminErrorState>{state.error}</AdminErrorState> : null}
 
-      <Grid container spacing={2.2} sx={{ mb: 2.6 }}>
-        <Grid item xs={12} md={3}>
-          <StatCard title="Total Revenue" value={formatCompactMoney(metrics.totalRevenue)} note={`${payments.length} total payments`} />
-        </Grid>
-        <Grid item xs={12} md={3}>
-          <StatCard title="Pending Payments" value={metrics.pendingCount} note={`${metrics.failedCount} failed this week`} tone="#1F2C40" />
-        </Grid>
-        <Grid item xs={12} md={3}>
-          <StatCard title="Success Rate" value={`${metrics.successRate}%`} note={`${metrics.failedCount} failed payments`} tone="#1F2C40" />
-        </Grid>
-        <Grid item xs={12} md={3}>
-          <StatCard title="Active Promos" value="None" note="Promo service not connected" dark />
-        </Grid>
-      </Grid>
+      {/* KPI Cards — 4 equal columns */}
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)", lg: "repeat(4, 1fr)" },
+          gap: 2.2,
+          mb: 2.6,
+        }}
+      >
+        <StatCard title="Total Revenue" value={formatCompactMoney(metrics.totalRevenue)} note={`${payments.length} total payments`} />
+        <StatCard title="Pending Payments" value={metrics.pendingCount} note={`${metrics.failedCount} failed this week`} tone="#1F2C40" />
+        <StatCard title="Success Rate" value={`${metrics.successRate}%`} note={`${metrics.failedCount} failed payments`} tone="#1F2C40" />
+        <StatCard title="Active Promos" value="None" note="Promo service not connected" dark />
+      </Box>
 
-      <AdminPanel sx={{ p: { xs: 1.5, md: 1.8 }, mb: 2.5, bgcolor: "#F6F8FB" }}>
-        <Grid container spacing={1.3} alignItems="center">
-          <Grid item xs={12} md={2.4}>
-            <FormControl fullWidth size="small">
-              <InputLabel>Status</InputLabel>
-              <Select label="Status" value={filters.status} onChange={(event) => setFilters((current) => ({ ...current, status: event.target.value }))}>
-                <MenuItem value="all">All Statuses</MenuItem>
-                <MenuItem value="paid">Paid</MenuItem>
-                <MenuItem value="pending">Pending</MenuItem>
-                <MenuItem value="failed">Failed</MenuItem>
-                <MenuItem value="cancelled">Cancelled</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-          <Grid item xs={12} md={2.4}>
-            <FormControl fullWidth size="small">
-              <InputLabel>Date Range</InputLabel>
-              <Select label="Date Range" value={filters.dateRange} onChange={(event) => setFilters((current) => ({ ...current, dateRange: event.target.value }))}>
-                <MenuItem value="30">Last 30 Days</MenuItem>
-                <MenuItem value="90">Last 90 Days</MenuItem>
-                <MenuItem value="365">Last 12 Months</MenuItem>
-                <MenuItem value="all">All Time</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-          <Grid item xs={12} md={2.4}>
-            <FormControl fullWidth size="small">
-              <InputLabel>Region</InputLabel>
-              <Select label="Region" value={filters.region} onChange={(event) => setFilters((current) => ({ ...current, region: event.target.value }))}>
-                <MenuItem value="all">All Regions</MenuItem>
-                {regions.map((region) => (
-                  <MenuItem key={region} value={region}>{region}</MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
-          <Grid item xs={12} md={4.8}>
-            <TextField
-              fullWidth
-              size="small"
-              value={filters.query}
-              onChange={(event) => setFilters((current) => ({ ...current, query: event.target.value }))}
-              placeholder="Search ID or Customer..."
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchRoundedIcon sx={{ color: "#8B98AA", fontSize: "1rem" }} />
-                  </InputAdornment>
-                ),
-              }}
-            />
-          </Grid>
-        </Grid>
+      <AdminPanel sx={{ p: { xs: 1.6, md: 2 }, mb: 2.5 }}>
+        <Stack direction={{ xs: "column", md: "row" }} spacing={1.5} alignItems={{ xs: "stretch", md: "center" }} flexWrap="wrap">
+          <FormControl size="small" sx={{ minWidth: 160 }}>
+            <Select value={filters.status} onChange={(event) => setFilters((current) => ({ ...current, status: event.target.value }))}
+              sx={{ borderRadius: "999px", bgcolor: "#F7F9FC", fontSize: "0.84rem" }}
+              startAdornment={<Box sx={{ mr: 0.5, color: "#8B97A8", fontSize: "0.8rem" }}>≡</Box>}>
+              <MenuItem value="all">All Statuses</MenuItem>
+              <MenuItem value="paid">Paid</MenuItem>
+              <MenuItem value="pending">Pending</MenuItem>
+              <MenuItem value="failed">Failed</MenuItem>
+              <MenuItem value="cancelled">Cancelled</MenuItem>
+            </Select>
+          </FormControl>
+          <FormControl size="small" sx={{ minWidth: 160 }}>
+            <Select value={filters.dateRange} onChange={(event) => setFilters((current) => ({ ...current, dateRange: event.target.value }))}
+              sx={{ borderRadius: "999px", bgcolor: "#F7F9FC", fontSize: "0.84rem" }}>
+              <MenuItem value="30">Last 30 Days</MenuItem>
+              <MenuItem value="90">Last 90 Days</MenuItem>
+              <MenuItem value="365">Last 12 Months</MenuItem>
+              <MenuItem value="all">All Time</MenuItem>
+            </Select>
+          </FormControl>
+          <FormControl size="small" sx={{ minWidth: 160 }}>
+            <Select value={filters.region} onChange={(event) => setFilters((current) => ({ ...current, region: event.target.value }))}
+              sx={{ borderRadius: "999px", bgcolor: "#F7F9FC", fontSize: "0.84rem" }}>
+              <MenuItem value="all">All Regions</MenuItem>
+              {regions.map((region) => (
+                <MenuItem key={region} value={region}>{region}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <TextField
+            size="small"
+            value={filters.query}
+            onChange={(event) => setFilters((current) => ({ ...current, query: event.target.value }))}
+            placeholder="Search ID or Customer..."
+            sx={{ ml: { md: "auto" }, minWidth: 240, "& .MuiOutlinedInput-root": { borderRadius: "999px", bgcolor: "#F7F9FC", fontSize: "0.84rem" } }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchRoundedIcon sx={{ color: "#8B98AA", fontSize: "1rem" }} />
+                </InputAdornment>
+              ),
+            }}
+          />
+        </Stack>
       </AdminPanel>
 
       <AdminPanel sx={{ overflow: "hidden" }}>
@@ -443,27 +438,28 @@ export default function AdminPaymentsPage() {
                 filteredPayments.map((payment) => {
                   const status = getStatusMeta(payment.status);
                   return (
-                    <TableRow key={payment.id} hover sx={{ "& td": { borderColor: "#EEF2F6", py: 1.7 } }}>
+                    <TableRow key={payment.id} hover sx={{ "& td": { borderColor: "#EEF2F6", py: 2 } }}>
                       <TableCell>
-                        <Box sx={{ display: "inline-flex", px: 0.7, py: 0.45, borderRadius: "0.4rem", bgcolor: "#DCE5FF", color: "#0E56C8", fontSize: "0.68rem", fontWeight: 900 }}>
+                        <Box sx={{ display: "inline-flex", px: 0.9, py: 0.5, borderRadius: "0.5rem", bgcolor: "#DCE5FF", color: "#0E56C8", fontSize: "0.72rem", fontWeight: 900 }}>
                           {getPaymentId(payment)}
                         </Box>
                       </TableCell>
                       <TableCell>
-                        <Typography sx={{ color: adminUi.colors.text, fontSize: "0.8rem", fontWeight: 900 }}>{payment.customer?.fullName || "Customer"}</Typography>
-                        <Typography sx={{ color: "#7C8899", fontSize: "0.64rem" }}>{payment.customer?.email || "No email"}</Typography>
+                        <Typography sx={{ color: adminUi.colors.text, fontSize: "0.88rem", fontWeight: 900 }}>{payment.customer?.fullName || "Customer"}</Typography>
+                        <Typography sx={{ color: "#7C8899", fontSize: "0.7rem" }}>{payment.customer?.email || "No email"}</Typography>
                       </TableCell>
-                      <TableCell sx={{ color: "#344155", fontSize: "0.76rem", fontWeight: 750 }}>{getProjectLeadId(payment)}</TableCell>
-                      <TableCell sx={{ color: adminUi.colors.text, fontSize: "0.82rem", fontWeight: 950 }}>{formatMoney(payment.amount)}</TableCell>
+                      <TableCell sx={{ color: "#344155", fontSize: "0.82rem", fontWeight: 750 }}>{getProjectLeadId(payment)}</TableCell>
+                      <TableCell sx={{ color: adminUi.colors.text, fontSize: "0.9rem", fontWeight: 950 }}>{formatMoney(payment.amount)}</TableCell>
                       <TableCell>
-                        <Box sx={{ display: "inline-flex", px: 0.8, py: 0.36, borderRadius: "999px", bgcolor: status.bg, color: status.color, fontSize: "0.62rem", fontWeight: 900 }}>
+                        <Box sx={{ display: "inline-flex", px: 0.9, py: 0.4, borderRadius: "999px", bgcolor: status.bg, color: status.color, fontSize: "0.68rem", fontWeight: 900 }}>
                           {status.label}
                         </Box>
                       </TableCell>
-                      <TableCell sx={{ color: "#344155", fontSize: "0.74rem", fontWeight: 750 }}>{formatMethod(payment.method)}</TableCell>
-                      <TableCell sx={{ color: "#344155", fontSize: "0.74rem", fontWeight: 750 }}>{formatDate(payment.paidAt || payment.dueAt || payment.createdAt)}</TableCell>
+                      <TableCell sx={{ color: "#344155", fontSize: "0.8rem", fontWeight: 750 }}>{formatMethod(payment.method)}</TableCell>
+                      <TableCell sx={{ color: "#344155", fontSize: "0.8rem", fontWeight: 750 }}>{formatDate(payment.paidAt || payment.dueAt || payment.createdAt)}</TableCell>
                       <TableCell align="right">
-                        <IconButton component={NavLink} to={`/admin/payments/${payment.id}`} size="small" aria-label="View payment">
+                        <IconButton component={NavLink} to={`/admin/payments/${payment.id}`} size="small" aria-label="View payment"
+                          sx={{ color: "#0E56C8", bgcolor: "#EEF4FF", borderRadius: "0.6rem", "&:hover": { bgcolor: "#DCE9FF" } }}>
                           <VisibilityOutlinedIcon sx={{ color: "#0E56C8", fontSize: "1rem" }} />
                         </IconButton>
                       </TableCell>
@@ -480,15 +476,22 @@ export default function AdminPaymentsPage() {
             </TableBody>
           </Table>
         </TableContainer>
-        <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" alignItems={{ xs: "flex-start", sm: "center" }} spacing={1.5} sx={{ px: 2, py: 1.6, borderTop: "1px solid #EEF2F6" }}>
-          <Typography sx={{ color: "#667386", fontSize: "0.78rem", fontWeight: 700 }}>
-            Showing {filteredPayments.length} of {payments.length} payments
+        <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" alignItems={{ xs: "flex-start", sm: "center" }} spacing={1.5} sx={{ px: 2, py: 1.8, borderTop: "1px solid #EEF2F6" }}>
+          <Typography sx={{ color: "#667386", fontSize: "0.8rem", fontWeight: 700 }}>
+            Showing 1-{Math.min(10, filteredPayments.length)} of {filteredPayments.length} payments
           </Typography>
-          <Stack direction="row" spacing={0.8} alignItems="center">
-            <LocationOnOutlinedIcon sx={{ color: "#7C8899", fontSize: "0.95rem" }} />
-            <Typography sx={{ color: "#667386", fontSize: "0.74rem", fontWeight: 750 }}>
-              {filters.region === "all" ? "All regions" : filters.region}
-            </Typography>
+          <Stack direction="row" spacing={0.6} alignItems="center">
+            <Box sx={{ width: 32, height: 32, borderRadius: "0.6rem", border: "1px solid #E2E8F0", display: "grid", placeItems: "center", color: "#667386", cursor: "pointer", fontSize: "0.9rem" }}>‹</Box>
+            {[1, 2, 3].map((p) => (
+              <Box key={p} sx={{ width: 32, height: 32, borderRadius: "0.6rem", bgcolor: p === 1 ? "#0E56C8" : "#FFFFFF", border: p === 1 ? "none" : "1px solid #E2E8F0", color: p === 1 ? "#FFFFFF" : "#223146", display: "grid", placeItems: "center", fontSize: "0.8rem", fontWeight: 900, cursor: "pointer" }}>
+                {p}
+              </Box>
+            ))}
+            <Typography sx={{ color: "#8B97A8", fontSize: "0.8rem", px: 0.3 }}>…</Typography>
+            <Box sx={{ width: 32, height: 32, borderRadius: "0.6rem", border: "1px solid #E2E8F0", color: "#223146", display: "grid", placeItems: "center", fontSize: "0.8rem", fontWeight: 700, cursor: "pointer" }}>
+              {Math.max(1, Math.ceil(filteredPayments.length / 10))}
+            </Box>
+            <Box sx={{ width: 32, height: 32, borderRadius: "0.6rem", border: "1px solid #E2E8F0", display: "grid", placeItems: "center", color: "#667386", cursor: "pointer", fontSize: "0.9rem" }}>›</Box>
           </Stack>
         </Stack>
       </AdminPanel>

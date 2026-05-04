@@ -1,8 +1,7 @@
 import {
   Box,
   FormControl,
-  Grid,
-  InputLabel,
+  IconButton,
   MenuItem,
   Select,
   Stack,
@@ -13,7 +12,6 @@ import {
   TableHead,
   TableRow,
   Typography,
-  IconButton,
 } from "@mui/material";
 import AccountBalanceWalletOutlinedIcon from "@mui/icons-material/AccountBalanceWalletOutlined";
 import GavelOutlinedIcon from "@mui/icons-material/GavelOutlined";
@@ -71,10 +69,18 @@ function getLatestQuoteAmount(quotes) {
 
 function StatCard({ title, value, note, icon: Icon, accent = "#0E56C8", chip }) {
   return (
-    <AdminPanel sx={{ p: 2, minHeight: 126, borderLeft: `4px solid ${accent}` }}>
+    <AdminPanel
+      sx={{
+        p: { xs: 2, md: 2.4 },
+        minHeight: 130,
+        borderLeft: `4px solid ${accent}`,
+        transition: "transform 0.18s ease",
+        "&:hover": { transform: "translateY(-2px)" },
+      }}
+    >
       <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-        <Box sx={{ width: 34, height: 34, borderRadius: "0.7rem", bgcolor: `${accent}18`, color: accent, display: "grid", placeItems: "center" }}>
-          <Icon sx={{ fontSize: "1.05rem" }} />
+        <Box sx={{ width: 38, height: 38, borderRadius: "0.85rem", bgcolor: `${accent}18`, color: accent, display: "grid", placeItems: "center" }}>
+          <Icon sx={{ fontSize: "1.15rem" }} />
         </Box>
         {chip ? (
           <Box sx={{ px: 0.9, py: 0.35, borderRadius: "999px", bgcolor: "#DFF7E8", color: "#108A55", fontSize: "0.62rem", fontWeight: 950 }}>
@@ -82,18 +88,18 @@ function StatCard({ title, value, note, icon: Icon, accent = "#0E56C8", chip }) 
           </Box>
         ) : null}
       </Stack>
-      <Typography sx={{ mt: 1.1, color: "#596579", fontSize: "0.78rem", fontWeight: 750 }}>{title}</Typography>
-      <Typography sx={{ mt: 0.35, color: adminUi.colors.text, fontSize: "1.55rem", fontWeight: 950, lineHeight: 1 }}>
+      <Typography sx={{ mt: 1.3, color: "#596579", fontSize: "0.72rem", fontWeight: 800, letterSpacing: "0.04em" }}>{title}</Typography>
+      <Typography sx={{ mt: 0.4, color: adminUi.colors.text, fontSize: "1.8rem", fontWeight: 950, lineHeight: 1 }}>
         {value}
       </Typography>
-      <Typography sx={{ mt: 0.85, color: "#647387", fontSize: "0.67rem", fontWeight: 700 }}>{note}</Typography>
+      <Typography sx={{ mt: 0.9, color: "#647387", fontSize: "0.7rem", fontWeight: 700 }}>{note}</Typography>
     </AdminPanel>
   );
 }
 
 function StatusPill({ status }) {
   return (
-    <Box sx={{ display: "inline-flex", px: 0.9, py: 0.4, borderRadius: "999px", bgcolor: status.bg, color: status.color, fontSize: "0.62rem", fontWeight: 950, textTransform: "uppercase" }}>
+    <Box sx={{ display: "inline-flex", px: 1.1, py: 0.45, borderRadius: "999px", bgcolor: status.bg, color: status.color, fontSize: "0.68rem", fontWeight: 950, textTransform: "uppercase", letterSpacing: "0.04em" }}>
       {status.label}
     </Box>
   );
@@ -205,58 +211,65 @@ export default function AdminBiddingPage() {
 
       {state.error ? <AdminErrorState>{state.error}</AdminErrorState> : null}
 
-      <Grid container spacing={2.2} sx={{ mb: 3 }}>
-        <Grid item xs={12} md={3}>
-          <StatCard title="Total Active Tenders" value={metrics.activeTenders} note="Currently live for bidding" icon={GavelOutlinedIcon} chip="+12%" />
-        </Grid>
-        <Grid item xs={12} md={3}>
-          <StatCard title="Total Bids Received" value={metrics.bidsReceived} note="Across all active projects" icon={TrendingUpRoundedIcon} accent="#8A9700" chip="New High" />
-        </Grid>
-        <Grid item xs={12} md={3}>
-          <StatCard title="Avg. Bids per Project" value={metrics.averageBids} note="Competitive participation" icon={Groups2OutlinedIcon} accent="#108A55" chip="Stable" />
-        </Grid>
-        <Grid item xs={12} md={3}>
-          <StatCard title="Bidding Value" value={formatCompactMoney(metrics.bidValue)} note="Cumulative tender estimate" icon={AccountBalanceWalletOutlinedIcon} chip="+40L" />
-        </Grid>
-      </Grid>
+      {/* KPI Cards — 4 equal columns */}
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)", lg: "repeat(4, 1fr)" },
+          gap: 2.2,
+          mb: 3,
+        }}
+      >
+        <StatCard title="Total Active Tenders" value={metrics.activeTenders} note="Currently live for bidding" icon={GavelOutlinedIcon} chip="+12%" />
+        <StatCard title="Total Bids Received" value={metrics.bidsReceived} note="Across all active projects" icon={TrendingUpRoundedIcon} accent="#8A9700" chip="New High" />
+        <StatCard title="Avg. Bids per Project" value={metrics.averageBids} note="Competitive participation" icon={Groups2OutlinedIcon} accent="#108A55" chip="Stable" />
+        <StatCard title="Bidding Value" value={formatCompactMoney(metrics.bidValue)} note="Cumulative tender estimate" icon={AccountBalanceWalletOutlinedIcon} chip="+40L" />
+      </Box>
 
-      <AdminPanel sx={{ p: { xs: 1.5, md: 1.8 }, mb: 2.5, bgcolor: "#F6F8FB" }}>
-        <Grid container spacing={1.3}>
-          <Grid item xs={12} md={4}>
-            <FormControl fullWidth size="small">
-              <InputLabel>Status</InputLabel>
-              <Select label="Status" value={filters.status} onChange={(event) => setFilters((current) => ({ ...current, status: event.target.value }))}>
-                <MenuItem value="all">All Activity</MenuItem>
-                <MenuItem value="active">Active</MenuItem>
-                <MenuItem value="completed">Completed</MenuItem>
-                <MenuItem value="selected">Selected</MenuItem>
-                <MenuItem value="pending">Pending</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-          <Grid item xs={12} md={4}>
-            <FormControl fullWidth size="small">
-              <InputLabel>Date Range</InputLabel>
-              <Select label="Date Range" value={filters.dateRange} onChange={(event) => setFilters((current) => ({ ...current, dateRange: event.target.value }))}>
-                <MenuItem value="7">Last 7 Days</MenuItem>
-                <MenuItem value="30">Last 30 Days</MenuItem>
-                <MenuItem value="90">Last 90 Days</MenuItem>
-                <MenuItem value="all">All Time</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-          <Grid item xs={12} md={4}>
-            <FormControl fullWidth size="small">
-              <InputLabel>Bid Range</InputLabel>
-              <Select label="Bid Range" value={filters.bidRange} onChange={(event) => setFilters((current) => ({ ...current, bidRange: event.target.value }))}>
-                <MenuItem value="all">All</MenuItem>
-                <MenuItem value="low">1-3 Bids</MenuItem>
-                <MenuItem value="medium">4-8 Bids</MenuItem>
-                <MenuItem value="high">9+ Bids</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-        </Grid>
+      {/* Filter bar — pill-style inline */}
+      <AdminPanel sx={{ p: { xs: 1.6, md: 2 }, mb: 2.5 }}>
+        <Stack direction={{ xs: "column", sm: "row" }} spacing={1.2} alignItems={{ xs: "stretch", sm: "center" }} flexWrap="wrap">
+          <FormControl size="small" sx={{ minWidth: 180 }}>
+            <Select
+              value={filters.status}
+              onChange={(event) => setFilters((current) => ({ ...current, status: event.target.value }))}
+              sx={{ borderRadius: "999px", bgcolor: "#F7F9FC", fontSize: "0.84rem" }}
+              renderValue={(v) => `Status: ${v === "all" ? "All Activity" : v.charAt(0).toUpperCase() + v.slice(1)}`}
+            >
+              <MenuItem value="all">All Activity</MenuItem>
+              <MenuItem value="active">Active</MenuItem>
+              <MenuItem value="completed">Completed</MenuItem>
+              <MenuItem value="selected">Selected</MenuItem>
+              <MenuItem value="pending">Pending</MenuItem>
+            </Select>
+          </FormControl>
+          <FormControl size="small" sx={{ minWidth: 200 }}>
+            <Select
+              value={filters.dateRange}
+              onChange={(event) => setFilters((current) => ({ ...current, dateRange: event.target.value }))}
+              sx={{ borderRadius: "999px", bgcolor: "#F7F9FC", fontSize: "0.84rem" }}
+              renderValue={(v) => `Date Range: ${v === "7" ? "Last 7 Days" : v === "30" ? "Last 30 Days" : v === "90" ? "Last 90 Days" : "All Time"}`}
+            >
+              <MenuItem value="7">Last 7 Days</MenuItem>
+              <MenuItem value="30">Last 30 Days</MenuItem>
+              <MenuItem value="90">Last 90 Days</MenuItem>
+              <MenuItem value="all">All Time</MenuItem>
+            </Select>
+          </FormControl>
+          <FormControl size="small" sx={{ minWidth: 160 }}>
+            <Select
+              value={filters.bidRange}
+              onChange={(event) => setFilters((current) => ({ ...current, bidRange: event.target.value }))}
+              sx={{ borderRadius: "999px", bgcolor: "#F7F9FC", fontSize: "0.84rem" }}
+              renderValue={(v) => `Bid Range: ${v === "all" ? "All" : v === "low" ? "1-3" : v === "medium" ? "4-8" : "9+"}`}
+            >
+              <MenuItem value="all">All</MenuItem>
+              <MenuItem value="low">1-3 Bids</MenuItem>
+              <MenuItem value="medium">4-8 Bids</MenuItem>
+              <MenuItem value="high">9+ Bids</MenuItem>
+            </Select>
+          </FormControl>
+        </Stack>
       </AdminPanel>
 
       <AdminPanel sx={{ overflow: "hidden" }}>
@@ -265,7 +278,7 @@ export default function AdminBiddingPage() {
             <TableHead>
               <TableRow sx={{ bgcolor: "#F6F8FB" }}>
                 {["Lead ID", "Customer", "Total Bids", "Bid Amount", "Status", "Actions"].map((heading) => (
-                  <TableCell key={heading} sx={{ color: "#738096", fontSize: "0.66rem", fontWeight: 900, letterSpacing: "0.11em", textTransform: "uppercase", py: 1.6 }}>
+                  <TableCell key={heading} sx={{ color: "#738096", fontSize: "0.66rem", fontWeight: 900, letterSpacing: "0.11em", textTransform: "uppercase", py: 1.8 }}>
                     {heading}
                   </TableCell>
                 ))}
@@ -274,29 +287,30 @@ export default function AdminBiddingPage() {
             <TableBody>
               {filteredRows.length ? (
                 filteredRows.map((row) => (
-                  <TableRow key={row.lead.id} hover sx={{ "& td": { borderColor: "#EEF2F6", py: 1.8 } }}>
+                  <TableRow key={row.lead.id} hover sx={{ "& td": { borderColor: "#EEF2F6", py: 2 } }}>
                     <TableCell>
-                      <Typography sx={{ color: "#0E56C8", fontSize: "0.8rem", fontWeight: 950 }}>
+                      <Typography sx={{ color: "#0E56C8", fontSize: "0.84rem", fontWeight: 950 }}>
                         {formatLeadId(row.lead.id)}
                       </Typography>
                     </TableCell>
                     <TableCell>
-                      <Typography sx={{ color: adminUi.colors.text, fontSize: "0.82rem", fontWeight: 900 }}>
+                      <Typography sx={{ color: adminUi.colors.text, fontSize: "0.88rem", fontWeight: 900 }}>
                         {row.lead.contact?.fullName || "Customer"}
                       </Typography>
-                      <Typography sx={{ color: "#7C8899", fontSize: "0.64rem", fontWeight: 700 }}>
+                      <Typography sx={{ color: "#7C8899", fontSize: "0.7rem", fontWeight: 700 }}>
                         {getCustomerLocation(row.lead)}
                       </Typography>
                     </TableCell>
-                    <TableCell sx={{ color: adminUi.colors.text, fontSize: "0.82rem", fontWeight: 900 }}>
+                    <TableCell sx={{ color: adminUi.colors.text, fontSize: "0.88rem", fontWeight: 900 }}>
                       {String(row.quotes.length).padStart(2, "0")}
                     </TableCell>
-                    <TableCell sx={{ color: adminUi.colors.text, fontSize: "0.82rem", fontWeight: 950 }}>
+                    <TableCell sx={{ color: adminUi.colors.text, fontSize: "0.9rem", fontWeight: 950 }}>
                       {row.bidAmount ? formatMoney(row.bidAmount) : "Pending"}
                     </TableCell>
                     <TableCell><StatusPill status={row.status} /></TableCell>
                     <TableCell>
-                      <IconButton component={NavLink} to={`/admin/leads/${row.lead.id}`} size="small" aria-label="View bidding lead">
+                      <IconButton component={NavLink} to={`/admin/leads/${row.lead.id}`} size="small" aria-label="View bidding lead"
+                        sx={{ color: "#0E56C8", bgcolor: "#EEF4FF", borderRadius: "0.6rem", "&:hover": { bgcolor: "#DCE9FF" } }}>
                         <VisibilityOutlinedIcon sx={{ color: "#0E56C8", fontSize: "1rem" }} />
                       </IconButton>
                     </TableCell>
@@ -312,10 +326,46 @@ export default function AdminBiddingPage() {
             </TableBody>
           </Table>
         </TableContainer>
-        <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" alignItems={{ xs: "flex-start", sm: "center" }} spacing={1.5} sx={{ px: 2, py: 1.6, borderTop: "1px solid #EEF2F6" }}>
-          <Typography sx={{ color: "#667386", fontSize: "0.78rem", fontWeight: 700 }}>
-            Showing {filteredRows.length} of {rows.length} active bids
+        <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" alignItems={{ xs: "flex-start", sm: "center" }} spacing={1.5} sx={{ px: 2, py: 1.8, borderTop: "1px solid #EEF2F6" }}>
+          <Typography sx={{ color: "#667386", fontSize: "0.8rem", fontWeight: 700 }}>
+            Showing 1-{Math.min(10, filteredRows.length)} of {filteredRows.length} active bids
           </Typography>
+          <Stack direction="row" spacing={1}>
+            <Box
+              sx={{
+                px: 1.8,
+                height: 36,
+                borderRadius: "0.7rem",
+                border: "1px solid #E2E8F0",
+                display: "flex",
+                alignItems: "center",
+                color: "#667386",
+                fontSize: "0.8rem",
+                fontWeight: 700,
+                cursor: "pointer",
+                "&:hover": { bgcolor: "#F7F9FC" },
+              }}
+            >
+              Previous
+            </Box>
+            <Box
+              sx={{
+                px: 1.8,
+                height: 36,
+                borderRadius: "0.7rem",
+                border: "1px solid #E2E8F0",
+                display: "flex",
+                alignItems: "center",
+                color: "#667386",
+                fontSize: "0.8rem",
+                fontWeight: 700,
+                cursor: "pointer",
+                "&:hover": { bgcolor: "#F7F9FC" },
+              }}
+            >
+              Next
+            </Box>
+          </Stack>
         </Stack>
       </AdminPanel>
     </AdminPageShell>
