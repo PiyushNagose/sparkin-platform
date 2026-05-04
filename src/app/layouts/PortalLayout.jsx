@@ -80,6 +80,7 @@ const ADMIN_NAV_ICONS = {
   Vendors: StorefrontOutlinedIcon,
   Bidding: GavelOutlinedIcon,
   "Customers/Projects": AssignmentOutlinedIcon,
+  Services: BoltOutlinedIcon,
   Reports: BarChartOutlinedIcon,
   Settings: SettingsOutlinedIcon,
   Notifications: NotificationsNoneRoundedIcon,

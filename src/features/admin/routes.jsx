@@ -3,6 +3,11 @@ import AdminBiddingPage from "@/features/admin/pages/AdminBiddingPage";
 import AdminLeadDetailPage from "@/features/admin/pages/AdminLeadDetailPage";
 import AdminLeadsPage from "@/features/admin/pages/AdminLeadsPage";
 import AdminPaymentsPage from "@/features/admin/pages/AdminPaymentsPage";
+import AdminProjectDetailPage from "@/features/admin/pages/AdminProjectDetailPage";
+import AdminProjectsPage from "@/features/admin/pages/AdminProjectsPage";
+import AdminReportsPage from "@/features/admin/pages/AdminReportsPage";
+import AdminServicesPage from "@/features/admin/pages/AdminServicesPage";
+import AdminSettingsPage from "@/features/admin/pages/AdminSettingsPage";
 import AdminVendorAssignmentPage from "@/features/admin/pages/AdminVendorAssignmentPage";
 import AdminVendorsPage from "@/features/admin/pages/AdminVendorsPage";
 
@@ -45,15 +50,23 @@ export const adminRoutes = [
   },
   {
     path: "customers-projects",
-    element: makeAdminPlaceholder("Customers/Projects"),
+    element: <AdminProjectsPage />,
+  },
+  {
+    path: "customers-projects/:projectId",
+    element: <AdminProjectDetailPage />,
+  },
+  {
+    path: "services",
+    element: <AdminServicesPage />,
   },
   {
     path: "reports",
-    element: makeAdminPlaceholder("Reports"),
+    element: <AdminReportsPage />,
   },
   {
     path: "settings",
-    element: makeAdminPlaceholder("Settings"),
+    element: <AdminSettingsPage />,
   },
   {
     path: "notifications",
