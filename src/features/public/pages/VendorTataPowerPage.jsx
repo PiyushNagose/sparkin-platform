@@ -17,22 +17,22 @@ import {
 
 const quickFacts = [
   {
-    icon: <SolarPowerRoundedIcon sx={{ fontSize: "1rem" }} />,
+    icon: <SolarPowerRoundedIcon sx={{ fontSize: "1.15rem" }} />,
     label: "System Capacity",
     value: "5kW on-grid efficiency mono-crystalline panels",
   },
   {
-    icon: <ShieldOutlinedIcon sx={{ fontSize: "1rem" }} />,
+    icon: <ShieldOutlinedIcon sx={{ fontSize: "1.15rem" }} />,
     label: "Warranty",
     value: "25-year performance warranty on PV modules",
   },
   {
-    icon: <BoltRoundedIcon sx={{ fontSize: "1rem" }} />,
+    icon: <BoltRoundedIcon sx={{ fontSize: "1.15rem" }} />,
     label: "Installation",
     value: "Standard timeline of 15 days from site survey",
   },
   {
-    icon: <WorkspacePremiumRoundedIcon sx={{ fontSize: "1rem" }} />,
+    icon: <WorkspacePremiumRoundedIcon sx={{ fontSize: "1.15rem" }} />,
     label: "Maintenance",
     value: "5-year AMC included with annual site visits",
   },
@@ -95,12 +95,12 @@ const testimonials = [
 
 function InfoCard({ icon, label, value }) {
   return (
-    <Stack spacing={0.95} sx={{ minWidth: 0 }}>
+    <Stack spacing={1.2} sx={{ minWidth: 0 }}>
       <Box
         sx={{
-          width: 30,
-          height: 30,
-          borderRadius: "0.85rem",
+          width: 38,
+          height: 38,
+          borderRadius: "0.95rem",
           bgcolor: "#EFF5FF",
           color: "#0E56C8",
           display: "grid",
@@ -109,10 +109,10 @@ function InfoCard({ icon, label, value }) {
       >
         {icon}
       </Box>
-      <Typography sx={{ color: "#1D2430", fontSize: "0.8rem", fontWeight: 700 }}>
+      <Typography sx={{ color: "#1D2430", fontSize: "0.92rem", fontWeight: 700 }}>
         {label}
       </Typography>
-      <Typography sx={{ color: "#687487", fontSize: "0.72rem", lineHeight: 1.55 }}>
+      <Typography sx={{ color: "#687487", fontSize: "0.84rem", lineHeight: 1.6 }}>
         {value}
       </Typography>
     </Stack>
@@ -131,7 +131,8 @@ export default function VendorTataPowerPage() {
         }}
       >
         <Container maxWidth={false} disableGutters className={styles.contentContainer}>
-          <Stack spacing={{ xs: 3.5, md: 4.1 }}>
+          <Stack spacing={{ xs: 4, md: 5 }}>
+            {/* Back button */}
             <Button
               component={RouterLink}
               to="/quotes/compare"
@@ -139,9 +140,9 @@ export default function VendorTataPowerPage() {
               sx={{
                 width: "fit-content",
                 px: 0,
-                minHeight: 28,
+                minHeight: 32,
                 color: "#657082",
-                fontSize: "0.72rem",
+                fontSize: "0.84rem",
                 fontWeight: 700,
                 textTransform: "none",
                 "&:hover": { bgcolor: "transparent", color: "#1F2937" },
@@ -150,13 +151,15 @@ export default function VendorTataPowerPage() {
               Back to Vendors
             </Button>
 
-            <Grid container spacing={{ xs: 3, md: 3.3 }} alignItems="start">
+            {/* Hero section */}
+            <Grid container spacing={{ xs: 3.5, md: 4 }} alignItems="start">
               <Grid size={{ xs: 12, md: 8 }}>
-                <Stack spacing={2.15}>
+                <Stack spacing={2.8}>
+                  {/* Title block */}
                   <Box>
                     <Stack
                       direction={{ xs: "column", sm: "row" }}
-                      spacing={1.05}
+                      spacing={1.2}
                       alignItems={{ xs: "flex-start", sm: "center" }}
                       flexWrap="wrap"
                     >
@@ -172,32 +175,32 @@ export default function VendorTataPowerPage() {
                       <Chip
                         label="Top Rated"
                         sx={{
-                          height: 22,
+                          height: 24,
                           bgcolor: "#EAF56F",
                           color: "#5A6400",
-                          fontSize: "0.54rem",
+                          fontSize: "0.62rem",
                           fontWeight: 800,
                           letterSpacing: 0.32,
                           textTransform: "uppercase",
                           borderRadius: 999,
                         }}
                       />
-                      <Stack direction="row" spacing={0.32} alignItems="center">
-                        <StarRoundedIcon sx={{ fontSize: "0.82rem", color: "#F3BB32" }} />
-                        <Typography sx={{ color: "#283344", fontSize: "0.72rem", fontWeight: 700 }}>
+                      <Stack direction="row" spacing={0.4} alignItems="center">
+                        <StarRoundedIcon sx={{ fontSize: "0.95rem", color: "#F3BB32" }} />
+                        <Typography sx={{ color: "#283344", fontSize: "0.84rem", fontWeight: 700 }}>
                           4.8
                         </Typography>
-                        <Typography sx={{ color: "#7B8696", fontSize: "0.68rem" }}>
+                        <Typography sx={{ color: "#7B8696", fontSize: "0.8rem" }}>
                           (4,814 reviews)
                         </Typography>
                       </Stack>
                     </Stack>
                     <Typography
                       sx={{
-                        mt: 1,
+                        mt: 1.2,
                         color: "#667084",
-                        fontSize: "0.92rem",
-                        lineHeight: 1.62,
+                        fontSize: "1rem",
+                        lineHeight: 1.65,
                         maxWidth: 690,
                       }}
                     >
@@ -206,20 +209,21 @@ export default function VendorTataPowerPage() {
                     </Typography>
                   </Box>
 
+                  {/* Hero image + pricing card */}
                   <Box
                     sx={{
-                      p: { xs: 1.45, md: 1.55 },
-                      borderRadius: "1.55rem",
+                      p: { xs: 1.8, md: 2 },
+                      borderRadius: "1.6rem",
                       bgcolor: "rgba(255,255,255,0.82)",
                       border: "1px solid #E8EDF5",
                       boxShadow: "0 16px 34px rgba(17,31,54,0.06)",
                     }}
                   >
-                    <Grid container spacing={1.8} alignItems="stretch">
+                    <Grid container spacing={2} alignItems="stretch">
                       <Grid size={{ xs: 12, md: 7.7 }}>
                         <Box
                           sx={{
-                            minHeight: { xs: 250, md: 290 },
+                            minHeight: { xs: 260, md: 320 },
                             borderRadius: "1.2rem",
                             overflow: "hidden",
                             backgroundImage: `url(${tataPowerHeroPlaceholder})`,
@@ -233,7 +237,7 @@ export default function VendorTataPowerPage() {
                         <Box
                           sx={{
                             height: "100%",
-                            p: { xs: 1.8, md: 2 },
+                            p: { xs: 2, md: 2.4 },
                             borderRadius: "1.2rem",
                             bgcolor: "#FFFFFF",
                             border: "1px solid #E7ECF4",
@@ -243,15 +247,15 @@ export default function VendorTataPowerPage() {
                             justifyContent: "space-between",
                           }}
                         >
-                          <Stack spacing={1.35}>
+                          <Stack spacing={1.6}>
                             <Stack direction="row" justifyContent="space-between" alignItems="start">
                               <Box>
                                 <Typography
                                   sx={{
                                     color: "#8B96A7",
-                                    fontSize: "0.52rem",
+                                    fontSize: "0.62rem",
                                     fontWeight: 800,
-                                    letterSpacing: 0.36,
+                                    letterSpacing: 0.4,
                                     textTransform: "uppercase",
                                   }}
                                 >
@@ -260,11 +264,11 @@ export default function VendorTataPowerPage() {
                                 <Typography
                                   sx={{
                                     color: "#0E56C8",
-                                    fontSize: { xs: "1.9rem", md: "2rem" },
+                                    fontSize: { xs: "2rem", md: "2.2rem" },
                                     fontWeight: 800,
                                     letterSpacing: "-0.04em",
                                     lineHeight: 1,
-                                    mt: 0.4,
+                                    mt: 0.5,
                                   }}
                                 >
                                   ₹2,85,000
@@ -273,10 +277,10 @@ export default function VendorTataPowerPage() {
                               <Chip
                                 label="+6% off"
                                 sx={{
-                                  height: 21,
+                                  height: 24,
                                   bgcolor: "#EAF2FF",
                                   color: "#0E56C8",
-                                  fontSize: "0.5rem",
+                                  fontSize: "0.6rem",
                                   fontWeight: 800,
                                   borderRadius: 999,
                                   textTransform: "uppercase",
@@ -284,16 +288,16 @@ export default function VendorTataPowerPage() {
                               />
                             </Stack>
 
-                            <Grid container spacing={1}>
+                            <Grid container spacing={1.2}>
                               <Grid size={{ xs: 6 }}>
-                                <Box sx={{ p: 1.1, borderRadius: "0.95rem", bgcolor: "#F6F8FB" }}>
+                                <Box sx={{ p: 1.3, borderRadius: "1rem", bgcolor: "#F6F8FB" }}>
                                   <Typography
                                     sx={{
                                       color: "#8A93A4",
-                                      fontSize: "0.5rem",
+                                      fontSize: "0.6rem",
                                       fontWeight: 800,
                                       textTransform: "uppercase",
-                                      letterSpacing: 0.28,
+                                      letterSpacing: 0.3,
                                     }}
                                   >
                                     System Size
@@ -301,7 +305,7 @@ export default function VendorTataPowerPage() {
                                   <Typography
                                     sx={{
                                       color: "#243142",
-                                      fontSize: "0.8rem",
+                                      fontSize: "0.92rem",
                                       fontWeight: 700,
                                       mt: 0.5,
                                     }}
@@ -311,14 +315,14 @@ export default function VendorTataPowerPage() {
                                 </Box>
                               </Grid>
                               <Grid size={{ xs: 6 }}>
-                                <Box sx={{ p: 1.1, borderRadius: "0.95rem", bgcolor: "#F6F8FB" }}>
+                                <Box sx={{ p: 1.3, borderRadius: "1rem", bgcolor: "#F6F8FB" }}>
                                   <Typography
                                     sx={{
                                       color: "#8A93A4",
-                                      fontSize: "0.5rem",
+                                      fontSize: "0.6rem",
                                       fontWeight: 800,
                                       textTransform: "uppercase",
-                                      letterSpacing: 0.28,
+                                      letterSpacing: 0.3,
                                     }}
                                   >
                                     Capacity
@@ -326,7 +330,7 @@ export default function VendorTataPowerPage() {
                                   <Typography
                                     sx={{
                                       color: "#243142",
-                                      fontSize: "0.8rem",
+                                      fontSize: "0.92rem",
                                       fontWeight: 700,
                                       mt: 0.5,
                                     }}
@@ -337,14 +341,14 @@ export default function VendorTataPowerPage() {
                               </Grid>
                             </Grid>
 
-                            <Box sx={{ p: 1.15, borderRadius: "0.95rem", bgcolor: "#F6F8FB" }}>
+                            <Box sx={{ p: 1.3, borderRadius: "1rem", bgcolor: "#F6F8FB" }}>
                               <Typography
                                 sx={{
                                   color: "#8A93A4",
-                                  fontSize: "0.5rem",
+                                  fontSize: "0.6rem",
                                   fontWeight: 800,
                                   textTransform: "uppercase",
-                                  letterSpacing: 0.28,
+                                  letterSpacing: 0.3,
                                 }}
                               >
                                 Net Payable
@@ -352,9 +356,9 @@ export default function VendorTataPowerPage() {
                               <Typography
                                 sx={{
                                   color: "#1E2736",
-                                  fontSize: "1.05rem",
+                                  fontSize: "1.2rem",
                                   fontWeight: 800,
-                                  mt: 0.48,
+                                  mt: 0.5,
                                 }}
                               >
                                 ₹2,67,000
@@ -362,15 +366,15 @@ export default function VendorTataPowerPage() {
                             </Box>
                           </Stack>
 
-                          <Stack spacing={1.05} sx={{ mt: 2 }}>
+                          <Stack spacing={1.2} sx={{ mt: 2.4 }}>
                             <Button
                               component={RouterLink}
                               to="/vendors/tata-power-solar/confirm"
                               variant="contained"
                               sx={{
-                                minHeight: 42,
-                                borderRadius: "0.85rem",
-                                fontSize: "0.78rem",
+                                minHeight: 46,
+                                borderRadius: "0.9rem",
+                                fontSize: "0.88rem",
                                 fontWeight: 700,
                                 textTransform: "none",
                                 background: "linear-gradient(180deg, #0E56C8 0%, #0D49B0 100%)",
@@ -381,11 +385,11 @@ export default function VendorTataPowerPage() {
                             </Button>
                             <Button
                               sx={{
-                                minHeight: 42,
-                                borderRadius: "0.85rem",
+                                minHeight: 46,
+                                borderRadius: "0.9rem",
                                 bgcolor: "#F4F7FB",
                                 color: "#202938",
-                                fontSize: "0.78rem",
+                                fontSize: "0.88rem",
                                 fontWeight: 700,
                                 textTransform: "none",
                               }}
@@ -400,14 +404,15 @@ export default function VendorTataPowerPage() {
                 </Stack>
               </Grid>
 
+              {/* Quick facts sidebar */}
               <Grid size={{ xs: 12, md: 4 }}>
-                <Grid container spacing={{ xs: 2, md: 1.8 }}>
+                <Grid container spacing={{ xs: 2, md: 2 }}>
                   {quickFacts.map((fact) => (
                     <Grid key={fact.label} size={{ xs: 12, sm: 6, md: 12 }}>
                       <Box
                         sx={{
-                          p: 1.45,
-                          borderRadius: "1.15rem",
+                          p: { xs: 2, md: 2.2 },
+                          borderRadius: "1.25rem",
                           bgcolor: "rgba(255,255,255,0.88)",
                           border: "1px solid #E8EDF5",
                           boxShadow: "0 14px 28px rgba(17,31,54,0.04)",
@@ -422,37 +427,38 @@ export default function VendorTataPowerPage() {
               </Grid>
             </Grid>
 
+            {/* System Specification */}
             <Box
               sx={{
-                p: { xs: 2.05, md: 2.35 },
-                borderRadius: "1.5rem",
+                p: { xs: 2.4, md: 3 },
+                borderRadius: "1.6rem",
                 bgcolor: "rgba(255,255,255,0.92)",
                 border: "1px solid #E8EDF5",
                 boxShadow: "0 16px 34px rgba(17,31,54,0.05)",
               }}
             >
-              <Grid container spacing={{ xs: 2.4, md: 3 }} alignItems="center">
+              <Grid container spacing={{ xs: 3, md: 4 }} alignItems="center">
                 <Grid size={{ xs: 12, md: 7 }}>
-                  <Stack spacing={1.5}>
-                    <Typography sx={{ color: "#202938", fontSize: "0.98rem", fontWeight: 800 }}>
+                  <Stack spacing={2}>
+                    <Typography sx={{ color: "#202938", fontSize: "1.1rem", fontWeight: 800 }}>
                       System Specification
                     </Typography>
-                    <Grid container spacing={1.3}>
+                    <Grid container spacing={1.8}>
                       {specs.map(([label, value]) => (
                         <Grid key={label} size={{ xs: 12, sm: 6 }}>
-                          <Stack spacing={0.3}>
+                          <Stack spacing={0.5}>
                             <Typography
                               sx={{
                                 color: "#8A93A4",
-                                fontSize: "0.52rem",
+                                fontSize: "0.62rem",
                                 fontWeight: 800,
-                                letterSpacing: 0.28,
+                                letterSpacing: 0.3,
                                 textTransform: "uppercase",
                               }}
                             >
                               {label}
                             </Typography>
-                            <Typography sx={{ color: "#243142", fontSize: "0.8rem", fontWeight: 700 }}>
+                            <Typography sx={{ color: "#243142", fontSize: "0.92rem", fontWeight: 700 }}>
                               {value}
                             </Typography>
                           </Stack>
@@ -464,7 +470,7 @@ export default function VendorTataPowerPage() {
                 <Grid size={{ xs: 12, md: 5 }}>
                   <Box
                     sx={{
-                      minHeight: 228,
+                      minHeight: 250,
                       borderRadius: "1.2rem",
                       overflow: "hidden",
                       backgroundImage: `url(${tataPowerSpecPlaceholder})`,
@@ -476,39 +482,40 @@ export default function VendorTataPowerPage() {
               </Grid>
             </Box>
 
+            {/* Warranty & Service */}
             <Box
               sx={{
-                p: { xs: 2.05, md: 2.35 },
-                borderRadius: "1.5rem",
+                p: { xs: 2.4, md: 3 },
+                borderRadius: "1.6rem",
                 bgcolor: "rgba(255,255,255,0.92)",
                 border: "1px solid #E8EDF5",
                 boxShadow: "0 16px 34px rgba(17,31,54,0.05)",
               }}
             >
-              <Typography sx={{ color: "#202938", fontSize: "0.98rem", fontWeight: 800 }}>
+              <Typography sx={{ color: "#202938", fontSize: "1.1rem", fontWeight: 800, mb: 2 }}>
                 Warranty & Post-Purchase Service
               </Typography>
-              <Grid container spacing={{ xs: 1.4, md: 1.6 }} sx={{ mt: 0.45 }}>
+              <Grid container spacing={{ xs: 1.8, md: 2 }}>
                 {serviceCards.map((card) => (
                   <Grid key={card.title} size={{ xs: 12, md: 4 }}>
                     <Box
                       sx={{
-                        p: 1.45,
-                        borderRadius: "1rem",
+                        p: { xs: 2, md: 2.2 },
+                        borderRadius: "1.1rem",
                         bgcolor: "#F7F9FC",
                         border: "1px solid #EBF0F6",
                         height: "100%",
                       }}
                     >
-                      <Typography sx={{ color: "#0E56C8", fontSize: "0.84rem", fontWeight: 800 }}>
+                      <Typography sx={{ color: "#0E56C8", fontSize: "1rem", fontWeight: 800 }}>
                         {card.value}
                       </Typography>
                       <Typography
-                        sx={{ color: "#202938", fontSize: "0.78rem", fontWeight: 700, mt: 0.55 }}
+                        sx={{ color: "#202938", fontSize: "0.9rem", fontWeight: 700, mt: 0.7 }}
                       >
                         {card.title}
                       </Typography>
-                      <Typography sx={{ color: "#687487", fontSize: "0.7rem", lineHeight: 1.55, mt: 0.45 }}>
+                      <Typography sx={{ color: "#687487", fontSize: "0.82rem", lineHeight: 1.6, mt: 0.6 }}>
                         {card.text}
                       </Typography>
                     </Box>
@@ -517,40 +524,41 @@ export default function VendorTataPowerPage() {
               </Grid>
             </Box>
 
+            {/* Installation Roadmap */}
             <Box
               sx={{
-                p: { xs: 2.05, md: 2.35 },
-                borderRadius: "1.5rem",
+                p: { xs: 2.4, md: 3 },
+                borderRadius: "1.6rem",
                 bgcolor: "rgba(255,255,255,0.92)",
                 border: "1px solid #E8EDF5",
                 boxShadow: "0 16px 34px rgba(17,31,54,0.05)",
               }}
             >
-              <Typography sx={{ color: "#202938", fontSize: "0.98rem", fontWeight: 800 }}>
+              <Typography sx={{ color: "#202938", fontSize: "1.1rem", fontWeight: 800, mb: 2 }}>
                 Installation Roadmap
               </Typography>
-              <Stack spacing={1.3} sx={{ mt: 1.3 }}>
+              <Stack spacing={1.8}>
                 {roadmap.map(([title, text], index) => (
-                  <Stack key={title} direction="row" spacing={1.1} alignItems="start">
-                    <Box sx={{ pt: 0.3 }}>
+                  <Stack key={title} direction="row" spacing={1.5} alignItems="start">
+                    <Box sx={{ pt: 0.4, flexShrink: 0 }}>
                       <Box
                         sx={{
-                          width: 10,
-                          height: 10,
+                          width: 12,
+                          height: 12,
                           borderRadius: "50%",
                           bgcolor: "#0E56C8",
-                          boxShadow: "0 0 0 4px rgba(14,86,200,0.08)",
+                          boxShadow: "0 0 0 5px rgba(14,86,200,0.1)",
                         }}
                       />
                       {index < roadmap.length - 1 ? (
-                        <Box sx={{ width: 2, minHeight: 32, bgcolor: "#D8E3F4", mt: 0.4, ml: 0.5 }} />
+                        <Box sx={{ width: 2, minHeight: 36, bgcolor: "#D8E3F4", mt: 0.5, ml: "5px" }} />
                       ) : null}
                     </Box>
-                    <Box sx={{ pb: 0.25 }}>
-                      <Typography sx={{ color: "#202938", fontSize: "0.82rem", fontWeight: 700 }}>
+                    <Box sx={{ pb: 0.5 }}>
+                      <Typography sx={{ color: "#202938", fontSize: "0.94rem", fontWeight: 700 }}>
                         {title}
                       </Typography>
-                      <Typography sx={{ color: "#687487", fontSize: "0.7rem", lineHeight: 1.55, mt: 0.22 }}>
+                      <Typography sx={{ color: "#687487", fontSize: "0.82rem", lineHeight: 1.6, mt: 0.3 }}>
                         {text}
                       </Typography>
                     </Box>
@@ -559,22 +567,23 @@ export default function VendorTataPowerPage() {
               </Stack>
             </Box>
 
-            <Stack spacing={1.45}>
+            {/* Testimonials */}
+            <Stack spacing={2}>
               <Stack
                 direction={{ xs: "column", sm: "row" }}
                 justifyContent="space-between"
                 alignItems={{ xs: "flex-start", sm: "center" }}
                 spacing={1}
               >
-                <Typography sx={{ color: "#202938", fontSize: "1rem", fontWeight: 800 }}>
+                <Typography sx={{ color: "#202938", fontSize: "1.1rem", fontWeight: 800 }}>
                   Customer Testimonials
                 </Typography>
                 <Button
                   sx={{
                     px: 0,
-                    minHeight: 24,
+                    minHeight: 28,
                     color: "#0E56C8",
-                    fontSize: "0.72rem",
+                    fontSize: "0.84rem",
                     fontWeight: 700,
                     textTransform: "none",
                   }}
@@ -582,49 +591,50 @@ export default function VendorTataPowerPage() {
                   View All Reviews
                 </Button>
               </Stack>
-              <Grid container spacing={{ xs: 1.5, md: 1.8 }}>
+              <Grid container spacing={{ xs: 2, md: 2.2 }}>
                 {testimonials.map((item) => (
                   <Grid key={item.name} size={{ xs: 12, md: 4 }}>
                     <Box
                       sx={{
-                        p: 1.45,
-                        borderRadius: "1.15rem",
+                        p: { xs: 2, md: 2.4 },
+                        borderRadius: "1.25rem",
                         bgcolor: "rgba(255,255,255,0.92)",
                         border: "1px solid #E8EDF5",
                         boxShadow: "0 14px 28px rgba(17,31,54,0.04)",
                         height: "100%",
                       }}
                     >
-                      <Stack spacing={1}>
-                        <Stack direction="row" spacing={0.18}>
+                      <Stack spacing={1.4}>
+                        <Stack direction="row" spacing={0.25}>
                           {Array.from({ length: 5 }).map((_, index) => (
-                            <StarRoundedIcon key={index} sx={{ fontSize: "0.86rem", color: "#F2B12A" }} />
+                            <StarRoundedIcon key={index} sx={{ fontSize: "1rem", color: "#F2B12A" }} />
                           ))}
                         </Stack>
-                        <Typography sx={{ color: "#425062", fontSize: "0.72rem", lineHeight: 1.7 }}>
+                        <Typography sx={{ color: "#425062", fontSize: "0.84rem", lineHeight: 1.72 }}>
                           &ldquo;{item.quote}&rdquo;
                         </Typography>
-                        <Stack direction="row" spacing={0.9} alignItems="center">
+                        <Stack direction="row" spacing={1.1} alignItems="center">
                           <Box
                             sx={{
-                              width: 34,
-                              height: 34,
+                              width: 40,
+                              height: 40,
                               borderRadius: "50%",
                               bgcolor: "#EAF0FA",
                               color: "#0E56C8",
                               display: "grid",
                               placeItems: "center",
-                              fontSize: "0.72rem",
+                              fontSize: "0.82rem",
                               fontWeight: 800,
+                              flexShrink: 0,
                             }}
                           >
                             {item.initials}
                           </Box>
                           <Box>
-                            <Typography sx={{ color: "#202938", fontSize: "0.76rem", fontWeight: 700 }}>
+                            <Typography sx={{ color: "#202938", fontSize: "0.88rem", fontWeight: 700 }}>
                               {item.name}
                             </Typography>
-                            <Typography sx={{ color: "#8A93A4", fontSize: "0.62rem" }}>
+                            <Typography sx={{ color: "#8A93A4", fontSize: "0.74rem" }}>
                               {item.meta}
                             </Typography>
                           </Box>
@@ -636,10 +646,11 @@ export default function VendorTataPowerPage() {
               </Grid>
             </Stack>
 
+            {/* Bottom CTA bar */}
             <Box
               sx={{
-                p: { xs: 1.6, md: 1.75 },
-                borderRadius: "1.25rem",
+                p: { xs: 2, md: 2.4 },
+                borderRadius: "1.4rem",
                 bgcolor: "rgba(255,255,255,0.94)",
                 border: "1px solid #E8EDF5",
                 boxShadow: "0 16px 34px rgba(17,31,54,0.05)",
@@ -647,7 +658,7 @@ export default function VendorTataPowerPage() {
             >
               <Stack
                 direction={{ xs: "column", md: "row" }}
-                spacing={2}
+                spacing={2.5}
                 justifyContent="space-between"
                 alignItems={{ xs: "stretch", md: "center" }}
               >
@@ -655,19 +666,19 @@ export default function VendorTataPowerPage() {
                   <Typography
                     sx={{
                       color: "#8A93A4",
-                      fontSize: "0.5rem",
+                      fontSize: "0.62rem",
                       fontWeight: 800,
-                      letterSpacing: 0.34,
+                      letterSpacing: 0.4,
                       textTransform: "uppercase",
                     }}
                   >
                     Ready to Switch?
                   </Typography>
-                  <Stack direction="row" spacing={0.7} alignItems="center" sx={{ mt: 0.45 }}>
-                    <Typography sx={{ color: "#202938", fontSize: "0.9rem", fontWeight: 700 }}>
+                  <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 0.6 }}>
+                    <Typography sx={{ color: "#202938", fontSize: "1rem", fontWeight: 700 }}>
                       Tata Power Solar
                     </Typography>
-                    <Typography sx={{ color: "#0E56C8", fontSize: "0.92rem", fontWeight: 800 }}>
+                    <Typography sx={{ color: "#0E56C8", fontSize: "1.05rem", fontWeight: 800 }}>
                       ₹2,85,000
                     </Typography>
                   </Stack>
@@ -675,19 +686,19 @@ export default function VendorTataPowerPage() {
 
                 <Stack
                   direction={{ xs: "column", sm: "row" }}
-                  spacing={1.1}
+                  spacing={1.2}
                   sx={{ width: { xs: "100%", md: "auto" } }}
                 >
                   <Button
                     startIcon={<DownloadRoundedIcon />}
                     sx={{
                       width: { xs: "100%", sm: "auto" },
-                      minHeight: 40,
-                      px: 1.55,
-                      borderRadius: "0.8rem",
+                      minHeight: 46,
+                      px: 2,
+                      borderRadius: "0.9rem",
                       bgcolor: "#F4F7FB",
                       color: "#202938",
-                      fontSize: "0.74rem",
+                      fontSize: "0.86rem",
                       fontWeight: 700,
                       textTransform: "none",
                     }}
@@ -700,10 +711,10 @@ export default function VendorTataPowerPage() {
                     variant="contained"
                     sx={{
                       width: { xs: "100%", sm: "auto" },
-                      minHeight: 40,
-                      px: 1.7,
-                      borderRadius: "0.8rem",
-                      fontSize: "0.74rem",
+                      minHeight: 46,
+                      px: 2.2,
+                      borderRadius: "0.9rem",
+                      fontSize: "0.86rem",
                       fontWeight: 700,
                       textTransform: "none",
                       background: "linear-gradient(180deg, #0E56C8 0%, #0D49B0 100%)",
