@@ -124,11 +124,12 @@ export function AuthScreenShell({
   heroStatTitle,
   heroStatBody,
   heroBackground,
+  fixedRole,
 }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { login, logout, register, getRoleHome } = useAuth();
-  const [accountType, setAccountType] = React.useState("customer");
+  const [accountType, setAccountType] = React.useState(fixedRole || "customer");
   const [fullName, setFullName] = React.useState("");
   const [phoneNumber, setPhoneNumber] = React.useState("");
   const [email, setEmail] = React.useState("");
@@ -139,6 +140,7 @@ export function AuthScreenShell({
   const [error, setError] = React.useState("");
   const [notice, setNotice] = React.useState("");
   const isSignup = mode === "signup";
+  const isFixedRole = Boolean(fixedRole);
 
   const heroOverlay =
     mode === "login"
@@ -228,7 +230,13 @@ export function AuthScreenShell({
             persist: keepLoggedIn,
           });
 
-      if (!isSignup && user.role !== accountType && user.role !== "admin") {
+      if (isFixedRole && user.role !== fixedRole) {
+        await logout();
+        setError(`This login is only for ${fixedRole} accounts.`);
+        return;
+      }
+
+      if (!isSignup && !isFixedRole && user.role !== accountType && user.role !== "admin") {
         await logout();
         setError(`This account is registered as ${user.role === "vendor" ? "a vendor" : "a user"}. Please choose the matching account type.`);
         return;
@@ -408,12 +416,14 @@ export function AuthScreenShell({
               </Alert>
             ) : null}
 
-            <Box>
-              <Typography sx={{ mb: 0.5, color: "#344054", fontSize: "0.8rem", fontWeight: 700 }}>
-                Account Type
-              </Typography>
-              <AccountToggle value={accountType} onChange={setAccountType} />
-            </Box>
+            {!isFixedRole ? (
+              <Box>
+                <Typography sx={{ mb: 0.5, color: "#344054", fontSize: "0.8rem", fontWeight: 700 }}>
+                  Account Type
+                </Typography>
+                <AccountToggle value={accountType} onChange={setAccountType} />
+              </Box>
+            ) : null}
 
             {isSignup && (
               <Box>

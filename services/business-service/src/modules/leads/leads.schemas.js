@@ -47,3 +47,7 @@ export const createLeadSchema = z.object({
 export const updateLeadStatusSchema = z.object({
   status: z.enum(["reviewing", "open_for_quotes", "closed"]),
 });
+
+export const assignLeadVendorsSchema = z.object({
+  vendorIds: z.array(z.string().trim().min(1)).min(1).max(25),
+});

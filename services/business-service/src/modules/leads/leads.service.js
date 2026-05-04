@@ -9,17 +9,19 @@ export const leadsService = {
     }
 
     const isVendorCreated = user.role === "vendor";
+    const isAdminCreated = user.role === "admin";
+    const isManualLead = isVendorCreated || isAdminCreated;
 
     const lead = await leadsRepository.createLead({
       ...input,
-      customerId: isVendorCreated ? `manual:${user.userId}` : user.userId,
+      customerId: isManualLead ? `manual:${user.userId}:${input.contact.phoneNumber}` : user.userId,
       createdByVendorId: isVendorCreated ? user.userId : null,
-      source: isVendorCreated ? "vendor_manual" : "customer_booking",
+      source: isAdminCreated ? "admin_manual" : isVendorCreated ? "vendor_manual" : "customer_booking",
       status: "submitted",
       submittedAt: new Date(),
     });
 
-    if (isVendorCreated) {
+    if (isManualLead) {
       return leadsRepository.updateStatus(lead.id, "reviewing");
     }
 
@@ -32,7 +34,7 @@ export const leadsService = {
     }
 
     if (user.role === "vendor") {
-      return leadsRepository.findVendorVisibleLeads();
+      return leadsRepository.findVendorVisibleLeads(user.userId);
     }
 
     return leadsRepository.findLeadsForCustomer(user.userId);
@@ -73,5 +75,20 @@ export const leadsService = {
     }
 
     return leadsRepository.updateStatus(leadId, input.status);
+  },
+
+  async assignVendors(user, leadId, input) {
+    if (user.role !== "admin") {
+      throw new AppError(403, "Only admins can assign vendors to leads");
+    }
+
+    const lead = await this.getLead(user, leadId);
+
+    if (lead.status === "closed") {
+      throw new AppError(409, "Closed leads cannot be assigned to vendors");
+    }
+
+    const vendorIds = [...new Set(input.vendorIds)];
+    return leadsRepository.assignVendors(leadId, vendorIds);
   },
 };

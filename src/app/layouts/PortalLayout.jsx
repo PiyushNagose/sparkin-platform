@@ -945,7 +945,7 @@ export function PortalLayout({ portal }) {
         </Box>
       </Box>
 
-      <AppFooter />
+      {portal === "customer" ? <AppFooter /> : null}
     </Box>
   );
 }

@@ -28,6 +28,11 @@ export const leadsApi = {
     const { data } = await businessClient.patch(`/leads/${requireId(leadId, "Lead id")}/status`, payload);
     return data.lead;
   },
+
+  async assignVendors(leadId, payload) {
+    const { data } = await businessClient.patch(`/leads/${requireId(leadId, "Lead id")}/vendors`, payload);
+    return data.lead;
+  },
 };
 
 export const quotesApi = {

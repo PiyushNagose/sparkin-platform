@@ -17,7 +17,7 @@ const leadSchema = new mongoose.Schema(
     createdByVendorId: { type: String, default: null, index: true },
     source: {
       type: String,
-      enum: ["customer_booking", "vendor_manual"],
+      enum: ["customer_booking", "vendor_manual", "admin_manual"],
       default: "customer_booking",
       index: true,
     },
@@ -73,6 +73,8 @@ const leadSchema = new mongoose.Schema(
     },
     notes: { type: String, trim: true, default: null },
     specialInstructions: { type: String, trim: true, default: null },
+    assignedVendorIds: [{ type: String, trim: true }],
+    vendorsAssignedAt: { type: Date, default: null },
     selection: {
       quoteId: { type: mongoose.Schema.Types.ObjectId, ref: "Quote", default: null },
       vendorId: { type: String, default: null },

@@ -1,6 +1,11 @@
 import { paymentsService } from "./payments.service.js";
 
 export const paymentsController = {
+  async create(req, res) {
+    const payment = await paymentsService.createInvoice(req.auth, req.body);
+    res.status(201).json({ payment });
+  },
+
   async list(req, res) {
     const payments = await paymentsService.listPayments(req.auth);
     res.status(200).json({ payments });

@@ -1,4 +1,8 @@
 import AdminDashboardPage, { makeAdminPlaceholder } from "@/features/admin/pages/AdminDashboardPage";
+import AdminLeadDetailPage from "@/features/admin/pages/AdminLeadDetailPage";
+import AdminLeadsPage from "@/features/admin/pages/AdminLeadsPage";
+import AdminPaymentsPage from "@/features/admin/pages/AdminPaymentsPage";
+import AdminVendorAssignmentPage from "@/features/admin/pages/AdminVendorAssignmentPage";
 
 export const adminRoutes = [
   {
@@ -7,15 +11,23 @@ export const adminRoutes = [
   },
   {
     path: "leads",
-    element: makeAdminPlaceholder("Leads"),
+    element: <AdminLeadsPage />,
+  },
+  {
+    path: "leads/:leadId",
+    element: <AdminLeadDetailPage />,
   },
   {
     path: "payments",
-    element: makeAdminPlaceholder("Payments"),
+    element: <AdminPaymentsPage />,
+  },
+  {
+    path: "payments/:paymentId",
+    element: makeAdminPlaceholder("Payment Details"),
   },
   {
     path: "vendor-assignment",
-    element: makeAdminPlaceholder("Vendor Assignment"),
+    element: <AdminVendorAssignmentPage />,
   },
   {
     path: "vendors",

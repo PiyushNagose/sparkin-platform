@@ -18,6 +18,11 @@ function normalizePayments(payments) {
 }
 
 export const paymentsRepository = {
+  async create(payment) {
+    const created = await PaymentModel.create(payment);
+    return normalizePayment(created);
+  },
+
   async createMany(payments) {
     const created = await PaymentModel.insertMany(payments, { ordered: true });
     return normalizePayments(created);
