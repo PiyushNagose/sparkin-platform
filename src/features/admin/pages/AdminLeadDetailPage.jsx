@@ -6,6 +6,7 @@ import {
   DialogTitle,
   Grid,
   Stack,
+  TextField,
   Typography,
 } from "@mui/material";
 import AssignmentTurnedInOutlinedIcon from "@mui/icons-material/AssignmentTurnedInOutlined";
@@ -129,35 +130,37 @@ function VerificationStepper({ activeStep }) {
   const activeIndex = verificationSteps.findIndex((step) => step.key === activeStep);
 
   return (
-    <AdminPanel sx={{ p: { xs: 2, md: 2.5 }, mb: 3, bgcolor: "#F6F8FB" }}>
-      <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1.2}>
+    <AdminPanel sx={{ p: { xs: 2, md: 2.8 }, mb: 3 }}>
+      <Stack direction="row" alignItems="center" justifyContent="space-between">
         {verificationSteps.map((step, index) => {
           const Icon = step.icon;
           const isDone = index <= activeIndex;
+          const isActive = index === activeIndex;
           return (
-            <Stack key={step.key} direction="row" alignItems="center" spacing={1.5} sx={{ flex: 1 }}>
-              <Stack alignItems="center" spacing={0.8} sx={{ minWidth: 70 }}>
+            <Stack key={step.key} direction="row" alignItems="center" sx={{ flex: 1 }}>
+              <Stack alignItems="center" spacing={1} sx={{ minWidth: 72 }}>
                 <Box
                   sx={{
-                    width: 44,
-                    height: 44,
+                    width: 48,
+                    height: 48,
                     borderRadius: "50%",
                     display: "grid",
                     placeItems: "center",
                     bgcolor: isDone ? "#0E56C8" : "#FFFFFF",
                     color: isDone ? "#FFFFFF" : "#8A96A8",
-                    border: "1px solid #D9E2EF",
-                    boxShadow: isDone ? "0 10px 22px rgba(14,86,200,0.22)" : "none",
+                    border: isActive ? "3px solid #0E56C8" : "1.5px solid #D9E2EF",
+                    boxShadow: isDone ? "0 10px 24px rgba(14,86,200,0.25)" : "none",
+                    transition: "all 0.2s ease",
                   }}
                 >
-                  <Icon sx={{ fontSize: "1.1rem" }} />
+                  <Icon sx={{ fontSize: "1.15rem" }} />
                 </Box>
-                <Typography sx={{ color: isDone ? "#0E56C8" : "#4A5667", fontSize: "0.74rem", fontWeight: 850 }}>
+                <Typography sx={{ color: isDone ? "#0E56C8" : "#6A7688", fontSize: "0.76rem", fontWeight: 850, textAlign: "center" }}>
                   {step.label}
                 </Typography>
               </Stack>
               {index < verificationSteps.length - 1 ? (
-                <Box sx={{ height: 2, flex: 1, bgcolor: isDone ? "#9ABCF7" : "#E2E8F0" }} />
+                <Box sx={{ height: 2.5, flex: 1, bgcolor: isDone ? "#9ABCF7" : "#E2E8F0", borderRadius: 9, mx: 0.5 }} />
               ) : null}
             </Stack>
           );
@@ -169,11 +172,11 @@ function VerificationStepper({ activeStep }) {
 
 function InfoMetric({ title, value }) {
   return (
-    <Box sx={{ p: 1.6, borderRadius: "1rem", bgcolor: "#F3F5F8", minHeight: 78 }}>
+    <Box sx={{ p: { xs: 1.8, md: 2 }, borderRadius: "1.1rem", bgcolor: "#F3F5F8", minHeight: 88 }}>
       <Typography sx={{ color: "#667386", fontSize: "0.62rem", fontWeight: 900, letterSpacing: "0.08em", textTransform: "uppercase" }}>
         {title}
       </Typography>
-      <Typography sx={{ mt: 0.5, color: adminUi.colors.text, fontSize: "1.05rem", fontWeight: 900, lineHeight: 1.25 }}>
+      <Typography sx={{ mt: 0.6, color: adminUi.colors.text, fontSize: "1.1rem", fontWeight: 900, lineHeight: 1.25 }}>
         {value}
       </Typography>
     </Box>
@@ -319,74 +322,102 @@ export default function AdminLeadDetailPage() {
 
       {actionError ? <AdminErrorState>{actionError}</AdminErrorState> : null}
 
-      <Grid container spacing={2.4}>
-        <Grid item xs={12} lg={8}>
-          <AdminPanel sx={{ p: { xs: 2, md: 2.6 } }}>
-            <Stack direction="row" justifyContent="space-between" spacing={2} sx={{ mb: 2.7 }}>
-              <Typography sx={{ color: adminUi.colors.text, fontSize: "1.25rem", fontWeight: 900 }}>
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: { xs: "1fr", lg: "1fr 380px" },
+          gap: 2.4,
+          alignItems: "start",
+        }}
+      >
+        {/* Customer Profile — editable */}
+        <AdminPanel sx={{ p: { xs: 2, md: 2.8 } }}>
+            <Stack direction="row" justifyContent="space-between" spacing={2} sx={{ mb: 3 }}>
+              <Typography sx={{ color: adminUi.colors.text, fontSize: "1.3rem", fontWeight: 900 }}>
                 Customer Profile
               </Typography>
-              <Box sx={{ px: 1.15, py: 0.45, borderRadius: "999px", bgcolor: "#D7E600", color: "#4D5800", fontSize: "0.67rem", fontWeight: 950 }}>
-                {lead.source === "customer_booking" ? "CUSTOMER LEAD" : "MANUAL LEAD"}
+              <Box sx={{ px: 1.3, py: 0.5, borderRadius: "999px", bgcolor: "#D7E600", color: "#4D5800", fontSize: "0.68rem", fontWeight: 950 }}>
+                {lead.source === "customer_booking" ? "CUSTOMER LEAD" : "PRIORITY LEAD"}
               </Box>
             </Stack>
 
-            <Grid container spacing={2.2}>
-              <Grid item xs={12} md={6}>
-                <Typography sx={{ color: "#657386", fontSize: "0.68rem", fontWeight: 900, letterSpacing: "0.08em" }}>
-                  CUSTOMER NAME
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+                gap: 2,
+                mb: 2,
+              }}
+            >
+              <Box>
+                <Typography sx={{ mb: 0.6, color: "#657386", fontSize: "0.64rem", fontWeight: 900, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+                  Customer Name
                 </Typography>
-                <Typography sx={{ mt: 0.55, color: adminUi.colors.text, fontSize: "1rem", fontWeight: 850 }}>
-                  {lead.contact?.fullName || "Not provided"}
-                </Typography>
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <Typography sx={{ color: "#657386", fontSize: "0.68rem", fontWeight: 900, letterSpacing: "0.08em" }}>
-                  PHONE NUMBER
-                </Typography>
-                <Typography sx={{ mt: 0.55, color: adminUi.colors.text, fontSize: "1rem", fontWeight: 850 }}>
-                  {lead.contact?.phoneNumber || "Not provided"}
-                </Typography>
-              </Grid>
-              <Grid item xs={12}>
-                <Typography sx={{ color: "#657386", fontSize: "0.68rem", fontWeight: 900, letterSpacing: "0.08em" }}>
-                  INSTALLATION ADDRESS
-                </Typography>
-                <Box sx={{ mt: 0.8, p: 1.4, borderRadius: "0.8rem", bgcolor: "#F0F2F5", color: adminUi.colors.text, fontSize: "0.92rem", fontWeight: 750 }}>
-                  {formatAddress(lead.installationAddress)}
-                </Box>
-              </Grid>
-              <Grid item xs={12} md={4}>
-                <InfoMetric title="System Size" value={`${getSystemSize(lead)} kW`} />
-              </Grid>
-              <Grid item xs={12} md={4}>
-                <InfoMetric
-                  title="Preferred Brand"
-                  value={acceptedQuote?.system?.panelType || lead.property?.distributionCompany || "Pending"}
+                <TextField
+                  fullWidth
+                  size="small"
+                  defaultValue={lead.contact?.fullName || ""}
+                  placeholder="Customer name"
+                  sx={{ "& .MuiOutlinedInput-root": { borderRadius: "0.75rem", bgcolor: "#F7F9FC", fontSize: "0.92rem", fontWeight: 700 } }}
                 />
-              </Grid>
-              <Grid item xs={12} md={4}>
-                <InfoMetric title="Estimated Cost" value={formatMoney(acceptedQuote?.pricing?.totalPrice)} />
-              </Grid>
-            </Grid>
-          </AdminPanel>
-        </Grid>
+              </Box>
+              <Box>
+                <Typography sx={{ mb: 0.6, color: "#657386", fontSize: "0.64rem", fontWeight: 900, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+                  Phone Number
+                </Typography>
+                <TextField
+                  fullWidth
+                  size="small"
+                  defaultValue={lead.contact?.phoneNumber || ""}
+                  placeholder="Phone number"
+                  sx={{ "& .MuiOutlinedInput-root": { borderRadius: "0.75rem", bgcolor: "#F7F9FC", fontSize: "0.92rem", fontWeight: 700 } }}
+                />
+              </Box>
+              <Box sx={{ gridColumn: { xs: "auto", sm: "1 / -1" } }}>
+                <Typography sx={{ mb: 0.6, color: "#657386", fontSize: "0.64rem", fontWeight: 900, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+                  Installation Address
+                </Typography>
+                <TextField
+                  fullWidth
+                  size="small"
+                  defaultValue={formatAddress(lead.installationAddress)}
+                  placeholder="Installation address"
+                  sx={{ "& .MuiOutlinedInput-root": { borderRadius: "0.75rem", bgcolor: "#F7F9FC", fontSize: "0.88rem" } }}
+                />
+              </Box>
+            </Box>
 
-        <Grid item xs={12} lg={4}>
-          <AdminPanel sx={{ p: { xs: 2, md: 2.6 }, borderTop: "4px solid #0E56C8" }}>
-            <Typography sx={{ color: adminUi.colors.text, fontSize: "1.15rem", fontWeight: 900, mb: 2 }}>
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: "repeat(3, 1fr)",
+                gap: 1.5,
+              }}
+            >
+              <InfoMetric title="System Size" value={`${getSystemSize(lead)} kW`} />
+              <InfoMetric
+                title="Preferred Brand"
+                value={acceptedQuote?.system?.panelType || lead.property?.distributionCompany || "Pending"}
+              />
+              <InfoMetric title="Estimated Cost" value={formatMoney(acceptedQuote?.pricing?.totalPrice)} />
+            </Box>
+          </AdminPanel>
+
+        {/* Verification Actions */}
+        <AdminPanel sx={{ p: { xs: 2, md: 2.6 }, borderTop: "4px solid #0E56C8" }}>
+            <Typography sx={{ color: adminUi.colors.text, fontSize: "1.2rem", fontWeight: 900, mb: 2.2 }}>
               Verification Actions
             </Typography>
 
-            <Stack spacing={1.2}>
+            <Stack spacing={1.3}>
               <AdminPrimaryButton
                 fullWidth
                 startIcon={<SettingsSuggestOutlinedIcon />}
                 disabled={isUpdating || lead.status === "open_for_quotes"}
                 onClick={() => updateStatus("open_for_quotes")}
-                sx={{ minHeight: 48 }}
+                sx={{ minHeight: 50, borderRadius: "999px", fontSize: "0.88rem" }}
               >
-                {lead.status === "open_for_quotes" ? "Verified" : "Mark as Verified"}
+                {lead.status === "open_for_quotes" ? "✓ Verified" : "Mark as Verified"}
               </AdminPrimaryButton>
               <Button
                 fullWidth
@@ -394,11 +425,11 @@ export default function AdminLeadDetailPage() {
                 disabled={isUpdating || lead.status === "reviewing"}
                 onClick={() => updateStatus("reviewing")}
                 sx={{
-                  minHeight: 48,
+                  minHeight: 50,
                   borderRadius: "999px",
                   bgcolor: "#E1E4E8",
                   color: "#1F2C40",
-                  fontSize: "0.82rem",
+                  fontSize: "0.88rem",
                   fontWeight: 850,
                   textTransform: "none",
                   "&:hover": { bgcolor: "#D6DBE1" },
@@ -412,12 +443,12 @@ export default function AdminLeadDetailPage() {
                 disabled={isUpdating || lead.status === "closed"}
                 onClick={() => updateStatus("closed")}
                 sx={{
-                  minHeight: 48,
+                  minHeight: 50,
                   borderRadius: "999px",
-                  border: "1px solid #FFC9C9",
+                  border: "1.5px solid #FFC9C9",
                   bgcolor: "#FFF7F7",
                   color: "#E32626",
-                  fontSize: "0.82rem",
+                  fontSize: "0.88rem",
                   fontWeight: 850,
                   textTransform: "none",
                   "&:hover": { bgcolor: "#FFECEC" },
@@ -427,9 +458,9 @@ export default function AdminLeadDetailPage() {
               </Button>
             </Stack>
 
-            <Box sx={{ my: 2.1, borderTop: "1px solid #E5EAF1" }} />
+            <Box sx={{ my: 2.4, borderTop: "1px solid #E5EAF1" }} />
 
-            <Typography sx={{ color: adminUi.colors.text, fontSize: "0.82rem", fontWeight: 900 }}>
+            <Typography sx={{ color: adminUi.colors.muted, fontSize: "0.78rem", fontWeight: 900, mb: 1.2 }}>
               Next Steps {canAssignVendor ? "" : "(Locked)"}
             </Typography>
             <Button
@@ -438,26 +469,27 @@ export default function AdminLeadDetailPage() {
               onClick={() => navigate("/admin/vendor-assignment", { state: { leadId: lead.id } })}
               endIcon={<GroupAddOutlinedIcon />}
               sx={{
-                mt: 1.2,
-                minHeight: 48,
+                minHeight: 50,
                 borderRadius: "999px",
-                bgcolor: canAssignVendor ? "#0E56C8" : "#EDF1F6",
-                color: canAssignVendor ? "#FFFFFF" : "#A3AFBF",
-                fontSize: "0.82rem",
+                bgcolor: "#EDF1F6",
+                color: canAssignVendor ? "#6A7688" : "#A3AFBF",
+                fontSize: "0.88rem",
                 fontWeight: 850,
                 textTransform: "none",
-                "&:hover": { bgcolor: canAssignVendor ? "#0B49AD" : "#EDF1F6" },
+                border: "1px solid #D9E2EF",
+                "&:hover": { bgcolor: canAssignVendor ? "#DDE5EE" : "#EDF1F6" },
               }}
             >
               Assign Vendor
             </Button>
 
-            <Box sx={{ mt: 1.6, color: "#6F7D8F", fontSize: "0.72rem", lineHeight: 1.55 }}>
-              Payment status: {paymentState === "locked" ? "Not started" : paymentState}
+            <Box sx={{ mt: 1.8, p: 1.4, borderRadius: "0.85rem", bgcolor: "#F6F8FB" }}>
+              <Typography sx={{ color: "#6F7D8F", fontSize: "0.74rem", lineHeight: 1.6 }}>
+                Payment status: <Box component="span" sx={{ fontWeight: 800, color: adminUi.colors.text }}>{paymentState === "locked" ? "Not started" : paymentState}</Box>
+              </Typography>
             </Box>
           </AdminPanel>
-        </Grid>
-      </Grid>
+      </Box>
 
       <HistoryDialog
         open={historyOpen}
