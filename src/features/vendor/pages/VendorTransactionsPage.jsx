@@ -26,7 +26,6 @@ import {
   VendorPageHeader,
   VendorPageShell,
   VendorPanel,
-  VendorPrimaryButton,
 } from "@/features/vendor/components/VendorPortalUI";
 
 const columns = [
@@ -103,12 +102,12 @@ function toTransaction(payment) {
 
 function FilterField({ label, value, wide, search, calendar, onChange }) {
   return (
-    <Box sx={{ minWidth: wide ? 0 : 170, flex: wide ? 1 : "unset" }}>
+    <Box sx={{ minWidth: wide ? 0 : 180, flex: wide ? 1 : "unset" }}>
       <Typography
         sx={{
-          mb: 0.48,
+          mb: 0.55,
           color: "#8B97A8",
-          fontSize: "0.55rem",
+          fontSize: "0.6rem",
           fontWeight: 800,
           letterSpacing: "0.1em",
           textTransform: "uppercase",
@@ -119,37 +118,35 @@ function FilterField({ label, value, wide, search, calendar, onChange }) {
       <Stack
         direction="row"
         alignItems="center"
-        spacing={0.65}
+        spacing={0.7}
         sx={{
-          minHeight: 38,
-          px: 1.1,
-          borderRadius: "0.8rem",
+          minHeight: 44,
+          px: 1.3,
+          borderRadius: "0.9rem",
           bgcolor: "#FFFFFF",
           border: "1px solid rgba(225,232,241,0.96)",
         }}
       >
         {search ? (
-          <SearchRoundedIcon sx={{ color: "#9AA5B5", fontSize: "0.95rem" }} />
+          <SearchRoundedIcon sx={{ color: "#9AA5B5", fontSize: "1rem" }} />
         ) : null}
         <InputBase
           value={value}
           onChange={(event) => onChange?.(event.target.value)}
           readOnly={!onChange}
+          placeholder={search ? "Name, email, or ID..." : undefined}
           sx={{
             flex: 1,
             color: "#223146",
-            fontSize: "0.74rem",
+            fontSize: "0.82rem",
             fontWeight: search ? 500 : 600,
-            "& input": {
-              p: 0,
-              cursor: "default",
-            },
+            "& input": { p: 0 },
           }}
         />
         {calendar ? (
-          <CalendarTodayOutlinedIcon sx={{ color: "#9AA5B5", fontSize: "0.9rem" }} />
+          <CalendarTodayOutlinedIcon sx={{ color: "#9AA5B5", fontSize: "0.95rem" }} />
         ) : (
-          <KeyboardArrowDownRoundedIcon sx={{ color: "#8A96A7", fontSize: "1rem" }} />
+          <KeyboardArrowDownRoundedIcon sx={{ color: "#8A96A7", fontSize: "1.05rem" }} />
         )}
       </Stack>
     </Box>
@@ -237,6 +234,13 @@ export default function VendorTransactionsPage() {
   const visibleRows = filteredRows.slice((page - 1) * pageSize, page * pageSize);
   const firstVisible = filteredRows.length ? (page - 1) * pageSize + 1 : 0;
   const lastVisible = filteredRows.length ? firstVisible + visibleRows.length - 1 : 0;
+  const pageNumbers = useMemo(() => {
+    if (totalPages <= 5) return Array.from({ length: totalPages }, (_, i) => i + 1);
+    const pages = new Set([1, totalPages, page]);
+    if (page > 1) pages.add(page - 1);
+    if (page < totalPages) pages.add(page + 1);
+    return [...pages].sort((a, b) => a - b);
+  }, [totalPages, page]);
   const paidTotal = payments.filter((payment) => payment.status === "paid").reduce((sum, payment) => sum + payment.amount, 0);
   const activeProjectCount = new Set(payments.map((payment) => String(payment.projectId))).size;
 
@@ -262,18 +266,30 @@ export default function VendorTransactionsPage() {
           <FilterField label="Search Customer" value={query} onChange={(value) => { setQuery(value); setPage(1); }} wide search />
           <FilterField label="Status" value={statusFilter} onChange={(value) => { setStatusFilter(value.toLowerCase()); setPage(1); }} />
           <FilterField label="Date Range" value="All Dates" calendar />
-          <VendorPrimaryButton
+          <Button
+            variant="contained"
             startIcon={<TuneRoundedIcon />}
             onClick={exportTransactions}
-            sx={{ px: 1.65, whiteSpace: "nowrap" }}
+            sx={{
+              minHeight: 44,
+              px: 2.2,
+              borderRadius: "0.9rem",
+              bgcolor: "#0E56C8",
+              boxShadow: "0 8px 20px rgba(14,86,200,0.18)",
+              fontSize: "0.82rem",
+              fontWeight: 700,
+              textTransform: "none",
+              whiteSpace: "nowrap",
+              alignSelf: "flex-end",
+            }}
           >
-            Export
-          </VendorPrimaryButton>
+            Apply Filters
+          </Button>
         </Stack>
       </VendorFilterPanel>
 
       <VendorPanel sx={{ mt: 1.7, borderRadius: "1.55rem", overflow: "hidden" }}>
-        <Box sx={{ display: { xs: "none", lg: "block" }, px: 1.7, pt: 1.5, pb: 1 }}>
+        <Box sx={{ display: { xs: "none", lg: "block" }, px: 1.7, pt: 1.8, pb: 1.1 }}>
           <Box
             sx={{
               display: "grid",
@@ -286,7 +302,7 @@ export default function VendorTransactionsPage() {
                 key={column}
                 sx={{
                   color: "#8B97A8",
-                  fontSize: "0.56rem",
+                  fontSize: "0.6rem",
                   fontWeight: 800,
                   letterSpacing: "0.1em",
                   textTransform: "uppercase",
@@ -328,7 +344,7 @@ export default function VendorTransactionsPage() {
               key={item.id}
               sx={{
                 borderTop: index === 0 ? "none" : "1px solid rgba(234,239,245,0.95)",
-                py: { xs: 1.45, md: 1.55 },
+                py: { xs: 1.6, md: 2 },
               }}
             >
               <Box
@@ -339,58 +355,58 @@ export default function VendorTransactionsPage() {
                   alignItems: "center",
                 }}
               >
-                <Typography sx={{ color: "#0E56C8", fontSize: "0.76rem", fontWeight: 800 }}>
+                <Typography sx={{ color: "#0E56C8", fontSize: "0.82rem", fontWeight: 800 }}>
                   {item.invoiceNumber}
                 </Typography>
 
                 <Stack direction="row" spacing={1} alignItems="center">
                   <Avatar
                     sx={{
-                      width: 30,
-                      height: 30,
+                      width: 36,
+                      height: 36,
                       bgcolor: "#EEF2F8",
                       color: "#667388",
-                      fontSize: "0.66rem",
+                      fontSize: "0.72rem",
                       fontWeight: 800,
                     }}
                   >
                     {item.initials}
                   </Avatar>
                   <Box>
-                    <Typography sx={{ color: "#223146", fontSize: "0.8rem", fontWeight: 700 }}>
+                    <Typography sx={{ color: "#223146", fontSize: "0.88rem", fontWeight: 700 }}>
                       {item.name}
                     </Typography>
-                    <Typography sx={{ mt: 0.12, color: "#7A8799", fontSize: "0.68rem" }}>
+                    <Typography sx={{ mt: 0.12, color: "#7A8799", fontSize: "0.74rem" }}>
                       {item.email}
                     </Typography>
                   </Box>
                 </Stack>
 
-                <Typography sx={{ color: "#5E6A7D", fontSize: "0.76rem", lineHeight: 1.45 }}>
+                <Typography sx={{ color: "#5E6A7D", fontSize: "0.82rem", lineHeight: 1.45 }}>
                   {item.project}
                 </Typography>
-                <Typography sx={{ color: "#18253A", fontSize: "0.8rem", fontWeight: 800 }}>
+                <Typography sx={{ color: "#18253A", fontSize: "0.88rem", fontWeight: 800 }}>
                   {item.amount}
                 </Typography>
-                <Typography sx={{ color: "#5E6A7D", fontSize: "0.76rem", lineHeight: 1.45 }}>
+                <Typography sx={{ color: "#5E6A7D", fontSize: "0.82rem", lineHeight: 1.45 }}>
                   {item.method}
                 </Typography>
                 <Box
                   sx={{
                     justifySelf: "start",
-                    px: 0.85,
-                    py: 0.34,
+                    px: 1,
+                    py: 0.4,
                     borderRadius: "999px",
                     bgcolor: item.statusBg,
                     color: item.statusTone,
-                    fontSize: "0.6rem",
+                    fontSize: "0.66rem",
                     fontWeight: 800,
                     lineHeight: 1,
                   }}
                 >
                   {item.status}
                 </Box>
-                <Typography sx={{ color: "#5E6A7D", fontSize: "0.76rem" }}>
+                <Typography sx={{ color: "#5E6A7D", fontSize: "0.82rem" }}>
                   {item.date}
                 </Typography>
                 <Stack direction="row" spacing={0.2} alignItems="center">
@@ -433,12 +449,12 @@ export default function VendorTransactionsPage() {
                     </Typography>
                     <Box
                       sx={{
-                        px: 0.85,
-                        py: 0.34,
+                        px: 1,
+                        py: 0.4,
                         borderRadius: "999px",
                         bgcolor: item.statusBg,
                         color: item.statusTone,
-                        fontSize: "0.6rem",
+                        fontSize: "0.66rem",
                         fontWeight: 800,
                         lineHeight: 1,
                       }}
@@ -577,26 +593,34 @@ export default function VendorTransactionsPage() {
             >
               <KeyboardArrowLeftRoundedIcon sx={{ fontSize: "1rem" }} />
             </Button>
-            {Array.from({ length: totalPages }, (_, index) => index + 1).map((pageNumber) => (
-              <Button
-                key={pageNumber}
-                onClick={() => setPage(pageNumber)}
-                sx={{
-                  minWidth: 30,
-                  width: 30,
-                  height: 30,
-                  borderRadius: "0.6rem",
-                  p: 0,
-                  color: pageNumber === page ? "#FFFFFF" : "#223146",
-                  bgcolor: pageNumber === page ? "#0E56C8" : "#FFFFFF",
-                  border: pageNumber === page ? "none" : "1px solid rgba(225,232,241,0.96)",
-                  fontSize: "0.7rem",
-                  fontWeight: 700,
-                }}
-              >
-                {pageNumber}
-              </Button>
-            ))}
+            {pageNumbers.map((pageNumber, idx) => {
+              const prev = pageNumbers[idx - 1];
+              const showEllipsis = prev && pageNumber - prev > 1;
+              return (
+                <Box key={pageNumber} sx={{ display: "flex", alignItems: "center", gap: 0.45 }}>
+                  {showEllipsis && (
+                    <Typography sx={{ color: "#8B97A8", fontSize: "0.72rem", px: 0.2 }}>…</Typography>
+                  )}
+                  <Button
+                    onClick={() => setPage(pageNumber)}
+                    sx={{
+                      minWidth: 30,
+                      width: 30,
+                      height: 30,
+                      borderRadius: "0.6rem",
+                      p: 0,
+                      color: pageNumber === page ? "#FFFFFF" : "#223146",
+                      bgcolor: pageNumber === page ? "#0E56C8" : "#FFFFFF",
+                      border: pageNumber === page ? "none" : "1px solid rgba(225,232,241,0.96)",
+                      fontSize: "0.7rem",
+                      fontWeight: 700,
+                    }}
+                  >
+                    {pageNumber}
+                  </Button>
+                </Box>
+              );
+            })}
             <Button
               onClick={() => setPage((currentPage) => Math.min(totalPages, currentPage + 1))}
               disabled={page === totalPages}
@@ -626,8 +650,8 @@ export default function VendorTransactionsPage() {
       >
         <Box
           sx={{
-            p: 1.55,
-            borderRadius: "1.15rem",
+            p: { xs: 2, md: 2.2 },
+            borderRadius: "1.3rem",
             bgcolor: "#0E56C8",
             color: "#FFFFFF",
             boxShadow: "0 16px 30px rgba(14,86,200,0.18)",
@@ -636,7 +660,7 @@ export default function VendorTransactionsPage() {
           <Typography
             sx={{
               color: "rgba(255,255,255,0.72)",
-              fontSize: "0.58rem",
+              fontSize: "0.64rem",
               fontWeight: 800,
               letterSpacing: "0.1em",
               textTransform: "uppercase",
@@ -644,7 +668,7 @@ export default function VendorTransactionsPage() {
           >
             Total Revenue
           </Typography>
-          <Typography sx={{ mt: 0.9, fontSize: "2rem", fontWeight: 800, lineHeight: 1.05 }}>
+          <Typography sx={{ mt: 0.9, fontSize: "2.2rem", fontWeight: 800, lineHeight: 1.05 }}>
             {formatPrice(paidTotal)}
           </Typography>
           <Box
@@ -656,7 +680,7 @@ export default function VendorTransactionsPage() {
               borderRadius: "999px",
               bgcolor: "rgba(153,255,186,0.2)",
               color: "#9AF39D",
-              fontSize: "0.62rem",
+              fontSize: "0.68rem",
               fontWeight: 800,
               lineHeight: 1,
             }}
@@ -667,8 +691,8 @@ export default function VendorTransactionsPage() {
 
         <Box
           sx={{
-            p: 1.55,
-            borderRadius: "1.15rem",
+            p: { xs: 2, md: 2.2 },
+            borderRadius: "1.3rem",
             bgcolor: "#FFFFFF",
             border: "1px solid rgba(225,232,241,0.96)",
             boxShadow: "0 14px 28px rgba(16,29,51,0.04)",
@@ -677,7 +701,7 @@ export default function VendorTransactionsPage() {
           <Typography
             sx={{
               color: "#7D8797",
-              fontSize: "0.58rem",
+              fontSize: "0.64rem",
               fontWeight: 800,
               letterSpacing: "0.1em",
               textTransform: "uppercase",
@@ -685,21 +709,21 @@ export default function VendorTransactionsPage() {
           >
             Active Projects
           </Typography>
-          <Typography sx={{ mt: 0.9, color: "#18253A", fontSize: "2rem", fontWeight: 800, lineHeight: 1.05 }}>
+          <Typography sx={{ mt: 0.9, color: "#18253A", fontSize: "2.2rem", fontWeight: 800, lineHeight: 1.05 }}>
             {activeProjectCount}
           </Typography>
           <Box sx={{ mt: 1.2, height: 5, borderRadius: "999px", bgcolor: "#E6EBF2" }}>
             <Box sx={{ width: "70%", height: "100%", borderRadius: "inherit", bgcolor: "#D3E717" }} />
           </Box>
-          <Typography sx={{ mt: 0.7, color: "#6F7D8F", fontSize: "0.72rem" }}>
+          <Typography sx={{ mt: 0.7, color: "#6F7D8F", fontSize: "0.78rem" }}>
             Projects with payment schedule
           </Typography>
         </Box>
 
         <Box
           sx={{
-            p: 1.55,
-            borderRadius: "1.15rem",
+            p: { xs: 2, md: 2.2 },
+            borderRadius: "1.3rem",
             bgcolor: "#FFFFFF",
             border: "1px solid rgba(225,232,241,0.96)",
             boxShadow: "0 14px 28px rgba(16,29,51,0.04)",
@@ -708,7 +732,7 @@ export default function VendorTransactionsPage() {
           <Typography
             sx={{
               color: "#7D8797",
-              fontSize: "0.58rem",
+              fontSize: "0.64rem",
               fontWeight: 800,
               letterSpacing: "0.1em",
               textTransform: "uppercase",
@@ -730,10 +754,10 @@ export default function VendorTransactionsPage() {
                   border: "1px solid rgba(232,237,244,0.96)",
                 }}
               >
-                <Typography sx={{ color: "#223146", fontSize: "0.76rem", fontWeight: 700 }}>
+                <Typography sx={{ color: "#223146", fontSize: "0.84rem", fontWeight: 700 }}>
                   {item}
                 </Typography>
-                <DownloadRoundedIcon sx={{ color: "#0E56C8", fontSize: "0.95rem" }} />
+                <DownloadRoundedIcon sx={{ color: "#0E56C8", fontSize: "1.05rem" }} />
               </Stack>
             ))}
           </Stack>

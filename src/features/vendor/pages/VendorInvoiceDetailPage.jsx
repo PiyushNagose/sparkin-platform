@@ -139,25 +139,20 @@ function InfoCard({ icon, title, rows, dark }) {
   return (
     <Box
       sx={{
-        p: 1.5,
-        borderRadius: "1.2rem",
+        p: { xs: 2, md: 2.4 },
+        borderRadius: "1.3rem",
         bgcolor: dark ? "#0E56C8" : "#FFFFFF",
         color: dark ? "#FFFFFF" : "#223146",
         border: dark ? "none" : "1px solid rgba(225,232,241,0.96)",
-        boxShadow: "0 14px 28px rgba(16,29,51,0.04)",
+        boxShadow: dark ? "0 16px 32px rgba(14,86,200,0.2)" : "0 14px 28px rgba(16,29,51,0.04)",
       }}
     >
-      <Stack
-        direction="row"
-        spacing={0.8}
-        alignItems="center"
-        sx={{ mb: 1.35 }}
-      >
+      <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1.6 }}>
         <Box
           sx={{
-            width: 30,
-            height: 30,
-            borderRadius: "0.8rem",
+            width: 36,
+            height: 36,
+            borderRadius: "0.9rem",
             bgcolor: dark ? "rgba(255,255,255,0.14)" : "#EEF4FF",
             color: dark ? "#FFFFFF" : "#0E56C8",
             display: "grid",
@@ -166,23 +161,18 @@ function InfoCard({ icon, title, rows, dark }) {
         >
           {icon}
         </Box>
-        <Typography sx={{ fontSize: "0.96rem", fontWeight: 800 }}>
+        <Typography sx={{ fontSize: "1.05rem", fontWeight: 800 }}>
           {title}
         </Typography>
       </Stack>
 
-      <Stack spacing={1.1}>
+      <Stack spacing={1.3}>
         {rows.map(([label, value]) => (
-          <Stack
-            key={label}
-            direction="row"
-            justifyContent="space-between"
-            spacing={1.2}
-          >
+          <Stack key={label} direction="row" justifyContent="space-between" spacing={1.5}>
             <Typography
               sx={{
                 color: dark ? "rgba(255,255,255,0.74)" : "#6F7D8F",
-                fontSize: "0.76rem",
+                fontSize: "0.82rem",
                 lineHeight: 1.5,
               }}
             >
@@ -191,7 +181,7 @@ function InfoCard({ icon, title, rows, dark }) {
             <Typography
               sx={{
                 color: dark ? "#FFFFFF" : "#223146",
-                fontSize: "0.76rem",
+                fontSize: "0.82rem",
                 fontWeight: 700,
                 lineHeight: 1.5,
                 textAlign: "right",
@@ -289,11 +279,11 @@ export default function VendorInvoiceDetailPage() {
         to="/vendor/payments/transactions"
         startIcon={<ArrowBackRoundedIcon sx={{ fontSize: "1rem" }} />}
         sx={{
-          mb: 2.2,
+          mb: 2.5,
           px: 0,
           minHeight: 28,
-          color: "#556478",
-          fontSize: "0.78rem",
+          color: "#0E56C8",
+          fontSize: "0.82rem",
           fontWeight: 600,
           textTransform: "none",
         }}
@@ -324,7 +314,7 @@ export default function VendorInvoiceDetailPage() {
           <Typography
             sx={{
               color: "#18253A",
-              fontSize: { xs: "1.95rem", md: "2.1rem" },
+              fontSize: { xs: "2rem", md: "2.4rem" },
               fontWeight: 800,
               lineHeight: 1.05,
               letterSpacing: "-0.04em",
@@ -336,7 +326,7 @@ export default function VendorInvoiceDetailPage() {
             sx={{
               mt: 0.45,
               color: "#6F7D8F",
-              fontSize: "0.92rem",
+              fontSize: "0.96rem",
               lineHeight: 1.6,
               maxWidth: 360,
             }}
@@ -351,13 +341,13 @@ export default function VendorInvoiceDetailPage() {
             startIcon={<ShareOutlinedIcon />}
             onClick={shareInvoice}
             sx={{
-              minHeight: 38,
-              px: 1.35,
+              minHeight: 42,
+              px: 1.6,
               borderRadius: "0.95rem",
               borderColor: "rgba(208,216,226,0.95)",
               bgcolor: "#FFFFFF",
               color: "#223146",
-              fontSize: "0.74rem",
+              fontSize: "0.82rem",
               fontWeight: 700,
               textTransform: "none",
             }}
@@ -369,13 +359,13 @@ export default function VendorInvoiceDetailPage() {
             startIcon={<PrintOutlinedIcon />}
             onClick={() => window.print()}
             sx={{
-              minHeight: 38,
-              px: 1.35,
+              minHeight: 42,
+              px: 1.6,
               borderRadius: "0.95rem",
               borderColor: "rgba(208,216,226,0.95)",
               bgcolor: "#FFFFFF",
               color: "#223146",
-              fontSize: "0.74rem",
+              fontSize: "0.82rem",
               fontWeight: 700,
               textTransform: "none",
             }}
@@ -388,12 +378,12 @@ export default function VendorInvoiceDetailPage() {
             onClick={downloadInvoice}
             disabled={!payment}
             sx={{
-              minHeight: 38,
-              px: 1.5,
+              minHeight: 42,
+              px: 2,
               borderRadius: "0.95rem",
               bgcolor: "#0E56C8",
               boxShadow: "0 12px 24px rgba(14,86,200,0.16)",
-              fontSize: "0.74rem",
+              fontSize: "0.82rem",
               fontWeight: 700,
               textTransform: "none",
             }}
@@ -405,12 +395,12 @@ export default function VendorInvoiceDetailPage() {
 
       <Box
         sx={{
-          p: 1.6,
-          borderRadius: "1.35rem",
+          p: { xs: 2, md: 2.4 },
+          borderRadius: "1.4rem",
           bgcolor: "#FFFFFF",
           border: "1px solid rgba(225,232,241,0.96)",
           boxShadow: "0 14px 28px rgba(16,29,51,0.04)",
-          mb: 1.7,
+          mb: 2,
         }}
       >
         <Box
@@ -425,7 +415,7 @@ export default function VendorInvoiceDetailPage() {
               <Typography
                 sx={{
                   color: "#8B97A8",
-                  fontSize: "0.56rem",
+                  fontSize: "0.62rem",
                   fontWeight: 800,
                   letterSpacing: "0.1em",
                   textTransform: "uppercase",
@@ -438,16 +428,19 @@ export default function VendorInvoiceDetailPage() {
                   sx={{
                     mt: 1.02,
                     display: "inline-flex",
-                    px: 0.9,
-                    py: 0.36,
+                    alignItems: "center",
+                    gap: 0.5,
+                    px: 1.1,
+                    py: 0.45,
                     borderRadius: "999px",
                     bgcolor: "#5AE56F",
                     color: "#1C6E2A",
-                    fontSize: "0.64rem",
+                    fontSize: "0.7rem",
                     fontWeight: 800,
                     lineHeight: 1,
                   }}
                 >
+                  <Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: "#1C6E2A" }} />
                   {value}
                 </Box>
               ) : (
@@ -455,7 +448,7 @@ export default function VendorInvoiceDetailPage() {
                   sx={{
                     mt: 0.95,
                     color: "#223146",
-                    fontSize: "1.05rem",
+                    fontSize: "1.15rem",
                     fontWeight: 800,
                     lineHeight: 1.2,
                   }}
@@ -471,7 +464,7 @@ export default function VendorInvoiceDetailPage() {
           <Typography
             sx={{
               color: "#8B97A8",
-              fontSize: "0.56rem",
+              fontSize: "0.64rem",
               fontWeight: 800,
               letterSpacing: "0.1em",
               textTransform: "uppercase",
@@ -483,7 +476,7 @@ export default function VendorInvoiceDetailPage() {
             sx={{
               mt: 0.85,
               color: "#0E56C8",
-              fontSize: "2rem",
+              fontSize: "2.4rem",
               fontWeight: 800,
               lineHeight: 1.05,
             }}
@@ -497,8 +490,8 @@ export default function VendorInvoiceDetailPage() {
         sx={{
           display: "grid",
           gridTemplateColumns: { xs: "1fr", xl: "1fr 1fr" },
-          gap: 1.6,
-          mb: 1.6,
+          gap: 2,
+          mb: 2,
         }}
       >
         <InfoCard
@@ -520,8 +513,8 @@ export default function VendorInvoiceDetailPage() {
 
         <Box
           sx={{
-            p: 1.5,
-            borderRadius: "1.2rem",
+            p: { xs: 2, md: 2.4 },
+            borderRadius: "1.3rem",
             bgcolor: "#FFFFFF",
             border: "1px solid rgba(225,232,241,0.96)",
             boxShadow: "0 14px 28px rgba(16,29,51,0.04)",
@@ -531,12 +524,12 @@ export default function VendorInvoiceDetailPage() {
             direction="row"
             spacing={0.8}
             alignItems="center"
-            sx={{ mb: 1.35 }}
+            sx={{ mb: 1.6 }}
           >
             <Box
               sx={{
-                width: 30,
-                height: 30,
+                width: 36,
+                height: 36,
                 borderRadius: "0.8rem",
                 bgcolor: "#EEF4FF",
                 color: "#0E56C8",
@@ -547,13 +540,13 @@ export default function VendorInvoiceDetailPage() {
               <ReceiptLongOutlinedIcon sx={{ fontSize: "0.95rem" }} />
             </Box>
             <Typography
-              sx={{ color: "#223146", fontSize: "0.96rem", fontWeight: 800 }}
+              sx={{ color: "#223146", fontSize: "1.05rem", fontWeight: 800 }}
             >
               Invoice Breakdown
             </Typography>
           </Stack>
 
-          <Stack spacing={1.05}>
+          <Stack spacing={1.3}>
             {displayInvoiceRows.map(([label, value]) => (
               <Stack
                 key={label}
@@ -561,13 +554,13 @@ export default function VendorInvoiceDetailPage() {
                 justifyContent="space-between"
                 spacing={1.2}
               >
-                <Typography sx={{ color: "#6F7D8F", fontSize: "0.76rem" }}>
+                <Typography sx={{ color: "#6F7D8F", fontSize: "0.84rem" }}>
                   {label}
                 </Typography>
                 <Typography
                   sx={{
                     color: "#223146",
-                    fontSize: "0.76rem",
+                    fontSize: "0.84rem",
                     fontWeight: 700,
                   }}
                 >
@@ -579,21 +572,21 @@ export default function VendorInvoiceDetailPage() {
 
           <Box
             sx={{
-              mt: 1.35,
-              pt: 1.2,
+              mt: 1.6,
+              pt: 1.4,
               borderTop: "1px solid rgba(231,236,242,0.96)",
             }}
           >
             <Stack direction="row" justifyContent="space-between" spacing={1.2}>
               <Typography
-                sx={{ color: "#223146", fontSize: "1rem", fontWeight: 800 }}
+                sx={{ color: "#223146", fontSize: "1.1rem", fontWeight: 800 }}
               >
                 Total Paid
               </Typography>
               <Typography
                 sx={{
                   color: "#223146",
-                  fontSize: "1.6rem",
+                  fontSize: "1.9rem",
                   fontWeight: 800,
                   lineHeight: 1.05,
                 }}
@@ -609,7 +602,7 @@ export default function VendorInvoiceDetailPage() {
         sx={{
           position: "relative",
           overflow: "hidden",
-          borderRadius: "1.4rem",
+          borderRadius: "1.5rem",
           border: "1px solid rgba(225,232,241,0.96)",
           boxShadow: "0 14px 28px rgba(16,29,51,0.04)",
         }}
@@ -621,7 +614,7 @@ export default function VendorInvoiceDetailPage() {
           sx={{
             display: "block",
             width: "100%",
-            height: { xs: 180, md: 210 },
+            height: { xs: 200, md: 240 },
             objectFit: "cover",
           }}
         />
@@ -636,7 +629,7 @@ export default function VendorInvoiceDetailPage() {
           <Typography
             sx={{
               color: "#FFFFFF",
-              fontSize: { xs: "1rem", md: "1.35rem" },
+              fontSize: { xs: "1.1rem", md: "1.5rem" },
               fontWeight: 800,
             }}
           >
@@ -646,7 +639,7 @@ export default function VendorInvoiceDetailPage() {
             sx={{
               mt: 0.35,
               color: "rgba(255,255,255,0.78)",
-              fontSize: "0.72rem",
+              fontSize: "0.8rem",
               lineHeight: 1.5,
             }}
           >
@@ -662,12 +655,12 @@ export default function VendorInvoiceDetailPage() {
             display: "inline-flex",
             alignItems: "center",
             gap: 0.6,
-            px: 1.1,
-            py: 0.55,
+            px: 1.3,
+            py: 0.65,
             borderRadius: "999px",
             bgcolor: "#E7F318",
             color: "#4D5800",
-            fontSize: "0.68rem",
+            fontSize: "0.74rem",
             fontWeight: 800,
             lineHeight: 1,
           }}
