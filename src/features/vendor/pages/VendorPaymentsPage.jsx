@@ -27,32 +27,24 @@ import {
 const kpiCards = [
   {
     label: "Total Earnings",
-    value: "\u20B912,85,000",
-    delta: "+12%",
     tone: "#4F89FF",
     bg: "#EEF4FF",
     icon: <AccountBalanceWalletOutlinedIcon sx={{ fontSize: "0.95rem" }} />,
   },
   {
     label: "Pending Payments",
-    value: "\u20B93,15,000",
-    note: "4 Active",
     tone: "#8B8600",
     bg: "#F5F1CB",
     icon: <PaymentsOutlinedIcon sx={{ fontSize: "0.95rem" }} />,
   },
   {
     label: "Paid Out",
-    value: "\u20B99,70,000",
-    note: "All clear",
     tone: "#239654",
     bg: "#E8FAEF",
     icon: <CheckCircleOutlineRoundedIcon sx={{ fontSize: "0.95rem" }} />,
   },
   {
     label: "Monthly Earnings",
-    value: "\u20B92,45,000",
-    delta: "+5.2%",
     tone: "#8B8600",
     bg: "#F5F1CB",
     icon: <CalendarTodayOutlinedIcon sx={{ fontSize: "0.92rem" }} />,
@@ -118,11 +110,14 @@ function toTransaction(payment) {
     id: payment.id,
     initials: getInitials(payment.customer.fullName),
     name: payment.customer.fullName,
-    project: payment.project?.system?.sizeKw ? `${payment.milestone.title} - ${payment.project.system.sizeKw} kW` : payment.milestone.title,
+    project: payment.project?.system?.sizeKw
+      ? `${payment.milestone.title} - ${payment.project.system.sizeKw} kW`
+      : payment.milestone.title,
     amount: formatPrice(payment.amount),
     status: status.label,
     statusTone: status.tone,
     statusBg: status.bg,
+    rawStatus: payment.status,
     date: formatDate(payment.paidAt || payment.dueAt),
   };
 }
@@ -147,7 +142,16 @@ function downloadFile(fileName, content) {
 
 function buildStatement(payments) {
   const rows = [
-    ["Invoice", "Customer", "Project", "Milestone", "Amount", "Status", "Due Date", "Paid Date"],
+    [
+      "Invoice",
+      "Customer",
+      "Project",
+      "Milestone",
+      "Amount",
+      "Status",
+      "Due Date",
+      "Paid Date",
+    ],
     ...payments.map((payment) => [
       payment.invoiceNumber,
       payment.customer?.fullName,
@@ -180,7 +184,9 @@ function buildChartBars(payments) {
       });
     });
 
-  const totals = [...monthTotals.values()].sort((a, b) => a.time - b.time).slice(-6);
+  const totals = [...monthTotals.values()]
+    .sort((a, b) => a.time - b.time)
+    .slice(-6);
   const max = Math.max(...totals.map((item) => item.total), 1);
 
   return totals.length
@@ -203,10 +209,17 @@ function KpiCard({ card }) {
         border: "1px solid rgba(225,232,241,0.96)",
         boxShadow: "0 4px 16px rgba(16,29,51,0.06)",
         transition: "all 0.18s ease",
-        "&:hover": { transform: "translateY(-2px)", boxShadow: "0 8px 24px rgba(16,29,51,0.1)" },
+        "&:hover": {
+          transform: "translateY(-2px)",
+          boxShadow: "0 8px 24px rgba(16,29,51,0.1)",
+        },
       }}
     >
-      <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
+      <Stack
+        direction="row"
+        justifyContent="space-between"
+        alignItems="flex-start"
+      >
         <Box
           sx={{
             width: 36,
@@ -221,19 +234,33 @@ function KpiCard({ card }) {
           {card.icon}
         </Box>
         {card.delta ? (
-          <Typography sx={{ color: "#239654", fontSize: "0.66rem", fontWeight: 800 }}>
+          <Typography
+            sx={{ color: "#239654", fontSize: "0.66rem", fontWeight: 800 }}
+          >
             {card.delta}
           </Typography>
         ) : card.note ? (
-          <Typography sx={{ color: "#778597", fontSize: "0.66rem", fontWeight: 700 }}>
+          <Typography
+            sx={{ color: "#778597", fontSize: "0.66rem", fontWeight: 700 }}
+          >
             {card.note}
           </Typography>
         ) : null}
       </Stack>
-      <Typography sx={{ mt: 1.3, color: "#6F7D8F", fontSize: "0.78rem", fontWeight: 500 }}>
+      <Typography
+        sx={{ mt: 1.3, color: "#6F7D8F", fontSize: "0.78rem", fontWeight: 500 }}
+      >
         {card.label}
       </Typography>
-      <Typography sx={{ mt: 0.4, color: "#18253A", fontSize: "1.9rem", fontWeight: 800, lineHeight: 1.05 }}>
+      <Typography
+        sx={{
+          mt: 0.4,
+          color: "#18253A",
+          fontSize: "1.9rem",
+          fontWeight: 800,
+          lineHeight: 1.05,
+        }}
+      >
         {card.value}
       </Typography>
     </Box>
@@ -244,6 +271,7 @@ export default function VendorPaymentsPage() {
   const location = useLocation();
   const [payments, setPayments] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [txFilter, setTxFilter] = useState("all");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -259,7 +287,10 @@ export default function VendorPaymentsPage() {
         const result = await paymentsApi.listPayments();
         if (active) setPayments(result);
       } catch (apiError) {
-        if (active) setError(apiError?.response?.data?.message || "Could not load payments.");
+        if (active)
+          setError(
+            apiError?.response?.data?.message || "Could not load payments.",
+          );
       } finally {
         if (active) setIsLoading(false);
       }
@@ -285,39 +316,70 @@ export default function VendorPaymentsPage() {
   const pendingAmount = payments
     .filter((payment) => payment.status === "pending")
     .reduce((sum, payment) => sum + payment.amount, 0);
-  const totalAmount = payments.reduce((sum, payment) => sum + payment.amount, 0);
+  const totalAmount = payments.reduce(
+    (sum, payment) => sum + payment.amount,
+    0,
+  );
   const monthlyPaidAmount = paidPayments
     .filter((payment) => {
       const date = new Date(payment.paidAt || payment.createdAt);
       const now = new Date();
-      return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
+      return (
+        date.getMonth() === now.getMonth() &&
+        date.getFullYear() === now.getFullYear()
+      );
     })
     .reduce((sum, payment) => sum + payment.amount, 0);
   const dynamicChartBars = useMemo(() => buildChartBars(payments), [payments]);
   const recentTransactions = transactions
     .filter((transaction) => {
       const normalizedSearch = searchTerm.trim().toLowerCase();
-      if (!normalizedSearch) return true;
-      return [transaction.id, transaction.name, transaction.project, transaction.amount, transaction.status, transaction.date]
-        .some((value) => String(value || "").toLowerCase().includes(normalizedSearch));
+      const matchesSearch =
+        !normalizedSearch ||
+        [
+          transaction.id,
+          transaction.name,
+          transaction.project,
+          transaction.amount,
+          transaction.status,
+          transaction.date,
+        ].some((value) =>
+          String(value || "")
+            .toLowerCase()
+            .includes(normalizedSearch),
+        );
+      const matchesFilter =
+        txFilter === "all" || transaction.rawStatus === txFilter;
+      return matchesSearch && matchesFilter;
     })
     .slice(0, 5);
   const dashboardKpis = useMemo(
     () => [
-      { ...kpiCards[0], value: formatPrice(totalAmount), delta: payments.length ? "+live" : "" },
+      {
+        ...kpiCards[0],
+        value: formatPrice(totalAmount),
+        delta: payments.length ? "+live" : "",
+      },
       {
         ...kpiCards[1],
         value: formatPrice(pendingAmount),
         note: `${payments.filter((payment) => payment.status === "pending").length} Active`,
       },
       { ...kpiCards[2], value: formatPrice(paidAmount), note: "Recorded" },
-      { ...kpiCards[3], value: formatPrice(monthlyPaidAmount), delta: payments.length ? "+live" : "" },
+      {
+        ...kpiCards[3],
+        value: formatPrice(monthlyPaidAmount),
+        delta: payments.length ? "+live" : "",
+      },
     ],
     [monthlyPaidAmount, paidAmount, payments, pendingAmount, totalAmount],
   );
 
   function downloadStatement() {
-    downloadFile(`sparkin-payment-statement-${new Date().toISOString().slice(0, 10)}.csv`, buildStatement(payments));
+    downloadFile(
+      `sparkin-payment-statement-${new Date().toISOString().slice(0, 10)}.csv`,
+      buildStatement(payments),
+    );
   }
 
   function handleWithdraw() {
@@ -335,21 +397,21 @@ export default function VendorPaymentsPage() {
         subtitle="Track your earnings and payouts"
         actions={
           <>
-          <VendorSecondaryButton
-            startIcon={<FileDownloadOutlinedIcon />}
-            onClick={downloadStatement}
-            disabled={isLoading || payments.length === 0}
-            sx={{ px: 1.55 }}
-          >
-            Statement
-          </VendorSecondaryButton>
-          <VendorPrimaryButton
-            startIcon={<PaymentsOutlinedIcon />}
-            onClick={handleWithdraw}
-            sx={{ px: 1.65 }}
-          >
-            Withdraw Funds
-          </VendorPrimaryButton>
+            <VendorSecondaryButton
+              startIcon={<FileDownloadOutlinedIcon />}
+              onClick={downloadStatement}
+              disabled={isLoading || payments.length === 0}
+              sx={{ px: 1.55 }}
+            >
+              Statement
+            </VendorSecondaryButton>
+            <VendorPrimaryButton
+              startIcon={<PaymentsOutlinedIcon />}
+              onClick={handleWithdraw}
+              sx={{ px: 1.65 }}
+            >
+              Withdraw Funds
+            </VendorPrimaryButton>
           </>
         }
       />
@@ -363,7 +425,11 @@ export default function VendorPaymentsPage() {
       <Box
         sx={{
           display: "grid",
-          gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)", lg: "repeat(4, 1fr)" },
+          gridTemplateColumns: {
+            xs: "1fr",
+            sm: "repeat(2, 1fr)",
+            lg: "repeat(4, 1fr)",
+          },
           gap: 1.6,
           mb: { xs: 2.4, md: 2.7 },
         }}
@@ -390,12 +456,21 @@ export default function VendorPaymentsPage() {
             boxShadow: "0 14px 28px rgba(16,29,51,0.04)",
           }}
         >
-          <Stack direction="row" justifyContent="space-between" spacing={1} alignItems="flex-start">
+          <Stack
+            direction="row"
+            justifyContent="space-between"
+            spacing={1}
+            alignItems="flex-start"
+          >
             <Box>
-              <Typography sx={{ color: "#18253A", fontSize: "1.1rem", fontWeight: 800 }}>
+              <Typography
+                sx={{ color: "#18253A", fontSize: "1.1rem", fontWeight: 800 }}
+              >
                 Monthly Revenue Trend
               </Typography>
-              <Typography sx={{ mt: 0.2, color: "#738094", fontSize: "0.72rem" }}>
+              <Typography
+                sx={{ mt: 0.2, color: "#738094", fontSize: "0.72rem" }}
+              >
                 Performance over the last 6 months
               </Typography>
             </Box>
@@ -473,7 +548,9 @@ export default function VendorPaymentsPage() {
             >
               <PaymentsOutlinedIcon sx={{ fontSize: "0.95rem" }} />
             </Box>
-            <Typography sx={{ color: "#223146", fontSize: "1.1rem", fontWeight: 800 }}>
+            <Typography
+              sx={{ color: "#223146", fontSize: "1.1rem", fontWeight: 800 }}
+            >
               Payout Setup
             </Typography>
           </Stack>
@@ -498,40 +575,35 @@ export default function VendorPaymentsPage() {
             >
               Linked Bank Account
             </Typography>
-            <Stack direction="row" justifyContent="space-between" spacing={1} sx={{ mt: 1 }}>
-              <Stack direction="row" spacing={0.9} alignItems="center">
-                <Box
-                  sx={{
-                    width: 28,
-                    height: 28,
-                    borderRadius: "0.75rem",
-                    bgcolor: "#F5F7FB",
-                    color: "#556478",
-                    display: "grid",
-                    placeItems: "center",
-                    fontSize: "0.9rem",
-                  }}
-                >
-                  ▣
-                </Box>
-                <Typography sx={{ color: "#223146", fontSize: "0.88rem", fontWeight: 700 }}>
-                </Typography>
-              </Stack>
+            <Stack
+              direction="row"
+              alignItems="center"
+              spacing={0.9}
+              sx={{ mt: 1 }}
+            >
               <Box
                 sx={{
-                  width: 20,
-                  height: 20,
-                  borderRadius: "50%",
-                  bgcolor: "#E8FAEF",
-                  color: "#239654",
+                  width: 28,
+                  height: 28,
+                  borderRadius: "0.75rem",
+                  bgcolor: "#FFF4E8",
+                  color: "#C47A00",
                   display: "grid",
                   placeItems: "center",
-                  fontSize: "0.7rem",
-                  fontWeight: 800,
+                  fontSize: "0.9rem",
                 }}
               >
-                ✓
+                ▣
               </Box>
+              <Typography
+                sx={{
+                  color: "#C47A00",
+                  fontSize: "0.84rem",
+                  fontWeight: 700,
+                }}
+              >
+                Bank account not connected
+              </Typography>
             </Stack>
 
             <Stack spacing={1} sx={{ mt: 1.35 }}>
@@ -539,16 +611,22 @@ export default function VendorPaymentsPage() {
                 <Typography sx={{ color: "#7A8799", fontSize: "0.8rem" }}>
                   Next payout date
                 </Typography>
-                <Typography sx={{ color: "#223146", fontSize: "0.8rem", fontWeight: 700 }}>
-                  {pendingAmount > 0 ? formatDate(new Date()) : "No payout pending"}
+                <Typography
+                  sx={{ color: "#223146", fontSize: "0.8rem", fontWeight: 700 }}
+                >
+                  {pendingAmount > 0
+                    ? formatDate(new Date())
+                    : "No payout pending"}
                 </Typography>
               </Stack>
               <Stack direction="row" justifyContent="space-between" spacing={1}>
                 <Typography sx={{ color: "#7A8799", fontSize: "0.8rem" }}>
                   Min withdrawal
                 </Typography>
-                <Typography sx={{ color: "#223146", fontSize: "0.8rem", fontWeight: 700 }}>
-                  \u20B910,000
+                <Typography
+                  sx={{ color: "#223146", fontSize: "0.8rem", fontWeight: 700 }}
+                >
+                  {formatPrice(10000)}
                 </Typography>
               </Stack>
             </Stack>
@@ -601,32 +679,46 @@ export default function VendorPaymentsPage() {
           spacing={1.2}
           sx={{ px: 1.7, pt: 1.5 }}
         >
-          <Typography sx={{ color: "#18253A", fontSize: "1.1rem", fontWeight: 800 }}>
+          <Typography
+            sx={{ color: "#18253A", fontSize: "1.1rem", fontWeight: 800 }}
+          >
             Recent Transactions
           </Typography>
 
           <Stack direction="row" spacing={0.55}>
-            {["All", "Paid", "Pending"].map((tab, index) => (
+            {[
+              { label: "All", value: "all" },
+              { label: "Paid", value: "paid" },
+              { label: "Pending", value: "pending" },
+            ].map((tab) => (
               <Button
-                key={tab}
+                key={tab.value}
+                onClick={() => setTxFilter(tab.value)}
                 sx={{
                   minHeight: 32,
                   px: 1.2,
                   borderRadius: "999px",
-                  bgcolor: index === 0 ? "#F4F7FB" : "transparent",
-                  color: "#556478",
+                  bgcolor: txFilter === tab.value ? "#EEF4FF" : "transparent",
+                  color: txFilter === tab.value ? "#0E56C8" : "#556478",
                   fontSize: "0.7rem",
-                  fontWeight: 700,
+                  fontWeight: txFilter === tab.value ? 800 : 700,
                   textTransform: "none",
                 }}
               >
-                {tab}
+                {tab.label}
               </Button>
             ))}
           </Stack>
         </Stack>
 
-        <Box sx={{ display: { xs: "none", lg: "block" }, px: 1.7, pt: 1.6, pb: 1.1 }}>
+        <Box
+          sx={{
+            display: { xs: "none", lg: "block" },
+            px: 1.7,
+            pt: 1.6,
+            pb: 1.1,
+          }}
+        >
           <Box
             sx={{
               display: "grid",
@@ -680,7 +772,8 @@ export default function VendorPaymentsPage() {
             <Box
               key={item.id}
               sx={{
-                borderTop: index === 0 ? "none" : "1px solid rgba(234,239,245,0.95)",
+                borderTop:
+                  index === 0 ? "none" : "1px solid rgba(234,239,245,0.95)",
                 py: { xs: 1.6, md: 1.9 },
               }}
             >
@@ -705,7 +798,13 @@ export default function VendorPaymentsPage() {
                   >
                     {item.initials}
                   </Avatar>
-                  <Typography sx={{ color: "#223146", fontSize: "0.9rem", fontWeight: 700 }}>
+                  <Typography
+                    sx={{
+                      color: "#223146",
+                      fontSize: "0.9rem",
+                      fontWeight: 700,
+                    }}
+                  >
                     {item.name}
                   </Typography>
                 </Stack>
@@ -713,7 +812,13 @@ export default function VendorPaymentsPage() {
                 <Typography sx={{ color: "#5E6A7D", fontSize: "0.82rem" }}>
                   {item.project}
                 </Typography>
-                <Typography sx={{ color: "#18253A", fontSize: "0.88rem", fontWeight: 800 }}>
+                <Typography
+                  sx={{
+                    color: "#18253A",
+                    fontSize: "0.88rem",
+                    fontWeight: 800,
+                  }}
+                >
                   {item.amount}
                 </Typography>
                 <Box
@@ -752,7 +857,12 @@ export default function VendorPaymentsPage() {
 
               <Box sx={{ display: { xs: "block", lg: "none" } }}>
                 <Stack spacing={1.05}>
-                  <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
+                  <Stack
+                    direction="row"
+                    spacing={1}
+                    alignItems="center"
+                    justifyContent="space-between"
+                  >
                     <Stack direction="row" spacing={1} alignItems="center">
                       <Avatar
                         sx={{
@@ -767,10 +877,22 @@ export default function VendorPaymentsPage() {
                         {item.initials}
                       </Avatar>
                       <Box>
-                        <Typography sx={{ color: "#223146", fontSize: "0.86rem", fontWeight: 700 }}>
+                        <Typography
+                          sx={{
+                            color: "#223146",
+                            fontSize: "0.86rem",
+                            fontWeight: 700,
+                          }}
+                        >
                           {item.name}
                         </Typography>
-                        <Typography sx={{ color: "#7A8799", fontSize: "0.72rem", mt: 0.12 }}>
+                        <Typography
+                          sx={{
+                            color: "#7A8799",
+                            fontSize: "0.72rem",
+                            mt: 0.12,
+                          }}
+                        >
                           {item.project}
                         </Typography>
                       </Box>

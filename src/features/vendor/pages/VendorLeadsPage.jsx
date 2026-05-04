@@ -126,7 +126,9 @@ function FilterSelect({ label, value, onChange, options }) {
 function ManualLeadSection({ title, children }) {
   return (
     <Box>
-      <Typography sx={{ mb: 1.1, color: "#18253A", fontSize: "0.9rem", fontWeight: 800 }}>
+      <Typography
+        sx={{ mb: 1.1, color: "#18253A", fontSize: "0.9rem", fontWeight: 800 }}
+      >
         {title}
       </Typography>
       <Box
@@ -142,7 +144,15 @@ function ManualLeadSection({ title, children }) {
   );
 }
 
-function ManualLeadField({ label, value, onChange, required = false, type = "text", wide = false, multiline = false }) {
+function ManualLeadField({
+  label,
+  value,
+  onChange,
+  required = false,
+  type = "text",
+  wide = false,
+  multiline = false,
+}) {
   return (
     <TextField
       label={required ? `${label} *` : label}
@@ -302,7 +312,9 @@ function toLeadRow(lead, quote) {
     raw: lead,
     initials: getInitials(name) || "CU",
     name,
-    location: [lead.installationAddress?.city, lead.installationAddress?.state].filter(Boolean).join(", "),
+    location: [lead.installationAddress?.city, lead.installationAddress?.state]
+      .filter(Boolean)
+      .join(", "),
     systemSize: load ? `${load} kW` : "Assessment pending",
     systemLoad: Number(load) || 0,
     budget: getLeadBudget(lead),
@@ -342,7 +354,10 @@ export default function VendorLeadsPage() {
     setError("");
 
     try {
-      const [leadRows, quoteRows] = await Promise.all([leadsApi.listLeads(), quotesApi.listQuotes()]);
+      const [leadRows, quoteRows] = await Promise.all([
+        leadsApi.listLeads(),
+        quotesApi.listQuotes(),
+      ]);
 
       if (active) {
         setLeads(leadRows);
@@ -383,54 +398,104 @@ export default function VendorLeadsPage() {
     return map;
   }, [quotes]);
   const leadRows = useMemo(
-    () => leads.map((lead) => toLeadRow(lead, quoteByLeadId.get(String(lead.id || lead._id)))),
+    () =>
+      leads.map((lead) =>
+        toLeadRow(lead, quoteByLeadId.get(String(lead.id || lead._id))),
+      ),
     [leads, quoteByLeadId],
   );
   const locationOptions = useMemo(
-    () => [...new Set(leadRows.map((lead) => lead.raw.installationAddress?.state).filter(Boolean))],
+    () => [
+      ...new Set(
+        leadRows
+          .map((lead) => lead.raw.installationAddress?.state)
+          .filter(Boolean),
+      ),
+    ],
     [leadRows],
   );
   const filteredRows = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
     const rows = leadRows.filter((lead) => {
-      const matchesStatus = statusFilter === "all" || lead.rawStatus === statusFilter;
-      const matchesLocation = locationFilter === "all" || lead.raw.installationAddress?.state === locationFilter;
+      const matchesStatus =
+        statusFilter === "all" || lead.rawStatus === statusFilter;
+      const matchesLocation =
+        locationFilter === "all" ||
+        lead.raw.installationAddress?.state === locationFilter;
       const matchesSystem =
         systemFilter === "all" ||
         (systemFilter === "assessment" && !lead.systemLoad) ||
-        (systemFilter === "under_5" && lead.systemLoad > 0 && lead.systemLoad < 5) ||
-        (systemFilter === "5_10" && lead.systemLoad >= 5 && lead.systemLoad <= 10) ||
+        (systemFilter === "under_5" &&
+          lead.systemLoad > 0 &&
+          lead.systemLoad < 5) ||
+        (systemFilter === "5_10" &&
+          lead.systemLoad >= 5 &&
+          lead.systemLoad <= 10) ||
         (systemFilter === "over_10" && lead.systemLoad > 10);
       const matchesSearch =
         !normalizedSearch ||
-        [lead.id, lead.name, lead.location, lead.systemSize, lead.budget, lead.status, lead.quoteStatus]
-          .some((value) => String(value || "").toLowerCase().includes(normalizedSearch));
+        [
+          lead.id,
+          lead.name,
+          lead.location,
+          lead.systemSize,
+          lead.budget,
+          lead.status,
+          lead.quoteStatus,
+        ].some((value) =>
+          String(value || "")
+            .toLowerCase()
+            .includes(normalizedSearch),
+        );
 
       return matchesStatus && matchesLocation && matchesSystem && matchesSearch;
     });
 
     return [...rows].sort((a, b) => {
-      if (sortBy === "oldest") return new Date(a.createdAt || 0) - new Date(b.createdAt || 0);
+      if (sortBy === "oldest")
+        return new Date(a.createdAt || 0) - new Date(b.createdAt || 0);
       if (sortBy === "system_desc") return b.systemLoad - a.systemLoad;
       if (sortBy === "system_asc") return a.systemLoad - b.systemLoad;
       return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
     });
-  }, [leadRows, locationFilter, searchTerm, sortBy, statusFilter, systemFilter]);
+  }, [
+    leadRows,
+    locationFilter,
+    searchTerm,
+    sortBy,
+    statusFilter,
+    systemFilter,
+  ]);
   const totalPages = Math.max(1, Math.ceil(filteredRows.length / pageSize));
-  const visibleRows = filteredRows.slice((page - 1) * pageSize, page * pageSize);
+  const visibleRows = filteredRows.slice(
+    (page - 1) * pageSize,
+    page * pageSize,
+  );
   const pageNumbers = useMemo(() => {
-    if (totalPages <= 5) return Array.from({ length: totalPages }, (_, i) => i + 1);
+    if (totalPages <= 5)
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
     const pages = new Set([1, totalPages, page]);
     if (page > 1) pages.add(page - 1);
     if (page < totalPages) pages.add(page + 1);
     return [...pages].sort((a, b) => a - b);
   }, [totalPages, page]);
   const firstVisibleLead = filteredRows.length ? (page - 1) * pageSize + 1 : 0;
-  const lastVisibleLead = filteredRows.length ? firstVisibleLead + visibleRows.length - 1 : 0;
+  const lastVisibleLead = filteredRows.length
+    ? firstVisibleLead + visibleRows.length - 1
+    : 0;
 
   function exportCsv() {
     const rows = [
-      ["Lead ID", "Customer", "Location", "System Size", "Budget", "Status", "Quote Status", "Time Received"],
+      [
+        "Lead ID",
+        "Customer",
+        "Location",
+        "System Size",
+        "Budget",
+        "Status",
+        "Quote Status",
+        "Time Received",
+      ],
       ...filteredRows.map((lead) => [
         lead.id,
         lead.name,
@@ -443,7 +508,10 @@ export default function VendorLeadsPage() {
       ]),
     ];
 
-    downloadFile(`sparkin-leads-${new Date().toISOString().slice(0, 10)}.csv`, toCsv(rows));
+    downloadFile(
+      `sparkin-leads-${new Date().toISOString().slice(0, 10)}.csv`,
+      toCsv(rows),
+    );
   }
 
   function updateFilter(setter, value) {
@@ -474,7 +542,10 @@ export default function VendorLeadsPage() {
       .filter(([field]) => !String(manualLeadForm[field] || "").trim())
       .map(([, label]) => label);
 
-    if (manualLeadForm.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(manualLeadForm.email.trim())) {
+    if (
+      manualLeadForm.email.trim() &&
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(manualLeadForm.email.trim())
+    ) {
       missing.push("Valid email");
     }
 
@@ -506,7 +577,10 @@ export default function VendorLeadsPage() {
         distributionCompany: manualLeadForm.distributionCompany.trim() || null,
         connectionType: manualLeadForm.connectionType || null,
         consumerNumber: manualLeadForm.consumerNumber.trim() || null,
-        sanctionedLoadKw: manualLeadForm.sanctionedLoadKw === "" ? null : Number(manualLeadForm.sanctionedLoadKw),
+        sanctionedLoadKw:
+          manualLeadForm.sanctionedLoadKw === ""
+            ? null
+            : Number(manualLeadForm.sanctionedLoadKw),
       },
       roof: {
         sizeRange: manualLeadForm.roofSizeRange,
@@ -535,7 +609,9 @@ export default function VendorLeadsPage() {
       setIsManualLeadOpen(false);
       await loadLeads();
     } catch (apiError) {
-      setManualLeadError(apiError?.response?.data?.message || "Could not create manual lead.");
+      setManualLeadError(
+        apiError?.response?.data?.message || "Could not create manual lead.",
+      );
     } finally {
       setIsCreatingLead(false);
     }
@@ -548,22 +624,22 @@ export default function VendorLeadsPage() {
         subtitle="Manage and track your potential solar installations."
         actions={
           <>
-          <VendorSecondaryButton
-            startIcon={<FileDownloadOutlinedIcon />}
-            onClick={exportCsv}
-            disabled={isLoading}
-            sx={{ borderRadius: "999px" }}
-          >
-            Export CSV
-          </VendorSecondaryButton>
-          <VendorPrimaryButton
-            startIcon={<AddRoundedIcon />}
-            onClick={() => setIsManualLeadOpen(true)}
-            disabled={isLoading || isCreatingLead}
-            sx={{ borderRadius: "999px" }}
-          >
-            Manual Lead
-          </VendorPrimaryButton>
+            <VendorSecondaryButton
+              startIcon={<FileDownloadOutlinedIcon />}
+              onClick={exportCsv}
+              disabled={isLoading}
+              sx={{ borderRadius: "999px" }}
+            >
+              Export CSV
+            </VendorSecondaryButton>
+            <VendorPrimaryButton
+              startIcon={<AddRoundedIcon />}
+              onClick={() => setIsManualLeadOpen(true)}
+              disabled={isLoading || isCreatingLead}
+              sx={{ borderRadius: "999px" }}
+            >
+              Manual Lead
+            </VendorPrimaryButton>
           </>
         }
       />
@@ -581,7 +657,9 @@ export default function VendorLeadsPage() {
           },
         }}
       >
-        <DialogTitle sx={{ color: "#18253A", fontSize: "1.35rem", fontWeight: 800 }}>
+        <DialogTitle
+          sx={{ color: "#18253A", fontSize: "1.35rem", fontWeight: 800 }}
+        >
           Create Manual Lead
         </DialogTitle>
         <DialogContent dividers sx={{ borderColor: "rgba(229,234,241,0.95)" }}>
@@ -593,49 +671,208 @@ export default function VendorLeadsPage() {
             ) : null}
 
             <ManualLeadSection title="Customer Details">
-              <ManualLeadField label="Customer Name" value={manualLeadForm.fullName} onChange={(value) => updateManualLead("fullName", value)} required />
-              <ManualLeadField label="Phone Number" value={manualLeadForm.phoneNumber} onChange={(value) => updateManualLead("phoneNumber", value)} required />
-              <ManualLeadField label="Email" value={manualLeadForm.email} onChange={(value) => updateManualLead("email", value)} type="email" />
+              <ManualLeadField
+                label="Customer Name"
+                value={manualLeadForm.fullName}
+                onChange={(value) => updateManualLead("fullName", value)}
+                required
+              />
+              <ManualLeadField
+                label="Phone Number"
+                value={manualLeadForm.phoneNumber}
+                onChange={(value) => updateManualLead("phoneNumber", value)}
+                required
+              />
+              <ManualLeadField
+                label="Email"
+                value={manualLeadForm.email}
+                onChange={(value) => updateManualLead("email", value)}
+                type="email"
+              />
             </ManualLeadSection>
 
             <ManualLeadSection title="Installation Address">
-              <ManualLeadField label="Street Address" value={manualLeadForm.street} onChange={(value) => updateManualLead("street", value)} required wide />
-              <ManualLeadField label="Landmark" value={manualLeadForm.landmark} onChange={(value) => updateManualLead("landmark", value)} />
-              <ManualLeadField label="City" value={manualLeadForm.city} onChange={(value) => updateManualLead("city", value)} required />
-              <ManualLeadField label="State" value={manualLeadForm.state} onChange={(value) => updateManualLead("state", value)} required />
-              <ManualLeadField label="Pincode" value={manualLeadForm.pincode} onChange={(value) => updateManualLead("pincode", value)} required />
+              <ManualLeadField
+                label="Street Address"
+                value={manualLeadForm.street}
+                onChange={(value) => updateManualLead("street", value)}
+                required
+                wide
+              />
+              <ManualLeadField
+                label="Landmark"
+                value={manualLeadForm.landmark}
+                onChange={(value) => updateManualLead("landmark", value)}
+              />
+              <ManualLeadField
+                label="City"
+                value={manualLeadForm.city}
+                onChange={(value) => updateManualLead("city", value)}
+                required
+              />
+              <ManualLeadField
+                label="State"
+                value={manualLeadForm.state}
+                onChange={(value) => updateManualLead("state", value)}
+                required
+              />
+              <ManualLeadField
+                label="Pincode"
+                value={manualLeadForm.pincode}
+                onChange={(value) => updateManualLead("pincode", value)}
+                required
+              />
             </ManualLeadSection>
 
             <ManualLeadSection title="Property & Roof">
-              <ManualLeadSelect label="Property Type" value={manualLeadForm.propertyType} onChange={(value) => updateManualLead("propertyType", value)} options={[["independent_house", "Independent House"], ["apartment", "Apartment"], ["commercial", "Commercial"]]} />
-              <ManualLeadSelect label="Roof Type" value={manualLeadForm.roofType} onChange={(value) => updateManualLead("roofType", value)} options={[["flat", "Flat"], ["sloped", "Sloped"]]} />
-              <ManualLeadSelect label="Ownership" value={manualLeadForm.ownership} onChange={(value) => updateManualLead("ownership", value)} options={[["owned", "Owned"], ["rented", "Rented"]]} />
-              <ManualLeadSelect label="Connection Type" value={manualLeadForm.connectionType} onChange={(value) => updateManualLead("connectionType", value)} options={[["single_phase", "Single Phase"], ["three_phase", "Three Phase"]]} />
-              <ManualLeadField label="Sanctioned Load (kW)" value={manualLeadForm.sanctionedLoadKw} onChange={(value) => updateManualLead("sanctionedLoadKw", value)} type="number" />
-              <ManualLeadField label="Distribution Company" value={manualLeadForm.distributionCompany} onChange={(value) => updateManualLead("distributionCompany", value)} />
-              <ManualLeadField label="Consumer Number" value={manualLeadForm.consumerNumber} onChange={(value) => updateManualLead("consumerNumber", value)} />
-              <ManualLeadSelect label="Roof Size" value={manualLeadForm.roofSizeRange} onChange={(value) => updateManualLead("roofSizeRange", value)} options={[["under_500", "Under 500 sq ft"], ["500_1000", "500-1000 sq ft"], ["over_1000", "Over 1000 sq ft"]]} />
-              <ManualLeadSelect label="Shadow" value={manualLeadForm.shadow} onChange={(value) => updateManualLead("shadow", value)} options={[["none", "None"], ["partial", "Partial"], ["heavy", "Heavy"]]} />
-              <ManualLeadSelect label="Roof Condition" value={manualLeadForm.condition} onChange={(value) => updateManualLead("condition", value)} options={[["excellent", "Excellent"], ["average", "Average"], ["needs_repair", "Needs Repair"]]} />
+              <ManualLeadSelect
+                label="Property Type"
+                value={manualLeadForm.propertyType}
+                onChange={(value) => updateManualLead("propertyType", value)}
+                options={[
+                  ["independent_house", "Independent House"],
+                  ["apartment", "Apartment"],
+                  ["commercial", "Commercial"],
+                ]}
+              />
+              <ManualLeadSelect
+                label="Roof Type"
+                value={manualLeadForm.roofType}
+                onChange={(value) => updateManualLead("roofType", value)}
+                options={[
+                  ["flat", "Flat"],
+                  ["sloped", "Sloped"],
+                ]}
+              />
+              <ManualLeadSelect
+                label="Ownership"
+                value={manualLeadForm.ownership}
+                onChange={(value) => updateManualLead("ownership", value)}
+                options={[
+                  ["owned", "Owned"],
+                  ["rented", "Rented"],
+                ]}
+              />
+              <ManualLeadSelect
+                label="Connection Type"
+                value={manualLeadForm.connectionType}
+                onChange={(value) => updateManualLead("connectionType", value)}
+                options={[
+                  ["single_phase", "Single Phase"],
+                  ["three_phase", "Three Phase"],
+                ]}
+              />
+              <ManualLeadField
+                label="Sanctioned Load (kW)"
+                value={manualLeadForm.sanctionedLoadKw}
+                onChange={(value) =>
+                  updateManualLead("sanctionedLoadKw", value)
+                }
+                type="number"
+              />
+              <ManualLeadField
+                label="Distribution Company"
+                value={manualLeadForm.distributionCompany}
+                onChange={(value) =>
+                  updateManualLead("distributionCompany", value)
+                }
+              />
+              <ManualLeadField
+                label="Consumer Number"
+                value={manualLeadForm.consumerNumber}
+                onChange={(value) => updateManualLead("consumerNumber", value)}
+              />
+              <ManualLeadSelect
+                label="Roof Size"
+                value={manualLeadForm.roofSizeRange}
+                onChange={(value) => updateManualLead("roofSizeRange", value)}
+                options={[
+                  ["under_500", "Under 500 sq ft"],
+                  ["500_1000", "500-1000 sq ft"],
+                  ["over_1000", "Over 1000 sq ft"],
+                ]}
+              />
+              <ManualLeadSelect
+                label="Shadow"
+                value={manualLeadForm.shadow}
+                onChange={(value) => updateManualLead("shadow", value)}
+                options={[
+                  ["none", "None"],
+                  ["partial", "Partial"],
+                  ["heavy", "Heavy"],
+                ]}
+              />
+              <ManualLeadSelect
+                label="Roof Condition"
+                value={manualLeadForm.condition}
+                onChange={(value) => updateManualLead("condition", value)}
+                options={[
+                  ["excellent", "Excellent"],
+                  ["average", "Average"],
+                  ["needs_repair", "Needs Repair"],
+                ]}
+              />
             </ManualLeadSection>
 
             <ManualLeadSection title="Inspection & Notes">
-              <ManualLeadField label="Preferred Date" value={manualLeadForm.preferredDate} onChange={(value) => updateManualLead("preferredDate", value)} type="date" />
-              <ManualLeadSelect label="Preferred Time" value={manualLeadForm.preferredTimeSlot} onChange={(value) => updateManualLead("preferredTimeSlot", value)} options={[["", "No Preference"], ["morning", "Morning"], ["afternoon", "Afternoon"], ["evening", "Evening"]]} />
-              <ManualLeadField label="Notes" value={manualLeadForm.notes} onChange={(value) => updateManualLead("notes", value)} wide multiline />
-              <ManualLeadField label="Special Instructions" value={manualLeadForm.specialInstructions} onChange={(value) => updateManualLead("specialInstructions", value)} wide multiline />
+              <ManualLeadField
+                label="Preferred Date"
+                value={manualLeadForm.preferredDate}
+                onChange={(value) => updateManualLead("preferredDate", value)}
+                type="date"
+              />
+              <ManualLeadSelect
+                label="Preferred Time"
+                value={manualLeadForm.preferredTimeSlot}
+                onChange={(value) =>
+                  updateManualLead("preferredTimeSlot", value)
+                }
+                options={[
+                  ["", "No Preference"],
+                  ["morning", "Morning"],
+                  ["afternoon", "Afternoon"],
+                  ["evening", "Evening"],
+                ]}
+              />
+              <ManualLeadField
+                label="Notes"
+                value={manualLeadForm.notes}
+                onChange={(value) => updateManualLead("notes", value)}
+                wide
+                multiline
+              />
+              <ManualLeadField
+                label="Special Instructions"
+                value={manualLeadForm.specialInstructions}
+                onChange={(value) =>
+                  updateManualLead("specialInstructions", value)
+                }
+                wide
+                multiline
+              />
             </ManualLeadSection>
           </Stack>
         </DialogContent>
         <DialogActions sx={{ px: 3, py: 2 }}>
-          <Button onClick={closeManualLeadDialog} disabled={isCreatingLead} sx={{ textTransform: "none", fontWeight: 700 }}>
+          <Button
+            onClick={closeManualLeadDialog}
+            disabled={isCreatingLead}
+            sx={{ textTransform: "none", fontWeight: 700 }}
+          >
             Cancel
           </Button>
           <Button
             variant="contained"
             onClick={createManualLead}
             disabled={isCreatingLead}
-            sx={{ minHeight: 38, borderRadius: "999px", px: 2.3, bgcolor: "#0E56C8", textTransform: "none", fontWeight: 800 }}
+            sx={{
+              minHeight: 38,
+              borderRadius: "999px",
+              px: 2.3,
+              bgcolor: "#0E56C8",
+              textTransform: "none",
+              fontWeight: 800,
+            }}
           >
             {isCreatingLead ? "Creating..." : "Create Lead"}
           </Button>
@@ -649,7 +886,29 @@ export default function VendorLeadsPage() {
           alignItems={{ xs: "stretch", lg: "center" }}
           spacing={1.35}
         >
-          <Stack direction={{ xs: "column", md: "row" }} spacing={1} flexWrap="wrap">
+          <Stack
+            direction={{ xs: "column", md: "row" }}
+            spacing={1}
+            flexWrap="wrap"
+          >
+            <TextField
+              size="small"
+              placeholder="Search by name, location, ID…"
+              value={searchTerm}
+              onChange={(event) =>
+                updateFilter(setSearchTerm, event.target.value)
+              }
+              sx={{
+                minWidth: { xs: "100%", md: 240 },
+                "& .MuiOutlinedInput-root": {
+                  height: 40,
+                  borderRadius: "999px",
+                  bgcolor: "#FFFFFF",
+                  fontSize: "0.74rem",
+                  fontWeight: 700,
+                },
+              }}
+            />
             <FilterSelect
               label="Status"
               value={statusFilter}
@@ -666,7 +925,10 @@ export default function VendorLeadsPage() {
               label="Location"
               value={locationFilter}
               onChange={(value) => updateFilter(setLocationFilter, value)}
-              options={[["all", "All Locations"], ...locationOptions.map((location) => [location, location])]}
+              options={[
+                ["all", "All Locations"],
+                ...locationOptions.map((location) => [location, location]),
+              ]}
             />
             <FilterSelect
               label="System"
@@ -682,9 +944,16 @@ export default function VendorLeadsPage() {
             />
           </Stack>
 
-          <Stack direction="row" spacing={0.85} alignItems="center" justifyContent="flex-end">
+          <Stack
+            direction="row"
+            spacing={0.85}
+            alignItems="center"
+            justifyContent="flex-end"
+          >
             <TuneRoundedIcon sx={{ color: "#6E7B8C", fontSize: "0.95rem" }} />
-            <Typography sx={{ color: "#6E7B8C", fontSize: "0.74rem", fontWeight: 600 }}>
+            <Typography
+              sx={{ color: "#6E7B8C", fontSize: "0.74rem", fontWeight: 600 }}
+            >
               Sort by:
             </Typography>
             <TextField
@@ -714,7 +983,9 @@ export default function VendorLeadsPage() {
       </VendorFilterPanel>
 
       <VendorPanel sx={{ borderRadius: "1.7rem", overflow: "hidden" }}>
-        <Box sx={{ display: { xs: "none", lg: "block" }, px: 2.4, pt: 2, pb: 1.2 }}>
+        <Box
+          sx={{ display: { xs: "none", lg: "block" }, px: 2.4, pt: 2, pb: 1.2 }}
+        >
           <Box
             sx={{
               display: "grid",
@@ -740,9 +1011,7 @@ export default function VendorLeadsPage() {
         </Box>
 
         <Stack spacing={0} sx={{ px: { xs: 1.4, md: 2.4 }, pb: 1.25 }}>
-          {isLoading ? (
-            <VendorLoadingState minHeight={140} />
-          ) : null}
+          {isLoading ? <VendorLoadingState minHeight={140} /> : null}
 
           {error ? (
             <VendorErrorState sx={{ my: 2 }}>{error}</VendorErrorState>
@@ -762,14 +1031,23 @@ export default function VendorLeadsPage() {
             <Box
               key={lead.id || `${lead.name}-${index}`}
               sx={{
-                borderTop: index === 0 ? "none" : "1px solid rgba(234,239,245,0.95)",
+                borderTop:
+                  index === 0 ? "none" : "1px solid rgba(234,239,245,0.95)",
                 py: { xs: 1.6, md: 2 },
                 transition: "background 0.15s",
                 borderRadius: "0.75rem",
                 "&:hover": { bgcolor: "#F4F7FF" },
               }}
             >
-              <Box sx={{ display: { xs: "none", lg: "grid" }, gridTemplateColumns: "1.35fr 1fr 0.7fr 0.82fr 0.8fr 0.88fr 0.9fr", gap: 1, alignItems: "center" }}>
+              <Box
+                sx={{
+                  display: { xs: "none", lg: "grid" },
+                  gridTemplateColumns:
+                    "1.35fr 1fr 0.7fr 0.82fr 0.8fr 0.88fr 0.9fr",
+                  gap: 1,
+                  alignItems: "center",
+                }}
+              >
                 <Stack direction="row" spacing={1.2} alignItems="center">
                   <Avatar
                     sx={{
@@ -784,7 +1062,14 @@ export default function VendorLeadsPage() {
                     {lead.initials}
                   </Avatar>
                   <Box>
-                    <Typography sx={{ color: "#223146", fontSize: "0.96rem", fontWeight: 700, lineHeight: 1.18 }}>
+                    <Typography
+                      sx={{
+                        color: "#223146",
+                        fontSize: "0.96rem",
+                        fontWeight: 700,
+                        lineHeight: 1.18,
+                      }}
+                    >
                       {lead.name}
                     </Typography>
                     {lead.rawStatus === "submitted" && (
@@ -809,19 +1094,43 @@ export default function VendorLeadsPage() {
                   </Box>
                 </Stack>
 
-                <Typography sx={{ color: "#5E6A7D", fontSize: "0.78rem", lineHeight: 1.4 }}>
+                <Typography
+                  sx={{
+                    color: "#5E6A7D",
+                    fontSize: "0.78rem",
+                    lineHeight: 1.4,
+                  }}
+                >
                   {lead.location}
                 </Typography>
-                <Typography sx={{ color: "#223146", fontSize: "0.78rem", fontWeight: 600 }}>
+                <Typography
+                  sx={{
+                    color: "#223146",
+                    fontSize: "0.78rem",
+                    fontWeight: 600,
+                  }}
+                >
                   {lead.systemSize}
                 </Typography>
-                <Typography sx={{ color: "#223146", fontSize: "0.78rem", fontWeight: 600 }}>
+                <Typography
+                  sx={{
+                    color: "#223146",
+                    fontSize: "0.78rem",
+                    fontWeight: 600,
+                  }}
+                >
                   {lead.budget}
                 </Typography>
                 <VendorStatusPill tone={lead.statusTone} bg={lead.statusBg}>
                   {lead.status}
                 </VendorStatusPill>
-                <Typography sx={{ color: "#5E6A7D", fontSize: "0.78rem", lineHeight: 1.35 }}>
+                <Typography
+                  sx={{
+                    color: "#5E6A7D",
+                    fontSize: "0.78rem",
+                    lineHeight: 1.35,
+                  }}
+                >
                   {lead.timeReceived}
                 </Typography>
 
@@ -837,7 +1146,10 @@ export default function VendorLeadsPage() {
                       fontSize: "0.76rem",
                       fontWeight: 700,
                       textTransform: "none",
-                      "&:hover": { bgcolor: "transparent", textDecoration: "underline" },
+                      "&:hover": {
+                        bgcolor: "transparent",
+                        textDecoration: "underline",
+                      },
                     }}
                   >
                     View Details
@@ -883,10 +1195,18 @@ export default function VendorLeadsPage() {
                       {lead.initials}
                     </Avatar>
                     <Box>
-                      <Typography sx={{ color: "#223146", fontSize: "0.92rem", fontWeight: 700 }}>
+                      <Typography
+                        sx={{
+                          color: "#223146",
+                          fontSize: "0.92rem",
+                          fontWeight: 700,
+                        }}
+                      >
                         {lead.name}
                       </Typography>
-                      <Typography sx={{ color: "#5E6A7D", fontSize: "0.76rem", mt: 0.15 }}>
+                      <Typography
+                        sx={{ color: "#5E6A7D", fontSize: "0.76rem", mt: 0.15 }}
+                      >
                         {lead.location}
                       </Typography>
                     </Box>
@@ -917,7 +1237,14 @@ export default function VendorLeadsPage() {
                         >
                           {label}
                         </Typography>
-                        <Typography sx={{ mt: 0.28, color: "#223146", fontSize: "0.76rem", fontWeight: 600 }}>
+                        <Typography
+                          sx={{
+                            mt: 0.28,
+                            color: "#223146",
+                            fontSize: "0.76rem",
+                            fontWeight: 600,
+                          }}
+                        >
                           {value}
                         </Typography>
                       </Box>
@@ -977,14 +1304,19 @@ export default function VendorLeadsPage() {
             borderTop: "1px solid rgba(234,239,245,0.95)",
           }}
         >
-          <Typography sx={{ color: "#738094", fontSize: "0.74rem", fontWeight: 500 }}>
-            Showing {firstVisibleLead}-{lastVisibleLead} of {filteredRows.length} lead
+          <Typography
+            sx={{ color: "#738094", fontSize: "0.74rem", fontWeight: 500 }}
+          >
+            Showing {firstVisibleLead}-{lastVisibleLead} of{" "}
+            {filteredRows.length} lead
             {filteredRows.length === 1 ? "" : "s"}
           </Typography>
 
           <Stack direction="row" spacing={0.55} alignItems="center">
             <Button
-              onClick={() => setPage((currentPage) => Math.max(1, currentPage - 1))}
+              onClick={() =>
+                setPage((currentPage) => Math.max(1, currentPage - 1))
+              }
               disabled={page === 1}
               sx={{
                 minWidth: 32,
@@ -1001,9 +1333,16 @@ export default function VendorLeadsPage() {
               const prev = pageNumbers[idx - 1];
               const showEllipsis = prev && pageNumber - prev > 1;
               return (
-                <Box key={pageNumber} sx={{ display: "flex", alignItems: "center", gap: 0.45 }}>
+                <Box
+                  key={pageNumber}
+                  sx={{ display: "flex", alignItems: "center", gap: 0.45 }}
+                >
                   {showEllipsis && (
-                    <Typography sx={{ color: "#8B97A8", fontSize: "0.72rem", px: 0.2 }}>…</Typography>
+                    <Typography
+                      sx={{ color: "#8B97A8", fontSize: "0.72rem", px: 0.2 }}
+                    >
+                      …
+                    </Typography>
                   )}
                   <Button
                     onClick={() => setPage(pageNumber)}
@@ -1015,7 +1354,10 @@ export default function VendorLeadsPage() {
                       p: 0,
                       color: pageNumber === page ? "#FFFFFF" : "#223146",
                       bgcolor: pageNumber === page ? "#0E56C8" : "transparent",
-                      border: pageNumber === page ? "none" : "1px solid rgba(225,232,241,0.96)",
+                      border:
+                        pageNumber === page
+                          ? "none"
+                          : "1px solid rgba(225,232,241,0.96)",
                       fontSize: "0.72rem",
                       fontWeight: 700,
                     }}
@@ -1026,7 +1368,9 @@ export default function VendorLeadsPage() {
               );
             })}
             <Button
-              onClick={() => setPage((currentPage) => Math.min(totalPages, currentPage + 1))}
+              onClick={() =>
+                setPage((currentPage) => Math.min(totalPages, currentPage + 1))
+              }
               disabled={page === totalPages}
               sx={{
                 minWidth: 32,
