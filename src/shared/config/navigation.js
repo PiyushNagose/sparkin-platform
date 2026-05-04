@@ -26,4 +26,16 @@ export const portalNavigation = {
     { label: "Payments", href: "/vendor/payments" },
     { label: "Settings", href: "/vendor/settings" },
   ],
+  admin: [
+    { label: "Dashboard", href: "/admin" },
+    { label: "Leads", href: "/admin/leads" },
+    { label: "Payments", href: "/admin/payments" },
+    { label: "Vendor Assignment", href: "/admin/vendor-assignment" },
+    { label: "Vendors", href: "/admin/vendors" },
+    { label: "Bidding", href: "/admin/bidding" },
+    { label: "Customers/Projects", href: "/admin/customers-projects" },
+    { label: "Reports", href: "/admin/reports" },
+    { label: "Settings", href: "/admin/settings" },
+    { label: "Notifications", href: "/admin/notifications" },
+  ],
 };

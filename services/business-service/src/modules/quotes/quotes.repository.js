@@ -58,6 +58,11 @@ export const quotesRepository = {
     return normalizeQuotes(quotes);
   },
 
+  async findAll() {
+    const quotes = await QuoteModel.find({}).sort({ createdAt: -1 }).lean({ virtuals: true });
+    return normalizeQuotes(quotes);
+  },
+
   async findQuotesByLeadIds(leadIds) {
     const quotes = await QuoteModel.find({ leadId: { $in: leadIds } }).sort({ createdAt: -1 }).lean({ virtuals: true });
     return normalizeQuotes(quotes);

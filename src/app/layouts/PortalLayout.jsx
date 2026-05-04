@@ -13,11 +13,14 @@ import {
   Typography,
 } from "@mui/material";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
+import AdminPanelSettingsOutlinedIcon from "@mui/icons-material/AdminPanelSettingsOutlined";
 import AssignmentOutlinedIcon from "@mui/icons-material/AssignmentOutlined";
+import BarChartOutlinedIcon from "@mui/icons-material/BarChartOutlined";
 import BoltOutlinedIcon from "@mui/icons-material/BoltOutlined";
 import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import DashboardRoundedIcon from "@mui/icons-material/DashboardRounded";
+import GavelOutlinedIcon from "@mui/icons-material/GavelOutlined";
 import Groups2OutlinedIcon from "@mui/icons-material/Groups2Outlined";
 import HelpOutlineRoundedIcon from "@mui/icons-material/HelpOutlineRounded";
 import MenuRoundedIcon from "@mui/icons-material/MenuRounded";
@@ -29,6 +32,7 @@ import RequestQuoteOutlinedIcon from "@mui/icons-material/RequestQuoteOutlined";
 import SavingsOutlinedIcon from "@mui/icons-material/SavingsOutlined";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
+import StorefrontOutlinedIcon from "@mui/icons-material/StorefrontOutlined";
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { portalNavigation } from "@/shared/config/navigation";
@@ -65,6 +69,19 @@ const CUSTOMER_NAV_ICONS = {
   Savings: SavingsOutlinedIcon,
   "Refer & Earn": RedeemOutlinedIcon,
   Profile: PersonOutlineOutlinedIcon,
+};
+
+const ADMIN_NAV_ICONS = {
+  Dashboard: DashboardRoundedIcon,
+  Leads: Groups2OutlinedIcon,
+  Payments: PaymentsOutlinedIcon,
+  "Vendor Assignment": AdminPanelSettingsOutlinedIcon,
+  Vendors: StorefrontOutlinedIcon,
+  Bidding: GavelOutlinedIcon,
+  "Customers/Projects": AssignmentOutlinedIcon,
+  Reports: BarChartOutlinedIcon,
+  Settings: SettingsOutlinedIcon,
+  Notifications: NotificationsNoneRoundedIcon,
 };
 
 const VENDOR_SEARCH_ROUTES = [
@@ -127,6 +144,18 @@ const CUSTOMER_SEARCH_ROUTES = [
   },
 ];
 
+const ADMIN_SEARCH_ROUTES = [
+  { terms: ["lead", "leads", "customer", "verification"], path: "/admin/leads" },
+  { terms: ["payment", "payments", "invoice", "transaction"], path: "/admin/payments" },
+  { terms: ["vendor", "vendors", "partner"], path: "/admin/vendors" },
+  { terms: ["assign", "assignment"], path: "/admin/vendor-assignment" },
+  { terms: ["bid", "bidding", "quote", "quotes"], path: "/admin/bidding" },
+  { terms: ["project", "projects", "customer"], path: "/admin/customers-projects" },
+  { terms: ["report", "reports", "metric"], path: "/admin/reports" },
+  { terms: ["setting", "settings"], path: "/admin/settings" },
+  { terms: ["notification", "alert", "log"], path: "/admin/notifications" },
+];
+
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
 function resolveSearchPath(portal, query) {
@@ -134,7 +163,11 @@ function resolveSearchPath(portal, query) {
   if (!q) return `/${portal}`;
 
   const routes =
-    portal === "vendor" ? VENDOR_SEARCH_ROUTES : CUSTOMER_SEARCH_ROUTES;
+    portal === "admin"
+      ? ADMIN_SEARCH_ROUTES
+      : portal === "vendor"
+        ? VENDOR_SEARCH_ROUTES
+        : CUSTOMER_SEARCH_ROUTES;
   return (
     routes.find((r) => r.terms.some((t) => q.includes(t)))?.path || `/${portal}`
   );
@@ -170,10 +203,20 @@ export function PortalLayout({ portal }) {
     activeProjects: 0,
   });
 
+  const [adminSummary, setAdminSummary] = useState({
+    leadsNeedReview: 0,
+    pendingPayments: 0,
+    activeProjects: 0,
+  });
+
   const navItems = portalNavigation[portal];
   const navIconMap =
-    portal === "customer" ? CUSTOMER_NAV_ICONS : VENDOR_NAV_ICONS;
-  const sidebarWidth = 158;
+    portal === "admin"
+      ? ADMIN_NAV_ICONS
+      : portal === "customer"
+        ? CUSTOMER_NAV_ICONS
+        : VENDOR_NAV_ICONS;
+  const sidebarWidth = portal === "admin" ? 210 : 158;
 
   const profileName = user?.fullName || "Sparkin User";
   const profileRole =
@@ -257,18 +300,77 @@ export function PortalLayout({ portal }) {
     };
   }, [portal]);
 
+  useEffect(() => {
+    if (portal !== "admin") return undefined;
+    let active = true;
+
+    async function loadAdminSummary() {
+      const [leadsRes, projectsRes, paymentsRes] = await Promise.allSettled([
+        leadsApi.listLeads(),
+        projectsApi.listProjects(),
+        paymentsApi.listPayments(),
+      ]);
+      if (!active) return;
+
+      const leads = leadsRes.status === "fulfilled" ? leadsRes.value : [];
+      const projects =
+        projectsRes.status === "fulfilled" ? projectsRes.value : [];
+      const payments =
+        paymentsRes.status === "fulfilled" ? paymentsRes.value : [];
+
+      setAdminSummary({
+        leadsNeedReview: leads.filter((lead) =>
+          ["submitted", "reviewing"].includes(lead.status),
+        ).length,
+        pendingPayments: payments.filter((payment) => payment.status === "pending").length,
+        activeProjects: projects.filter(
+          (project) => !["completed", "cancelled"].includes(project.status),
+        ).length,
+      });
+    }
+
+    loadAdminSummary();
+    return () => {
+      active = false;
+    };
+  }, [portal]);
+
   // ── notification config ────────────────────────────────────────────────────
 
   const notificationCount =
-    portal === "vendor"
-      ? vendorSummary.openLeads +
-        vendorSummary.activeProjects +
-        vendorSummary.pendingPayments
-      : customerSummary.pendingQuotes +
-        customerSummary.activeServiceRequests +
-        customerSummary.activeProjects;
+    portal === "admin"
+      ? adminSummary.leadsNeedReview +
+        adminSummary.pendingPayments +
+        adminSummary.activeProjects
+      : portal === "vendor"
+        ? vendorSummary.openLeads +
+          vendorSummary.activeProjects +
+          vendorSummary.pendingPayments
+        : customerSummary.pendingQuotes +
+          customerSummary.activeServiceRequests +
+          customerSummary.activeProjects;
 
   const notificationItems = useMemo(() => {
+    if (portal === "admin") {
+      return [
+        {
+          label: `${adminSummary.leadsNeedReview} lead${adminSummary.leadsNeedReview === 1 ? "" : "s"} need verification`,
+          caption: "Review submitted and manually created leads",
+          path: "/admin/leads",
+        },
+        {
+          label: `${adminSummary.pendingPayments} pending payment${adminSummary.pendingPayments === 1 ? "" : "s"}`,
+          caption: "Track invoice and payment recovery queue",
+          path: "/admin/payments",
+        },
+        {
+          label: `${adminSummary.activeProjects} active project${adminSummary.activeProjects === 1 ? "" : "s"}`,
+          caption: "Monitor customer and vendor project progress",
+          path: "/admin/customers-projects",
+        },
+      ];
+    }
+
     if (portal === "vendor") {
       return [
         {
@@ -306,7 +408,7 @@ export function PortalLayout({ portal }) {
         path: "/customer/services",
       },
     ];
-  }, [portal, vendorSummary, customerSummary]);
+  }, [portal, vendorSummary, customerSummary, adminSummary]);
 
   // ── handlers ──────────────────────────────────────────────────────────────
 
@@ -339,7 +441,32 @@ export function PortalLayout({ portal }) {
                 display: "block",
               }}
             />
-            {portal === "vendor" && (
+            {portal === "admin" ? (
+              <Box sx={{ mt: -0.45 }}>
+                <Typography
+                  sx={{
+                    color: "#0E56C8",
+                    fontSize: "1rem",
+                    fontWeight: 850,
+                    lineHeight: 1,
+                  }}
+                >
+                  Sparkin Admin
+                </Typography>
+                <Typography
+                  sx={{
+                    mt: 0.25,
+                    color: "#7D8797",
+                    fontSize: "0.54rem",
+                    fontWeight: 800,
+                    letterSpacing: "0.12em",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  Operational Control
+                </Typography>
+              </Box>
+            ) : portal === "vendor" ? (
               <Typography
                 sx={{
                   mt: 0.05,
@@ -352,7 +479,7 @@ export function PortalLayout({ portal }) {
               >
                 Vendor Portal
               </Typography>
-            )}
+            ) : null}
           </Box>
 
           <Stack spacing={0.6}>
@@ -396,7 +523,7 @@ export function PortalLayout({ portal }) {
           </Stack>
 
           <Box sx={{ mt: "auto", pt: 2 }}>
-            {portal === "vendor" ? (
+            {portal === "admin" ? null : portal === "vendor" ? (
               <Button
                 component={NavLink}
                 to="/vendor/projects"
@@ -588,9 +715,11 @@ export function PortalLayout({ portal }) {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder={
-                  portal === "vendor"
-                    ? "Search leads, projects, payments…"
-                    : "Search bookings, projects, savings…"
+                  portal === "admin"
+                    ? "Search systems or leads..."
+                    : portal === "vendor"
+                      ? "Search leads, projects, payments..."
+                      : "Search bookings, projects, savings..."
                 }
                 sx={{
                   "& .MuiOutlinedInput-root": {
@@ -662,9 +791,11 @@ export function PortalLayout({ portal }) {
                   <Typography
                     sx={{ mt: 0.2, color: "#7A8799", fontSize: "0.7rem" }}
                   >
-                    {portal === "vendor"
-                      ? "Live vendor activity summary"
-                      : "Your account activity"}
+                    {portal === "admin"
+                      ? "Operational activity summary"
+                      : portal === "vendor"
+                        ? "Live vendor activity summary"
+                        : "Your account activity"}
                   </Typography>
                 </Box>
 
@@ -723,7 +854,11 @@ export function PortalLayout({ portal }) {
               <Stack
                 component={NavLink}
                 to={
-                  portal === "vendor" ? "/vendor/services" : "/service-support"
+                  portal === "admin"
+                    ? "/admin/notifications"
+                    : portal === "vendor"
+                      ? "/vendor/services"
+                      : "/service-support"
                 }
                 direction="row"
                 spacing={0.5}
@@ -749,7 +884,7 @@ export function PortalLayout({ portal }) {
                 alignItems="center"
                 sx={{ pl: 0.4, textDecoration: "none" }}
                 component={NavLink}
-                to={`/${portal}/profile`}
+                to={portal === "admin" ? "/admin/settings" : `/${portal}/profile`}
                 color="inherit"
               >
                 <Avatar
@@ -798,7 +933,7 @@ export function PortalLayout({ portal }) {
               py: { xs: 3.8, md: 4.6 },
               px: { xs: 2.2, md: 3.6, lg: 4.2 },
               flex: 1,
-              bgcolor: "#FFFFFF",
+              bgcolor: portal === "admin" ? "#F5F8F6" : "#FFFFFF",
               borderLeft: { lg: "1px solid rgba(220,228,238,0.92)" },
               borderRight: { lg: "1px solid rgba(220,228,238,0.92)" },
               borderBottom: { lg: "1px solid rgba(220,228,238,0.92)" },

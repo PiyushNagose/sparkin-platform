@@ -78,6 +78,14 @@ async function ensureProfile(user) {
 }
 
 export const vendorsService = {
+  async listVendors(user) {
+    if (user.role !== "admin") {
+      throw new AppError(403, "Only admins can view all vendors");
+    }
+
+    return vendorsRepository.findAll();
+  },
+
   async listFeaturedVendors() {
     const profiles = await vendorsRepository.listFeatured(6);
 

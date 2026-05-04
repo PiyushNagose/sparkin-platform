@@ -3,6 +3,7 @@ import { AuthLayout } from "@/app/layouts/AuthLayout";
 import { PortalLayout } from "@/app/layouts/PortalLayout";
 import { PublicLayout } from "@/app/layouts/PublicLayout";
 import { RequireAuth } from "@/features/auth/RequireAuth";
+import { adminRoutes } from "@/features/admin/routes";
 import { authRoutes } from "@/features/auth/routes";
 import { customerRoutes } from "@/features/customer/routes";
 import { publicRoutes } from "@/features/public/routes";
@@ -24,6 +25,16 @@ export const appRouter = createBrowserRouter([
         path: "/auth",
         element: <AuthLayout />,
         children: authRoutes,
+      },
+      {
+        path: "/admin",
+        element: <RequireAuth allowedRoles={["admin"]} />,
+        children: [
+          {
+            element: <PortalLayout portal="admin" />,
+            children: adminRoutes,
+          },
+        ],
       },
       {
         path: "/customer",
