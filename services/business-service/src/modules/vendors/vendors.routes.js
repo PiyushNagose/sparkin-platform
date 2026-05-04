@@ -3,7 +3,7 @@ import { requireAuth } from "../../common/middleware/require-auth.js";
 import { validate } from "../../common/middleware/validate.js";
 import { asyncHandler } from "../../common/utils/async-handler.js";
 import { vendorsController } from "./vendors.controller.js";
-import { updateVendorProfileSchema, uploadVendorDocumentSchema } from "./vendors.schemas.js";
+import { updateVendorProfileSchema, updateVendorStatusSchema, uploadVendorDocumentSchema } from "./vendors.schemas.js";
 
 export const vendorsRouter = Router();
 
@@ -21,4 +21,5 @@ vendorsRouter.post(
 vendorsRouter.delete("/me/documents/:documentId", requireAuth, asyncHandler(vendorsController.deleteDocument));
 vendorsRouter.post("/me/submit", requireAuth, asyncHandler(vendorsController.submitApplication));
 
+vendorsRouter.patch("/:vendorId/status", requireAuth, validate(updateVendorStatusSchema), asyncHandler(vendorsController.updateStatus));
 vendorsRouter.get("/:vendorId", asyncHandler(vendorsController.getByVendorId));

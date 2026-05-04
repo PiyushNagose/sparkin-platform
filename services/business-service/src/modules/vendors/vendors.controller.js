@@ -26,6 +26,15 @@ export const vendorsController = {
     res.status(200).json({ vendorProfile });
   },
 
+  async updateStatus(req, res) {
+    const vendorProfile = await vendorsService.updateVendorStatus(
+      req.auth,
+      req.params.vendorId,
+      req.body,
+    );
+    res.status(200).json({ vendorProfile });
+  },
+
   async uploadDocument(req, res) {
     const vendorProfile = await vendorsService.uploadDocument(req.auth, req.body);
     res.status(201).json({ vendorProfile });

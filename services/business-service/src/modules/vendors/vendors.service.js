@@ -130,6 +130,22 @@ export const vendorsService = {
     return vendorsRepository.updateByVendorId(user.userId, patch);
   },
 
+  async updateVendorStatus(user, vendorId, input) {
+    if (user.role !== "admin") {
+      throw new AppError(403, "Only admins can update vendor status");
+    }
+
+    const existing = await vendorsRepository.findByVendorId(vendorId);
+
+    if (!existing) {
+      throw new AppError(404, "Vendor profile not found");
+    }
+
+    return vendorsRepository.updateByVendorId(vendorId, {
+      verificationStatus: input.verificationStatus,
+    });
+  },
+
   async uploadDocument(user, input) {
     assertVendor(user);
     await ensureProfile(user);
