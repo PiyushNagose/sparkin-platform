@@ -29,27 +29,46 @@ export const paymentsRepository = {
   },
 
   async findForProject(projectId) {
-    const payments = await PaymentModel.find({ projectId }).sort({ dueAt: 1 }).lean({ virtuals: true });
+    const payments = await PaymentModel.find({ projectId })
+      .sort({ dueAt: 1 })
+      .lean({ virtuals: true });
     return normalizePayments(payments);
   },
 
   async findById(paymentId) {
-    const payment = await PaymentModel.findById(paymentId).lean({ virtuals: true });
+    const payment = await PaymentModel.findById(paymentId).lean({
+      virtuals: true,
+    });
     return normalizePayment(payment);
   },
 
   async findForCustomer(customerId) {
-    const payments = await PaymentModel.find({ customerId }).sort({ createdAt: -1 }).lean({ virtuals: true });
+    const payments = await PaymentModel.find({ customerId })
+      .sort({ createdAt: -1 })
+      .lean({ virtuals: true });
     return normalizePayments(payments);
   },
 
   async findForVendor(vendorId) {
-    const payments = await PaymentModel.find({ vendorId }).sort({ createdAt: -1 }).lean({ virtuals: true });
+    const payments = await PaymentModel.find({ vendorId })
+      .sort({ createdAt: -1 })
+      .lean({ virtuals: true });
     return normalizePayments(payments);
   },
 
   async findAll() {
-    const payments = await PaymentModel.find({}).sort({ createdAt: -1 }).lean({ virtuals: true });
+    const payments = await PaymentModel.find({})
+      .sort({ createdAt: -1 })
+      .lean({ virtuals: true });
     return normalizePayments(payments);
+  },
+
+  async update(paymentId, updates) {
+    const payment = await PaymentModel.findByIdAndUpdate(
+      paymentId,
+      { $set: updates },
+      { new: true },
+    ).lean({ virtuals: true });
+    return normalizePayment(payment);
   },
 };

@@ -20,7 +20,17 @@ export const paymentsApi = {
   },
 
   async getPayment(paymentId) {
-    const { data } = await fulfillmentClient.get(`/payments/${requireId(paymentId, "Payment id")}`);
+    const { data } = await fulfillmentClient.get(
+      `/payments/${requireId(paymentId, "Payment id")}`,
+    );
+    return data.payment;
+  },
+
+  async updatePaymentStatus(paymentId, payload) {
+    const { data } = await fulfillmentClient.patch(
+      `/payments/${requireId(paymentId, "Payment id")}/status`,
+      payload,
+    );
     return data.payment;
   },
 };
