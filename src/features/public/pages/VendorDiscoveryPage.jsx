@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Box, Button, Container, Grid, Stack, Typography } from "@mui/material";
+import { useEffect, useState } from "react";
+import { Box, Button, CircularProgress, Container, Grid, Stack, Typography } from "@mui/material";
 import { Link as RouterLink } from "react-router-dom";
 import PlaceOutlinedIcon from "@mui/icons-material/PlaceOutlined";
 import StarRoundedIcon from "@mui/icons-material/StarRounded";
@@ -9,6 +9,7 @@ import KeyboardArrowDownRoundedIcon from "@mui/icons-material/KeyboardArrowDownR
 import vendorHeroPlaceholder from "@/shared/assets/images/public/vendors/vendor-discovery-hero-placeholder.png";
 import vendorConsultPlaceholder from "@/shared/assets/images/public/vendors/vendor-consult-placeholder.png";
 import styles from "@/app/layouts/PublicLayout.module.css";
+import { publicVendorsApi } from "@/features/public/api/vendorsApi";
 
 const filterChips = [
   { label: "Location", icon: <PlaceOutlinedIcon sx={{ fontSize: "0.85rem" }} /> },
@@ -17,93 +18,54 @@ const filterChips = [
   { label: "Services", icon: <TuneRoundedIcon sx={{ fontSize: "0.85rem" }} /> },
 ];
 
-const vendors = [
-  {
-    name: "Total Power Solar",
-    location: "Mumbai, Maharashtra",
-    expertise: "20+ Years",
-    projects: "58+ Projects",
-    rating: "4.2",
-    reviews: "125 reviews",
-    tags: [
-      { label: "Installation", color: "#0A7A40", bg: "#EDFFF5" },
-      { label: "Maintenance", color: "#0A7A40", bg: "#EDFFF5" },
-      { label: "Financing", color: "#0E56C8", bg: "#EEF4FF" },
-    ],
-    logoColor: "#154D9F",
-    logoText: "TP",
-  },
-  {
-    name: "Adani Solar",
-    location: "Ahmedabad, Gujarat",
-    expertise: "10+ Years",
-    projects: "48+ Projects",
-    rating: "4.6",
-    reviews: "180 reviews",
-    tags: [
-      { label: "Installation", color: "#0A7A40", bg: "#EDFFF5" },
-      { label: "Commercial", color: "#0A7A40", bg: "#EDFFF5" },
-    ],
-    logoColor: "#2D8A43",
-    logoText: "AS",
-  },
-  {
-    name: "Loom Solar",
-    location: "Faridabad, Haryana",
-    expertise: "8+ Years",
-    projects: "41+ Projects",
-    rating: "4.7",
-    reviews: "160 reviews",
-    tags: [
-      { label: "Installation", color: "#0A7A40", bg: "#EDFFF5" },
-      { label: "Off Grid Solutions", color: "#0A7A40", bg: "#EDFFF5" },
-    ],
-    logoColor: "#C47A00",
-    logoText: "LS",
-  },
-  {
-    name: "Waaree Energies",
-    location: "Surat, Gujarat",
-    expertise: "20+ Years",
-    projects: "155+ Projects",
-    rating: "4.9",
-    reviews: "175 reviews",
-    tags: [
-      { label: "Manufacturing", color: "#0A7A40", bg: "#EDFFF5" },
-      { label: "Consulting", color: "#0A7A40", bg: "#EDFFF5" },
-    ],
-    logoColor: "#0E7A6A",
-    logoText: "WE",
-  },
-  {
-    name: "Vikram Solar",
-    location: "Kolkata, West Bengal",
-    expertise: "13+ Years",
-    projects: "75+ Projects",
-    rating: "4.6",
-    reviews: "130 reviews",
-    tags: [
-      { label: "Installation", color: "#0A7A40", bg: "#EDFFF5" },
-      { label: "PV Modules", color: "#0A7A40", bg: "#EDFFF5" },
-    ],
-    logoColor: "#233B63",
-    logoText: "VS",
-  },
-  {
-    name: "Servotech",
-    location: "New Delhi, Delhi",
-    expertise: "10+ Years",
-    projects: "35+ Projects",
+const logoColors = ["#154D9F", "#2D8A43", "#C47A00", "#0E7A6A", "#233B63", "#C04A20"];
+
+function getLogoText(name) {
+  const words = (name || "").trim().split(/\s+/);
+  if (words.length >= 2) return (words[0][0] + words[1][0]).toUpperCase();
+  return (name || "??").slice(0, 2).toUpperCase();
+}
+
+function getLogoColor(index) {
+  return logoColors[index % logoColors.length];
+}
+
+function buildServiceTags(services) {
+  const map = {
+    installation: "Installation",
+    maintenance: "Maintenance",
+    siteSurvey: "Site Survey",
+    consultation: "Consultation",
+  };
+  return Object.entries(services || {})
+    .filter(([, enabled]) => enabled)
+    .map(([key]) => ({
+      label: map[key] || key,
+      color: "#0A7A40",
+      bg: "#EDFFF5",
+    }));
+}
+
+function normalizeVendor(profile, index) {
+  const city = profile.company?.city || "";
+  const state = profile.company?.state || "";
+  const location = [city, state].filter(Boolean).join(", ") || "India";
+  const years = profile.company?.experienceYears;
+  const projects = profile.company?.projectsCompleted;
+
+  return {
+    vendorId: profile.vendorId,
+    name: profile.company?.name || "Verified Partner",
+    location,
+    expertise: years ? `${years}+ Years` : "Experienced",
+    projects: projects ? `${projects}+ Projects` : "Multiple Projects",
     rating: "4.5",
-    reviews: "120 reviews",
-    tags: [
-      { label: "Inverters", color: "#0A7A40", bg: "#EDFFF5" },
-      { label: "Maintenance", color: "#0A7A40", bg: "#EDFFF5" },
-    ],
-    logoColor: "#C04A20",
-    logoText: "ST",
-  },
-];
+    reviews: "Verified",
+    tags: buildServiceTags(profile.services),
+    logoColor: getLogoColor(index),
+    logoText: getLogoText(profile.company?.name || "VP"),
+  };
+}
 
 function VendorCard({ vendor }) {
   return (
@@ -251,7 +213,7 @@ function VendorCard({ vendor }) {
         <Stack direction="row" spacing={1.2} sx={{ mt: "auto" }}>
           <Button
             component={RouterLink}
-            to="/vendors/tata-power-solar"
+            to={`/vendors/${vendor.vendorId}`}
             variant="contained"
             sx={{
               flex: 1,
@@ -268,7 +230,7 @@ function VendorCard({ vendor }) {
           </Button>
           <Button
             component={RouterLink}
-            to="/booking"
+            to="/quotes/compare"
             variant="outlined"
             sx={{
               flex: 1,
@@ -294,6 +256,18 @@ function VendorCard({ vendor }) {
 
 export default function VendorDiscoveryPage() {
   const [activeFilter, setActiveFilter] = useState(null);
+  const [vendors, setVendors] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    publicVendorsApi.listFeaturedVendors().then((profiles) => {
+      if (active) setVendors(profiles.map(normalizeVendor));
+    }).catch(() => {}).finally(() => {
+      if (active) setIsLoading(false);
+    });
+    return () => { active = false; };
+  }, []);
 
   return (
     <Box sx={{ bgcolor: "#F7FAFB" }}>
@@ -461,8 +435,14 @@ export default function VendorDiscoveryPage() {
 
         {/* Vendor grid */}
         <Grid container spacing={{ xs: 2, md: 2.2 }}>
-          {vendors.map((vendor) => (
-            <Grid key={vendor.name} size={{ xs: 12, sm: 6, md: 4 }}>
+          {isLoading ? (
+            <Grid size={{ xs: 12 }}>
+              <Box sx={{ py: 6, display: "grid", placeItems: "center" }}>
+                <CircularProgress />
+              </Box>
+            </Grid>
+          ) : vendors.map((vendor) => (
+            <Grid key={vendor.vendorId} size={{ xs: 12, sm: 6, md: 4 }}>
               <VendorCard vendor={vendor} />
             </Grid>
           ))}

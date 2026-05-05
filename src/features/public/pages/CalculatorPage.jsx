@@ -224,8 +224,12 @@ export default function CalculatorPage() {
                   borderRadius: "0.85rem",
                   fontSize: "1rem",
                   fontWeight: 700,
-                  background: "linear-gradient(90deg, #0E56C8 0%, #1BC17B 100%)",
-                  boxShadow: "0 10px 24px rgba(27,193,123,0.18)",
+                  background: "linear-gradient(180deg, #1A66E8 0%, #0E56C8 100%)",
+                  boxShadow: "0 10px 24px rgba(14,86,200,0.18)",
+                  "&:hover": {
+                    background: "linear-gradient(180deg, #2C76F0 0%, #145FCF 100%)",
+                    boxShadow: "0 16px 30px rgba(14,86,200,0.22)",
+                  },
                 }}
               >
                 {isSubmitting ? "Calculating..." : "Calculate Savings"}
