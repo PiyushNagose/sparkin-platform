@@ -2,7 +2,12 @@ import mongoose from "mongoose";
 
 const quoteSchema = new mongoose.Schema(
   {
-    leadId: { type: mongoose.Schema.Types.ObjectId, required: true, index: true, ref: "Lead" },
+    leadId: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: true,
+      index: true,
+      ref: "Lead",
+    },
     customerId: { type: String, required: true, index: true },
     vendorId: { type: String, required: true, index: true },
     vendorEmail: { type: String, trim: true, lowercase: true, default: null },
@@ -51,4 +56,8 @@ const quoteSchema = new mongoose.Schema(
   },
 );
 
-export const QuoteModel = mongoose.models.Quote ?? mongoose.model("Quote", quoteSchema);
+// Enforce one quote per vendor per lead at the DB level
+quoteSchema.index({ vendorId: 1, leadId: 1 }, { unique: true });
+
+export const QuoteModel =
+  mongoose.models.Quote ?? mongoose.model("Quote", quoteSchema);

@@ -5,9 +5,15 @@ import { quotesRepository } from "./quotes.repository.js";
 import mongoose from "mongoose";
 
 async function attachLeads(quotes) {
-  const leadIds = [...new Set(quotes.map((quote) => quote.leadId?.toString()).filter(Boolean))];
-  const leads = leadIds.length ? await leadsRepository.findLeadsByIds(leadIds) : [];
-  const leadById = new Map(leads.map((lead) => [String(lead.id || lead._id), lead]));
+  const leadIds = [
+    ...new Set(quotes.map((quote) => quote.leadId?.toString()).filter(Boolean)),
+  ];
+  const leads = leadIds.length
+    ? await leadsRepository.findLeadsByIds(leadIds)
+    : [];
+  const leadById = new Map(
+    leads.map((lead) => [String(lead.id || lead._id), lead]),
+  );
 
   return quotes.map((quote) => ({
     ...quote,
@@ -31,7 +37,10 @@ export const quotesService = {
       throw new AppError(404, "Lead not found");
     }
 
-    const existingQuote = await quotesRepository.findQuoteByVendorAndLead(user.userId, leadId);
+    const existingQuote = await quotesRepository.findQuoteByVendorAndLead(
+      user.userId,
+      leadId,
+    );
 
     if (existingQuote) {
       if (existingQuote.status === "accepted") {
@@ -84,7 +93,9 @@ export const quotesService = {
     }
 
     if (user.role === "vendor") {
-      return attachLeads(await quotesRepository.findQuotesByVendor(user.userId));
+      return attachLeads(
+        await quotesRepository.findQuotesByVendor(user.userId),
+      );
     }
 
     if (user.role === "admin") {
@@ -93,7 +104,9 @@ export const quotesService = {
 
     const leads = await leadsRepository.findLeadsForCustomer(user.userId);
     const leadIds = leads.map((lead) => lead._id || lead.id).filter(Boolean);
-    return attachLeads(await quotesRepository.findQuotesByCustomer(user.userId, leadIds));
+    return attachLeads(
+      await quotesRepository.findQuotesByCustomer(user.userId, leadIds),
+    );
   },
 
   async getQuote(user, quoteId) {
@@ -153,14 +166,40 @@ export const quotesService = {
     const canSelect = user.role === "admin" || lead.customerId === user.userId;
 
     if (!canSelect) {
-      throw new AppError(403, "You can only select vendors for your own bookings");
+      throw new AppError(
+        403,
+        "You can only select vendors for your own bookings",
+      );
     }
 
-    if (lead.status === "quote_selected" && lead.selection?.quoteId?.toString() !== quoteId) {
-      throw new AppError(409, "A vendor has already been selected for this booking");
+    if (
+      lead.status === "quote_selected" &&
+      lead.selection?.quoteId?.toString() !== quoteId
+    ) {
+      throw new AppError(
+        409,
+        "A vendor has already been selected for this booking",
+      );
     }
 
-    const acceptedQuote = await quotesRepository.acceptQuote(quoteId, quote.leadId);
+    // If this exact quote is already accepted and lead already selected, return existing state
+    if (
+      quote.status === "accepted" &&
+      lead.status === "quote_selected" &&
+      lead.selection?.quoteId?.toString() === quoteId
+    ) {
+      const project = await fulfillmentClient.createProjectFromAcceptedQuote({
+        lead,
+        quote,
+        authorization,
+      });
+      return { quote, lead, project };
+    }
+
+    const acceptedQuote = await quotesRepository.acceptQuote(
+      quoteId,
+      quote.leadId,
+    );
     const selectedLead = await leadsRepository.markQuoteSelected(quote.leadId, {
       quoteId,
       vendorId: quote.vendorId,

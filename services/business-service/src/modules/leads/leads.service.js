@@ -12,6 +12,23 @@ export const leadsService = {
     const isAdminCreated = user.role === "admin";
     const isManualLead = isVendorCreated || isAdminCreated;
 
+    // Idempotency guard for customers: block duplicate submissions within 60 seconds
+    if (!isManualLead) {
+      const recentLeads = await leadsRepository.findLeadsForCustomer(
+        user.userId,
+      );
+      const sixtySecondsAgo = new Date(Date.now() - 60_000);
+      const recentDuplicate = recentLeads.find(
+        (lead) =>
+          lead.status === "submitted" &&
+          new Date(lead.submittedAt || lead.createdAt) > sixtySecondsAgo &&
+          lead.contact?.phoneNumber === input.contact?.phoneNumber,
+      );
+      if (recentDuplicate) {
+        return recentDuplicate; // return existing lead silently — idempotent
+      }
+    }
+
     const lead = await leadsRepository.createLead({
       ...input,
       customerId: isManualLead
