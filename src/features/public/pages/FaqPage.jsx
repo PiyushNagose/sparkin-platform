@@ -36,7 +36,7 @@ const faqs = [
   {
     question: "How long does the typical installation process take?",
     answer:
-      "The physical installation of panels usually takes only 1-3 days depending on the size of your roof. However, the entire process - including site assessment, design, permitting, and final utility interconnection - typically takes between 4 to 8 weeks from the moment you sign your contract.",
+      "The physical installation of panels usually takes only 1–3 days depending on the size of your roof. However, the entire process — including site assessment, design, permitting, and final utility interconnection — typically takes between 4 to 8 weeks from the moment you sign your contract.",
     highlights: [
       { label: "Permitting", text: "Handled by your specialist team" },
       { label: "Grid Connect", text: "Final utility inspection required" },
@@ -44,15 +44,39 @@ const faqs = [
   },
   {
     question: "What happens to my energy production on cloudy days?",
+    answer:
+      "Solar panels still generate electricity on cloudy days — just at a reduced output, typically 10–25% of their rated capacity. Modern monocrystalline panels are designed to capture diffuse light effectively. On overcast days your system draws the shortfall from the grid, and any surplus generated on sunny days can be exported back via net metering to offset those costs.",
+    highlights: [
+      { label: "Cloudy Output", text: "10–25% of peak capacity retained" },
+      { label: "Net Metering", text: "Surplus credits offset grid usage" },
+    ],
   },
   {
     question: "Do solar panels require regular maintenance?",
+    answer:
+      "Solar panels are largely maintenance-free. The main task is periodic cleaning — typically every 3 to 6 months — to remove dust, bird droppings, and debris that can reduce efficiency. Most reputable installers include an Annual Maintenance Contract (AMC) covering cleaning visits, inverter health checks, and wiring inspections. Panels themselves carry a 25-year performance warranty.",
+    highlights: [
+      { label: "Cleaning", text: "Every 3–6 months recommended" },
+      { label: "AMC", text: "Annual check-up usually included" },
+    ],
   },
   {
     question: "How much can I realistically save on my monthly bill?",
+    answer:
+      "Savings depend on your current consumption, local electricity tariff, and system size. On average, a 5 kW residential system in Telangana or Andhra Pradesh can offset 60–90% of a household's monthly bill, translating to ₹1,500–₹4,000 in monthly savings. Over a 25-year panel life, total savings typically range from ₹8–₹15 lakhs after accounting for the initial investment.",
+    highlights: [
+      { label: "Monthly Saving", text: "₹1,500–₹4,000 on average" },
+      { label: "Payback Period", text: "Typically 4–6 years" },
+    ],
   },
   {
     question: "What are the available government solar subsidies?",
+    answer:
+      "Under the PM Surya Ghar Muft Bijli Yojana, residential consumers can avail a central subsidy of up to ₹78,000 for systems up to 3 kW, and proportionally higher for larger systems. Several state governments in Andhra Pradesh, Telangana, and Karnataka also offer additional incentives. Our platform automatically factors in applicable subsidies when generating your savings estimate.",
+    highlights: [
+      { label: "Central Subsidy", text: "Up to ₹78,000 under PM Surya Ghar" },
+      { label: "State Schemes", text: "Additional benefits in AP, TS & KA" },
+    ],
   },
 ];
 
@@ -132,22 +156,7 @@ export default function FaqPage() {
               startAdornment: (
                 <SearchRoundedIcon sx={{ color: "#8B97A9", fontSize: "1rem", mr: 1 }} />
               ),
-              endAdornment: (
-                <Box
-                  sx={{
-                    px: 0.8,
-                    py: 0.35,
-                    borderRadius: "0.65rem",
-                    bgcolor: "#F5F7FB",
-                    border: "1px solid #E6EBF3",
-                    color: "#7D889A",
-                    fontSize: "0.72rem",
-                    fontWeight: 700,
-                  }}
-                >
-                  Ctrl + F
-                </Box>
-              ),
+
               sx: {
                 minHeight: { xs: 54, md: 56 },
                 borderRadius: "0.9rem",
@@ -262,7 +271,7 @@ export default function FaqPage() {
                   </Typography>
                 </AccordionSummary>
 
-                {index === 0 && (
+                {item.answer && (
                   <AccordionDetails
                     sx={{
                       px: { xs: 1.6, md: 2.5 },
