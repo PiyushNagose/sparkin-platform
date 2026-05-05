@@ -23,8 +23,10 @@ import ChatOutlinedIcon from "@mui/icons-material/ChatOutlined";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import DashboardRoundedIcon from "@mui/icons-material/DashboardRounded";
 import GavelOutlinedIcon from "@mui/icons-material/GavelOutlined";
+import GroupAddOutlinedIcon from "@mui/icons-material/GroupAddOutlined";
 import Groups2OutlinedIcon from "@mui/icons-material/Groups2Outlined";
 import HeadsetMicOutlinedIcon from "@mui/icons-material/HeadsetMicOutlined";
+import LocalOfferOutlinedIcon from "@mui/icons-material/LocalOfferOutlined";
 import HelpOutlineRoundedIcon from "@mui/icons-material/HelpOutlineRounded";
 import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
 import MenuRoundedIcon from "@mui/icons-material/MenuRounded";
@@ -91,6 +93,8 @@ const ADMIN_NAV_ICONS = {
   Notifications: NotificationsNoneRoundedIcon,
   "Broadcast": CampaignOutlinedIcon,
   "Help Desk": HeadsetMicOutlinedIcon,
+  "Vendor Applications": GroupAddOutlinedIcon,
+  "Offers": LocalOfferOutlinedIcon,
 };
 
 const VENDOR_SEARCH_ROUTES = [

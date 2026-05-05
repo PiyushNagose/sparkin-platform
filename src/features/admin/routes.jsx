@@ -10,7 +10,10 @@ import AdminProjectsPage from "@/features/admin/pages/AdminProjectsPage";
 import AdminReportsPage from "@/features/admin/pages/AdminReportsPage";
 import AdminServicesPage from "@/features/admin/pages/AdminServicesPage";
 import AdminSettingsPage from "@/features/admin/pages/AdminSettingsPage";
+import AdminCreateOfferPage from "@/features/admin/pages/AdminCreateOfferPage";
+import AdminOffersPage from "@/features/admin/pages/AdminOffersPage";
 import AdminTicketDetailPage from "@/features/admin/pages/AdminTicketDetailPage";
+import AdminVendorApplicationsPage from "@/features/admin/pages/AdminVendorApplicationsPage";
 import AdminVendorAssignmentPage from "@/features/admin/pages/AdminVendorAssignmentPage";
 import AdminVendorsPage from "@/features/admin/pages/AdminVendorsPage";
 
@@ -86,5 +89,17 @@ export const adminRoutes = [
   {
     path: "broadcast",
     element: <AdminBroadcastPage />,
+  },
+  {
+    path: "offers",
+    element: <AdminOffersPage />,
+  },
+  {
+    path: "offers/create",
+    element: <AdminCreateOfferPage />,
+  },
+  {
+    path: "vendor-applications",
+    element: <AdminVendorApplicationsPage />,
   },
 ];
