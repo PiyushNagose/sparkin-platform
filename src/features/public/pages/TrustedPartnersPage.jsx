@@ -14,6 +14,7 @@ import {
   publicPageSpacing,
   publicTypography,
 } from "@/features/public/pages/publicPageStyles";
+import styles from "@/app/layouts/PublicLayout.module.css";
 
 const verificationLogos = [
   "Tata Power",
@@ -101,7 +102,7 @@ export default function TrustedPartnersPage() {
           boxShadow: "0 18px 30px rgba(16,29,51,0.12)",
         }}
       >
-        <Container maxWidth="lg">
+        <Container maxWidth={false} disableGutters className={styles.publicContentContainer}>
           <Box
             sx={{
               minHeight: { xs: 360, md: 430 },
@@ -179,7 +180,7 @@ export default function TrustedPartnersPage() {
         </Container>
       </Box>
 
-      <Container maxWidth="lg">
+      <Container maxWidth={false} disableGutters className={styles.publicContentContainer}>
         <Box sx={{ mt: { xs: 7.5, md: 9.5 } }}>
           <Typography
             sx={{

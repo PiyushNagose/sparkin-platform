@@ -2484,11 +2484,11 @@ function HomePage() {
             </Typography>
           </Stack>
 
-          <Grid container spacing={{ xs: 2.5, md: 3 }} sx={{ mt: 5.25 }}>
-            {serviceCards.map((card) => (
+          <Grid container spacing={{ xs: 2.5, md: 3 }} sx={{ mt: 5.25, alignItems: "stretch" }}>
+            {serviceCards.map((card, idx) => (
               <Grid
                 key={card.title}
-                size={{ xs: 12, md: 4 }}
+                size={{ xs: 12, md: idx === 1 ? 4.4 : 3.8 }}
                 sx={{ display: "flex" }}
               >
                 <Box
@@ -2499,7 +2499,7 @@ function HomePage() {
                     height: "100%",
                     borderRadius: "2.25rem",
                     overflow: "hidden",
-                    minHeight: 438,
+                    minHeight: idx === 1 ? 520 : 438,
                     backgroundImage: `url(${card.image})`,
                     backgroundSize: "cover",
                     backgroundPosition: "center",
