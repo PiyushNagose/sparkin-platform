@@ -17,10 +17,18 @@ import { publicPrimaryNav } from "@/shared/config/navigation";
 import logoPlaceholder from "@/shared/assets/logo-placeholder.png";
 import styles from "@/app/layouts/PublicLayout.module.css";
 import { AppFooter } from "@/shared/components/AppFooter";
+import { useAuth } from "@/features/auth/AuthProvider";
 
 export function PublicLayout() {
   const { pathname } = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { user } = useAuth();
+
+  // Derive dashboard path based on role
+  const dashboardPath =
+    user?.role === "admin" ? "/admin" :
+    user?.role === "vendor" ? "/vendor" :
+    "/customer";
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
@@ -95,26 +103,49 @@ export function PublicLayout() {
               className={styles.navActions}
               sx={{ display: { xs: "none", sm: "flex" } }}
             >
-              <Button
-                component={RouterLink}
-                to="/auth/login"
-                variant="outlined"
-                color="inherit"
-                sx={{
-                  minWidth: 136,
-                  minHeight: 36,
-                  px: 3.7,
-                  py: 0.25,
-                  borderRadius: "0.35rem",
-                  borderColor: "#0E56C8",
-                  color: "#10192F",
-                  fontSize: "0.8rem",
-                  fontWeight: 700,
-                  textTransform: "none",
-                }}
-              >
-                Login
-              </Button>
+              {user ? (
+                <Button
+                  component={RouterLink}
+                  to={dashboardPath}
+                  variant="outlined"
+                  color="inherit"
+                  sx={{
+                    minWidth: 136,
+                    minHeight: 36,
+                    px: 3.7,
+                    py: 0.25,
+                    borderRadius: "0.35rem",
+                    borderColor: "#0E56C8",
+                    color: "#0E56C8",
+                    fontSize: "0.8rem",
+                    fontWeight: 700,
+                    textTransform: "none",
+                  }}
+                >
+                  Dashboard
+                </Button>
+              ) : (
+                <Button
+                  component={RouterLink}
+                  to="/auth/login"
+                  variant="outlined"
+                  color="inherit"
+                  sx={{
+                    minWidth: 136,
+                    minHeight: 36,
+                    px: 3.7,
+                    py: 0.25,
+                    borderRadius: "0.35rem",
+                    borderColor: "#0E56C8",
+                    color: "#10192F",
+                    fontSize: "0.8rem",
+                    fontWeight: 700,
+                    textTransform: "none",
+                  }}
+                >
+                  Login
+                </Button>
+              )}
               <Button
                 component={RouterLink}
                 to="/booking"
@@ -216,21 +247,39 @@ export function PublicLayout() {
           </Stack>
 
           <Stack spacing={1.1} sx={{ mt: "auto" }}>
-            <Button
-              component={RouterLink}
-              to="/auth/login"
-              variant="outlined"
-              sx={{
-                minHeight: 46,
-                borderRadius: "0.85rem",
-                borderColor: "#0E56C8",
-                color: "#10192F",
-                fontWeight: 800,
-                textTransform: "none",
-              }}
-            >
-              Login
-            </Button>
+            {user ? (
+              <Button
+                component={RouterLink}
+                to={dashboardPath}
+                variant="outlined"
+                sx={{
+                  minHeight: 46,
+                  borderRadius: "0.85rem",
+                  borderColor: "#0E56C8",
+                  color: "#0E56C8",
+                  fontWeight: 800,
+                  textTransform: "none",
+                }}
+              >
+                Dashboard
+              </Button>
+            ) : (
+              <Button
+                component={RouterLink}
+                to="/auth/login"
+                variant="outlined"
+                sx={{
+                  minHeight: 46,
+                  borderRadius: "0.85rem",
+                  borderColor: "#0E56C8",
+                  color: "#10192F",
+                  fontWeight: 800,
+                  textTransform: "none",
+                }}
+              >
+                Login
+              </Button>
+            )}
             <Button
               component={RouterLink}
               to="/booking"

@@ -142,6 +142,8 @@ export default function TrustedPartnersPage() {
               sx={{ mt: 2.35 }}
             >
               <Button
+                component={RouterLink}
+                to="/auth/login"
                 variant="contained"
                 sx={{
                   minHeight: 42,
@@ -157,6 +159,8 @@ export default function TrustedPartnersPage() {
                 Become a Partner
               </Button>
               <Button
+                component={RouterLink}
+                to="/resources"
                 variant="contained"
                 sx={{
                   minHeight: 42,
@@ -535,6 +539,8 @@ export default function TrustedPartnersPage() {
             sx={{ mt: 2.8, position: "relative" }}
           >
             <Button
+              component={RouterLink}
+              to="/auth/login"
               variant="contained"
               endIcon={<ArrowForwardRoundedIcon />}
               sx={{
@@ -550,23 +556,6 @@ export default function TrustedPartnersPage() {
               }}
             >
               Apply Now
-            </Button>
-            <Button
-              variant="contained"
-              sx={{
-                minWidth: 166,
-                minHeight: 44,
-                borderRadius: "0.72rem",
-                fontSize: "0.84rem",
-                fontWeight: 700,
-                textTransform: "none",
-                bgcolor: "rgba(255,255,255,0.12)",
-                color: "white",
-                border: "1px solid rgba(255,255,255,0.12)",
-                boxShadow: "none",
-              }}
-            >
-              Partner Handbook
             </Button>
           </Stack>
         </Box>

@@ -2488,7 +2488,7 @@ function HomePage() {
             {serviceCards.map((card, idx) => (
               <Grid
                 key={card.title}
-                size={{ xs: 12, md: idx === 1 ? 4.4 : 3.8 }}
+                size={{ xs: 12, md: 4 }}
                 sx={{ display: "flex" }}
               >
                 <Box
@@ -2499,7 +2499,7 @@ function HomePage() {
                     height: "100%",
                     borderRadius: "2.25rem",
                     overflow: "hidden",
-                    minHeight: idx === 1 ? 520 : 438,
+                    minHeight: 438,
                     backgroundImage: `url(${card.image})`,
                     backgroundSize: "cover",
                     backgroundPosition: "center",
