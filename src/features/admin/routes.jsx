@@ -1,4 +1,6 @@
-import AdminDashboardPage, { makeAdminPlaceholder } from "@/features/admin/pages/AdminDashboardPage";
+import AdminDashboardPage, {
+  makeAdminPlaceholder,
+} from "@/features/admin/pages/AdminDashboardPage";
 import AdminBiddingPage from "@/features/admin/pages/AdminBiddingPage";
 import AdminBroadcastPage from "@/features/admin/pages/AdminBroadcastPage";
 import AdminHelpDeskPage from "@/features/admin/pages/AdminHelpDeskPage";
@@ -14,6 +16,7 @@ import AdminCreateOfferPage from "@/features/admin/pages/AdminCreateOfferPage";
 import AdminOffersPage from "@/features/admin/pages/AdminOffersPage";
 import AdminTicketDetailPage from "@/features/admin/pages/AdminTicketDetailPage";
 import AdminVendorApplicationsPage from "@/features/admin/pages/AdminVendorApplicationsPage";
+import AdminVendorApplicationDetailPage from "@/features/admin/pages/AdminVendorApplicationDetailPage";
 import AdminVendorAssignmentPage from "@/features/admin/pages/AdminVendorAssignmentPage";
 import AdminVendorsPage from "@/features/admin/pages/AdminVendorsPage";
 
@@ -101,5 +104,9 @@ export const adminRoutes = [
   {
     path: "vendor-applications",
     element: <AdminVendorApplicationsPage />,
+  },
+  {
+    path: "vendor-applications/:vendorId",
+    element: <AdminVendorApplicationDetailPage />,
   },
 ];
