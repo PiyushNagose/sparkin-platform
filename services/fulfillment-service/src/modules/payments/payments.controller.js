@@ -12,7 +12,19 @@ export const paymentsController = {
   },
 
   async getById(req, res) {
-    const payment = await paymentsService.getPayment(req.auth, req.params.paymentId);
+    const payment = await paymentsService.getPayment(
+      req.auth,
+      req.params.paymentId,
+    );
+    res.status(200).json({ payment });
+  },
+
+  async updateStatus(req, res) {
+    const payment = await paymentsService.updateStatus(
+      req.auth,
+      req.params.paymentId,
+      req.body,
+    );
     res.status(200).json({ payment });
   },
 };

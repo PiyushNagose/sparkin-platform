@@ -6,6 +6,28 @@ export const createPaymentInvoiceSchema = z.object({
   amount: z.coerce.number().positive(),
   dueAt: z.string().trim().datetime().nullable().optional(),
   method: z
-    .enum(["upi", "net_banking", "card", "bank_transfer", "cash", "not_recorded"])
+    .enum([
+      "upi",
+      "net_banking",
+      "card",
+      "bank_transfer",
+      "cash",
+      "not_recorded",
+    ])
     .default("not_recorded"),
+});
+
+export const updatePaymentStatusSchema = z.object({
+  status: z.enum(["pending", "paid", "failed", "cancelled"]),
+  method: z
+    .enum([
+      "upi",
+      "net_banking",
+      "card",
+      "bank_transfer",
+      "cash",
+      "not_recorded",
+    ])
+    .optional(),
+  paidAt: z.string().trim().datetime().nullable().optional(),
 });
