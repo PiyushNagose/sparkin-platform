@@ -23,7 +23,13 @@ const leadSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["submitted", "reviewing", "open_for_quotes", "quote_selected", "closed"],
+      enum: [
+        "submitted",
+        "reviewing",
+        "open_for_quotes",
+        "quote_selected",
+        "closed",
+      ],
       default: "submitted",
       index: true,
     },
@@ -50,7 +56,11 @@ const leadSchema = new mongoose.Schema(
       roofType: { type: String, enum: ["flat", "sloped"], required: true },
       ownership: { type: String, enum: ["owned", "rented"], required: true },
       distributionCompany: { type: String, trim: true, default: null },
-      connectionType: { type: String, enum: ["single_phase", "three_phase", null], default: null },
+      connectionType: {
+        type: String,
+        enum: ["single_phase", "three_phase", null],
+        default: null,
+      },
       consumerNumber: { type: String, trim: true, default: null },
       sanctionedLoadKw: { type: Number, min: 0, default: null },
     },
@@ -73,10 +83,19 @@ const leadSchema = new mongoose.Schema(
     },
     notes: { type: String, trim: true, default: null },
     specialInstructions: { type: String, trim: true, default: null },
+    // Admin-set fields after verification
+    adminSystemSizeKw: { type: Number, min: 0, default: null },
+    estimatedCost: { type: Number, min: 0, default: null },
+    commitmentFeePaid: { type: Boolean, default: false },
+    commitmentFeePaidAt: { type: Date, default: null },
     assignedVendorIds: [{ type: String, trim: true }],
     vendorsAssignedAt: { type: Date, default: null },
     selection: {
-      quoteId: { type: mongoose.Schema.Types.ObjectId, ref: "Quote", default: null },
+      quoteId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Quote",
+        default: null,
+      },
       vendorId: { type: String, default: null },
       selectedAt: { type: Date, default: null },
     },
@@ -98,4 +117,5 @@ const leadSchema = new mongoose.Schema(
   },
 );
 
-export const LeadModel = mongoose.models.Lead ?? mongoose.model("Lead", leadSchema);
+export const LeadModel =
+  mongoose.models.Lead ?? mongoose.model("Lead", leadSchema);

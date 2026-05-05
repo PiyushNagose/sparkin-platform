@@ -17,12 +17,37 @@ export const leadsController = {
   },
 
   async updateStatus(req, res) {
-    const lead = await leadsService.updateLeadStatus(req.auth, req.params.leadId, req.body);
+    const lead = await leadsService.updateLeadStatus(
+      req.auth,
+      req.params.leadId,
+      req.body,
+    );
+    res.status(200).json({ lead });
+  },
+
+  async updateDetails(req, res) {
+    const lead = await leadsService.updateDetails(
+      req.auth,
+      req.params.leadId,
+      req.body,
+    );
+    res.status(200).json({ lead });
+  },
+
+  async markCommitmentPaid(req, res) {
+    const lead = await leadsService.markCommitmentPaid(
+      req.auth,
+      req.params.leadId,
+    );
     res.status(200).json({ lead });
   },
 
   async assignVendors(req, res) {
-    const lead = await leadsService.assignVendors(req.auth, req.params.leadId, req.body);
+    const lead = await leadsService.assignVendors(
+      req.auth,
+      req.params.leadId,
+      req.body,
+    );
     res.status(200).json({ lead });
   },
 };

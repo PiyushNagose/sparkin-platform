@@ -14,9 +14,15 @@ export const leadsService = {
 
     const lead = await leadsRepository.createLead({
       ...input,
-      customerId: isManualLead ? `manual:${user.userId}:${input.contact.phoneNumber}` : user.userId,
+      customerId: isManualLead
+        ? `manual:${user.userId}:${input.contact.phoneNumber}`
+        : user.userId,
       createdByVendorId: isVendorCreated ? user.userId : null,
-      source: isAdminCreated ? "admin_manual" : isVendorCreated ? "vendor_manual" : "customer_booking",
+      source: isAdminCreated
+        ? "admin_manual"
+        : isVendorCreated
+          ? "vendor_manual"
+          : "customer_booking",
       status: "submitted",
       submittedAt: new Date(),
     });
@@ -71,7 +77,10 @@ export const leadsService = {
     const lead = await this.getLead(user, leadId);
 
     if (lead.status === "quote_selected" && input.status !== "closed") {
-      throw new AppError(409, "Selected leads cannot be moved back into review");
+      throw new AppError(
+        409,
+        "Selected leads cannot be moved back into review",
+      );
     }
 
     return leadsRepository.updateStatus(leadId, input.status);
@@ -90,5 +99,32 @@ export const leadsService = {
 
     const vendorIds = [...new Set(input.vendorIds)];
     return leadsRepository.assignVendors(leadId, vendorIds);
+  },
+
+  async updateDetails(user, leadId, input) {
+    if (user.role !== "admin") {
+      throw new AppError(403, "Only admins can update lead details");
+    }
+
+    await this.getLead(user, leadId);
+
+    const updates = {};
+    if (input.adminSystemSizeKw !== undefined)
+      updates.adminSystemSizeKw = input.adminSystemSizeKw;
+    if (input.estimatedCost !== undefined)
+      updates.estimatedCost = input.estimatedCost;
+
+    return leadsRepository.updateDetails(leadId, updates);
+  },
+
+  async markCommitmentPaid(user, leadId) {
+    // Customers mark their own lead payment; admins can mark any
+    const lead = await this.getLead(user, leadId);
+
+    if (user.role === "customer" && lead.customerId !== user.userId) {
+      throw new AppError(403, "You can only update your own lead");
+    }
+
+    return leadsRepository.markCommitmentPaid(leadId);
   },
 };

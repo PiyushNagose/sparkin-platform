@@ -1,16 +1,10 @@
-import {
-  Box,
-  Button,
-  Container,
-  Stack,
-  Typography,
-} from "@mui/material";
+import { Box, Button, Container, Stack, Typography } from "@mui/material";
 import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
 import ImageSearchRoundedIcon from "@mui/icons-material/ImageSearchRounded";
 import LocalOfferOutlinedIcon from "@mui/icons-material/LocalOfferOutlined";
 import CompareArrowsRoundedIcon from "@mui/icons-material/CompareArrowsRounded";
 import RadioButtonUncheckedRoundedIcon from "@mui/icons-material/RadioButtonUncheckedRounded";
-import { Link as RouterLink } from "react-router-dom";
+import { Link as RouterLink, useLocation, useNavigate } from "react-router-dom";
 import styles from "@/features/public/pages/CalculatorPage.module.css";
 import {
   publicPageSpacing,
@@ -80,6 +74,60 @@ function NextStepItem({ icon, title, description }) {
 }
 
 export default function BookingSubmittedPage() {
+  const { state } = useLocation();
+  const leadId = state?.leadId;
+  const navigate = useNavigate();
+
+  if (!leadId) {
+    return (
+      <Box className={styles.pageShell}>
+        <Box
+          sx={{
+            py: publicPageSpacing.pageYCompact,
+            minHeight: "calc(100vh - 72px)",
+            background:
+              "radial-gradient(circle at top center, rgba(214,229,246,0.78) 0%, rgba(244,248,251,0.97) 24%, #F9FBFD 64%, #F7FAFB 100%)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <Stack
+            alignItems="center"
+            spacing={2}
+            sx={{ textAlign: "center", px: 2 }}
+          >
+            <Typography
+              sx={{ color: "#202938", fontSize: "1.1rem", fontWeight: 700 }}
+            >
+              No booking found
+            </Typography>
+            <Typography sx={{ color: "#707D90", fontSize: "0.9rem" }}>
+              It looks like you navigated here directly. Please start a new
+              booking.
+            </Typography>
+            <Button
+              component={RouterLink}
+              to="/booking"
+              variant="contained"
+              sx={{
+                minHeight: 44,
+                borderRadius: "0.85rem",
+                fontWeight: 700,
+                fontSize: "0.86rem",
+                textTransform: "none",
+                background: "linear-gradient(180deg, #0E56C8 0%, #0D49B0 100%)",
+                boxShadow: "0 12px 24px rgba(14,86,200,0.22)",
+              }}
+            >
+              Start Booking
+            </Button>
+          </Stack>
+        </Box>
+      </Box>
+    );
+  }
+
   return (
     <Box className={styles.pageShell}>
       <Box
@@ -100,7 +148,11 @@ export default function BookingSubmittedPage() {
             justifyContent: "center",
           }}
         >
-          <Stack alignItems="center" spacing={{ xs: 2.2, md: 2.6 }} sx={{ width: "100%" }}>
+          <Stack
+            alignItems="center"
+            spacing={{ xs: 2.2, md: 2.6 }}
+            sx={{ width: "100%" }}
+          >
             <Box
               sx={{
                 width: "100%",
@@ -113,7 +165,11 @@ export default function BookingSubmittedPage() {
                 boxShadow: "0 22px 54px rgba(20,34,56,0.08)",
               }}
             >
-              <Stack alignItems="center" textAlign="center" spacing={{ xs: 1.45, md: 1.7 }}>
+              <Stack
+                alignItems="center"
+                textAlign="center"
+                spacing={{ xs: 1.45, md: 1.7 }}
+              >
                 <Box
                   sx={{
                     width: 58,
@@ -133,7 +189,12 @@ export default function BookingSubmittedPage() {
                   sx={{
                     maxWidth: 480,
                     color: "#20242B",
-                    fontSize: { xs: "1.55rem", sm: "1.7rem", md: "1.85rem", lg: "2rem" },
+                    fontSize: {
+                      xs: "1.55rem",
+                      sm: "1.7rem",
+                      md: "1.85rem",
+                      lg: "2rem",
+                    },
                     lineHeight: 1.12,
                     letterSpacing: "-0.04em",
                     fontWeight: 800,
@@ -175,9 +236,33 @@ export default function BookingSubmittedPage() {
                   </Stack>
                 </Box>
 
+                {leadId ? (
+                  <Box
+                    sx={{
+                      px: 1.6,
+                      py: 0.9,
+                      borderRadius: "0.75rem",
+                      bgcolor: "#EAF1FF",
+                      border: "1px solid #C5D8FF",
+                    }}
+                  >
+                    <Typography
+                      sx={{
+                        color: "#0E56C8",
+                        fontSize: "0.72rem",
+                        fontWeight: 800,
+                        textAlign: "center",
+                      }}
+                    >
+                      Booking Reference: #
+                      {String(leadId).slice(-8).toUpperCase()}
+                    </Typography>
+                  </Box>
+                ) : null}
+
                 <Button
                   component={RouterLink}
-                  to="/tenders/live"
+                  to="/customer/bookings"
                   variant="contained"
                   sx={{
                     width: "100%",
@@ -235,10 +320,7 @@ export default function BookingSubmittedPage() {
               }}
             >
               Need help?{" "}
-              <Box
-                component="span"
-                sx={{ color: "#0E56C8", fontWeight: 600 }}
-              >
+              <Box component="span" sx={{ color: "#0E56C8", fontWeight: 600 }}>
                 Contact our energy consultants
               </Box>
             </Typography>

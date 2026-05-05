@@ -24,12 +24,16 @@ export const leadsRepository = {
   },
 
   async findLeadsForCustomer(customerId) {
-    const leads = await LeadModel.find({ customerId }).sort({ createdAt: -1 }).lean({ virtuals: true });
+    const leads = await LeadModel.find({ customerId })
+      .sort({ createdAt: -1 })
+      .lean({ virtuals: true });
     return normalizeLeads(leads);
   },
 
   async findAll() {
-    const leads = await LeadModel.find({}).sort({ createdAt: -1 }).lean({ virtuals: true });
+    const leads = await LeadModel.find({})
+      .sort({ createdAt: -1 })
+      .lean({ virtuals: true });
     return normalizeLeads(leads);
   },
 
@@ -39,18 +43,17 @@ export const leadsRepository = {
   },
 
   async findLeadsByIds(ids) {
-    const leads = await LeadModel.find({ _id: { $in: ids } }).lean({ virtuals: true });
+    const leads = await LeadModel.find({ _id: { $in: ids } }).lean({
+      virtuals: true,
+    });
     return normalizeLeads(leads);
   },
 
   async findVendorVisibleLeads(vendorId) {
+    // Only show leads where this vendor is explicitly assigned
     const leads = await LeadModel.find({
-      status: { $in: ["submitted", "reviewing", "open_for_quotes"] },
-      $or: [
-        { assignedVendorIds: { $exists: false } },
-        { assignedVendorIds: { $size: 0 } },
-        { assignedVendorIds: vendorId },
-      ],
+      status: { $in: ["open_for_quotes", "quote_selected"] },
+      assignedVendorIds: vendorId,
     })
       .sort({ createdAt: -1 })
       .lean({ virtuals: true });
@@ -103,6 +106,26 @@ export const leadsRepository = {
           selection,
         },
       },
+      { new: true },
+    ).lean({ virtuals: true });
+
+    return normalizeLead(lead);
+  },
+
+  async updateDetails(id, updates) {
+    const lead = await LeadModel.findByIdAndUpdate(
+      id,
+      { $set: updates },
+      { new: true },
+    ).lean({ virtuals: true });
+
+    return normalizeLead(lead);
+  },
+
+  async markCommitmentPaid(id) {
+    const lead = await LeadModel.findByIdAndUpdate(
+      id,
+      { $set: { commitmentFeePaid: true, commitmentFeePaidAt: new Date() } },
       { new: true },
     ).lean({ virtuals: true });
 

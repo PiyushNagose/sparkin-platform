@@ -23,7 +23,7 @@ import SecurityRoundedIcon from "@mui/icons-material/SecurityRounded";
 import BlockRoundedIcon from "@mui/icons-material/BlockRounded";
 import VerifiedRoundedIcon from "@mui/icons-material/VerifiedRounded";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import uploadSummaryPlaceholder from "@/shared/assets/images/public/booking/upload-summary-placeholder.png";
 import styles from "@/features/public/pages/CalculatorPage.module.css";
 import {
@@ -32,6 +32,11 @@ import {
 } from "@/features/public/pages/publicPageStyles";
 import { useBookingDraft } from "@/features/public/booking/BookingDraftProvider";
 import { leadsApi } from "@/features/public/api/leadsApi";
+import {
+  isStep1Complete,
+  isStep2Complete,
+  isStep3Complete,
+} from "@/features/public/booking/bookingValidation";
 
 const steps = [
   { label: "Step 1", state: "complete" },
@@ -43,14 +48,16 @@ const steps = [
 const whyUploadItems = [
   {
     title: "Accurate System Design",
-    description: "Better photos help our engineers design the optimal panel layout.",
+    description:
+      "Better photos help our engineers design the optimal panel layout.",
     icon: <ArchitectureRoundedIcon sx={{ fontSize: "0.95rem" }} />,
     color: "#1A57C8",
     bg: "#E9EEFF",
   },
   {
     title: "Faster Quotes",
-    description: "Vendors can provide firm prices without a physical site visit.",
+    description:
+      "Vendors can provide firm prices without a physical site visit.",
     icon: <FlashOnRoundedIcon sx={{ fontSize: "0.95rem" }} />,
     color: "#188D48",
     bg: "#62F082",
@@ -223,7 +230,14 @@ function SectionLabel({ children }) {
   );
 }
 
-function UploadZone({ icon, title, description, buttonLabel, helper, compact = false }) {
+function UploadZone({
+  icon,
+  title,
+  description,
+  buttonLabel,
+  helper,
+  compact = false,
+}) {
   return (
     <Box
       sx={{
@@ -322,6 +336,16 @@ export default function BookingStepFourPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
 
+  useEffect(() => {
+    if (
+      !isStep1Complete(draft) ||
+      !isStep2Complete(draft) ||
+      !isStep3Complete(draft)
+    ) {
+      navigate("/booking", { replace: true });
+    }
+  }, []);
+
   function buildLeadPayload() {
     return {
       ...draft,
@@ -351,7 +375,11 @@ export default function BookingStepFourPage() {
   }
 
   function getErrorMessage(apiError) {
-    return apiError?.response?.data?.message || apiError?.message || "Could not submit your request. Please check the details and try again.";
+    return (
+      apiError?.response?.data?.message ||
+      apiError?.message ||
+      "Could not submit your request. Please check the details and try again."
+    );
   }
 
   async function handleSubmit() {
@@ -361,7 +389,10 @@ export default function BookingStepFourPage() {
     try {
       const lead = await leadsApi.createLead(buildLeadPayload());
       resetDraft();
-      navigate("/booking/submitted", { replace: true, state: { leadId: lead.id } });
+      navigate("/booking/payment", {
+        replace: true,
+        state: { leadId: lead.id },
+      });
     } catch (apiError) {
       setError(getErrorMessage(apiError));
     } finally {
@@ -389,7 +420,11 @@ export default function BookingStepFourPage() {
             justifyContent: "center",
           }}
         >
-          <Stack spacing={{ xs: 2.8, md: 3.2 }} alignItems="center" sx={{ width: "100%" }}>
+          <Stack
+            spacing={{ xs: 2.8, md: 3.2 }}
+            alignItems="center"
+            sx={{ width: "100%" }}
+          >
             <Box
               sx={{
                 width: "100%",
@@ -403,7 +438,10 @@ export default function BookingStepFourPage() {
             >
               <Stack spacing={{ xs: 3, md: 3.5 }}>
                 {error ? (
-                  <Alert severity="error" sx={{ borderRadius: "0.9rem", fontSize: "0.82rem" }}>
+                  <Alert
+                    severity="error"
+                    sx={{ borderRadius: "0.9rem", fontSize: "0.82rem" }}
+                  >
                     {error}
                   </Alert>
                 ) : null}
@@ -432,7 +470,8 @@ export default function BookingStepFourPage() {
                       lineHeight: 1.6,
                     }}
                   >
-                    Upload a few details to help vendors give you accurate quotes
+                    Upload a few details to help vendors give you accurate
+                    quotes
                   </Typography>
                 </Stack>
 
@@ -440,7 +479,9 @@ export default function BookingStepFourPage() {
                   <SectionLabel>Roof Reference</SectionLabel>
                   <Stack spacing={2}>
                     <UploadZone
-                      icon={<CloudUploadOutlinedIcon sx={{ fontSize: "1rem" }} />}
+                      icon={
+                        <CloudUploadOutlinedIcon sx={{ fontSize: "1rem" }} />
+                      }
                       title="Upload roof photos (optional)"
                       description="Provide a visual reference to help experts design your perfect system"
                       buttonLabel="Browse Files"
@@ -449,7 +490,9 @@ export default function BookingStepFourPage() {
 
                     <UploadZone
                       compact
-                      icon={<CameraAltOutlinedIcon sx={{ fontSize: "0.95rem" }} />}
+                      icon={
+                        <CameraAltOutlinedIcon sx={{ fontSize: "0.95rem" }} />
+                      }
                       title="Capture Live Photo"
                       description="with GPS"
                     />
@@ -471,7 +514,11 @@ export default function BookingStepFourPage() {
                   <Grid container spacing={1.8}>
                     {whyUploadItems.map((item) => (
                       <Grid key={item.title} size={{ xs: 12, md: 4 }}>
-                        <Stack spacing={1.05} alignItems="center" textAlign="center">
+                        <Stack
+                          spacing={1.05}
+                          alignItems="center"
+                          textAlign="center"
+                        >
                           <Box
                             sx={{
                               width: 38,
@@ -518,7 +565,9 @@ export default function BookingStepFourPage() {
                     multiline
                     minRows={3}
                     value={draft.notes}
-                    onChange={(event) => updateField("notes", event.target.value)}
+                    onChange={(event) =>
+                      updateField("notes", event.target.value)
+                    }
                     placeholder="Any specific requirements or questions? (e.g. 'Considering an EV charger soon')"
                     InputProps={{
                       sx: {
@@ -833,7 +882,11 @@ export default function BookingStepFourPage() {
               </Stack>
             </Box>
 
-            <Grid container spacing={1.15} sx={{ width: "100%", maxWidth: 620 }}>
+            <Grid
+              container
+              spacing={1.15}
+              sx={{ width: "100%", maxWidth: 620 }}
+            >
               {trustItems.map((item) => (
                 <Grid key={item.title} size={{ xs: 12, md: 4 }}>
                   <Box

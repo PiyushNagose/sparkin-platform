@@ -8,6 +8,7 @@ import BookingStepOnePage from "@/features/public/pages/BookingStepOnePage";
 import BookingStepTwoPage from "@/features/public/pages/BookingStepTwoPage";
 import BookingStepThreePage from "@/features/public/pages/BookingStepThreePage";
 import BookingStepFourPage from "@/features/public/pages/BookingStepFourPage";
+import BookingPaymentPage from "@/features/public/pages/BookingPaymentPage";
 import BookingSubmittedPage from "@/features/public/pages/BookingSubmittedPage";
 import LiveBiddingPage from "@/features/public/pages/LiveBiddingPage";
 import QuoteComparisonPage from "@/features/public/pages/QuoteComparisonPage";
@@ -36,7 +37,9 @@ import WhyChooseUsPage from "@/features/public/pages/WhyChooseUsPage";
 import { RequireAuth } from "@/features/auth/RequireAuth";
 
 function protectedCustomerPage(element) {
-  return <RequireAuth allowedRoles={["customer", "admin"]}>{element}</RequireAuth>;
+  return (
+    <RequireAuth allowedRoles={["customer", "admin"]}>{element}</RequireAuth>
+  );
 }
 
 export const publicRoutes = [
@@ -59,7 +62,12 @@ export const publicRoutes = [
         eyebrow="How It Works"
         title="Quote Journey Overview"
         description="Explain how the lead, bidding, selection, project, and service flow works for customers."
-        sections={["Broadcast phase", "Competitive bidding", "Selection process", "Bottom CTA"]}
+        sections={[
+          "Broadcast phase",
+          "Competitive bidding",
+          "Selection process",
+          "Bottom CTA",
+        ]}
       />
     ),
   },
@@ -150,6 +158,10 @@ export const publicRoutes = [
   {
     path: "booking/upload",
     element: protectedCustomerPage(<BookingStepFourPage />),
+  },
+  {
+    path: "booking/payment",
+    element: protectedCustomerPage(<BookingPaymentPage />),
   },
   {
     path: "booking/submitted",

@@ -23,7 +23,10 @@ export const createLeadSchema = z.object({
   inspection: z
     .object({
       preferredDate: nullableTrimmedString,
-      preferredTimeSlot: z.enum(["morning", "afternoon", "evening"]).nullable().optional(),
+      preferredTimeSlot: z
+        .enum(["morning", "afternoon", "evening"])
+        .nullable()
+        .optional(),
     })
     .optional(),
   property: z.object({
@@ -31,7 +34,10 @@ export const createLeadSchema = z.object({
     roofType: z.enum(["flat", "sloped"]),
     ownership: z.enum(["owned", "rented"]),
     distributionCompany: nullableTrimmedString,
-    connectionType: z.enum(["single_phase", "three_phase"]).nullable().optional(),
+    connectionType: z
+      .enum(["single_phase", "three_phase"])
+      .nullable()
+      .optional(),
     consumerNumber: nullableTrimmedString,
     sanctionedLoadKw: z.coerce.number().min(0).nullable().optional(),
   }),
@@ -46,6 +52,15 @@ export const createLeadSchema = z.object({
 
 export const updateLeadStatusSchema = z.object({
   status: z.enum(["reviewing", "open_for_quotes", "closed"]),
+});
+
+export const updateLeadDetailsSchema = z.object({
+  adminSystemSizeKw: z.coerce.number().positive().optional(),
+  estimatedCost: z.coerce.number().positive().optional(),
+});
+
+export const markCommitmentPaidSchema = z.object({
+  paid: z.boolean(),
 });
 
 export const assignLeadVendorsSchema = z.object({
