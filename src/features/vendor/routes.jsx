@@ -11,6 +11,7 @@ import VendorTransactionsPage from "@/features/vendor/pages/VendorTransactionsPa
 import VendorInvoiceDetailPage from "@/features/vendor/pages/VendorInvoiceDetailPage";
 import VendorProfilePage from "@/features/vendor/pages/VendorProfilePage";
 import VendorSettingsPage from "@/features/vendor/pages/VendorSettingsPage";
+import VendorChatPage from "@/features/vendor/pages/VendorChatPage";
 
 export const vendorRoutes = [
   {
@@ -68,5 +69,9 @@ export const vendorRoutes = [
   {
     path: "settings",
     element: <VendorSettingsPage />,
+  },
+  {
+    path: "chat",
+    element: <VendorChatPage />,
   },
 ];

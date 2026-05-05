@@ -1,5 +1,6 @@
 import CustomerDashboardPage from "@/features/customer/pages/CustomerDashboardPage";
 import CustomerBookingsPage from "@/features/customer/pages/CustomerBookingsPage";
+import CustomerChatPage from "@/features/customer/pages/CustomerChatPage";
 import CustomerTendersPage from "@/features/customer/pages/CustomerTendersPage";
 import CustomerProjectsPage from "@/features/customer/pages/CustomerProjectsPage";
 import CustomerServicesPage from "@/features/customer/pages/CustomerServicesPage";
@@ -49,5 +50,9 @@ export const customerRoutes = [
   {
     path: "profile",
     element: <CustomerProfilePage />,
+  },
+  {
+    path: "chat",
+    element: <CustomerChatPage />,
   },
 ];

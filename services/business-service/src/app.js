@@ -6,9 +6,9 @@ import { errorHandler } from "./common/middleware/error-handler.js";
 import { notFoundHandler } from "./common/middleware/not-found-handler.js";
 import { requestContext } from "./common/middleware/request-context.js";
 import { env } from "./config/env.js";
-import { apiRouter } from "./routes/index.js";
+import { createApiRouter } from "./routes/index.js";
 
-export function createApp() {
+export function createApp(io) {
   const app = express();
 
   app.disable("x-powered-by");
@@ -37,7 +37,7 @@ export function createApp() {
     });
   });
 
-  app.use("/api/v1", apiRouter);
+  app.use("/api/v1", createApiRouter(io));
   app.use(notFoundHandler);
   app.use(errorHandler);
 

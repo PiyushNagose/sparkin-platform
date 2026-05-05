@@ -1,5 +1,6 @@
 import AdminDashboardPage, { makeAdminPlaceholder } from "@/features/admin/pages/AdminDashboardPage";
 import AdminBiddingPage from "@/features/admin/pages/AdminBiddingPage";
+import AdminHelpDeskPage from "@/features/admin/pages/AdminHelpDeskPage";
 import AdminLeadDetailPage from "@/features/admin/pages/AdminLeadDetailPage";
 import AdminLeadsPage from "@/features/admin/pages/AdminLeadsPage";
 import AdminPaymentsPage from "@/features/admin/pages/AdminPaymentsPage";
@@ -71,5 +72,9 @@ export const adminRoutes = [
   {
     path: "notifications",
     element: makeAdminPlaceholder("Notifications"),
+  },
+  {
+    path: "help-desk",
+    element: <AdminHelpDeskPage />,
   },
 ];

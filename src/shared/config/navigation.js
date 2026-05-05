@@ -15,6 +15,7 @@ export const portalNavigation = {
     { label: "Services", href: "/customer/services" },
     { label: "Savings", href: "/customer/savings" },
     { label: "Refer & Earn", href: "/customer/referrals" },
+    { label: "Support Chat", href: "/customer/chat" },
     { label: "Profile", href: "/customer/profile" },
   ],
   vendor: [
@@ -24,12 +25,14 @@ export const portalNavigation = {
     { label: "Projects", href: "/vendor/projects" },
     { label: "Services", href: "/vendor/services" },
     { label: "Payments", href: "/vendor/payments" },
+    { label: "Support Chat", href: "/vendor/chat" },
     { label: "Settings", href: "/vendor/settings" },
   ],
   admin: [
     { label: "Dashboard", href: "/admin" },
     { label: "Leads", href: "/admin/leads" },
     { label: "Payments", href: "/admin/payments" },
+    { label: "Vendor Assignment", href: "/admin/vendor-assignment" },
     { label: "Vendors", href: "/admin/vendors" },
     { label: "Bidding", href: "/admin/bidding" },
     { label: "Customers/Projects", href: "/admin/customers-projects" },
@@ -37,5 +40,6 @@ export const portalNavigation = {
     { label: "Reports", href: "/admin/reports" },
     { label: "Settings", href: "/admin/settings" },
     { label: "Notifications", href: "/admin/notifications" },
+    { label: "Help Desk", href: "/admin/help-desk" },
   ],
 };
