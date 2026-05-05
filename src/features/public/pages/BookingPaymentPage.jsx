@@ -174,6 +174,7 @@ export default function BookingPaymentPage() {
   const systemLabel = `${systemSizeKw}kW Residential Solar`;
 
   async function handlePay() {
+    if (isPaying) return; // guard against double-click
     setPayError("");
     setIsPaying(true);
 

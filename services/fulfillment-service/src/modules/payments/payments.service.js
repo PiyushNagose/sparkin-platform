@@ -97,13 +97,16 @@ export const paymentsService = {
       return existingPayments;
     }
 
+    // Use findOneAndUpdate with upsert on the first milestone to prevent
+    // race conditions when two requests try to create the schedule simultaneously
+    const firstCreated =
+      await paymentsRepository.findOrCreateBookingAdvance(project);
+    if (!firstCreated.wasNew) {
+      // Another request already created the schedule, return all payments
+      return paymentsRepository.findForProject(project.id);
+    }
+
     const schedule = [
-      {
-        key: "booking_advance",
-        title: "Booking Advance",
-        ratio: 0.1,
-        dueInDays: 0,
-      },
       {
         key: "installation_start",
         title: "Installation Start",
@@ -118,7 +121,7 @@ export const paymentsService = {
       },
     ];
 
-    const payments = schedule.map((milestone, index) => ({
+    const remaining = schedule.map((milestone, index) => ({
       projectId: project.id,
       quoteId: project.quoteId,
       customerId: project.customerId,
@@ -128,18 +131,19 @@ export const paymentsService = {
         email: project.customer.email ?? null,
       },
       vendorEmail: project.vendorEmail ?? null,
-      invoiceNumber: buildInvoiceNumber(project, index),
+      invoiceNumber: buildInvoiceNumber(project, index + 1),
       milestone: {
         key: milestone.key,
         title: milestone.title,
       },
       amount: Math.round(project.pricing.totalPrice * milestone.ratio),
-      status: index === 0 ? "paid" : "pending",
+      status: "pending",
       dueAt: addDays(milestone.dueInDays),
-      paidAt: index === 0 ? new Date() : null,
+      paidAt: null,
     }));
 
-    return paymentsRepository.createMany(payments);
+    await paymentsRepository.createMany(remaining);
+    return paymentsRepository.findForProject(project.id);
   },
 
   async listPayments(user) {

@@ -383,6 +383,7 @@ export default function BookingStepFourPage() {
   }
 
   async function handleSubmit() {
+    if (isSubmitting) return; // guard against double-click
     setError("");
     setIsSubmitting(true);
 
