@@ -5,13 +5,13 @@ import VendorQuoteProposalPage from "@/features/vendor/pages/VendorQuoteProposal
 import VendorQuotesPage from "@/features/vendor/pages/VendorQuotesPage";
 import VendorProjectsPage from "@/features/vendor/pages/VendorProjectsPage";
 import VendorProjectDetailPage from "@/features/vendor/pages/VendorProjectDetailPage";
-import VendorServiceRequestsPage from "@/features/vendor/pages/VendorServiceRequestsPage";
 import VendorPaymentsPage from "@/features/vendor/pages/VendorPaymentsPage";
 import VendorTransactionsPage from "@/features/vendor/pages/VendorTransactionsPage";
 import VendorInvoiceDetailPage from "@/features/vendor/pages/VendorInvoiceDetailPage";
 import VendorProfilePage from "@/features/vendor/pages/VendorProfilePage";
 import VendorSettingsPage from "@/features/vendor/pages/VendorSettingsPage";
 import VendorChatPage from "@/features/vendor/pages/VendorChatPage";
+import VendorHelpCenterPage from "@/features/vendor/pages/VendorHelpCenterPage";
 
 export const vendorRoutes = [
   {
@@ -47,10 +47,6 @@ export const vendorRoutes = [
     element: <VendorProjectDetailPage />,
   },
   {
-    path: "services",
-    element: <VendorServiceRequestsPage />,
-  },
-  {
     path: "payments",
     element: <VendorPaymentsPage />,
   },
@@ -73,5 +69,9 @@ export const vendorRoutes = [
   {
     path: "chat",
     element: <VendorChatPage />,
+  },
+  {
+    path: "help",
+    element: <VendorHelpCenterPage />,
   },
 ];

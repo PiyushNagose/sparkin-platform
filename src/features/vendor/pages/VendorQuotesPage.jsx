@@ -1,20 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import {
-  Alert,
   Avatar,
   Box,
   Button,
   CircularProgress,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  MenuItem,
   Stack,
   TextField,
   Typography,
 } from "@mui/material";
-import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import KeyboardArrowLeftRoundedIcon from "@mui/icons-material/KeyboardArrowLeftRounded";
 import KeyboardArrowRightRoundedIcon from "@mui/icons-material/KeyboardArrowRightRounded";
 import TuneRoundedIcon from "@mui/icons-material/TuneRounded";
@@ -24,7 +17,7 @@ import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import RequestQuoteOutlinedIcon from "@mui/icons-material/RequestQuoteOutlined";
 import HourglassEmptyRoundedIcon from "@mui/icons-material/HourglassEmptyRounded";
-import { Link as RouterLink, useLocation, useNavigate } from "react-router-dom";
+import { Link as RouterLink, useLocation } from "react-router-dom";
 import { leadsApi, quotesApi } from "@/features/public/api/leadsApi";
 import {
   VendorEmptyState,
@@ -33,7 +26,6 @@ import {
   VendorPageHeader,
   VendorPageShell,
   VendorPanel,
-  VendorPrimaryButton,
   VendorSecondaryButton,
   VendorStatusPill,
 } from "@/features/vendor/components/VendorPortalUI";
@@ -51,32 +43,6 @@ const columns = [
 ];
 
 const pageSize = 8;
-const emptyManualQuoteForm = {
-  fullName: "",
-  phoneNumber: "",
-  email: "",
-  street: "",
-  landmark: "",
-  city: "",
-  state: "",
-  pincode: "",
-  propertyType: "independent_house",
-  roofType: "flat",
-  ownership: "owned",
-  sanctionedLoadKw: "",
-  roofSizeRange: "500_1000",
-  shadow: "partial",
-  condition: "average",
-  totalPrice: "",
-  equipmentCost: "",
-  laborCost: "",
-  permittingCost: "",
-  sizeKw: "",
-  panelType: "monocrystalline",
-  inverterType: "",
-  installationWindow: "4_6_weeks",
-  proposalNotes: "",
-};
 
 function formatPrice(value) {
   return new Intl.NumberFormat("en-IN", {
@@ -98,21 +64,43 @@ function formatDate(value) {
 }
 
 function getInitials(name = "") {
-  return name
-    .split(" ")
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join("") || "CU";
+  return (
+    name
+      .split(" ")
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase())
+      .join("") || "CU"
+  );
 }
 
 function getStatusMeta(status) {
   const map = {
-    submitted: { status: "Pending", statusTone: "#4F89FF", statusBg: "#EEF4FF" },
-    shortlisted: { status: "Under Review", statusTone: "#878500", statusBg: "#F2F08E" },
-    accepted: { status: "Accepted", statusTone: "#1FA453", statusBg: "#E8FAEF" },
-    rejected: { status: "Rejected", statusTone: "#D94040", statusBg: "#FDECEC" },
-    withdrawn: { status: "Rejected", statusTone: "#D94040", statusBg: "#FDECEC" },
+    submitted: {
+      status: "Pending",
+      statusTone: "#4F89FF",
+      statusBg: "#EEF4FF",
+    },
+    shortlisted: {
+      status: "Under Review",
+      statusTone: "#878500",
+      statusBg: "#F2F08E",
+    },
+    accepted: {
+      status: "Accepted",
+      statusTone: "#1FA453",
+      statusBg: "#E8FAEF",
+    },
+    rejected: {
+      status: "Rejected",
+      statusTone: "#D94040",
+      statusBg: "#FDECEC",
+    },
+    withdrawn: {
+      status: "Rejected",
+      statusTone: "#D94040",
+      statusBg: "#FDECEC",
+    },
   };
 
   return map[status] || map.submitted;
@@ -151,8 +139,13 @@ function toQuoteRow(quote, lead) {
     initials: getInitials(customerName),
     name: customerName,
     type: lead?.projectType || "Residential Project",
-    location: [lead?.installationAddress?.city, lead?.installationAddress?.state].filter(Boolean).join(", ") || "Location pending",
-    systemSize: quote.system?.sizeKw ? `${quote.system.sizeKw} kW` : "Assessment pending",
+    location:
+      [lead?.installationAddress?.city, lead?.installationAddress?.state]
+        .filter(Boolean)
+        .join(", ") || "Location pending",
+    systemSize: quote.system?.sizeKw
+      ? `${quote.system.sizeKw} kW`
+      : "Assessment pending",
     yourPrice: formatPrice(quote.pricing?.totalPrice),
     status,
     statusTone,
@@ -189,91 +182,12 @@ function KpiIcon({ type, tone, bg }) {
   );
 }
 
-function QuoteFormSection({ title, children }) {
-  return (
-    <Box>
-      <Typography sx={{ mb: 1.1, color: "#18253A", fontSize: "0.9rem", fontWeight: 800 }}>
-        {title}
-      </Typography>
-      <Box
-        sx={{
-          display: "grid",
-          gridTemplateColumns: { xs: "1fr", md: "repeat(3, minmax(0, 1fr))" },
-          gap: 1.2,
-        }}
-      >
-        {children}
-      </Box>
-    </Box>
-  );
-}
-
-function QuoteField({ label, value, onChange, required = false, type = "text", wide = false, multiline = false }) {
-  return (
-    <TextField
-      label={required ? `${label} *` : label}
-      value={value}
-      type={type}
-      multiline={multiline}
-      minRows={multiline ? 3 : undefined}
-      onChange={(event) => onChange(event.target.value)}
-      sx={{
-        gridColumn: wide ? { xs: "auto", md: "1 / -1" } : "auto",
-        "& .MuiOutlinedInput-root": {
-          borderRadius: "0.85rem",
-          bgcolor: "#FFFFFF",
-          fontSize: "0.82rem",
-        },
-        "& .MuiInputLabel-root": {
-          fontSize: "0.78rem",
-          fontWeight: 700,
-        },
-      }}
-    />
-  );
-}
-
-function QuoteSelect({ label, value, onChange, options }) {
-  return (
-    <TextField
-      select
-      label={label}
-      value={value}
-      onChange={(event) => onChange(event.target.value)}
-      sx={{
-        "& .MuiOutlinedInput-root": {
-          borderRadius: "0.85rem",
-          bgcolor: "#FFFFFF",
-          fontSize: "0.82rem",
-        },
-        "& .MuiInputLabel-root": {
-          fontSize: "0.78rem",
-          fontWeight: 700,
-        },
-      }}
-    >
-      {options.map(([optionValue, optionLabel]) => (
-        <MenuItem key={optionValue} value={optionValue}>
-          {optionLabel}
-        </MenuItem>
-      ))}
-    </TextField>
-  );
-}
-
 export default function VendorQuotesPage() {
   const location = useLocation();
-  const navigate = useNavigate();
   const [quotes, setQuotes] = useState([]);
   const [leads, setLeads] = useState([]);
   const [activeTab, setActiveTab] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
-  const [leadSearchTerm, setLeadSearchTerm] = useState("");
-  const [isLeadPickerOpen, setIsLeadPickerOpen] = useState(false);
-  const [isManualQuoteOpen, setIsManualQuoteOpen] = useState(false);
-  const [manualQuoteForm, setManualQuoteForm] = useState(emptyManualQuoteForm);
-  const [isCreatingManualQuote, setIsCreatingManualQuote] = useState(false);
-  const [manualQuoteError, setManualQuoteError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [page, setPage] = useState(1);
@@ -286,7 +200,10 @@ export default function VendorQuotesPage() {
       setError("");
 
       try {
-        const [quotesResult, leadsResult] = await Promise.allSettled([quotesApi.listQuotes(), leadsApi.listLeads()]);
+        const [quotesResult, leadsResult] = await Promise.allSettled([
+          quotesApi.listQuotes(),
+          leadsApi.listLeads(),
+        ]);
         if (quotesResult.status === "rejected") {
           throw quotesResult.reason;
         }
@@ -295,7 +212,10 @@ export default function VendorQuotesPage() {
         setQuotes(quotesResult.value);
         setLeads(leadsResult.status === "fulfilled" ? leadsResult.value : []);
       } catch (apiError) {
-        if (active) setError(apiError?.response?.data?.message || "Could not load quotes.");
+        if (active)
+          setError(
+            apiError?.response?.data?.message || "Could not load quotes.",
+          );
       } finally {
         if (active) setIsLoading(false);
       }
@@ -319,77 +239,94 @@ export default function VendorQuotesPage() {
     leads.forEach((lead) => map.set(String(lead.id || lead._id), lead));
     return map;
   }, [leads]);
-  const quotedLeadIds = useMemo(
-    () => new Set(quotes.map((quote) => String(quote.leadId)).filter(Boolean)),
-    [quotes],
-  );
-  const quoteEligibleLeads = useMemo(() => {
-    const normalizedSearch = leadSearchTerm.trim().toLowerCase();
-
-    return leads
-      .filter((lead) => {
-        const leadId = String(lead.id || lead._id || "");
-        const isOpen = !["quote_selected", "closed", "cancelled"].includes(lead.status);
-        return leadId && isOpen && !quotedLeadIds.has(leadId);
-      })
-      .filter((lead) => {
-        if (!normalizedSearch) return true;
-        return [
-          lead.id,
-          lead._id,
-          lead.contact?.fullName,
-          lead.contact?.phoneNumber,
-          lead.installationAddress?.city,
-          lead.installationAddress?.state,
-          lead.property?.sanctionedLoadKw,
-        ].some((value) => String(value || "").toLowerCase().includes(normalizedSearch));
-      })
-      .sort((a, b) => new Date(b.createdAt || b.submittedAt || 0) - new Date(a.createdAt || a.submittedAt || 0));
-  }, [leadSearchTerm, leads, quotedLeadIds]);
   const quoteRows = useMemo(
-    () => quotes.map((quote) => toQuoteRow(quote, quote.lead || leadById.get(String(quote.leadId)))),
+    () =>
+      quotes.map((quote) =>
+        toQuoteRow(quote, quote.lead || leadById.get(String(quote.leadId))),
+      ),
     [leadById, quotes],
   );
   const filteredQuotes = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
-    const rows = quoteRows.filter((quote) => {
-      if (activeTab === "Pending") return ["submitted", "shortlisted"].includes(quote.rawStatus);
-      if (activeTab === "Accepted") return quote.rawStatus === "accepted";
-      if (activeTab === "Rejected") return ["rejected", "withdrawn"].includes(quote.rawStatus);
-      return true;
-    }).filter((quote) => {
-      if (!normalizedSearch) return true;
-      return [quote.id, quote.leadId, quote.name, quote.type, quote.location, quote.systemSize, quote.yourPrice, quote.status]
-        .some((value) => String(value || "").toLowerCase().includes(normalizedSearch));
-    });
+    const rows = quoteRows
+      .filter((quote) => {
+        if (activeTab === "Pending")
+          return ["submitted", "shortlisted"].includes(quote.rawStatus);
+        if (activeTab === "Accepted") return quote.rawStatus === "accepted";
+        if (activeTab === "Rejected")
+          return ["rejected", "withdrawn"].includes(quote.rawStatus);
+        return true;
+      })
+      .filter((quote) => {
+        if (!normalizedSearch) return true;
+        return [
+          quote.id,
+          quote.leadId,
+          quote.name,
+          quote.type,
+          quote.location,
+          quote.systemSize,
+          quote.yourPrice,
+          quote.status,
+        ].some((value) =>
+          String(value || "")
+            .toLowerCase()
+            .includes(normalizedSearch),
+        );
+      });
 
-    return [...rows].sort((a, b) => new Date(b.submittedAt || 0) - new Date(a.submittedAt || 0));
+    return [...rows].sort(
+      (a, b) => new Date(b.submittedAt || 0) - new Date(a.submittedAt || 0),
+    );
   }, [activeTab, quoteRows, searchTerm]);
   const totalPages = Math.max(1, Math.ceil(filteredQuotes.length / pageSize));
-  const visibleQuotes = filteredQuotes.slice((page - 1) * pageSize, page * pageSize);
+  const visibleQuotes = filteredQuotes.slice(
+    (page - 1) * pageSize,
+    page * pageSize,
+  );
   const pageNumbers = useMemo(() => {
-    if (totalPages <= 5) return Array.from({ length: totalPages }, (_, i) => i + 1);
+    if (totalPages <= 5)
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
     const pages = new Set([1, totalPages, page]);
     if (page > 1) pages.add(page - 1);
     if (page < totalPages) pages.add(page + 1);
     return [...pages].sort((a, b) => a - b);
   }, [totalPages, page]);
-  const firstVisibleQuote = filteredQuotes.length ? (page - 1) * pageSize + 1 : 0;
-  const lastVisibleQuote = filteredQuotes.length ? firstVisibleQuote + visibleQuotes.length - 1 : 0;
-  const acceptedCount = quoteRows.filter((quote) => quote.rawStatus === "accepted").length;
-  const rejectedCount = quoteRows.filter((quote) => ["rejected", "withdrawn"].includes(quote.rawStatus)).length;
-  const pendingCount = quoteRows.filter((quote) => ["submitted", "shortlisted"].includes(quote.rawStatus)).length;
-  const acceptanceRate = quoteRows.length ? Math.round((acceptedCount / quoteRows.length) * 100) : 0;
+  const firstVisibleQuote = filteredQuotes.length
+    ? (page - 1) * pageSize + 1
+    : 0;
+  const lastVisibleQuote = filteredQuotes.length
+    ? firstVisibleQuote + visibleQuotes.length - 1
+    : 0;
+  const acceptedCount = quoteRows.filter(
+    (quote) => quote.rawStatus === "accepted",
+  ).length;
+  const rejectedCount = quoteRows.filter((quote) =>
+    ["rejected", "withdrawn"].includes(quote.rawStatus),
+  ).length;
+  const pendingCount = quoteRows.filter((quote) =>
+    ["submitted", "shortlisted"].includes(quote.rawStatus),
+  ).length;
+  const acceptanceRate = quoteRows.length
+    ? Math.round((acceptedCount / quoteRows.length) * 100)
+    : 0;
   const averageQuoteValue = quoteRows.length
     ? Math.round(
-        quoteRows.reduce((sum, quote) => sum + Number(String(quote.yourPrice).replace(/[^\d.-]/g, "") || 0), 0) /
-          quoteRows.length,
+        quoteRows.reduce(
+          (sum, quote) =>
+            sum + Number(String(quote.yourPrice).replace(/[^\d.-]/g, "") || 0),
+          0,
+        ) / quoteRows.length,
       )
     : 0;
   const topLocation = quoteRows
     .map((quote) => quote.location)
     .filter((value) => value && value !== "Location pending")
-    .sort((a, b) => quoteRows.filter((quote) => quote.location === b).length - quoteRows.filter((quote) => quote.location === a).length)[0];
+    .sort(
+      (a, b) =>
+        quoteRows.filter((quote) => quote.location === b).length -
+        quoteRows.filter((quote) => quote.location === a).length,
+    )[0];
   const kpiCards = [
     {
       label: "Total Quotes",
@@ -435,7 +372,16 @@ export default function VendorQuotesPage() {
 
   function exportQuotes() {
     const rows = [
-      ["Quote ID", "Lead ID", "Customer", "Location", "System Size", "Your Price", "Status", "Date"],
+      [
+        "Quote ID",
+        "Lead ID",
+        "Customer",
+        "Location",
+        "System Size",
+        "Your Price",
+        "Status",
+        "Date",
+      ],
       ...filteredQuotes.map((quote) => [
         quote.id,
         quote.leadId,
@@ -448,125 +394,10 @@ export default function VendorQuotesPage() {
       ]),
     ];
 
-    downloadFile(`sparkin-quotes-${new Date().toISOString().slice(0, 10)}.csv`, toCsv(rows));
-  }
-
-  function selectLeadForQuote(leadId) {
-    setIsLeadPickerOpen(false);
-    setLeadSearchTerm("");
-    navigate(`/vendor/leads/${leadId}/quote`);
-  }
-
-  function updateManualQuote(field, value) {
-    setManualQuoteForm((current) => ({ ...current, [field]: value }));
-  }
-
-  function closeManualQuoteDialog() {
-    if (isCreatingManualQuote) return;
-    setIsManualQuoteOpen(false);
-    setManualQuoteError("");
-  }
-
-  function validateManualQuote() {
-    const requiredFields = [
-      ["fullName", "Customer name"],
-      ["phoneNumber", "Phone number"],
-      ["street", "Street address"],
-      ["city", "City"],
-      ["state", "State"],
-      ["pincode", "Pincode"],
-      ["totalPrice", "Total price"],
-      ["sizeKw", "System size"],
-      ["inverterType", "Inverter type"],
-    ];
-    const missing = requiredFields
-      .filter(([field]) => !String(manualQuoteForm[field] || "").trim())
-      .map(([, label]) => label);
-
-    if (manualQuoteForm.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(manualQuoteForm.email.trim())) {
-      missing.push("Valid email");
-    }
-
-    return missing;
-  }
-
-  function numberOrNull(value) {
-    return value === "" ? null : Number(value);
-  }
-
-  async function createManualQuote() {
-    const missing = validateManualQuote();
-
-    if (missing.length) {
-      setManualQuoteError(`Please complete: ${missing.join(", ")}.`);
-      return;
-    }
-
-    setIsCreatingManualQuote(true);
-    setManualQuoteError("");
-
-    try {
-      const lead = await leadsApi.createLead({
-        contact: {
-          fullName: manualQuoteForm.fullName.trim(),
-          phoneNumber: manualQuoteForm.phoneNumber.trim(),
-          email: manualQuoteForm.email.trim() || null,
-        },
-        installationAddress: {
-          street: manualQuoteForm.street.trim(),
-          landmark: manualQuoteForm.landmark.trim() || null,
-          city: manualQuoteForm.city.trim(),
-          state: manualQuoteForm.state.trim(),
-          pincode: manualQuoteForm.pincode.trim(),
-        },
-        property: {
-          type: manualQuoteForm.propertyType,
-          roofType: manualQuoteForm.roofType,
-          ownership: manualQuoteForm.ownership,
-          distributionCompany: null,
-          connectionType: null,
-          consumerNumber: null,
-          sanctionedLoadKw: numberOrNull(manualQuoteForm.sanctionedLoadKw || manualQuoteForm.sizeKw),
-        },
-        roof: {
-          sizeRange: manualQuoteForm.roofSizeRange,
-          shadow: manualQuoteForm.shadow,
-          condition: manualQuoteForm.condition,
-        },
-        notes: "Created from vendor manual quote flow.",
-        specialInstructions: null,
-      });
-
-      await quotesApi.createQuote(lead.id || lead._id, {
-        pricing: {
-          totalPrice: Number(manualQuoteForm.totalPrice),
-          equipmentCost: numberOrNull(manualQuoteForm.equipmentCost),
-          laborCost: numberOrNull(manualQuoteForm.laborCost),
-          permittingCost: numberOrNull(manualQuoteForm.permittingCost),
-        },
-        system: {
-          sizeKw: Number(manualQuoteForm.sizeKw),
-          panelType: manualQuoteForm.panelType,
-          inverterType: manualQuoteForm.inverterType.trim(),
-        },
-        timeline: {
-          installationWindow: manualQuoteForm.installationWindow,
-        },
-        proposalNotes: manualQuoteForm.proposalNotes.trim() || null,
-      });
-
-      setManualQuoteForm(emptyManualQuoteForm);
-      setIsManualQuoteOpen(false);
-      setIsLeadPickerOpen(false);
-      const [quoteRows, leadRows] = await Promise.all([quotesApi.listQuotes(), leadsApi.listLeads()]);
-      setQuotes(quoteRows);
-      setLeads(leadRows);
-      navigate("/vendor/quotes", { replace: true });
-    } catch (apiError) {
-      setManualQuoteError(apiError?.response?.data?.message || "Could not create manual quote.");
-    } finally {
-      setIsCreatingManualQuote(false);
-    }
+    downloadFile(
+      `sparkin-quotes-${new Date().toISOString().slice(0, 10)}.csv`,
+      toCsv(rows),
+    );
   }
 
   return (
@@ -574,234 +405,16 @@ export default function VendorQuotesPage() {
       <VendorPageHeader
         title="Quotes"
         subtitle="Manage and track all your submitted quotes"
-        actions={
-          <VendorPrimaryButton
-          startIcon={<AddRoundedIcon />}
-          onClick={() => setIsLeadPickerOpen(true)}
-          disabled={isLoading}
-        >
-          Create New Quote
-          </VendorPrimaryButton>
-        }
       />
-
-      <Dialog
-        open={isLeadPickerOpen}
-        onClose={() => setIsLeadPickerOpen(false)}
-        fullWidth
-        maxWidth="md"
-        PaperProps={{
-          sx: {
-            borderRadius: "1.35rem",
-            border: "1px solid rgba(225,232,241,0.96)",
-            boxShadow: "0 22px 48px rgba(16,29,51,0.16)",
-          },
-        }}
-      >
-        <DialogTitle sx={{ color: "#18253A", fontSize: "1.35rem", fontWeight: 800 }}>
-          Select Lead for New Quote
-        </DialogTitle>
-        <DialogContent dividers sx={{ borderColor: "rgba(229,234,241,0.95)" }}>
-          <TextField
-            fullWidth
-            size="small"
-            value={leadSearchTerm}
-            onChange={(event) => setLeadSearchTerm(event.target.value)}
-            placeholder="Search by customer, location, phone, or system size"
-            sx={{
-              mb: 1.5,
-              "& .MuiOutlinedInput-root": {
-                height: 40,
-                borderRadius: "999px",
-                bgcolor: "#FFFFFF",
-                fontSize: "0.78rem",
-              },
-            }}
-          />
-
-          {quoteEligibleLeads.length === 0 ? (
-            <Box sx={{ py: 2.2 }}>
-              <VendorEmptyState
-                icon={RequestQuoteOutlinedIcon}
-                title="No eligible leads available"
-                subtitle="Create a manual quote with customer details or review leads that do not already have your quote."
-                actionLabel="Create Manual Quote"
-                actionOnClick={() => {
-                  setIsLeadPickerOpen(false);
-                  setIsManualQuoteOpen(true);
-                }}
-              />
-              <Button
-                component={RouterLink}
-                to="/vendor/leads"
-                onClick={() => setIsLeadPickerOpen(false)}
-                sx={{ mt: 1.4, color: "#0E56C8", textTransform: "none", fontWeight: 800 }}
-              >
-                Go to Leads
-              </Button>
-            </Box>
-          ) : (
-            <Stack spacing={1}>
-              <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 0.5 }}>
-                <Button
-                  variant="outlined"
-                  onClick={() => {
-                    setIsLeadPickerOpen(false);
-                    setIsManualQuoteOpen(true);
-                  }}
-                  sx={{
-                    minHeight: 34,
-                    borderRadius: "999px",
-                    borderColor: "rgba(225,232,241,0.96)",
-                    color: "#0E56C8",
-                    fontSize: "0.72rem",
-                    fontWeight: 800,
-                    textTransform: "none",
-                  }}
-                >
-                  Create Manual Quote
-                </Button>
-              </Box>
-              {quoteEligibleLeads.map((lead) => {
-                const leadId = lead.id || lead._id;
-                const customerName = lead.contact?.fullName || "Customer";
-                const locationLabel = [lead.installationAddress?.city, lead.installationAddress?.state].filter(Boolean).join(", ") || "Location pending";
-                const systemLabel = lead.property?.sanctionedLoadKw ? `${lead.property.sanctionedLoadKw} kW` : "Assessment pending";
-
-                return (
-                  <Box
-                    key={leadId}
-                    sx={{
-                      p: 1.25,
-                      borderRadius: "1rem",
-                      border: "1px solid rgba(225,232,241,0.96)",
-                      bgcolor: "#FFFFFF",
-                      display: "flex",
-                      flexDirection: { xs: "column", md: "row" },
-                      alignItems: { xs: "stretch", md: "center" },
-                      justifyContent: "space-between",
-                      gap: 1.2,
-                    }}
-                  >
-                    <Stack direction="row" spacing={1} alignItems="center">
-                      <Avatar sx={{ width: 34, height: 34, bgcolor: "#EEF2F8", color: "#667388", fontSize: "0.74rem", fontWeight: 800 }}>
-                        {getInitials(customerName)}
-                      </Avatar>
-                      <Box>
-                        <Typography sx={{ color: "#223146", fontSize: "0.9rem", fontWeight: 800 }}>
-                          {customerName}
-                        </Typography>
-                        <Typography sx={{ mt: 0.16, color: "#738094", fontSize: "0.72rem" }}>
-                          {locationLabel} · {systemLabel}
-                        </Typography>
-                      </Box>
-                    </Stack>
-
-                    <Button
-                      variant="contained"
-                      onClick={() => selectLeadForQuote(leadId)}
-                      sx={{
-                        minHeight: 34,
-                        px: 1.4,
-                        borderRadius: "999px",
-                        bgcolor: "#0E56C8",
-                        boxShadow: "none",
-                        fontSize: "0.72rem",
-                        fontWeight: 800,
-                        textTransform: "none",
-                      }}
-                    >
-                      Start Quote
-                    </Button>
-                  </Box>
-                );
-              })}
-            </Stack>
-          )}
-        </DialogContent>
-        <DialogActions sx={{ px: 3, py: 2 }}>
-          <Button onClick={() => setIsLeadPickerOpen(false)} sx={{ textTransform: "none", fontWeight: 700 }}>
-            Cancel
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      <Dialog
-        open={isManualQuoteOpen}
-        onClose={closeManualQuoteDialog}
-        fullWidth
-        maxWidth="md"
-        PaperProps={{
-          sx: {
-            borderRadius: "1.35rem",
-            border: "1px solid rgba(225,232,241,0.96)",
-            boxShadow: "0 22px 48px rgba(16,29,51,0.16)",
-          },
-        }}
-      >
-        <DialogTitle sx={{ color: "#18253A", fontSize: "1.35rem", fontWeight: 800 }}>
-          Create Manual Quote
-        </DialogTitle>
-        <DialogContent dividers sx={{ borderColor: "rgba(229,234,241,0.95)" }}>
-          <Stack spacing={2.2} sx={{ pt: 0.5 }}>
-            {manualQuoteError ? (
-              <Alert severity="error" sx={{ borderRadius: "0.9rem" }}>
-                {manualQuoteError}
-              </Alert>
-            ) : null}
-
-            <QuoteFormSection title="Customer Details">
-              <QuoteField label="Customer Name" value={manualQuoteForm.fullName} onChange={(value) => updateManualQuote("fullName", value)} required />
-              <QuoteField label="Phone Number" value={manualQuoteForm.phoneNumber} onChange={(value) => updateManualQuote("phoneNumber", value)} required />
-              <QuoteField label="Email" value={manualQuoteForm.email} onChange={(value) => updateManualQuote("email", value)} type="email" />
-            </QuoteFormSection>
-
-            <QuoteFormSection title="Site Details">
-              <QuoteField label="Street Address" value={manualQuoteForm.street} onChange={(value) => updateManualQuote("street", value)} required wide />
-              <QuoteField label="Landmark" value={manualQuoteForm.landmark} onChange={(value) => updateManualQuote("landmark", value)} />
-              <QuoteField label="City" value={manualQuoteForm.city} onChange={(value) => updateManualQuote("city", value)} required />
-              <QuoteField label="State" value={manualQuoteForm.state} onChange={(value) => updateManualQuote("state", value)} required />
-              <QuoteField label="Pincode" value={manualQuoteForm.pincode} onChange={(value) => updateManualQuote("pincode", value)} required />
-              <QuoteSelect label="Property Type" value={manualQuoteForm.propertyType} onChange={(value) => updateManualQuote("propertyType", value)} options={[["independent_house", "Independent House"], ["apartment", "Apartment"], ["commercial", "Commercial"]]} />
-              <QuoteSelect label="Roof Type" value={manualQuoteForm.roofType} onChange={(value) => updateManualQuote("roofType", value)} options={[["flat", "Flat"], ["sloped", "Sloped"]]} />
-              <QuoteSelect label="Ownership" value={manualQuoteForm.ownership} onChange={(value) => updateManualQuote("ownership", value)} options={[["owned", "Owned"], ["rented", "Rented"]]} />
-            </QuoteFormSection>
-
-            <QuoteFormSection title="Quote Details">
-              <QuoteField label="Total Price" value={manualQuoteForm.totalPrice} onChange={(value) => updateManualQuote("totalPrice", value)} type="number" required />
-              <QuoteField label="Equipment Cost" value={manualQuoteForm.equipmentCost} onChange={(value) => updateManualQuote("equipmentCost", value)} type="number" />
-              <QuoteField label="Labor Cost" value={manualQuoteForm.laborCost} onChange={(value) => updateManualQuote("laborCost", value)} type="number" />
-              <QuoteField label="Permitting Cost" value={manualQuoteForm.permittingCost} onChange={(value) => updateManualQuote("permittingCost", value)} type="number" />
-              <QuoteField label="System Size (kW)" value={manualQuoteForm.sizeKw} onChange={(value) => updateManualQuote("sizeKw", value)} type="number" required />
-              <QuoteSelect label="Panel Type" value={manualQuoteForm.panelType} onChange={(value) => updateManualQuote("panelType", value)} options={[["monocrystalline", "Monocrystalline"], ["polycrystalline", "Polycrystalline"], ["bifacial", "Bifacial"]]} />
-              <QuoteField label="Inverter Type" value={manualQuoteForm.inverterType} onChange={(value) => updateManualQuote("inverterType", value)} required />
-              <QuoteSelect label="Installation Window" value={manualQuoteForm.installationWindow} onChange={(value) => updateManualQuote("installationWindow", value)} options={[["2_4_weeks", "2-4 Weeks"], ["4_6_weeks", "4-6 Weeks"], ["6_8_weeks", "6-8 Weeks"]]} />
-              <QuoteSelect label="Roof Size" value={manualQuoteForm.roofSizeRange} onChange={(value) => updateManualQuote("roofSizeRange", value)} options={[["under_500", "Under 500 sq ft"], ["500_1000", "500-1000 sq ft"], ["over_1000", "Over 1000 sq ft"]]} />
-              <QuoteSelect label="Shadow" value={manualQuoteForm.shadow} onChange={(value) => updateManualQuote("shadow", value)} options={[["none", "None"], ["partial", "Partial"], ["heavy", "Heavy"]]} />
-              <QuoteSelect label="Roof Condition" value={manualQuoteForm.condition} onChange={(value) => updateManualQuote("condition", value)} options={[["excellent", "Excellent"], ["average", "Average"], ["needs_repair", "Needs Repair"]]} />
-              <QuoteField label="Proposal Notes" value={manualQuoteForm.proposalNotes} onChange={(value) => updateManualQuote("proposalNotes", value)} wide multiline />
-            </QuoteFormSection>
-          </Stack>
-        </DialogContent>
-        <DialogActions sx={{ px: 3, py: 2 }}>
-          <Button onClick={closeManualQuoteDialog} disabled={isCreatingManualQuote} sx={{ textTransform: "none", fontWeight: 700 }}>
-            Cancel
-          </Button>
-          <Button
-            variant="contained"
-            onClick={createManualQuote}
-            disabled={isCreatingManualQuote}
-            sx={{ minHeight: 38, borderRadius: "999px", px: 2.3, bgcolor: "#0E56C8", textTransform: "none", fontWeight: 800 }}
-          >
-            {isCreatingManualQuote ? "Creating..." : "Create Quote"}
-          </Button>
-        </DialogActions>
-      </Dialog>
 
       <Box
         sx={{
           display: "grid",
-          gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)", lg: "repeat(4, 1fr)" },
+          gridTemplateColumns: {
+            xs: "1fr",
+            sm: "repeat(2, 1fr)",
+            lg: "repeat(4, 1fr)",
+          },
           gap: 1.6,
           mb: { xs: 2.4, md: 2.7 },
         }}
@@ -823,10 +436,20 @@ export default function VendorQuotesPage() {
               },
             }}
           >
-            <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
+            <Stack
+              direction="row"
+              justifyContent="space-between"
+              alignItems="flex-start"
+            >
               <KpiIcon type={card.icon} tone={card.tone} bg={card.bg} />
               {card.delta ? (
-                <Typography sx={{ color: "#778597", fontSize: "0.58rem", fontWeight: 800 }}>
+                <Typography
+                  sx={{
+                    color: "#778597",
+                    fontSize: "0.58rem",
+                    fontWeight: 800,
+                  }}
+                >
                   {card.delta}
                 </Typography>
               ) : card.badge ? (
@@ -871,16 +494,24 @@ export default function VendorQuotesPage() {
         ))}
       </Box>
 
-      {error ? (
-        <VendorErrorState>{error}</VendorErrorState>
-      ) : null}
+      {error ? <VendorErrorState>{error}</VendorErrorState> : null}
 
-      <VendorPanel sx={{ borderRadius: "1.55rem", overflow: "hidden", mb: { xs: 2.5, md: 2.8 } }}>
+      <VendorPanel
+        sx={{
+          borderRadius: "1.55rem",
+          overflow: "hidden",
+          mb: { xs: 2.5, md: 2.8 },
+        }}
+      >
         <Stack
           direction={{ xs: "column", md: "row" }}
           justifyContent="space-between"
           alignItems={{ xs: "stretch", md: "center" }}
-          sx={{ px: 1.7, pt: 1.5, borderBottom: "1px solid rgba(234,239,245,0.95)" }}
+          sx={{
+            px: 1.7,
+            pt: 1.5,
+            borderBottom: "1px solid rgba(234,239,245,0.95)",
+          }}
         >
           <Stack direction="row" spacing={0}>
             {tabs.map((tab) => (
@@ -891,7 +522,10 @@ export default function VendorQuotesPage() {
                   minHeight: 38,
                   px: 1.4,
                   borderRadius: 0,
-                  borderBottom: activeTab === tab ? "2px solid #0E56C8" : "2px solid transparent",
+                  borderBottom:
+                    activeTab === tab
+                      ? "2px solid #0E56C8"
+                      : "2px solid transparent",
                   color: activeTab === tab ? "#0E56C8" : "#6F7D8F",
                   fontSize: "0.76rem",
                   fontWeight: activeTab === tab ? 800 : 600,
@@ -905,7 +539,12 @@ export default function VendorQuotesPage() {
             ))}
           </Stack>
 
-          <Stack direction="row" spacing={0.8} alignItems="center" sx={{ pb: { xs: 1, md: 0 } }}>
+          <Stack
+            direction="row"
+            spacing={0.8}
+            alignItems="center"
+            sx={{ pb: { xs: 1, md: 0 } }}
+          >
             <Button
               startIcon={<TuneRoundedIcon />}
               variant="outlined"
@@ -927,18 +566,31 @@ export default function VendorQuotesPage() {
               startIcon={<FileDownloadOutlinedIcon />}
               onClick={exportQuotes}
               disabled={isLoading}
-              sx={{ minHeight: 32, px: 1.2, borderRadius: "0.8rem", fontSize: "0.68rem" }}
+              sx={{
+                minHeight: 32,
+                px: 1.2,
+                borderRadius: "0.8rem",
+                fontSize: "0.68rem",
+              }}
             >
               Export
             </VendorSecondaryButton>
           </Stack>
         </Stack>
 
-        <Box sx={{ display: { xs: "none", lg: "block" }, px: 1.7, pt: 1.3, pb: 0.6 }}>
+        <Box
+          sx={{
+            display: { xs: "none", lg: "block" },
+            px: 1.7,
+            pt: 1.3,
+            pb: 0.6,
+          }}
+        >
           <Box
             sx={{
               display: "grid",
-              gridTemplateColumns: "1.25fr 1fr 0.72fr 0.98fr 0.92fr 0.88fr 0.95fr",
+              gridTemplateColumns:
+                "1.25fr 1fr 0.72fr 0.98fr 0.92fr 0.88fr 0.95fr",
               gap: 1,
             }}
           >
@@ -960,17 +612,13 @@ export default function VendorQuotesPage() {
         </Box>
 
         <Stack spacing={0} sx={{ px: { xs: 1.2, md: 1.7 }, pb: 1.1 }}>
-          {isLoading ? (
-            <VendorLoadingState minHeight={140} />
-          ) : null}
+          {isLoading ? <VendorLoadingState minHeight={140} /> : null}
 
           {!isLoading && !error && filteredQuotes.length === 0 ? (
             <VendorEmptyState
               icon={RequestQuoteOutlinedIcon}
               title="No quotes available"
-              subtitle="Create your first quote from active leads to start tracking performance."
-              actionLabel="Create New Quote"
-              actionOnClick={() => setIsLeadPickerOpen(true)}
+              subtitle="Go to Leads and submit a quote on any open lead to start tracking performance."
             />
           ) : null}
 
@@ -978,7 +626,8 @@ export default function VendorQuotesPage() {
             <Box
               key={quote.id}
               sx={{
-                borderTop: index === 0 ? "none" : "1px solid rgba(234,239,245,0.95)",
+                borderTop:
+                  index === 0 ? "none" : "1px solid rgba(234,239,245,0.95)",
                 py: { xs: 1.45, md: 1.55 },
                 borderRadius: "0.75rem",
                 transition: "background 0.15s",
@@ -988,7 +637,8 @@ export default function VendorQuotesPage() {
               <Box
                 sx={{
                   display: { xs: "none", lg: "grid" },
-                  gridTemplateColumns: "1.25fr 1fr 0.72fr 0.98fr 0.92fr 0.88fr 0.95fr",
+                  gridTemplateColumns:
+                    "1.25fr 1fr 0.72fr 0.98fr 0.92fr 0.88fr 0.95fr",
                   gap: 1,
                   alignItems: "center",
                 }}
@@ -1007,22 +657,50 @@ export default function VendorQuotesPage() {
                     {quote.initials}
                   </Avatar>
                   <Box>
-                    <Typography sx={{ color: "#223146", fontSize: "0.86rem", fontWeight: 700, lineHeight: 1.15 }}>
+                    <Typography
+                      sx={{
+                        color: "#223146",
+                        fontSize: "0.86rem",
+                        fontWeight: 700,
+                        lineHeight: 1.15,
+                      }}
+                    >
                       {quote.name}
                     </Typography>
-                    <Typography sx={{ mt: 0.15, color: "#98A3B2", fontSize: "0.66rem", lineHeight: 1.3 }}>
+                    <Typography
+                      sx={{
+                        mt: 0.15,
+                        color: "#98A3B2",
+                        fontSize: "0.66rem",
+                        lineHeight: 1.3,
+                      }}
+                    >
                       {quote.type}
                     </Typography>
                   </Box>
                 </Stack>
 
-                <Typography sx={{ color: "#5E6A7D", fontSize: "0.76rem", lineHeight: 1.35 }}>
+                <Typography
+                  sx={{
+                    color: "#5E6A7D",
+                    fontSize: "0.76rem",
+                    lineHeight: 1.35,
+                  }}
+                >
                   {quote.location}
                 </Typography>
-                <Typography sx={{ color: "#223146", fontSize: "0.76rem", fontWeight: 600 }}>
+                <Typography
+                  sx={{
+                    color: "#223146",
+                    fontSize: "0.76rem",
+                    fontWeight: 600,
+                  }}
+                >
                   {quote.systemSize}
                 </Typography>
-                <Typography sx={{ color: "#0E56C8", fontSize: "0.8rem", fontWeight: 800 }}>
+                <Typography
+                  sx={{ color: "#0E56C8", fontSize: "0.8rem", fontWeight: 800 }}
+                >
                   {quote.yourPrice}
                 </Typography>
                 <VendorStatusPill tone={quote.statusTone} bg={quote.statusBg}>
@@ -1084,10 +762,18 @@ export default function VendorQuotesPage() {
                       {quote.initials}
                     </Avatar>
                     <Box>
-                      <Typography sx={{ color: "#223146", fontSize: "0.9rem", fontWeight: 700 }}>
+                      <Typography
+                        sx={{
+                          color: "#223146",
+                          fontSize: "0.9rem",
+                          fontWeight: 700,
+                        }}
+                      >
                         {quote.name}
                       </Typography>
-                      <Typography sx={{ color: "#98A3B2", fontSize: "0.7rem", mt: 0.12 }}>
+                      <Typography
+                        sx={{ color: "#98A3B2", fontSize: "0.7rem", mt: 0.12 }}
+                      >
                         {quote.type}
                       </Typography>
                     </Box>
@@ -1121,7 +807,8 @@ export default function VendorQuotesPage() {
                         <Typography
                           sx={{
                             mt: 0.22,
-                            color: label === "Your Price" ? "#0E56C8" : "#223146",
+                            color:
+                              label === "Your Price" ? "#0E56C8" : "#223146",
                             fontSize: "0.76rem",
                             fontWeight: label === "Your Price" ? 800 : 600,
                           }}
@@ -1132,8 +819,16 @@ export default function VendorQuotesPage() {
                     ))}
                   </Box>
 
-                  <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
-                    <VendorStatusPill tone={quote.statusTone} bg={quote.statusBg}>
+                  <Stack
+                    direction="row"
+                    spacing={1}
+                    alignItems="center"
+                    flexWrap="wrap"
+                  >
+                    <VendorStatusPill
+                      tone={quote.statusTone}
+                      bg={quote.statusBg}
+                    >
                       {quote.status}
                     </VendorStatusPill>
                     <Button
@@ -1186,13 +881,18 @@ export default function VendorQuotesPage() {
             borderTop: "1px solid rgba(234,239,245,0.95)",
           }}
         >
-          <Typography sx={{ color: "#738094", fontSize: "0.72rem", fontWeight: 500 }}>
-            Showing {firstVisibleQuote} to {lastVisibleQuote} of {filteredQuotes.length} quotes
+          <Typography
+            sx={{ color: "#738094", fontSize: "0.72rem", fontWeight: 500 }}
+          >
+            Showing {firstVisibleQuote} to {lastVisibleQuote} of{" "}
+            {filteredQuotes.length} quotes
           </Typography>
 
           <Stack direction="row" spacing={0.45} alignItems="center">
             <Button
-              onClick={() => setPage((currentPage) => Math.max(1, currentPage - 1))}
+              onClick={() =>
+                setPage((currentPage) => Math.max(1, currentPage - 1))
+              }
               disabled={page === 1}
               sx={{
                 minWidth: 30,
@@ -1210,9 +910,16 @@ export default function VendorQuotesPage() {
               const prev = pageNumbers[idx - 1];
               const showEllipsis = prev && pageNumber - prev > 1;
               return (
-                <Box key={pageNumber} sx={{ display: "flex", alignItems: "center", gap: 0.45 }}>
+                <Box
+                  key={pageNumber}
+                  sx={{ display: "flex", alignItems: "center", gap: 0.45 }}
+                >
                   {showEllipsis && (
-                    <Typography sx={{ color: "#8B97A8", fontSize: "0.7rem", px: 0.3 }}>…</Typography>
+                    <Typography
+                      sx={{ color: "#8B97A8", fontSize: "0.7rem", px: 0.3 }}
+                    >
+                      …
+                    </Typography>
                   )}
                   <Button
                     onClick={() => setPage(pageNumber)}
@@ -1224,7 +931,10 @@ export default function VendorQuotesPage() {
                       p: 0,
                       color: pageNumber === page ? "#FFFFFF" : "#223146",
                       bgcolor: pageNumber === page ? "#0E56C8" : "#FFFFFF",
-                      border: pageNumber === page ? "none" : "1px solid rgba(225,232,241,0.96)",
+                      border:
+                        pageNumber === page
+                          ? "none"
+                          : "1px solid rgba(225,232,241,0.96)",
                       fontSize: "0.7rem",
                       fontWeight: 700,
                     }}
@@ -1235,7 +945,9 @@ export default function VendorQuotesPage() {
               );
             })}
             <Button
-              onClick={() => setPage((currentPage) => Math.min(totalPages, currentPage + 1))}
+              onClick={() =>
+                setPage((currentPage) => Math.min(totalPages, currentPage + 1))
+              }
               disabled={page === totalPages}
               sx={{
                 minWidth: 30,
@@ -1269,7 +981,9 @@ export default function VendorQuotesPage() {
             boxShadow: "0 14px 28px rgba(16,29,51,0.04)",
           }}
         >
-          <Typography sx={{ color: "#18253A", fontSize: "1.08rem", fontWeight: 800 }}>
+          <Typography
+            sx={{ color: "#18253A", fontSize: "1.08rem", fontWeight: 800 }}
+          >
             Quote Insights
           </Typography>
           <Stack
@@ -1279,9 +993,14 @@ export default function VendorQuotesPage() {
             sx={{ mt: 1.2 }}
           >
             <Box sx={{ maxWidth: 280 }}>
-              <Typography sx={{ color: "#5E6A7D", fontSize: "0.84rem", lineHeight: 1.7 }}>
-                Your current quote acceptance rate is {acceptanceRate}% across {quoteRows.length} submitted quotes.
-                {topLocation ? ` ${topLocation} is your most active quote location.` : " Submit more quotes to build reliable regional insights."}
+              <Typography
+                sx={{ color: "#5E6A7D", fontSize: "0.84rem", lineHeight: 1.7 }}
+              >
+                Your current quote acceptance rate is {acceptanceRate}% across{" "}
+                {quoteRows.length} submitted quotes.
+                {topLocation
+                  ? ` ${topLocation} is your most active quote location.`
+                  : " Submit more quotes to build reliable regional insights."}
               </Typography>
               <Button
                 onClick={exportQuotes}
@@ -1353,7 +1072,8 @@ export default function VendorQuotesPage() {
             }}
           >
             Your average submitted quote is {formatPrice(averageQuoteValue)}.
-            Review open leads and tune proposals using system size, warranty, and delivery timelines.
+            Review open leads and tune proposals using system size, warranty,
+            and delivery timelines.
           </Typography>
           <Button
             component={RouterLink}
