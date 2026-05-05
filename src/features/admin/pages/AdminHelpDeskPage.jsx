@@ -16,6 +16,7 @@ import ChatOutlinedIcon from "@mui/icons-material/ChatOutlined";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import { useCallback, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { ChatWindow } from "@/features/chat/ChatWindow";
 import { chatApi } from "@/features/chat/chatApi";
 import { useChatSocket } from "@/features/chat/useChatSocket";
@@ -54,6 +55,8 @@ function formatTime(value) {
 
 // ── Tickets tab ───────────────────────────────────────────────────────────────
 function TicketsTab() {
+  const navigate = useNavigate();
+
   return (
     <Box>
       <Stack direction="row" justifyContent="flex-end" spacing={1} sx={{ mb: 2.5 }}>
@@ -74,7 +77,11 @@ function TicketsTab() {
           ))}
         </Box>
         {STATIC_TICKETS.map((ticket, index) => (
-          <Box key={ticket.id} sx={{ display: "grid", gridTemplateColumns: "0.8fr 1.2fr 1fr 0.7fr 0.9fr 0.8fr", gap: 1, px: 2.5, py: 2, alignItems: "center", borderTop: index === 0 ? "none" : "1px solid #EEF2F6", transition: "background 0.15s", "&:hover": { bgcolor: "#F7F9FC" } }}>
+          <Box
+            key={ticket.id}
+            onClick={() => navigate(`/admin/help-desk/${encodeURIComponent(ticket.id)}`)}
+            sx={{ display: "grid", gridTemplateColumns: "0.8fr 1.2fr 1fr 0.7fr 0.9fr 0.8fr", gap: 1, px: 2.5, py: 2, alignItems: "center", borderTop: index === 0 ? "none" : "1px solid #EEF2F6", transition: "background 0.15s", cursor: "pointer", "&:hover": { bgcolor: "#F0F5FF" } }}
+          >
             <Typography sx={{ color: "#0E56C8", fontSize: "0.84rem", fontWeight: 900 }}>{ticket.id}</Typography>
             <Stack direction="row" spacing={1.2} alignItems="center">
               <Avatar sx={{ width: 32, height: 32, bgcolor: "#EEF2F6", color: "#667386", fontSize: "0.68rem", fontWeight: 900 }}>{ticket.initials}</Avatar>
