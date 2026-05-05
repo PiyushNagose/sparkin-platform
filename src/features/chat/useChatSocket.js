@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { io } from "socket.io-client";
 
+// ── Fix: use VITE_BUSINESS_API_BASE_URL (port 4002) not VITE_API_BASE_URL (port 4001 / gateway)
 const SOCKET_URL = (
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:4002/api/v1"
+  import.meta.env.VITE_BUSINESS_API_BASE_URL || "http://localhost:4002/api/v1"
 ).replace(/\/api\/v1\/?$/, "");
 
 /**
@@ -17,13 +18,17 @@ export function useChatSocket(token, { onNewRoom, onRoomUpdated } = {}) {
   const socketRef = useRef(null);
   const [connected, setConnected] = useState(false);
   const [messages, setMessages] = useState({}); // { [roomId]: Message[] }
-  const [typing, setTyping] = useState({});     // { [roomId]: { userId, name }[] }
+  const [typing, setTyping] = useState({}); // { [roomId]: { userId, name }[] }
 
   // Keep callbacks in refs so the effect doesn't re-run when they change
   const onNewRoomRef = useRef(onNewRoom);
   const onRoomUpdatedRef = useRef(onRoomUpdated);
-  useEffect(() => { onNewRoomRef.current = onNewRoom; }, [onNewRoom]);
-  useEffect(() => { onRoomUpdatedRef.current = onRoomUpdated; }, [onRoomUpdated]);
+  useEffect(() => {
+    onNewRoomRef.current = onNewRoom;
+  }, [onNewRoom]);
+  useEffect(() => {
+    onRoomUpdatedRef.current = onRoomUpdated;
+  }, [onRoomUpdated]);
 
   useEffect(() => {
     if (!token) return;
