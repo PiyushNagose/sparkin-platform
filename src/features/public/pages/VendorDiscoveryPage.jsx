@@ -309,7 +309,7 @@ export default function VendorDiscoveryPage() {
           backgroundPosition: "center",
         }}
       >
-        <Container maxWidth="lg">
+        <Container maxWidth={false} disableGutters className={styles.publicContentContainer}>
           <Box
             sx={{
               minHeight: { xs: 340, md: 420 },
