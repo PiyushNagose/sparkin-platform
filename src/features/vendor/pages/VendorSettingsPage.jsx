@@ -319,22 +319,6 @@ export default function VendorSettingsPage() {
             clears the local session and revokes the refresh token on the
             identity service.
           </Typography>
-          <Button
-            variant="outlined"
-            color="error"
-            startIcon={<LogoutOutlinedIcon />}
-            onClick={handleLogout}
-            disabled={isLoggingOut}
-            sx={{
-              mt: 1.5,
-              minHeight: 38,
-              borderRadius: "0.9rem",
-              textTransform: "none",
-              fontWeight: 800,
-            }}
-          >
-            {isLoggingOut ? "Logging out…" : "Logout from this device"}
-          </Button>
         </SectionCard>
 
         {/* Support */}
@@ -359,7 +343,7 @@ export default function VendorSettingsPage() {
             </Button>
             <Button
               component={RouterLink}
-              to="/vendor/services"
+              to="/vendor/chat"
               variant="contained"
               sx={{
                 minHeight: 38,
@@ -370,7 +354,7 @@ export default function VendorSettingsPage() {
                 fontWeight: 800,
               }}
             >
-              View Service Requests
+              Support Chat
             </Button>
           </Stack>
         </SectionCard>

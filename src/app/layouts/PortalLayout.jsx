@@ -103,7 +103,7 @@ const VENDOR_SEARCH_ROUTES = [
   },
   {
     terms: ["service", "services", "ticket", "support", "repair"],
-    path: "/vendor/services",
+    path: "/vendor/chat",
   },
   {
     terms: ["payment", "payments", "transaction", "invoice", "payout"],
@@ -153,16 +153,28 @@ const CUSTOMER_SEARCH_ROUTES = [
 ];
 
 const ADMIN_SEARCH_ROUTES = [
-  { terms: ["lead", "leads", "customer", "verification"], path: "/admin/leads" },
-  { terms: ["payment", "payments", "invoice", "transaction"], path: "/admin/payments" },
+  {
+    terms: ["lead", "leads", "customer", "verification"],
+    path: "/admin/leads",
+  },
+  {
+    terms: ["payment", "payments", "invoice", "transaction"],
+    path: "/admin/payments",
+  },
   { terms: ["vendor", "vendors", "partner"], path: "/admin/vendors" },
   { terms: ["assign", "assignment"], path: "/admin/vendor-assignment" },
   { terms: ["bid", "bidding", "quote", "quotes"], path: "/admin/bidding" },
-  { terms: ["project", "projects", "customer"], path: "/admin/customers-projects" },
+  {
+    terms: ["project", "projects", "customer"],
+    path: "/admin/customers-projects",
+  },
   { terms: ["report", "reports", "metric"], path: "/admin/reports" },
   { terms: ["setting", "settings"], path: "/admin/settings" },
   { terms: ["notification", "alert", "log"], path: "/admin/notifications" },
-  { terms: ["help", "desk", "helpdesk", "ticket", "chat", "support"], path: "/admin/help-desk" },
+  {
+    terms: ["help", "desk", "helpdesk", "ticket", "chat", "support"],
+    path: "/admin/help-desk",
+  },
 ];
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
@@ -331,7 +343,9 @@ export function PortalLayout({ portal }) {
         leadsNeedReview: leads.filter((lead) =>
           ["submitted", "reviewing"].includes(lead.status),
         ).length,
-        pendingPayments: payments.filter((payment) => payment.status === "pending").length,
+        pendingPayments: payments.filter(
+          (payment) => payment.status === "pending",
+        ).length,
         activeProjects: projects.filter(
           (project) => !["completed", "cancelled"].includes(project.status),
         ).length,
@@ -435,16 +449,19 @@ export function PortalLayout({ portal }) {
     portal === "admin"
       ? "/admin/notifications"
       : portal === "vendor"
-        ? "/vendor/services"
+        ? "/vendor/help"
         : "/service-support";
 
-  const handleSidebarLogout = useCallback(async (onNavClick) => {
-    onNavClick?.();
-    await logout();
-    navigate(portal === "admin" ? "/auth/admin-login" : "/auth/login", {
-      replace: true,
-    });
-  }, [logout, navigate, portal]);
+  const handleSidebarLogout = useCallback(
+    async (onNavClick) => {
+      onNavClick?.();
+      await logout();
+      navigate(portal === "admin" ? "/auth/admin-login" : "/auth/login", {
+        replace: true,
+      });
+    },
+    [logout, navigate, portal],
+  );
 
   // ── sidebar content — defined outside render to avoid remount ─────────────
 
@@ -547,34 +564,7 @@ export function PortalLayout({ portal }) {
           </Stack>
 
           <Box sx={{ mt: "auto", pt: 2 }}>
-            {portal === "admin" ? null : portal === "vendor" ? (
-              <Button
-                component={NavLink}
-                to="/vendor/projects"
-                state={{ openCreateProject: true }}
-                variant="contained"
-                startIcon={<AddRoundedIcon />}
-                onClick={onNavClick}
-                sx={{
-                  width: "100%",
-                  minHeight: 40,
-                  borderRadius: "0.8rem",
-                  textTransform: "none",
-                  fontSize: "0.78rem",
-                  fontWeight: 700,
-                  bgcolor: "#0E56C8",
-                  boxShadow: "0 6px 16px rgba(14,86,200,0.2)",
-                  transition: "all 0.15s cubic-bezier(0.4,0,0.2,1)",
-                  "&:hover": {
-                    bgcolor: "#0B49AD",
-                    boxShadow: "0 10px 22px rgba(14,86,200,0.28)",
-                    transform: "translateY(-1px)",
-                  },
-                }}
-              >
-                Create Project
-              </Button>
-            ) : (
+            {portal === "admin" ? null : portal === "vendor" ? null : (
               <Button
                 component={NavLink}
                 to="/booking"
@@ -938,7 +928,7 @@ export function PortalLayout({ portal }) {
                   portal === "admin"
                     ? "/admin/notifications"
                     : portal === "vendor"
-                      ? "/vendor/services"
+                      ? "/vendor/help"
                       : "/service-support"
                 }
                 direction="row"
@@ -965,7 +955,9 @@ export function PortalLayout({ portal }) {
                 alignItems="center"
                 sx={{ pl: 0.4, textDecoration: "none" }}
                 component={NavLink}
-                to={portal === "admin" ? "/admin/settings" : `/${portal}/profile`}
+                to={
+                  portal === "admin" ? "/admin/settings" : `/${portal}/profile`
+                }
                 color="inherit"
               >
                 <Avatar

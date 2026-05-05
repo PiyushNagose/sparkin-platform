@@ -4,10 +4,6 @@ import {
   Box,
   Button,
   CircularProgress,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
   MenuItem,
   Stack,
   TextField,
@@ -17,7 +13,6 @@ import FileDownloadOutlinedIcon from "@mui/icons-material/FileDownloadOutlined";
 import TuneRoundedIcon from "@mui/icons-material/TuneRounded";
 import KeyboardArrowLeftRoundedIcon from "@mui/icons-material/KeyboardArrowLeftRounded";
 import KeyboardArrowRightRoundedIcon from "@mui/icons-material/KeyboardArrowRightRounded";
-import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import Groups2RoundedIcon from "@mui/icons-material/Groups2Rounded";
 import { Link as RouterLink, useLocation } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
@@ -30,7 +25,6 @@ import {
   VendorPageHeader,
   VendorPageShell,
   VendorPanel,
-  VendorPrimaryButton,
   VendorSecondaryButton,
   VendorStatusPill,
 } from "@/features/vendor/components/VendorPortalUI";
@@ -46,30 +40,6 @@ const columns = [
 ];
 
 const pageSize = 8;
-const emptyManualLeadForm = {
-  fullName: "",
-  phoneNumber: "",
-  email: "",
-  street: "",
-  landmark: "",
-  city: "",
-  state: "",
-  pincode: "",
-  propertyType: "independent_house",
-  roofType: "flat",
-  ownership: "owned",
-  distributionCompany: "",
-  connectionType: "single_phase",
-  consumerNumber: "",
-  sanctionedLoadKw: "",
-  roofSizeRange: "500_1000",
-  shadow: "partial",
-  condition: "average",
-  preferredDate: "",
-  preferredTimeSlot: "",
-  notes: "",
-  specialInstructions: "",
-};
 
 function FilterSelect({ label, value, onChange, options }) {
   return (
@@ -120,89 +90,6 @@ function FilterSelect({ label, value, onChange, options }) {
         ))}
       </TextField>
     </Stack>
-  );
-}
-
-function ManualLeadSection({ title, children }) {
-  return (
-    <Box>
-      <Typography
-        sx={{ mb: 1.1, color: "#18253A", fontSize: "0.9rem", fontWeight: 800 }}
-      >
-        {title}
-      </Typography>
-      <Box
-        sx={{
-          display: "grid",
-          gridTemplateColumns: { xs: "1fr", md: "repeat(3, minmax(0, 1fr))" },
-          gap: 1.2,
-        }}
-      >
-        {children}
-      </Box>
-    </Box>
-  );
-}
-
-function ManualLeadField({
-  label,
-  value,
-  onChange,
-  required = false,
-  type = "text",
-  wide = false,
-  multiline = false,
-}) {
-  return (
-    <TextField
-      label={required ? `${label} *` : label}
-      value={value}
-      type={type}
-      multiline={multiline}
-      minRows={multiline ? 3 : undefined}
-      onChange={(event) => onChange(event.target.value)}
-      InputLabelProps={type === "date" ? { shrink: true } : undefined}
-      sx={{
-        gridColumn: wide ? { xs: "auto", md: "1 / -1" } : "auto",
-        "& .MuiOutlinedInput-root": {
-          borderRadius: "0.85rem",
-          bgcolor: "#FFFFFF",
-          fontSize: "0.82rem",
-        },
-        "& .MuiInputLabel-root": {
-          fontSize: "0.78rem",
-          fontWeight: 700,
-        },
-      }}
-    />
-  );
-}
-
-function ManualLeadSelect({ label, value, onChange, options }) {
-  return (
-    <TextField
-      select
-      label={label}
-      value={value}
-      onChange={(event) => onChange(event.target.value)}
-      sx={{
-        "& .MuiOutlinedInput-root": {
-          borderRadius: "0.85rem",
-          bgcolor: "#FFFFFF",
-          fontSize: "0.82rem",
-        },
-        "& .MuiInputLabel-root": {
-          fontSize: "0.78rem",
-          fontWeight: 700,
-        },
-      }}
-    >
-      {options.map(([optionValue, optionLabel]) => (
-        <MenuItem key={optionValue} value={optionValue}>
-          {optionLabel}
-        </MenuItem>
-      ))}
-    </TextField>
   );
 }
 
@@ -344,10 +231,6 @@ export default function VendorLeadsPage() {
   const [systemFilter, setSystemFilter] = useState("all");
   const [sortBy, setSortBy] = useState("newest");
   const [page, setPage] = useState(1);
-  const [isManualLeadOpen, setIsManualLeadOpen] = useState(false);
-  const [manualLeadForm, setManualLeadForm] = useState(emptyManualLeadForm);
-  const [isCreatingLead, setIsCreatingLead] = useState(false);
-  const [manualLeadError, setManualLeadError] = useState("");
 
   async function loadLeads(active = true) {
     setIsLoading(true);
@@ -519,104 +402,6 @@ export default function VendorLeadsPage() {
     setPage(1);
   }
 
-  function updateManualLead(field, value) {
-    setManualLeadForm((current) => ({ ...current, [field]: value }));
-  }
-
-  function closeManualLeadDialog() {
-    if (isCreatingLead) return;
-    setIsManualLeadOpen(false);
-    setManualLeadError("");
-  }
-
-  function validateManualLead() {
-    const requiredFields = [
-      ["fullName", "Customer name"],
-      ["phoneNumber", "Phone number"],
-      ["street", "Street address"],
-      ["city", "City"],
-      ["state", "State"],
-      ["pincode", "Pincode"],
-    ];
-    const missing = requiredFields
-      .filter(([field]) => !String(manualLeadForm[field] || "").trim())
-      .map(([, label]) => label);
-
-    if (
-      manualLeadForm.email.trim() &&
-      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(manualLeadForm.email.trim())
-    ) {
-      missing.push("Valid email");
-    }
-
-    return missing;
-  }
-
-  function buildManualLeadPayload() {
-    return {
-      contact: {
-        fullName: manualLeadForm.fullName.trim(),
-        phoneNumber: manualLeadForm.phoneNumber.trim(),
-        email: manualLeadForm.email.trim() || null,
-      },
-      installationAddress: {
-        street: manualLeadForm.street.trim(),
-        landmark: manualLeadForm.landmark.trim() || null,
-        city: manualLeadForm.city.trim(),
-        state: manualLeadForm.state.trim(),
-        pincode: manualLeadForm.pincode.trim(),
-      },
-      inspection: {
-        preferredDate: manualLeadForm.preferredDate || null,
-        preferredTimeSlot: manualLeadForm.preferredTimeSlot || null,
-      },
-      property: {
-        type: manualLeadForm.propertyType,
-        roofType: manualLeadForm.roofType,
-        ownership: manualLeadForm.ownership,
-        distributionCompany: manualLeadForm.distributionCompany.trim() || null,
-        connectionType: manualLeadForm.connectionType || null,
-        consumerNumber: manualLeadForm.consumerNumber.trim() || null,
-        sanctionedLoadKw:
-          manualLeadForm.sanctionedLoadKw === ""
-            ? null
-            : Number(manualLeadForm.sanctionedLoadKw),
-      },
-      roof: {
-        sizeRange: manualLeadForm.roofSizeRange,
-        shadow: manualLeadForm.shadow,
-        condition: manualLeadForm.condition,
-      },
-      notes: manualLeadForm.notes.trim() || null,
-      specialInstructions: manualLeadForm.specialInstructions.trim() || null,
-    };
-  }
-
-  async function createManualLead() {
-    const missing = validateManualLead();
-
-    if (missing.length) {
-      setManualLeadError(`Please complete: ${missing.join(", ")}.`);
-      return;
-    }
-
-    setIsCreatingLead(true);
-    setManualLeadError("");
-
-    try {
-      await leadsApi.createLead(buildManualLeadPayload());
-      setManualLeadForm(emptyManualLeadForm);
-      setIsManualLeadOpen(false);
-      await loadLeads();
-    } catch (apiError) {
-      setManualLeadError(
-        apiError?.response?.data?.message || "Could not create manual lead.",
-      );
-    } finally {
-      setIsCreatingLead(false);
-    }
-  }
-
   return (
     <VendorPageShell>
       <VendorPageHeader
@@ -632,252 +417,9 @@ export default function VendorLeadsPage() {
             >
               Export CSV
             </VendorSecondaryButton>
-            <VendorPrimaryButton
-              startIcon={<AddRoundedIcon />}
-              onClick={() => setIsManualLeadOpen(true)}
-              disabled={isLoading || isCreatingLead}
-              sx={{ borderRadius: "999px" }}
-            >
-              Manual Lead
-            </VendorPrimaryButton>
           </>
         }
       />
-
-      <Dialog
-        open={isManualLeadOpen}
-        onClose={closeManualLeadDialog}
-        fullWidth
-        maxWidth="md"
-        PaperProps={{
-          sx: {
-            borderRadius: "1.35rem",
-            border: "1px solid rgba(225,232,241,0.96)",
-            boxShadow: "0 22px 48px rgba(16,29,51,0.16)",
-          },
-        }}
-      >
-        <DialogTitle
-          sx={{ color: "#18253A", fontSize: "1.35rem", fontWeight: 800 }}
-        >
-          Create Manual Lead
-        </DialogTitle>
-        <DialogContent dividers sx={{ borderColor: "rgba(229,234,241,0.95)" }}>
-          <Stack spacing={2.2} sx={{ pt: 0.5 }}>
-            {manualLeadError ? (
-              <Alert severity="error" sx={{ borderRadius: "0.9rem" }}>
-                {manualLeadError}
-              </Alert>
-            ) : null}
-
-            <ManualLeadSection title="Customer Details">
-              <ManualLeadField
-                label="Customer Name"
-                value={manualLeadForm.fullName}
-                onChange={(value) => updateManualLead("fullName", value)}
-                required
-              />
-              <ManualLeadField
-                label="Phone Number"
-                value={manualLeadForm.phoneNumber}
-                onChange={(value) => updateManualLead("phoneNumber", value)}
-                required
-              />
-              <ManualLeadField
-                label="Email"
-                value={manualLeadForm.email}
-                onChange={(value) => updateManualLead("email", value)}
-                type="email"
-              />
-            </ManualLeadSection>
-
-            <ManualLeadSection title="Installation Address">
-              <ManualLeadField
-                label="Street Address"
-                value={manualLeadForm.street}
-                onChange={(value) => updateManualLead("street", value)}
-                required
-                wide
-              />
-              <ManualLeadField
-                label="Landmark"
-                value={manualLeadForm.landmark}
-                onChange={(value) => updateManualLead("landmark", value)}
-              />
-              <ManualLeadField
-                label="City"
-                value={manualLeadForm.city}
-                onChange={(value) => updateManualLead("city", value)}
-                required
-              />
-              <ManualLeadField
-                label="State"
-                value={manualLeadForm.state}
-                onChange={(value) => updateManualLead("state", value)}
-                required
-              />
-              <ManualLeadField
-                label="Pincode"
-                value={manualLeadForm.pincode}
-                onChange={(value) => updateManualLead("pincode", value)}
-                required
-              />
-            </ManualLeadSection>
-
-            <ManualLeadSection title="Property & Roof">
-              <ManualLeadSelect
-                label="Property Type"
-                value={manualLeadForm.propertyType}
-                onChange={(value) => updateManualLead("propertyType", value)}
-                options={[
-                  ["independent_house", "Independent House"],
-                  ["apartment", "Apartment"],
-                  ["commercial", "Commercial"],
-                ]}
-              />
-              <ManualLeadSelect
-                label="Roof Type"
-                value={manualLeadForm.roofType}
-                onChange={(value) => updateManualLead("roofType", value)}
-                options={[
-                  ["flat", "Flat"],
-                  ["sloped", "Sloped"],
-                ]}
-              />
-              <ManualLeadSelect
-                label="Ownership"
-                value={manualLeadForm.ownership}
-                onChange={(value) => updateManualLead("ownership", value)}
-                options={[
-                  ["owned", "Owned"],
-                  ["rented", "Rented"],
-                ]}
-              />
-              <ManualLeadSelect
-                label="Connection Type"
-                value={manualLeadForm.connectionType}
-                onChange={(value) => updateManualLead("connectionType", value)}
-                options={[
-                  ["single_phase", "Single Phase"],
-                  ["three_phase", "Three Phase"],
-                ]}
-              />
-              <ManualLeadField
-                label="Sanctioned Load (kW)"
-                value={manualLeadForm.sanctionedLoadKw}
-                onChange={(value) =>
-                  updateManualLead("sanctionedLoadKw", value)
-                }
-                type="number"
-              />
-              <ManualLeadField
-                label="Distribution Company"
-                value={manualLeadForm.distributionCompany}
-                onChange={(value) =>
-                  updateManualLead("distributionCompany", value)
-                }
-              />
-              <ManualLeadField
-                label="Consumer Number"
-                value={manualLeadForm.consumerNumber}
-                onChange={(value) => updateManualLead("consumerNumber", value)}
-              />
-              <ManualLeadSelect
-                label="Roof Size"
-                value={manualLeadForm.roofSizeRange}
-                onChange={(value) => updateManualLead("roofSizeRange", value)}
-                options={[
-                  ["under_500", "Under 500 sq ft"],
-                  ["500_1000", "500-1000 sq ft"],
-                  ["over_1000", "Over 1000 sq ft"],
-                ]}
-              />
-              <ManualLeadSelect
-                label="Shadow"
-                value={manualLeadForm.shadow}
-                onChange={(value) => updateManualLead("shadow", value)}
-                options={[
-                  ["none", "None"],
-                  ["partial", "Partial"],
-                  ["heavy", "Heavy"],
-                ]}
-              />
-              <ManualLeadSelect
-                label="Roof Condition"
-                value={manualLeadForm.condition}
-                onChange={(value) => updateManualLead("condition", value)}
-                options={[
-                  ["excellent", "Excellent"],
-                  ["average", "Average"],
-                  ["needs_repair", "Needs Repair"],
-                ]}
-              />
-            </ManualLeadSection>
-
-            <ManualLeadSection title="Inspection & Notes">
-              <ManualLeadField
-                label="Preferred Date"
-                value={manualLeadForm.preferredDate}
-                onChange={(value) => updateManualLead("preferredDate", value)}
-                type="date"
-              />
-              <ManualLeadSelect
-                label="Preferred Time"
-                value={manualLeadForm.preferredTimeSlot}
-                onChange={(value) =>
-                  updateManualLead("preferredTimeSlot", value)
-                }
-                options={[
-                  ["", "No Preference"],
-                  ["morning", "Morning"],
-                  ["afternoon", "Afternoon"],
-                  ["evening", "Evening"],
-                ]}
-              />
-              <ManualLeadField
-                label="Notes"
-                value={manualLeadForm.notes}
-                onChange={(value) => updateManualLead("notes", value)}
-                wide
-                multiline
-              />
-              <ManualLeadField
-                label="Special Instructions"
-                value={manualLeadForm.specialInstructions}
-                onChange={(value) =>
-                  updateManualLead("specialInstructions", value)
-                }
-                wide
-                multiline
-              />
-            </ManualLeadSection>
-          </Stack>
-        </DialogContent>
-        <DialogActions sx={{ px: 3, py: 2 }}>
-          <Button
-            onClick={closeManualLeadDialog}
-            disabled={isCreatingLead}
-            sx={{ textTransform: "none", fontWeight: 700 }}
-          >
-            Cancel
-          </Button>
-          <Button
-            variant="contained"
-            onClick={createManualLead}
-            disabled={isCreatingLead}
-            sx={{
-              minHeight: 38,
-              borderRadius: "999px",
-              px: 2.3,
-              bgcolor: "#0E56C8",
-              textTransform: "none",
-              fontWeight: 800,
-            }}
-          >
-            {isCreatingLead ? "Creating..." : "Create Lead"}
-          </Button>
-        </DialogActions>
-      </Dialog>
 
       <VendorFilterPanel>
         <Stack
@@ -1021,9 +563,7 @@ export default function VendorLeadsPage() {
             <VendorEmptyState
               icon={Groups2RoundedIcon}
               title="No matching leads"
-              subtitle="Adjust the filters or create a manual lead for an offline customer enquiry."
-              actionLabel="Create Manual Lead"
-              actionOnClick={() => setIsManualLeadOpen(true)}
+              subtitle="Adjust the filters above to find leads assigned to you."
             />
           ) : null}
 
