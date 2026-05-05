@@ -12,6 +12,7 @@ import BookingSubmittedPage from "@/features/public/pages/BookingSubmittedPage";
 import LiveBiddingPage from "@/features/public/pages/LiveBiddingPage";
 import QuoteComparisonPage from "@/features/public/pages/QuoteComparisonPage";
 import VendorTataPowerPage from "@/features/public/pages/VendorTataPowerPage";
+import VendorPublicProfilePage from "@/features/public/pages/VendorPublicProfilePage";
 import VendorConfirmSelectionPage from "@/features/public/pages/VendorConfirmSelectionPage";
 import SolarInstallationProjectPage from "@/features/public/pages/SolarInstallationProjectPage";
 import ServiceSupportPage from "@/features/public/pages/ServiceSupportPage";
@@ -173,6 +174,10 @@ export const publicRoutes = [
   {
     path: "vendors/tata-power-solar/confirm",
     element: protectedCustomerPage(<VendorConfirmSelectionPage />),
+  },
+  {
+    path: "vendors/:vendorId",
+    element: <VendorPublicProfilePage />,
   },
   {
     path: "vendors/onboarding",
