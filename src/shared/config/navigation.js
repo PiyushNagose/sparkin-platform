@@ -3,6 +3,7 @@ export const publicPrimaryNav = [
   { label: "About Us", href: "/about-us" },
   { label: "Calculator", href: "/calculator" },
   { label: "Vendors", href: "/vendors" },
+  { label: "Partner", href: "/vendors/partners" },
   { label: "Resources", href: "/resources" },
 ];
 

@@ -8,6 +8,7 @@ import TuneRoundedIcon from "@mui/icons-material/TuneRounded";
 import KeyboardArrowDownRoundedIcon from "@mui/icons-material/KeyboardArrowDownRounded";
 import vendorHeroPlaceholder from "@/shared/assets/images/public/vendors/vendor-discovery-hero-placeholder.png";
 import vendorConsultPlaceholder from "@/shared/assets/images/public/vendors/vendor-consult-placeholder.png";
+import styles from "@/app/layouts/PublicLayout.module.css";
 
 const filterChips = [
   { label: "Location", icon: <PlaceOutlinedIcon sx={{ fontSize: "0.85rem" }} /> },
@@ -409,7 +410,7 @@ export default function VendorDiscoveryPage() {
         </Container>
       </Box>
 
-      <Container maxWidth="lg" sx={{ pb: { xs: 6, md: 9 } }}>
+      <Container maxWidth={false} disableGutters className={styles.publicContentContainer} sx={{ pb: { xs: 6, md: 9 } }}>
         {/* Filter bar */}
         <Stack
           direction={{ xs: "column", md: "row" }}
