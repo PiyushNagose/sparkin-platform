@@ -18,10 +18,12 @@ import AssignmentOutlinedIcon from "@mui/icons-material/AssignmentOutlined";
 import BarChartOutlinedIcon from "@mui/icons-material/BarChartOutlined";
 import BoltOutlinedIcon from "@mui/icons-material/BoltOutlined";
 import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
+import ChatOutlinedIcon from "@mui/icons-material/ChatOutlined";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import DashboardRoundedIcon from "@mui/icons-material/DashboardRounded";
 import GavelOutlinedIcon from "@mui/icons-material/GavelOutlined";
 import Groups2OutlinedIcon from "@mui/icons-material/Groups2Outlined";
+import HeadsetMicOutlinedIcon from "@mui/icons-material/HeadsetMicOutlined";
 import HelpOutlineRoundedIcon from "@mui/icons-material/HelpOutlineRounded";
 import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
 import MenuRoundedIcon from "@mui/icons-material/MenuRounded";
@@ -58,6 +60,7 @@ const VENDOR_NAV_ICONS = {
   Projects: AssignmentOutlinedIcon,
   Services: BoltOutlinedIcon,
   Payments: PaymentsOutlinedIcon,
+  "Support Chat": ChatOutlinedIcon,
   Settings: SettingsOutlinedIcon,
 };
 
@@ -69,6 +72,7 @@ const CUSTOMER_NAV_ICONS = {
   Services: BoltOutlinedIcon,
   Savings: SavingsOutlinedIcon,
   "Refer & Earn": RedeemOutlinedIcon,
+  "Support Chat": ChatOutlinedIcon,
   Profile: PersonOutlineOutlinedIcon,
 };
 
@@ -84,6 +88,7 @@ const ADMIN_NAV_ICONS = {
   Reports: BarChartOutlinedIcon,
   Settings: SettingsOutlinedIcon,
   Notifications: NotificationsNoneRoundedIcon,
+  "Help Desk": HeadsetMicOutlinedIcon,
 };
 
 const VENDOR_SEARCH_ROUTES = [
@@ -109,6 +114,7 @@ const VENDOR_SEARCH_ROUTES = [
     terms: ["profile", "business", "company", "document"],
     path: "/vendor/profile",
   },
+  { terms: ["chat", "support chat", "message", "help"], path: "/vendor/chat" },
 ];
 
 const CUSTOMER_SEARCH_ROUTES = [
@@ -156,6 +162,7 @@ const ADMIN_SEARCH_ROUTES = [
   { terms: ["report", "reports", "metric"], path: "/admin/reports" },
   { terms: ["setting", "settings"], path: "/admin/settings" },
   { terms: ["notification", "alert", "log"], path: "/admin/notifications" },
+  { terms: ["help", "desk", "helpdesk", "ticket", "chat", "support"], path: "/admin/help-desk" },
 ];
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
