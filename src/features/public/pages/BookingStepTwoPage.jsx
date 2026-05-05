@@ -15,13 +15,18 @@ import ApartmentRoundedIcon from "@mui/icons-material/ApartmentRounded";
 import BusinessRoundedIcon from "@mui/icons-material/BusinessRounded";
 import HomeRoundedIcon from "@mui/icons-material/HomeRounded";
 import KeyboardArrowDownRoundedIcon from "@mui/icons-material/KeyboardArrowDownRounded";
-import { Link as RouterLink } from "react-router-dom";
+import { Link as RouterLink, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
 import styles from "@/features/public/pages/CalculatorPage.module.css";
 import {
   publicPageSpacing,
   publicTypography,
 } from "@/features/public/pages/publicPageStyles";
 import { useBookingDraft } from "@/features/public/booking/BookingDraftProvider";
+import {
+  validateStep2,
+  isStep1Complete,
+} from "@/features/public/booking/bookingValidation";
 
 const steps = [
   { label: "Step 1", state: "complete" },
@@ -102,10 +107,7 @@ function BookingStepper() {
               width: step.state === "active" ? 32 : 28,
               height: step.state === "active" ? 32 : 28,
               borderRadius: "50%",
-              border:
-                step.state === "active"
-                  ? "3px solid #0E56C8"
-                  : "none",
+              border: step.state === "active" ? "3px solid #0E56C8" : "none",
               bgcolor:
                 step.state === "complete"
                   ? "#0E56C8"
@@ -250,9 +252,10 @@ function SegmentedChoice({ items, value, onChange }) {
             minHeight: 38,
             borderRadius: "0.72rem",
             bgcolor: item.value === value ? "white" : "transparent",
-            border: item.value === value
-              ? "1px solid #E8EDF5"
-              : "1px solid transparent",
+            border:
+              item.value === value
+                ? "1px solid #E8EDF5"
+                : "1px solid transparent",
             color: item.value === value ? "#0E56C8" : "#2D3A4C",
             fontWeight: 700,
             fontSize: "0.76rem",
@@ -287,9 +290,26 @@ function FieldLabel({ children }) {
 
 export default function BookingStepTwoPage() {
   const { draft, updateDraft } = useBookingDraft();
+  const navigate = useNavigate();
+  const [errors, setErrors] = useState({});
+
+  useEffect(() => {
+    if (!isStep1Complete(draft)) {
+      navigate("/booking", { replace: true });
+    }
+  }, []);
 
   function updateProperty(values) {
     updateDraft("property", values);
+  }
+
+  function handleContinue() {
+    const { valid, errors: validationErrors } = validateStep2(draft);
+    if (!valid) {
+      setErrors(validationErrors);
+      return;
+    }
+    navigate("/booking/roof");
   }
 
   return (
@@ -361,11 +381,25 @@ export default function BookingStepTwoPage() {
                         <OptionCard
                           {...item}
                           selected={draft.property.type === item.value}
-                          onClick={() => updateProperty({ type: item.value })}
+                          onClick={() => {
+                            updateProperty({ type: item.value });
+                            setErrors((prev) => {
+                              const next = { ...prev };
+                              delete next["property.type"];
+                              return next;
+                            });
+                          }}
                         />
                       </Grid>
                     ))}
                   </Grid>
+                  {errors["property.type"] ? (
+                    <Typography
+                      sx={{ mt: 0.8, color: "#D32F2F", fontSize: "0.72rem" }}
+                    >
+                      {errors["property.type"]}
+                    </Typography>
+                  ) : null}
                 </Grid>
 
                 <Grid size={{ xs: 12, md: 6 }}>
@@ -375,8 +409,26 @@ export default function BookingStepTwoPage() {
                       <SegmentedChoice
                         items={roofTypes}
                         value={draft.property.roofType}
-                        onChange={(roofType) => updateProperty({ roofType })}
+                        onChange={(roofType) => {
+                          updateProperty({ roofType });
+                          setErrors((prev) => {
+                            const next = { ...prev };
+                            delete next["property.roofType"];
+                            return next;
+                          });
+                        }}
                       />
+                      {errors["property.roofType"] ? (
+                        <Typography
+                          sx={{
+                            mt: 0.8,
+                            color: "#D32F2F",
+                            fontSize: "0.72rem",
+                          }}
+                        >
+                          {errors["property.roofType"]}
+                        </Typography>
+                      ) : null}
                     </Box>
 
                     <Box>
@@ -384,8 +436,26 @@ export default function BookingStepTwoPage() {
                       <SegmentedChoice
                         items={ownershipTypes}
                         value={draft.property.ownership}
-                        onChange={(ownership) => updateProperty({ ownership })}
+                        onChange={(ownership) => {
+                          updateProperty({ ownership });
+                          setErrors((prev) => {
+                            const next = { ...prev };
+                            delete next["property.ownership"];
+                            return next;
+                          });
+                        }}
                       />
+                      {errors["property.ownership"] ? (
+                        <Typography
+                          sx={{
+                            mt: 0.8,
+                            color: "#D32F2F",
+                            fontSize: "0.72rem",
+                          }}
+                        >
+                          {errors["property.ownership"]}
+                        </Typography>
+                      ) : null}
                     </Box>
                   </Stack>
                 </Grid>
@@ -417,7 +487,9 @@ export default function BookingStepTwoPage() {
                       fullWidth
                       value={draft.property.distributionCompany}
                       onChange={(event) =>
-                        updateProperty({ distributionCompany: event.target.value })
+                        updateProperty({
+                          distributionCompany: event.target.value,
+                        })
                       }
                       SelectProps={{
                         displayEmpty: true,
@@ -535,8 +607,7 @@ export default function BookingStepTwoPage() {
                 </Button>
 
                 <Button
-                  component={RouterLink}
-                  to="/booking/roof"
+                  onClick={handleContinue}
                   variant="contained"
                   endIcon={<ArrowForwardRoundedIcon />}
                   sx={{

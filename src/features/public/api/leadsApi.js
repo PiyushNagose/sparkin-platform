@@ -20,24 +20,51 @@ export const leadsApi = {
   },
 
   async getLead(leadId) {
-    const { data } = await businessClient.get(`/leads/${requireId(leadId, "Lead id")}`);
+    const { data } = await businessClient.get(
+      `/leads/${requireId(leadId, "Lead id")}`,
+    );
     return data.lead;
   },
 
   async updateLeadStatus(leadId, payload) {
-    const { data } = await businessClient.patch(`/leads/${requireId(leadId, "Lead id")}/status`, payload);
+    const { data } = await businessClient.patch(
+      `/leads/${requireId(leadId, "Lead id")}/status`,
+      payload,
+    );
     return data.lead;
   },
 
   async assignVendors(leadId, payload) {
-    const { data } = await businessClient.patch(`/leads/${requireId(leadId, "Lead id")}/vendors`, payload);
+    const { data } = await businessClient.patch(
+      `/leads/${requireId(leadId, "Lead id")}/vendors`,
+      payload,
+    );
+    return data.lead;
+  },
+
+  async updateLeadDetails(leadId, payload) {
+    const { data } = await businessClient.patch(
+      `/leads/${requireId(leadId, "Lead id")}/details`,
+      payload,
+    );
+    return data.lead;
+  },
+
+  async markCommitmentPaid(leadId) {
+    const { data } = await businessClient.patch(
+      `/leads/${requireId(leadId, "Lead id")}/commitment-paid`,
+      { paid: true },
+    );
     return data.lead;
   },
 };
 
 export const quotesApi = {
   async createQuote(leadId, payload) {
-    const { data } = await businessClient.post(`/quotes/leads/${requireId(leadId, "Lead id")}`, payload);
+    const { data } = await businessClient.post(
+      `/quotes/leads/${requireId(leadId, "Lead id")}`,
+      payload,
+    );
     return data.quote;
   },
 
@@ -47,12 +74,16 @@ export const quotesApi = {
   },
 
   async getQuote(quoteId) {
-    const { data } = await businessClient.get(`/quotes/${requireId(quoteId, "Quote id")}`);
+    const { data } = await businessClient.get(
+      `/quotes/${requireId(quoteId, "Quote id")}`,
+    );
     return data.quote;
   },
 
   async acceptQuote(quoteId) {
-    const { data } = await businessClient.post(`/quotes/${requireId(quoteId, "Quote id")}/accept`);
+    const { data } = await businessClient.post(
+      `/quotes/${requireId(quoteId, "Quote id")}/accept`,
+    );
     return data;
   },
 

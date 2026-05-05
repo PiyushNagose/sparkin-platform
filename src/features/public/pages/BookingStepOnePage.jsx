@@ -14,13 +14,15 @@ import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
 import PersonOutlineRoundedIcon from "@mui/icons-material/PersonOutlineRounded";
 import ReorderRoundedIcon from "@mui/icons-material/ReorderRounded";
-import { Link as RouterLink } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 import styles from "@/features/public/pages/CalculatorPage.module.css";
 import {
   publicPageSpacing,
   publicTypography,
 } from "@/features/public/pages/publicPageStyles";
 import { useBookingDraft } from "@/features/public/booking/BookingDraftProvider";
+import { validateStep1 } from "@/features/public/booking/bookingValidation";
 
 const stepItems = [
   { label: "Step 1", status: "In Progress", active: true },
@@ -63,6 +65,8 @@ function InputField({
   multiline = false,
   minRows = 1,
   type = "text",
+  error = false,
+  helperText = "",
 }) {
   return (
     <Box>
@@ -74,7 +78,7 @@ function InputField({
       >
         <Typography
           sx={{
-            color: "#505C70",
+            color: error ? "#D32F2F" : "#505C70",
             fontSize: "0.72rem",
             fontWeight: 700,
           }}
@@ -101,14 +105,18 @@ function InputField({
         placeholder={placeholder}
         multiline={multiline}
         minRows={minRows}
+        error={error}
+        helperText={helperText}
         InputProps={{
           sx: {
             borderRadius: "0.95rem",
-            bgcolor: "#F3F5F9",
+            bgcolor: error ? "#FFF5F5" : "#F3F5F9",
             minHeight: multiline ? "auto" : 48,
             alignItems: multiline ? "flex-start" : "center",
+            border: error ? "1px solid #D32F2F" : "none",
           },
         }}
+        FormHelperTextProps={{ sx: { fontSize: "0.68rem", mt: 0.4 } }}
       />
     </Box>
   );
@@ -116,6 +124,8 @@ function InputField({
 
 export default function BookingStepOnePage() {
   const { draft, updateDraft, updateField } = useBookingDraft();
+  const navigate = useNavigate();
+  const [errors, setErrors] = useState({});
 
   function updateContact(values) {
     updateDraft("contact", values);
@@ -127,6 +137,15 @@ export default function BookingStepOnePage() {
 
   function updateInspection(values) {
     updateDraft("inspection", values);
+  }
+
+  function handleContinue() {
+    const { valid, errors: validationErrors } = validateStep1(draft);
+    if (!valid) {
+      setErrors(validationErrors);
+      return;
+    }
+    navigate("/booking/property");
   }
 
   return (
@@ -152,10 +171,7 @@ export default function BookingStepOnePage() {
             alignItems="center"
             sx={{ width: "100%" }}
           >
-            <Stack
-              alignItems="center"
-              sx={{ width: "100%", maxWidth: 920 }}
-            >
+            <Stack alignItems="center" sx={{ width: "100%", maxWidth: 920 }}>
               <Box
                 sx={{
                   width: "100%",
@@ -303,21 +319,48 @@ export default function BookingStepOnePage() {
                       label="Full name"
                       placeholder="John Doe"
                       value={draft.contact.fullName}
-                      onChange={(fullName) => updateContact({ fullName })}
+                      onChange={(fullName) => {
+                        updateContact({ fullName });
+                        setErrors((prev) => {
+                          const next = { ...prev };
+                          delete next["contact.fullName"];
+                          return next;
+                        });
+                      }}
+                      error={!!errors["contact.fullName"]}
+                      helperText={errors["contact.fullName"]}
                     />
                     <InputField
                       label="Phone number"
                       placeholder="+1 (555) 000-0000"
                       value={draft.contact.phoneNumber}
-                      onChange={(phoneNumber) => updateContact({ phoneNumber })}
+                      onChange={(phoneNumber) => {
+                        updateContact({ phoneNumber });
+                        setErrors((prev) => {
+                          const next = { ...prev };
+                          delete next["contact.phoneNumber"];
+                          return next;
+                        });
+                      }}
+                      error={!!errors["contact.phoneNumber"]}
+                      helperText={errors["contact.phoneNumber"]}
                     />
                     <InputField
                       label="Email"
                       placeholder="name@example.com"
                       type="email"
                       value={draft.contact.email}
-                      onChange={(email) => updateContact({ email })}
+                      onChange={(email) => {
+                        updateContact({ email });
+                        setErrors((prev) => {
+                          const next = { ...prev };
+                          delete next["contact.email"];
+                          return next;
+                        });
+                      }}
                       optional
+                      error={!!errors["contact.email"]}
+                      helperText={errors["contact.email"]}
                     />
                   </Stack>
                 </Grid>
@@ -332,7 +375,16 @@ export default function BookingStepOnePage() {
                       label="Street Address / House No."
                       placeholder="e.g. 123 Solar Street"
                       value={draft.installationAddress.street}
-                      onChange={(street) => updateAddress({ street })}
+                      onChange={(street) => {
+                        updateAddress({ street });
+                        setErrors((prev) => {
+                          const next = { ...prev };
+                          delete next["installationAddress.street"];
+                          return next;
+                        });
+                      }}
+                      error={!!errors["installationAddress.street"]}
+                      helperText={errors["installationAddress.street"]}
                     />
                     <InputField
                       label="Landmark"
@@ -347,7 +399,16 @@ export default function BookingStepOnePage() {
                           label="City"
                           placeholder="City"
                           value={draft.installationAddress.city}
-                          onChange={(city) => updateAddress({ city })}
+                          onChange={(city) => {
+                            updateAddress({ city });
+                            setErrors((prev) => {
+                              const next = { ...prev };
+                              delete next["installationAddress.city"];
+                              return next;
+                            });
+                          }}
+                          error={!!errors["installationAddress.city"]}
+                          helperText={errors["installationAddress.city"]}
                         />
                       </Grid>
                       <Grid size={{ xs: 12, sm: 6 }}>
@@ -355,7 +416,16 @@ export default function BookingStepOnePage() {
                           label="State"
                           placeholder="State"
                           value={draft.installationAddress.state}
-                          onChange={(state) => updateAddress({ state })}
+                          onChange={(state) => {
+                            updateAddress({ state });
+                            setErrors((prev) => {
+                              const next = { ...prev };
+                              delete next["installationAddress.state"];
+                              return next;
+                            });
+                          }}
+                          error={!!errors["installationAddress.state"]}
+                          helperText={errors["installationAddress.state"]}
                         />
                       </Grid>
                     </Grid>
@@ -363,7 +433,16 @@ export default function BookingStepOnePage() {
                       label="Pincode"
                       placeholder="000000"
                       value={draft.installationAddress.pincode}
-                      onChange={(pincode) => updateAddress({ pincode })}
+                      onChange={(pincode) => {
+                        updateAddress({ pincode });
+                        setErrors((prev) => {
+                          const next = { ...prev };
+                          delete next["installationAddress.pincode"];
+                          return next;
+                        });
+                      }}
+                      error={!!errors["installationAddress.pincode"]}
+                      helperText={errors["installationAddress.pincode"]}
                     />
                   </Stack>
                 </Grid>
@@ -387,7 +466,9 @@ export default function BookingStepOnePage() {
                       placeholder="mm/dd/yyyy"
                       type="date"
                       value={draft.inspection.preferredDate}
-                      onChange={(preferredDate) => updateInspection({ preferredDate })}
+                      onChange={(preferredDate) =>
+                        updateInspection({ preferredDate })
+                      }
                     />
                     <Box>
                       <Typography
@@ -415,15 +496,18 @@ export default function BookingStepOnePage() {
                                 minHeight: 50,
                                 borderRadius: "0.9rem",
                                 borderColor:
-                                  draft.inspection.preferredTimeSlot === slot.title.toLowerCase()
+                                  draft.inspection.preferredTimeSlot ===
+                                  slot.title.toLowerCase()
                                     ? "#0E56C8"
                                     : "#E5EAF0",
                                 bgcolor:
-                                  draft.inspection.preferredTimeSlot === slot.title.toLowerCase()
+                                  draft.inspection.preferredTimeSlot ===
+                                  slot.title.toLowerCase()
                                     ? "#F3F6FF"
                                     : "#F7F9FC",
                                 color:
-                                  draft.inspection.preferredTimeSlot === slot.title.toLowerCase()
+                                  draft.inspection.preferredTimeSlot ===
+                                  slot.title.toLowerCase()
                                     ? "#0E56C8"
                                     : "#1D293B",
                                 display: "flex",
@@ -463,7 +547,9 @@ export default function BookingStepOnePage() {
                     label="Special Instructions"
                     placeholder="Any specific instructions (e.g., gate code, pets)"
                     value={draft.specialInstructions}
-                    onChange={(specialInstructions) => updateField("specialInstructions", specialInstructions)}
+                    onChange={(specialInstructions) =>
+                      updateField("specialInstructions", specialInstructions)
+                    }
                     multiline
                     minRows={5}
                   />
@@ -496,8 +582,7 @@ export default function BookingStepOnePage() {
                 </Stack>
 
                 <Button
-                  component={RouterLink}
-                  to="/booking/property"
+                  onClick={handleContinue}
                   variant="contained"
                   endIcon={<ArrowForwardRoundedIcon />}
                   sx={{
