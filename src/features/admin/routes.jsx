@@ -1,5 +1,6 @@
 import AdminDashboardPage, { makeAdminPlaceholder } from "@/features/admin/pages/AdminDashboardPage";
 import AdminBiddingPage from "@/features/admin/pages/AdminBiddingPage";
+import AdminBroadcastPage from "@/features/admin/pages/AdminBroadcastPage";
 import AdminHelpDeskPage from "@/features/admin/pages/AdminHelpDeskPage";
 import AdminLeadDetailPage from "@/features/admin/pages/AdminLeadDetailPage";
 import AdminLeadsPage from "@/features/admin/pages/AdminLeadsPage";
@@ -9,6 +10,7 @@ import AdminProjectsPage from "@/features/admin/pages/AdminProjectsPage";
 import AdminReportsPage from "@/features/admin/pages/AdminReportsPage";
 import AdminServicesPage from "@/features/admin/pages/AdminServicesPage";
 import AdminSettingsPage from "@/features/admin/pages/AdminSettingsPage";
+import AdminTicketDetailPage from "@/features/admin/pages/AdminTicketDetailPage";
 import AdminVendorAssignmentPage from "@/features/admin/pages/AdminVendorAssignmentPage";
 import AdminVendorsPage from "@/features/admin/pages/AdminVendorsPage";
 
@@ -76,5 +78,13 @@ export const adminRoutes = [
   {
     path: "help-desk",
     element: <AdminHelpDeskPage />,
+  },
+  {
+    path: "help-desk/:ticketId",
+    element: <AdminTicketDetailPage />,
+  },
+  {
+    path: "broadcast",
+    element: <AdminBroadcastPage />,
   },
 ];

@@ -18,6 +18,7 @@ import AssignmentOutlinedIcon from "@mui/icons-material/AssignmentOutlined";
 import BarChartOutlinedIcon from "@mui/icons-material/BarChartOutlined";
 import BoltOutlinedIcon from "@mui/icons-material/BoltOutlined";
 import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
+import CampaignOutlinedIcon from "@mui/icons-material/CampaignOutlined";
 import ChatOutlinedIcon from "@mui/icons-material/ChatOutlined";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import DashboardRoundedIcon from "@mui/icons-material/DashboardRounded";
@@ -88,6 +89,7 @@ const ADMIN_NAV_ICONS = {
   Reports: BarChartOutlinedIcon,
   Settings: SettingsOutlinedIcon,
   Notifications: NotificationsNoneRoundedIcon,
+  "Broadcast": CampaignOutlinedIcon,
   "Help Desk": HeadsetMicOutlinedIcon,
 };
 
