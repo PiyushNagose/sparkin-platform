@@ -291,8 +291,8 @@ export default function QuoteComparisonPage() {
 
       try {
         const [result, leadResult] = await Promise.all([
-          quotesApi.listQuotes(leadId ? { leadId } : {}),
-          leadId ? leadsApi.getLead(leadId) : Promise.resolve(null),
+          quotesApi.listQuotes(leadId ? { leadId } : {}, { force: true }),
+          leadId ? leadsApi.getLead(leadId, { force: true }) : Promise.resolve(null),
         ]);
         if (active) {
           setSubmittedQuotes(result);

@@ -1,4 +1,5 @@
 import { fulfillmentClient } from "@/shared/lib/http/fulfillmentClient";
+import { cachedGet, invalidateRequestCache } from "@/shared/lib/http/requestCache";
 
 function requireId(id, label) {
   if (!id || id === "undefined") {
@@ -9,19 +10,22 @@ function requireId(id, label) {
 }
 
 export const paymentsApi = {
-  async listPayments() {
-    const { data } = await fulfillmentClient.get("/payments");
+  async listPayments(options = {}) {
+    const { data } = await cachedGet(fulfillmentClient, "/payments", options);
     return data.payments;
   },
 
   async createInvoice(payload) {
     const { data } = await fulfillmentClient.post("/payments", payload);
+    invalidateRequestCache("/payments");
     return data.payment;
   },
 
-  async getPayment(paymentId) {
-    const { data } = await fulfillmentClient.get(
+  async getPayment(paymentId, options = {}) {
+    const { data } = await cachedGet(
+      fulfillmentClient,
       `/payments/${requireId(paymentId, "Payment id")}`,
+      options,
     );
     return data.payment;
   },
@@ -31,6 +35,7 @@ export const paymentsApi = {
       `/payments/${requireId(paymentId, "Payment id")}/status`,
       payload,
     );
+    invalidateRequestCache("/payments");
     return data.payment;
   },
 };

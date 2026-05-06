@@ -1,4 +1,5 @@
 import { businessClient } from "@/shared/lib/http/businessClient";
+import { cachedGet } from "@/shared/lib/http/requestCache";
 
 function requireId(id, label) {
   if (!id || id === "undefined") {
@@ -9,13 +10,17 @@ function requireId(id, label) {
 }
 
 export const publicVendorsApi = {
-  async listFeaturedVendors() {
-    const { data } = await businessClient.get("/vendors/public/featured");
+  async listFeaturedVendors(options = {}) {
+    const { data } = await cachedGet(businessClient, "/vendors/public/featured", options);
     return data.vendors;
   },
 
-  async getVendorProfile(vendorId) {
-    const { data } = await businessClient.get(`/vendors/${requireId(vendorId, "Vendor id")}`);
+  async getVendorProfile(vendorId, options = {}) {
+    const { data } = await cachedGet(
+      businessClient,
+      `/vendors/${requireId(vendorId, "Vendor id")}`,
+      options,
+    );
     return data.vendorProfile;
   },
 };

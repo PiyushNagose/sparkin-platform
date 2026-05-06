@@ -1,4 +1,5 @@
 import { fulfillmentClient } from "@/shared/lib/http/fulfillmentClient";
+import { cachedGet, invalidateRequestCache } from "@/shared/lib/http/requestCache";
 
 function requireId(id, label) {
   if (!id || id === "undefined") {
@@ -11,16 +12,21 @@ function requireId(id, label) {
 export const serviceRequestsApi = {
   async createRequest(payload) {
     const { data } = await fulfillmentClient.post("/service-requests", payload);
+    invalidateRequestCache("/service-requests");
     return data.request;
   },
 
-  async listRequests() {
-    const { data } = await fulfillmentClient.get("/service-requests");
+  async listRequests(options = {}) {
+    const { data } = await cachedGet(fulfillmentClient, "/service-requests", options);
     return data.requests;
   },
 
-  async getRequest(requestId) {
-    const { data } = await fulfillmentClient.get(`/service-requests/${requireId(requestId, "Service request id")}`);
+  async getRequest(requestId, options = {}) {
+    const { data } = await cachedGet(
+      fulfillmentClient,
+      `/service-requests/${requireId(requestId, "Service request id")}`,
+      options,
+    );
     return data.request;
   },
 
@@ -29,6 +35,7 @@ export const serviceRequestsApi = {
       `/service-requests/${requireId(requestId, "Service request id")}/status`,
       payload,
     );
+    invalidateRequestCache("/service-requests");
     return data.request;
   },
 };

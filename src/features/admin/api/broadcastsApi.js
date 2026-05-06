@@ -1,4 +1,5 @@
 import { businessClient } from "@/shared/lib/http/businessClient";
+import { cachedGet, invalidateRequestCache } from "@/shared/lib/http/requestCache";
 
 export const broadcastsApi = {
   /**
@@ -7,6 +8,7 @@ export const broadcastsApi = {
    */
   async send(payload) {
     const { data } = await businessClient.post("/broadcasts", payload);
+    invalidateRequestCache("/broadcasts");
     return data.broadcast;
   },
 
@@ -16,6 +18,7 @@ export const broadcastsApi = {
    */
   async saveDraft(payload) {
     const { data } = await businessClient.post("/broadcasts/draft", payload);
+    invalidateRequestCache("/broadcasts");
     return data.broadcast;
   },
 
@@ -24,7 +27,7 @@ export const broadcastsApi = {
    * @param {{ page?: number, limit?: number, status?: string }} params
    */
   async list(params = {}) {
-    const { data } = await businessClient.get("/broadcasts", { params });
+    const { data } = await cachedGet(businessClient, "/broadcasts", { params });
     // returns { broadcasts: [], total: number }
     return data;
   },
@@ -34,7 +37,7 @@ export const broadcastsApi = {
    * @param {string} broadcastId
    */
   async getById(broadcastId) {
-    const { data } = await businessClient.get(`/broadcasts/${broadcastId}`);
+    const { data } = await cachedGet(businessClient, `/broadcasts/${broadcastId}`);
     return data.broadcast;
   },
 
@@ -46,6 +49,7 @@ export const broadcastsApi = {
     const { data } = await businessClient.patch(
       `/broadcasts/${broadcastId}/cancel`,
     );
+    invalidateRequestCache("/broadcasts");
     return data.broadcast;
   },
 
@@ -55,5 +59,6 @@ export const broadcastsApi = {
    */
   async remove(broadcastId) {
     await businessClient.delete(`/broadcasts/${broadcastId}`);
+    invalidateRequestCache("/broadcasts");
   },
 };

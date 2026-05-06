@@ -1,4 +1,5 @@
 import { fulfillmentClient } from "@/shared/lib/http/fulfillmentClient";
+import { cachedGet, invalidateRequestCache } from "@/shared/lib/http/requestCache";
 
 function requireId(id, label) {
   if (!id || id === "undefined") {
@@ -9,19 +10,22 @@ function requireId(id, label) {
 }
 
 export const projectsApi = {
-  async listProjects() {
-    const { data } = await fulfillmentClient.get("/projects");
+  async listProjects(options = {}) {
+    const { data } = await cachedGet(fulfillmentClient, "/projects", options);
     return data.projects;
   },
 
   async createManualProjectAdmin(payload) {
     const { data } = await fulfillmentClient.post("/projects/manual", payload);
+    invalidateRequestCache("/projects");
     return data.project;
   },
 
-  async getProject(projectId) {
-    const { data } = await fulfillmentClient.get(
+  async getProject(projectId, options = {}) {
+    const { data } = await cachedGet(
+      fulfillmentClient,
       `/projects/${requireId(projectId, "Project id")}`,
+      options,
     );
     return data.project;
   },
@@ -31,6 +35,7 @@ export const projectsApi = {
       `/projects/${requireId(projectId, "Project id")}/milestone`,
       payload,
     );
+    invalidateRequestCache("/projects");
     return data.project;
   },
 
@@ -39,6 +44,7 @@ export const projectsApi = {
       `/projects/${requireId(projectId, "Project id")}/onboarding`,
       payload,
     );
+    invalidateRequestCache("/projects");
     return data.project;
   },
 
@@ -47,6 +53,7 @@ export const projectsApi = {
       `/projects/${requireId(projectId, "Project id")}/documents`,
       payload,
     );
+    invalidateRequestCache("/projects");
     return data.project;
   },
 };

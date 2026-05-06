@@ -1,4 +1,5 @@
 import { businessClient } from "@/shared/lib/http/businessClient";
+import { cachedGet, invalidateRequestCache } from "@/shared/lib/http/requestCache";
 
 function requireId(id, label) {
   if (!id || id === "undefined") {
@@ -11,17 +12,20 @@ function requireId(id, label) {
 export const leadsApi = {
   async createLead(payload) {
     const { data } = await businessClient.post("/leads", payload);
+    invalidateRequestCache((key) => key.includes("/leads") || key.includes("/quotes"));
     return data.lead;
   },
 
-  async listLeads() {
-    const { data } = await businessClient.get("/leads");
+  async listLeads(options = {}) {
+    const { data } = await cachedGet(businessClient, "/leads", options);
     return data.leads;
   },
 
-  async getLead(leadId) {
-    const { data } = await businessClient.get(
+  async getLead(leadId, options = {}) {
+    const { data } = await cachedGet(
+      businessClient,
       `/leads/${requireId(leadId, "Lead id")}`,
+      options,
     );
     return data.lead;
   },
@@ -31,6 +35,7 @@ export const leadsApi = {
       `/leads/${requireId(leadId, "Lead id")}/status`,
       payload,
     );
+    invalidateRequestCache((key) => key.includes("/leads") || key.includes("/quotes"));
     return data.lead;
   },
 
@@ -39,6 +44,7 @@ export const leadsApi = {
       `/leads/${requireId(leadId, "Lead id")}/vendors`,
       payload,
     );
+    invalidateRequestCache((key) => key.includes("/leads") || key.includes("/quotes"));
     return data.lead;
   },
 
@@ -47,6 +53,7 @@ export const leadsApi = {
       `/leads/${requireId(leadId, "Lead id")}/details`,
       payload,
     );
+    invalidateRequestCache((key) => key.includes("/leads") || key.includes("/quotes"));
     return data.lead;
   },
 
@@ -55,6 +62,7 @@ export const leadsApi = {
       `/leads/${requireId(leadId, "Lead id")}/commitment-paid`,
       { paid: true },
     );
+    invalidateRequestCache((key) => key.includes("/leads") || key.includes("/quotes"));
     return data.lead;
   },
 };
@@ -65,17 +73,20 @@ export const quotesApi = {
       `/quotes/leads/${requireId(leadId, "Lead id")}`,
       payload,
     );
+    invalidateRequestCache((key) => key.includes("/quotes") || key.includes("/leads"));
     return data.quote;
   },
 
-  async listQuotes(params = {}) {
-    const { data } = await businessClient.get("/quotes", { params });
+  async listQuotes(params = {}, options = {}) {
+    const { data } = await cachedGet(businessClient, "/quotes", { ...options, params });
     return data.quotes;
   },
 
-  async getQuote(quoteId) {
-    const { data } = await businessClient.get(
+  async getQuote(quoteId, options = {}) {
+    const { data } = await cachedGet(
+      businessClient,
       `/quotes/${requireId(quoteId, "Quote id")}`,
+      options,
     );
     return data.quote;
   },
@@ -83,6 +94,12 @@ export const quotesApi = {
   async acceptQuote(quoteId) {
     const { data } = await businessClient.post(
       `/quotes/${requireId(quoteId, "Quote id")}/accept`,
+    );
+    invalidateRequestCache((key) =>
+      key.includes("/quotes") ||
+      key.includes("/leads") ||
+      key.includes("/projects") ||
+      key.includes("/payments"),
     );
     return data;
   },

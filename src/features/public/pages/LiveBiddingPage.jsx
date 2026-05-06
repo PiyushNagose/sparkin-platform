@@ -169,7 +169,7 @@ export default function LiveBiddingPage() {
 
     async function redirectWhenQuotesArrive() {
       try {
-        const quotes = await quotesApi.listQuotes(leadId ? { leadId } : {});
+        const quotes = await quotesApi.listQuotes(leadId ? { leadId } : {}, { force: true });
         if (active && quotes.length > 0) {
           navigate(`/quotes/compare${leadId ? `?leadId=${leadId}` : ""}`, { replace: true });
           return;
@@ -194,7 +194,7 @@ export default function LiveBiddingPage() {
   async function handleReviewQuotes() {
     setReviewMessage("");
     try {
-      const quotes = await quotesApi.listQuotes(leadId ? { leadId } : {});
+      const quotes = await quotesApi.listQuotes(leadId ? { leadId } : {}, { force: true });
       if (quotes.length > 0) {
         navigate(`/quotes/compare${leadId ? `?leadId=${leadId}` : ""}`);
         return;
