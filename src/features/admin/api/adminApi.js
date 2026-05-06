@@ -16,6 +16,18 @@ export const adminVendorsApi = {
   },
 };
 
+export const platformSettingsApi = {
+  async getSettings() {
+    const { data } = await businessClient.get("/platform-settings");
+    return data.settings;
+  },
+
+  async updateSettings(payload) {
+    const { data } = await businessClient.patch("/platform-settings", payload);
+    return data.settings;
+  },
+};
+
 export async function getAdminDashboardData() {
   const [leads, quotes, payments, projects, serviceRequests, vendors] =
     await Promise.all([

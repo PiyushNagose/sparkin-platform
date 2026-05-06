@@ -1,4 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useAuth } from "@/features/auth/AuthProvider";
+import { calculatorApi } from "@/features/public/api/calculatorApi";
+import { calculatorStorage } from "@/features/public/calculator/calculatorStorage";
+import { offersApi } from "@/features/admin/api/offersApi";
+import { leadsApi } from "@/features/public/api/leadsApi";
 import {
   Accordion,
   AccordionDetails,
@@ -28,7 +33,7 @@ import SettingsSuggestRoundedIcon from "@mui/icons-material/SettingsSuggestRound
 import ShieldOutlinedIcon from "@mui/icons-material/ShieldOutlined";
 import TrendingUpRoundedIcon from "@mui/icons-material/TrendingUpRounded";
 import VerifiedOutlinedIcon from "@mui/icons-material/VerifiedOutlined";
-import { Link as RouterLink } from "react-router-dom";
+import { Link as RouterLink, useNavigate } from "react-router-dom";
 import styles from "@/features/public/pages/HomePage.module.css";
 import {
   publicPageSpacing,
@@ -217,13 +222,6 @@ const faqs = [
   },
 ];
 
-const systemTypes = [
-  "On-Grid (Hybrid)",
-  "On-Grid",
-  "Off-Grid",
-  "Battery Ready",
-];
-
 function formatInr(value) {
   return `\u20B9${Math.round(value).toLocaleString("en-IN")}`;
 }
@@ -232,13 +230,20 @@ function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);
 }
 
+const systemTypes = [
+  { label: "Residential", value: "residential" },
+  { label: "Commercial", value: "commercial" },
+];
+
 function toInitials(name = "") {
-  return name
-    .split(" ")
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join("") || "VP";
+  return (
+    name
+      .split(" ")
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase())
+      .join("") || "VP"
+  );
 }
 
 function estimateVendorPrice(company = {}) {
@@ -248,7 +253,10 @@ function estimateVendorPrice(company = {}) {
   return `\u20B9${Math.round(estimated / 1000)}K`;
 }
 
-function useCountUp(target, { duration = 1200, decimals = 0, started = true } = {}) {
+function useCountUp(
+  target,
+  { duration = 1200, decimals = 0, started = true } = {},
+) {
   const [value, setValue] = useState(0);
 
   useEffect(() => {
@@ -582,7 +590,13 @@ function ReferralStatsSection() {
       {[
         [14500, "₹", "", "Total Rewards Earned", "Updated 2m ago"],
         [1200, "", "+", "Active Ambassadors", "Growing Daily"],
-        [5000, "₹", "", "Per Referral Bonus", "Guaranteed payout and earn extra ₹10,000 for 4 successful referrals"],
+        [
+          5000,
+          "₹",
+          "",
+          "Per Referral Bonus",
+          "Guaranteed payout and earn extra ₹10,000 for 4 successful referrals",
+        ],
       ].map(([target, prefix, suffix, title, foot]) => (
         <Grid key={title} size={{ xs: 12, md: 4 }}>
           <Box
@@ -611,10 +625,13 @@ function ReferralStatsSection() {
             >
               {title}
             </Typography>
-            <Typography
-              sx={{ mt: 1.25, fontSize: "1.95rem", fontWeight: 800 }}
-            >
-              <CountUpValue target={target} prefix={prefix} suffix={suffix} started={inView} />
+            <Typography sx={{ mt: 1.25, fontSize: "1.95rem", fontWeight: 800 }}>
+              <CountUpValue
+                target={target}
+                prefix={prefix}
+                suffix={suffix}
+                started={inView}
+              />
             </Typography>
             <Typography
               variant="body2"
@@ -627,9 +644,7 @@ function ReferralStatsSection() {
                     ? "uppercase"
                     : "none",
                 letterSpacing:
-                  foot === "Updated 2m ago" || foot === "Growing Daily"
-                    ? 1
-                    : 0,
+                  foot === "Updated 2m ago" || foot === "Growing Daily" ? 1 : 0,
               }}
             >
               {foot === "Updated 2m ago" ? (
@@ -662,14 +677,20 @@ function ReferralStatsSection() {
 function HomePage() {
   const primaryBlueGradient =
     "linear-gradient(180deg, #1A66E8 0%, #0E56C8 100%)";
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [monthlyBill, setMonthlyBill] = useState(5000);
   const [roofArea, setRoofArea] = useState(800);
-  const [pinCode, setPinCode] = useState("560001");
-  const [systemType, setSystemType] = useState(systemTypes[0]);
+  const [pinCode, setPinCode] = useState("500001");
+  const [systemType, setSystemType] = useState("residential");
+  const [estimateLoading, setEstimateLoading] = useState(false);
+  const [estimateError, setEstimateError] = useState("");
   const [saleSecondsLeft, setSaleSecondsLeft] = useState(
     14 * 60 * 60 + 42 * 60 + 58,
   );
   const [featuredVendors, setFeaturedVendors] = useState([]);
+  const [liveOffers, setLiveOffers] = useState([]);
+  const [userLeads, setUserLeads] = useState([]);
 
   useEffect(() => {
     const timerId = window.setInterval(() => {
@@ -699,6 +720,41 @@ function HomePage() {
       active = false;
     };
   }, []);
+
+  useEffect(() => {
+    let active = true;
+    async function loadOffers() {
+      try {
+        const result = await offersApi.list({ status: "active", limit: 3 });
+        if (active && result?.offers?.length) {
+          setLiveOffers(result.offers);
+        }
+      } catch {
+        // fallback to static offers
+      }
+    }
+    loadOffers();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!user || user.role !== "customer") return;
+    let active = true;
+    async function loadUserLeads() {
+      try {
+        const leads = await leadsApi.listLeads();
+        if (active) setUserLeads(Array.isArray(leads) ? leads : []);
+      } catch {
+        // silent
+      }
+    }
+    loadUserLeads();
+    return () => {
+      active = false;
+    };
+  }, [user]);
 
   const heroStats = useMemo(() => {
     const vendorValue = featuredVendors.length
@@ -736,26 +792,113 @@ function HomePage() {
   }, [featuredVendors]);
 
   const estimate = useMemo(() => {
-    const monthlySavings = monthlyBill * 0.68;
-    const annualSavings = monthlySavings * 12;
-    const roofDrivenKw = roofArea / 110;
+    const roofCapacityKw = roofArea / 100;
     const billDrivenKw = monthlyBill / 1150;
     const recommendedKw = clamp(
-      Number(((roofDrivenKw + billDrivenKw) / 2).toFixed(1)),
-      2.5,
-      12,
+      Number(Math.min(roofCapacityKw, billDrivenKw).toFixed(1)),
+      1,
+      25,
     );
-    const paybackYears = clamp(5.8 - recommendedKw * 0.18, 3.2, 6.5);
+    const monthlySavings = Math.min(monthlyBill * 0.82, recommendedKw * 1150);
+    const annualSavings = monthlySavings * 12;
     const co2Reduced = clamp(recommendedKw * 0.84, 2.1, 8.8);
+    const roofUtilization = clamp((recommendedKw / roofCapacityKw) * 100, 0, 100);
 
     return {
       monthlySavings,
       annualSavings,
       recommendedKw,
-      paybackYears,
       co2Reduced,
+      roofUtilization,
+      paybackYears: 0,
+      subsidy: 0,
+      stateName: "",
     };
   }, [monthlyBill, roofArea]);
+
+  const displayEstimate = estimate;
+
+  async function handleQuickReport() {
+    const normalizedPincode = pinCode.trim();
+    setEstimateError("");
+
+    if (!/^\d{6}$/.test(normalizedPincode)) {
+      setEstimateError("Enter a valid 6-digit pincode to check availability.");
+      return;
+    }
+
+    setEstimateLoading(true);
+    try {
+      const serviceability = await calculatorApi.checkServiceability({
+        pincode: normalizedPincode,
+      });
+
+      if (!serviceability.serviceable) {
+        calculatorStorage.setServiceability(serviceability);
+        navigate("/calculator/unavailable");
+        return;
+      }
+
+      const quickEstimate = await calculatorApi.createEstimate({
+        propertyType: systemType,
+        state: serviceability.state,
+        city: serviceability.city,
+        pincode: normalizedPincode,
+        monthlyBill,
+        roofAreaSqFt: roofArea,
+      });
+
+      calculatorStorage.setEstimate({
+        ...quickEstimate,
+        input: {
+          ...quickEstimate.input,
+          source: "home_quick_tool",
+        },
+      });
+      navigate("/calculator/results?source=home_quick_tool");
+    } catch (error) {
+      const serviceability = error?.response?.data?.details?.serviceability;
+      if (serviceability) {
+        calculatorStorage.setServiceability(serviceability);
+        navigate("/calculator/unavailable");
+        return;
+      }
+      setEstimateError(
+        error?.response?.data?.message ||
+          "Unable to calculate right now. Please try the full calculator.",
+      );
+    } finally {
+      setEstimateLoading(false);
+    }
+  }
+
+  const displayOffers =
+    liveOffers.length > 0
+      ? liveOffers.slice(0, 3).map((offer) => ({
+          badge:
+            offer.type === "subsidy"
+              ? "Govt Scheme"
+              : offer.type === "discount"
+                ? "Limited Time"
+                : "Financing",
+          title: offer.title,
+          text: offer.description,
+          action: "View Details",
+          href: "/booking",
+        }))
+      : offers;
+
+  const activeLeads = userLeads.filter(
+    (l) => !["closed", "quote_selected"].includes(l.status),
+  );
+  const hasActiveLead = activeLeads.length > 0;
+  const heroGreeting = user
+    ? `Welcome back, ${user.fullName?.split(" ")[0] || "there"}!`
+    : null;
+  const heroPrimaryLabel = hasActiveLead
+    ? "Continue Booking"
+    : "Calculate Savings";
+  const heroPrimaryHref = hasActiveLead ? "/booking/payment" : "/calculator";
 
   const shareMessage =
     "I found Sparkin Solar helpful for comparing verified solar vendors and savings. Check it out: https://sparkin.in";
@@ -878,6 +1021,19 @@ function HomePage() {
                       }}
                     />
 
+                    {heroGreeting ? (
+                      <Typography
+                        sx={{
+                          color: "rgba(255,255,255,0.75)",
+                          fontSize: "0.92rem",
+                          fontWeight: 600,
+                          mb: 0.5,
+                        }}
+                      >
+                        {heroGreeting}
+                      </Typography>
+                    ) : null}
+
                     <Typography
                       variant="h1"
                       sx={{
@@ -919,7 +1075,7 @@ function HomePage() {
                     >
                       <Button
                         component={RouterLink}
-                        to="/calculator"
+                        to={heroPrimaryHref}
                         variant="contained"
                         size="large"
                         startIcon={<BoltRoundedIcon />}
@@ -929,12 +1085,11 @@ function HomePage() {
                           minHeight: 54,
                           fontSize: "0.98rem",
                           borderRadius: "0.8rem",
-                          background:
-                            primaryBlueGradient,
+                          background: primaryBlueGradient,
                           boxShadow: "0 16px 34px rgba(14,86,200,0.26)",
                         }}
                       >
-                        Calculate Savings
+                        {heroPrimaryLabel}
                       </Button>
 
                       <Button
@@ -1099,7 +1254,7 @@ function HomePage() {
                             sx={{
                               color: "#10192F",
                               fontWeight: 800,
-                            fontSize: "0.92rem",
+                              fontSize: "0.92rem",
                             }}
                           >
                             {bid.name}
@@ -1166,6 +1321,60 @@ function HomePage() {
           </Box>
         </Container>
       </Box>
+
+      {hasActiveLead ? (
+        <Box sx={{ bgcolor: "#0E56C8", color: "white", py: 1.4 }}>
+          <Container
+            maxWidth={false}
+            disableGutters
+            className={styles.contentContainer}
+          >
+            <Stack
+              direction={{ xs: "column", sm: "row" }}
+              justifyContent="space-between"
+              alignItems={{ xs: "flex-start", sm: "center" }}
+              spacing={1}
+            >
+              <Stack direction="row" spacing={1.2} alignItems="center">
+                <Box
+                  sx={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: "50%",
+                    bgcolor: "#4ADE80",
+                    flexShrink: 0,
+                    animation: "pulse 2s infinite",
+                  }}
+                />
+                <Typography sx={{ fontSize: "0.88rem", fontWeight: 700 }}>
+                  Your booking is active —{" "}
+                  {activeLeads[0]?.contact?.fullName || "your request"} ·
+                  Status: {activeLeads[0]?.status?.replaceAll("_", " ")}
+                </Typography>
+              </Stack>
+              <Button
+                component={RouterLink}
+                to="/customer/bookings"
+                sx={{
+                  color: "white",
+                  fontSize: "0.8rem",
+                  fontWeight: 800,
+                  textTransform: "none",
+                  minWidth: 0,
+                  px: 0,
+                  "&:hover": {
+                    bgcolor: "transparent",
+                    textDecoration: "underline",
+                  },
+                }}
+                endIcon={<ArrowForwardRoundedIcon />}
+              >
+                Track Request
+              </Button>
+            </Stack>
+          </Container>
+        </Box>
+      ) : null}
 
       <Box
         sx={{
@@ -1274,8 +1483,11 @@ function HomePage() {
                       <TextField
                         fullWidth
                         value={pinCode}
-                        onChange={(event) => setPinCode(event.target.value)}
+                        onChange={(event) =>
+                          setPinCode(event.target.value.replace(/\D/g, "").slice(0, 6))
+                        }
                         label="Pin Code"
+                        inputProps={{ inputMode: "numeric", maxLength: 6 }}
                         InputProps={{
                           sx: {
                             borderRadius: "1rem",
@@ -1309,13 +1521,18 @@ function HomePage() {
                         }}
                       >
                         {systemTypes.map((type) => (
-                          <MenuItem key={type} value={type}>
-                            {type}
+                          <MenuItem key={type.value} value={type.value}>
+                            {type.label}
                           </MenuItem>
                         ))}
                       </TextField>
                     </Grid>
                   </Grid>
+                  {estimateError ? (
+                    <Typography sx={{ color: "#FFB4B4", fontSize: "0.78rem" }}>
+                      {estimateError}
+                    </Typography>
+                  ) : null}
                 </Stack>
               </Grid>
               <Grid
@@ -1332,21 +1549,58 @@ function HomePage() {
                 >
                   Estimated Annual Savings
                 </Typography>
-                <Typography
-                  sx={{
-                    mt: 0.75,
-                    fontSize: { xs: "2.35rem", md: "3.2rem" },
-                    fontWeight: 800,
-                    lineHeight: 1,
-                  }}
-                >
-                  {formatInr(estimate.annualSavings)}
-                </Typography>
+                {estimateLoading ? (
+                  <Typography
+                    sx={{
+                      mt: 0.75,
+                      fontSize: { xs: "1.5rem", md: "2rem" },
+                      fontWeight: 800,
+                      lineHeight: 1,
+                      color: "#72C8AF",
+                    }}
+                  >
+                    Calculating...
+                  </Typography>
+                ) : (
+                  <Typography
+                    sx={{
+                      mt: 0.75,
+                      fontSize: { xs: "2.35rem", md: "3.2rem" },
+                      fontWeight: 800,
+                      lineHeight: 1,
+                    }}
+                  >
+                    {formatInr(displayEstimate.annualSavings)}
+                  </Typography>
+                )}
+                {displayEstimate.stateName ? (
+                  <Typography
+                    sx={{
+                      mt: 0.5,
+                      color: "#72C8AF",
+                      fontSize: "0.76rem",
+                      fontWeight: 700,
+                      letterSpacing: "0.06em",
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    {displayEstimate.stateName} · PM Surya Ghar eligible
+                  </Typography>
+                ) : null}
                 <Stack spacing={1.2} sx={{ mt: 2 }}>
                   {[
-                    ["Recommended System", `${estimate.recommendedKw} kW`],
-                    ["Payback Period", `${estimate.paybackYears.toFixed(1)} Years`],
-                    ["CO2 Reduced", `${estimate.co2Reduced.toFixed(1)} Tons/yr`],
+                    [
+                      "Recommended System",
+                      `${displayEstimate.recommendedKw} kW`,
+                    ],
+                    [
+                      "Roof Usage",
+                      `${Math.round(displayEstimate.roofUtilization)}%`,
+                    ],
+                    [
+                      "CO2 Reduced",
+                      `${displayEstimate.co2Reduced.toFixed(1)} Tons/yr`,
+                    ],
                   ].map(([label, value]) => (
                     <Box
                       key={label}
@@ -1365,13 +1619,33 @@ function HomePage() {
                       <Typography sx={{ fontWeight: 700 }}>{value}</Typography>
                     </Box>
                   ))}
+                  {displayEstimate.subsidy > 0 ? (
+                    <Box
+                      sx={{
+                        px: 1.75,
+                        py: 1.35,
+                        borderRadius: "1rem",
+                        bgcolor: "rgba(25,201,139,0.12)",
+                        border: "1px solid rgba(25,201,139,0.2)",
+                        display: "flex",
+                        justifyContent: "space-between",
+                      }}
+                    >
+                      <Typography sx={{ color: "rgba(255,255,255,0.64)" }}>
+                        Govt Subsidy
+                      </Typography>
+                      <Typography sx={{ fontWeight: 700, color: "#19C98B" }}>
+                        {formatInr(displayEstimate.subsidy)}
+                      </Typography>
+                    </Box>
+                  ) : null}
                 </Stack>
                 <Button
-                  component={RouterLink}
-                  to="/calculator/results"
+                  onClick={handleQuickReport}
                   variant="contained"
                   fullWidth
                   endIcon={<ArrowForwardRoundedIcon />}
+                  disabled={estimateLoading}
                   className={styles.blueCta}
                   sx={{
                     mt: 2.5,
@@ -1382,7 +1656,7 @@ function HomePage() {
                     boxShadow: "0 10px 22px rgba(14,86,200,0.18)",
                   }}
                 >
-                  See Full Report
+                  {estimateLoading ? "Checking Availability..." : "See Full Report"}
                 </Button>
                 <Typography
                   variant="caption"
@@ -1392,7 +1666,8 @@ function HomePage() {
                     color: "rgba(255,255,255,0.34)",
                   }}
                 >
-                  Preview built from monthly bill, roof area, pincode, and {systemType.toLowerCase()}
+                  Preview uses live platform tariff settings and pincode
+                  coverage for Andhra Pradesh, Telangana, and Karnataka.
                 </Typography>
               </Grid>
             </Grid>
@@ -2329,27 +2604,27 @@ function HomePage() {
               </Typography>
             </Stack>
             <Grid container spacing={{ xs: 2.25, md: 3 }} sx={{ mt: 4 }}>
-              {offers.map((offer) => (
+              {displayOffers.map((offer) => (
                 <Grid
                   key={offer.title}
                   size={{ xs: 12, md: 4 }}
                   sx={{ display: "flex" }}
                 >
-                <Box
-                  className={styles.animatedSurface}
-                  sx={{
-                    width: "100%",
-                    height: "100%",
-                    display: "flex",
-                    flexDirection: "column",
-                    p: { xs: 2.5, md: 2.7 },
-                    minHeight: 288,
-                    borderRadius: "2rem",
-                    bgcolor: "white",
-                    border: "1px solid #E7EDF4",
-                    boxShadow: "0 8px 24px rgba(16,25,47,0.03)",
-                  }}
-                >
+                  <Box
+                    className={styles.animatedSurface}
+                    sx={{
+                      width: "100%",
+                      height: "100%",
+                      display: "flex",
+                      flexDirection: "column",
+                      p: { xs: 2.5, md: 2.7 },
+                      minHeight: 288,
+                      borderRadius: "2rem",
+                      bgcolor: "white",
+                      border: "1px solid #E7EDF4",
+                      boxShadow: "0 8px 24px rgba(16,25,47,0.03)",
+                    }}
+                  >
                     <Stack
                       direction="row"
                       justifyContent="space-between"
@@ -2484,7 +2759,11 @@ function HomePage() {
             </Typography>
           </Stack>
 
-          <Grid container spacing={{ xs: 2.5, md: 3 }} sx={{ mt: 5.25, alignItems: "stretch" }}>
+          <Grid
+            container
+            spacing={{ xs: 2.5, md: 3 }}
+            sx={{ mt: 5.25, alignItems: "stretch" }}
+          >
             {serviceCards.map((card, idx) => (
               <Grid
                 key={card.title}

@@ -7,6 +7,21 @@ const nullableTrimmedString = z
   .nullable()
   .optional();
 
+const attachmentSchema = z.object({
+  category: z.enum(["roof_photo", "electricity_bill", "photo_id"]),
+  fileName: z.string().trim().min(1).max(160),
+  mimeType: z.string().trim().min(3).max(120),
+  size: z.coerce.number().min(1).max(2 * 1024 * 1024),
+  dataUrl: z.string().min(20).max(3_000_000),
+  capturedAt: z.string().datetime().nullable().optional(),
+  location: z
+    .object({
+      latitude: z.number().nullable().optional(),
+      longitude: z.number().nullable().optional(),
+    })
+    .optional(),
+});
+
 export const createLeadSchema = z.object({
   contact: z.object({
     fullName: z.string().trim().min(2).max(120),
@@ -46,6 +61,14 @@ export const createLeadSchema = z.object({
     shadow: z.enum(["none", "partial", "heavy"]),
     condition: z.enum(["excellent", "average", "needs_repair"]),
   }),
+  attachments: z
+    .object({
+      roofPhotos: z.array(attachmentSchema).max(5).optional().default([]),
+      electricityBill: z.array(attachmentSchema).max(3).optional().default([]),
+      photoId: z.array(attachmentSchema).max(2).optional().default([]),
+    })
+    .optional(),
+  calculatorEstimate: z.unknown().nullable().optional(),
   notes: nullableTrimmedString,
   specialInstructions: nullableTrimmedString,
 });
@@ -57,6 +80,12 @@ export const updateLeadStatusSchema = z.object({
 export const updateLeadDetailsSchema = z.object({
   adminSystemSizeKw: z.coerce.number().positive().optional(),
   estimatedCost: z.coerce.number().positive().optional(),
+  bidRange: z
+    .object({
+      minAmount: z.coerce.number().positive(),
+      maxAmount: z.coerce.number().positive(),
+    })
+    .optional(),
 });
 
 export const markCommitmentPaidSchema = z.object({

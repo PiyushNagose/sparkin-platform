@@ -64,14 +64,14 @@ export const leadsRepository = {
   async markOpenForQuotes(id) {
     const lead = await LeadModel.findByIdAndUpdate(
       id,
-      { $set: { status: "open_for_quotes" } },
+      { $set: { status: "open_for_quotes", verifiedAt: new Date() } },
       { new: true },
     ).lean({ virtuals: true });
 
     return normalizeLead(lead);
   },
 
-  async assignVendors(id, vendorIds) {
+  async assignVendors(id, vendorIds, biddingMeta = {}) {
     const lead = await LeadModel.findByIdAndUpdate(
       id,
       {
@@ -79,6 +79,7 @@ export const leadsRepository = {
           assignedVendorIds: vendorIds,
           vendorsAssignedAt: new Date(),
           status: "open_for_quotes",
+          ...biddingMeta,
         },
       },
       { new: true },
@@ -88,9 +89,11 @@ export const leadsRepository = {
   },
 
   async updateStatus(id, status) {
+    const extra =
+      status === "open_for_quotes" ? { verifiedAt: new Date() } : {};
     const lead = await LeadModel.findByIdAndUpdate(
       id,
-      { $set: { status } },
+      { $set: { status, ...extra } },
       { new: true },
     ).lean({ virtuals: true });
 

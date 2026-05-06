@@ -1,4 +1,4 @@
-import { Box, Button, Chip, Container, Grid, Stack, Typography } from "@mui/material";
+import { Alert, Box, Button, Chip, CircularProgress, Container, Grid, Stack, Typography } from "@mui/material";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import BoltRoundedIcon from "@mui/icons-material/BoltRounded";
 import DownloadRoundedIcon from "@mui/icons-material/DownloadRounded";
@@ -6,7 +6,10 @@ import ShieldOutlinedIcon from "@mui/icons-material/ShieldOutlined";
 import SolarPowerRoundedIcon from "@mui/icons-material/SolarPowerRounded";
 import StarRoundedIcon from "@mui/icons-material/StarRounded";
 import WorkspacePremiumRoundedIcon from "@mui/icons-material/WorkspacePremiumRounded";
-import { Link as RouterLink } from "react-router-dom";
+import { Link as RouterLink, useParams } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { leadsApi, quotesApi } from "@/features/public/api/leadsApi";
+import { publicVendorsApi } from "@/features/public/api/vendorsApi";
 import styles from "@/features/public/pages/CalculatorPage.module.css";
 import tataPowerHeroPlaceholder from "@/shared/assets/images/public/vendors/tata-power-hero-placeholder.png";
 import tataPowerSpecPlaceholder from "@/shared/assets/images/public/vendors/tata-power-spec-placeholder.png";
@@ -15,7 +18,7 @@ import {
   publicTypography,
 } from "@/features/public/pages/publicPageStyles";
 
-const quickFacts = [
+const defaultQuickFacts = [
   {
     icon: <SolarPowerRoundedIcon sx={{ fontSize: "1.15rem" }} />,
     label: "System Capacity",
@@ -38,7 +41,7 @@ const quickFacts = [
   },
 ];
 
-const specs = [
+const defaultSpecs = [
   ["Panel Type", "Mono-PERC Half Cut"],
   ["Inverter Technology", "String Inverter (MPPT)"],
   ["Structure Material", "Hot Dipped Galvanised Steel"],
@@ -119,7 +122,143 @@ function InfoCard({ icon, label, value }) {
   );
 }
 
+function formatPrice(value) {
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(Number(value) || 0);
+}
+
+function formatWindow(value) {
+  const labels = {
+    "2_4_weeks": "2-4 Weeks",
+    "4_6_weeks": "4-6 Weeks",
+    "6_8_weeks": "6-8 Weeks",
+  };
+
+  return labels[value] || "Timeline shared";
+}
+
+function getVendorName(quote, vendor) {
+  return (
+    vendor?.company?.name ||
+    vendor?.account?.fullName ||
+    quote?.vendorEmail?.split("@")[0] ||
+    "Tata Power Solar"
+  );
+}
+
+function getLocation(vendor, lead) {
+  return (
+    [vendor?.company?.city, vendor?.company?.state].filter(Boolean).join(", ") ||
+    [lead?.installationAddress?.city, lead?.installationAddress?.state]
+      .filter(Boolean)
+      .join(", ") ||
+    "Service area confirmed"
+  );
+}
+
 export default function VendorTataPowerPage() {
+  const { quoteId } = useParams();
+  const [quote, setQuote] = useState(null);
+  const [lead, setLead] = useState(null);
+  const [vendor, setVendor] = useState(null);
+  const [isLoading, setIsLoading] = useState(Boolean(quoteId));
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!quoteId) return;
+
+    let active = true;
+    setIsLoading(true);
+    setError("");
+
+    async function loadQuoteDetails() {
+      try {
+        const quoteResult = await quotesApi.getQuote(quoteId);
+        const [leadResult, vendorResult] = await Promise.all([
+          quoteResult.leadId ? leadsApi.getLead(quoteResult.leadId) : null,
+          quoteResult.vendorId
+            ? publicVendorsApi.getVendorProfile(quoteResult.vendorId).catch(() => null)
+            : null,
+        ]);
+
+        if (!active) return;
+        setQuote(quoteResult);
+        setLead(leadResult);
+        setVendor(vendorResult);
+      } catch (apiError) {
+        if (active) {
+          setError(
+            apiError?.response?.data?.message ||
+              "Could not load vendor quote details.",
+          );
+        }
+      } finally {
+        if (active) setIsLoading(false);
+      }
+    }
+
+    loadQuoteDetails();
+
+    return () => {
+      active = false;
+    };
+  }, [quoteId]);
+
+  const vendorName = getVendorName(quote, vendor);
+  const totalPrice = quote?.pricing?.totalPrice || 285000;
+  const netPayable = Math.round(totalPrice * 0.94);
+  const systemSize = quote?.system?.sizeKw || 5;
+  const panelType = quote?.system?.panelType || "Mono-PERC Half Cut";
+  const inverterType = quote?.system?.inverterType || "String Inverter (MPPT)";
+  const location = getLocation(vendor, lead);
+  const confirmTo = quote ? `/quotes/${quote.id}/confirm` : "/vendors/tata-power-solar/confirm";
+  const compareTo = lead?.id ? `/quotes/compare?leadId=${lead.id}` : "/quotes/compare";
+  const quickFacts = useMemo(
+    () =>
+      quote
+        ? [
+            {
+              icon: <SolarPowerRoundedIcon sx={{ fontSize: "1.15rem" }} />,
+              label: "System Capacity",
+              value: `${systemSize}kW ${panelType} system proposed for this booking`,
+            },
+            {
+              icon: <ShieldOutlinedIcon sx={{ fontSize: "1.15rem" }} />,
+              label: "Warranty",
+              value: "Warranty terms confirmed in vendor proposal notes",
+            },
+            {
+              icon: <BoltRoundedIcon sx={{ fontSize: "1.15rem" }} />,
+              label: "Installation",
+              value: formatWindow(quote.timeline?.installationWindow),
+            },
+            {
+              icon: <WorkspacePremiumRoundedIcon sx={{ fontSize: "1.15rem" }} />,
+              label: "Maintenance",
+              value: vendor?.services?.maintenance
+                ? "Maintenance support available"
+                : "Maintenance terms shared after site visit",
+            },
+          ]
+        : defaultQuickFacts,
+    [panelType, quote, systemSize, vendor?.services?.maintenance],
+  );
+  const specs = useMemo(
+    () =>
+      quote
+        ? [
+            ["Panel Type", panelType],
+            ["Inverter Technology", inverterType],
+            ["System Size", `${systemSize}kW`],
+            ["Proposal Notes", quote.proposalNotes || "Vendor proposal details shared"],
+          ]
+        : defaultSpecs,
+    [inverterType, panelType, quote, systemSize],
+  );
+
   return (
     <Box className={styles.pageShell}>
       <Box
@@ -132,10 +271,24 @@ export default function VendorTataPowerPage() {
       >
         <Container maxWidth={false} disableGutters className={styles.contentContainer}>
           <Stack spacing={{ xs: 4, md: 5 }}>
+            {isLoading ? (
+              <Box sx={{ py: 8, display: "grid", placeItems: "center" }}>
+                <CircularProgress />
+              </Box>
+            ) : null}
+
+            {!isLoading && error ? (
+              <Alert severity="error" sx={{ borderRadius: "0.9rem" }}>
+                {error}
+              </Alert>
+            ) : null}
+
+            {!isLoading && !error ? (
+              <>
             {/* Back button */}
             <Button
               component={RouterLink}
-              to="/quotes/compare"
+              to={compareTo}
               startIcon={<ArrowBackRoundedIcon />}
               sx={{
                 width: "fit-content",
@@ -170,7 +323,7 @@ export default function VendorTataPowerPage() {
                           ...publicTypography.pageTitle,
                         }}
                       >
-                        Tata Power Solar
+                        {vendorName}
                       </Typography>
                       <Chip
                         label="Top Rated"
@@ -204,8 +357,8 @@ export default function VendorTataPowerPage() {
                         maxWidth: 690,
                       }}
                     >
-                      India&apos;s largest integrated solar company with over 3 decades of expertise
-                      in providing sustainable energy solutions for residential and commercial spaces.
+                      {quote?.proposalNotes ||
+                        `${vendorName} has submitted a verified proposal for your solar installation request in ${location}. Review system details, pricing, and timeline before selecting the vendor.`}
                     </Typography>
                   </Box>
 
@@ -271,7 +424,7 @@ export default function VendorTataPowerPage() {
                                     mt: 0.5,
                                   }}
                                 >
-                                  ₹2,85,000
+                                  {formatPrice(totalPrice)}
                                 </Typography>
                               </Box>
                               <Chip
@@ -310,7 +463,7 @@ export default function VendorTataPowerPage() {
                                       mt: 0.5,
                                     }}
                                   >
-                                    5kW
+                                    {systemSize}kW
                                   </Typography>
                                 </Box>
                               </Grid>
@@ -335,7 +488,7 @@ export default function VendorTataPowerPage() {
                                       mt: 0.5,
                                     }}
                                   >
-                                    5kW Capacity
+                                    {systemSize}kW Capacity
                                   </Typography>
                                 </Box>
                               </Grid>
@@ -361,7 +514,7 @@ export default function VendorTataPowerPage() {
                                   mt: 0.5,
                                 }}
                               >
-                                ₹2,67,000
+                                {formatPrice(netPayable)}
                               </Typography>
                             </Box>
                           </Stack>
@@ -369,7 +522,7 @@ export default function VendorTataPowerPage() {
                           <Stack spacing={1.2} sx={{ mt: 2.4 }}>
                             <Button
                               component={RouterLink}
-                              to="/vendors/tata-power-solar/confirm"
+                              to={confirmTo}
                               variant="contained"
                               sx={{
                                 minHeight: 46,
@@ -676,10 +829,10 @@ export default function VendorTataPowerPage() {
                   </Typography>
                   <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 0.6 }}>
                     <Typography sx={{ color: "#202938", fontSize: "1rem", fontWeight: 700 }}>
-                      Tata Power Solar
+                      {vendorName}
                     </Typography>
                     <Typography sx={{ color: "#0E56C8", fontSize: "1.05rem", fontWeight: 800 }}>
-                      ₹2,85,000
+                      {formatPrice(totalPrice)}
                     </Typography>
                   </Stack>
                 </Box>
@@ -707,7 +860,7 @@ export default function VendorTataPowerPage() {
                   </Button>
                   <Button
                     component={RouterLink}
-                    to="/vendors/tata-power-solar/confirm"
+                    to={confirmTo}
                     variant="contained"
                     sx={{
                       width: { xs: "100%", sm: "auto" },
@@ -726,6 +879,8 @@ export default function VendorTataPowerPage() {
                 </Stack>
               </Stack>
             </Box>
+              </>
+            ) : null}
           </Stack>
         </Container>
       </Box>

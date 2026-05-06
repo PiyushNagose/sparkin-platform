@@ -1,4 +1,5 @@
 import { AppError } from "../../common/errors/app-error.js";
+import { platformSettingsService } from "../platform-settings/platform-settings.service.js";
 
 const stateProfiles = {
   andhra_pradesh: {
@@ -106,16 +107,21 @@ function calculateEmi(principal, annualRate = 0.0865, months = 60) {
   return Math.round((principal * monthlyRate * (1 + monthlyRate) ** months) / ((1 + monthlyRate) ** months - 1));
 }
 
-function buildEstimate(input) {
+async function buildEstimate(input) {
   const serviceability = getServiceability(input);
 
   if (!serviceability.serviceable) {
     throw new AppError(422, serviceability.reason, { serviceability });
   }
 
+  const settings = await platformSettingsService.getSettings();
   const profile = stateProfiles[serviceability.state];
   const isCommercial = input.propertyType === "commercial";
-  const tariff = isCommercial ? profile.commercialTariff : profile.residentialTariff;
+  const tariff = platformSettingsService.getStateRate(
+    settings,
+    serviceability.state,
+    input.propertyType,
+  );
   const monthlyUnits = input.monthlyUnits || input.monthlyBill / tariff;
   const annualConsumption = monthlyUnits * 12;
   const desiredOffset = (input.desiredOffsetPercent || (isCommercial ? 75 : 90)) / 100;
@@ -129,8 +135,11 @@ function buildEstimate(input) {
   const monthlyGenerationKwh = Math.round(annualGenerationKwh / 12);
   const firstYearSavings = Math.round(Math.min(annualGenerationKwh, annualConsumption) * tariff);
   const monthlySavings = Math.round(firstYearSavings / 12);
-  const grossCost = Math.round(roundedSystemSizeKw * (isCommercial ? profile.costPerWattCommercial : profile.costPerWattResidential));
-  const subsidy = isCommercial ? 0 : calculateResidentialSubsidy(roundedSystemSizeKw);
+  const costPerKw = Number(settings.pricing.standardCostPerKw) || (isCommercial ? profile.costPerWattCommercial : profile.costPerWattResidential);
+  const grossCost = Math.round(roundedSystemSizeKw * costPerKw);
+  const subsidy = isCommercial && settings.subsidy.residentialOnly
+    ? 0
+    : Math.min(settings.subsidy.maxAmount, calculateResidentialSubsidy(roundedSystemSizeKw));
   const netCost = Math.max(0, grossCost - subsidy);
   const paybackYears = firstYearSavings ? round(netCost / firstYearSavings, 1) : null;
   const degradation = 0.01;
@@ -157,6 +166,7 @@ function buildEstimate(input) {
       tariffPerUnit: tariff,
       solarYieldPerKwYear: profile.solarYieldPerKwYear,
       derateFactor,
+      standardCostPerKw: costPerKw,
       annualPanelDegradationPercent: 1,
       annualElectricityInflationPercent: 3,
       roofAreaPerKwSqFt: 90,

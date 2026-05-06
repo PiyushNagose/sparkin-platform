@@ -8,7 +8,7 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import { Link as RouterLink } from "react-router-dom";
+import { Link as RouterLink, useSearchParams } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import BoltRoundedIcon from "@mui/icons-material/BoltRounded";
 import StarRoundedIcon from "@mui/icons-material/StarRounded";
@@ -20,7 +20,7 @@ import {
   publicPageSpacing,
   publicTypography,
 } from "@/features/public/pages/publicPageStyles";
-import { quotesApi } from "@/features/public/api/leadsApi";
+import { leadsApi, quotesApi } from "@/features/public/api/leadsApi";
 
 function formatPrice(value) {
   return new Intl.NumberFormat("en-IN", {
@@ -56,7 +56,8 @@ function toQuoteCard(quote, index) {
     system: `${quote.system.sizeKw}kW System`,
     warranty: quote.system.panelType,
     delivery: formatWindow(quote.timeline.installationWindow),
-    detailsTo: `/quotes/${quote.id}/confirm`,
+    detailsTo: `/quotes/${quote.id}/details`,
+    confirmTo: `/quotes/${quote.id}/confirm`,
   };
 }
 
@@ -73,6 +74,7 @@ function QuoteCard({
   warranty,
   delivery,
   detailsTo,
+  confirmTo,
 }) {
   return (
     <Box
@@ -251,7 +253,7 @@ function QuoteCard({
           </Button>
           <Button
             component={RouterLink}
-            to={detailsTo}
+            to={confirmTo}
             fullWidth
             variant="contained"
             sx={{
@@ -273,7 +275,10 @@ function QuoteCard({
 }
 
 export default function QuoteComparisonPage() {
+  const [searchParams] = useSearchParams();
+  const leadId = searchParams.get("leadId");
   const [submittedQuotes, setSubmittedQuotes] = useState([]);
+  const [lead, setLead] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -285,8 +290,14 @@ export default function QuoteComparisonPage() {
       setError("");
 
       try {
-        const result = await quotesApi.listQuotes();
-        if (active) setSubmittedQuotes(result);
+        const [result, leadResult] = await Promise.all([
+          quotesApi.listQuotes(leadId ? { leadId } : {}),
+          leadId ? leadsApi.getLead(leadId) : Promise.resolve(null),
+        ]);
+        if (active) {
+          setSubmittedQuotes(result);
+          setLead(leadResult);
+        }
       } catch (apiError) {
         if (active) setError(apiError?.response?.data?.message || "Could not load quotes.");
       } finally {
@@ -299,9 +310,17 @@ export default function QuoteComparisonPage() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [leadId]);
 
   const quoteCards = useMemo(() => submittedQuotes.map(toQuoteCard), [submittedQuotes]);
+  const biddingEndsAt = lead?.biddingEndsAt || submittedQuotes[0]?.lead?.biddingEndsAt;
+  const countdown = useMemo(() => {
+    if (!biddingEndsAt) return "48h window";
+    const remainingMs = Math.max(0, new Date(biddingEndsAt).getTime() - Date.now());
+    const hours = Math.floor(remainingMs / 3600000);
+    const minutes = Math.floor((remainingMs % 3600000) / 60000);
+    return remainingMs > 0 ? `${hours}h ${minutes}m remaining` : "Bidding closed";
+  }, [biddingEndsAt, submittedQuotes.length]);
 
   if (!isLoading && !error && quoteCards.length === 0) {
     return <LiveBiddingPage />;
@@ -429,7 +448,7 @@ export default function QuoteComparisonPage() {
                     letterSpacing: "-0.04em",
                   }}
                 >
-                  22h 14m 30s
+                  {countdown}
                 </Typography>
               </Stack>
             </Box>

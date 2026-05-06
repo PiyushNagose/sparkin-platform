@@ -81,6 +81,14 @@ function estimateInstallationCost(lead, quotes) {
   return Math.max(size, 3) * 65000;
 }
 
+function formatBidRange(lead) {
+  if (lead?.bidRange?.minAmount && lead?.bidRange?.maxAmount) {
+    return `${formatMoney(lead.bidRange.minAmount)} - ${formatMoney(lead.bidRange.maxAmount)}`;
+  }
+
+  return formatMoney(estimateInstallationCost(lead, []));
+}
+
 function getVendorName(vendor) {
   return (
     vendor.company?.name ||
@@ -224,7 +232,7 @@ function LeadSummary({ lead, quotes }) {
                       fontWeight: 900,
                     }}
                   >
-                    {formatMoney(estimateInstallationCost(lead, quotes))}
+                    {formatBidRange(lead)}
                   </Typography>
                 </Box>
               </Stack>

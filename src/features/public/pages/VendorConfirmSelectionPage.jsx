@@ -96,21 +96,7 @@ export default function VendorConfirmSelectionPage() {
   );
 
   async function handleConfirm() {
-    setIsSubmitting(true);
-    setError("");
-
-    try {
-      const result = await quotesApi.acceptQuote(quoteId);
-      if (result.project?.id) {
-        navigate(`/project/installation?projectId=${result.project.id}`, { replace: true });
-        return;
-      }
-      navigate("/project/installation", { replace: true });
-    } catch (apiError) {
-      setError(apiError?.response?.data?.message || "Could not confirm this vendor.");
-    } finally {
-      setIsSubmitting(false);
-    }
+    navigate(`/quotes/${quoteId}/payment`);
   }
 
   return (
@@ -143,7 +129,7 @@ export default function VendorConfirmSelectionPage() {
                   maxWidth: 420,
                 }}
               >
-                You&apos;re about to proceed with this vendor for your solar installation.
+                You&apos;re about to proceed with this vendor for your solar installation. Payment confirmation happens on the next screen.
               </Typography>
             </Stack>
 
@@ -346,7 +332,7 @@ export default function VendorConfirmSelectionPage() {
                           maxWidth: 560,
                         }}
                       >
-                        Once confirmed, this quote will be marked accepted, competing quotes for
+                        Once payment is completed on the next screen, this quote will be marked accepted, competing quotes for
                         the same booking will be closed, and your project tracker will open.
                       </Typography>
                     </Stack>

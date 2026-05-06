@@ -11,6 +11,26 @@ const addressSchema = new mongoose.Schema(
   { _id: false },
 );
 
+const attachmentSchema = new mongoose.Schema(
+  {
+    category: {
+      type: String,
+      enum: ["roof_photo", "electricity_bill", "photo_id"],
+      required: true,
+    },
+    fileName: { type: String, trim: true, required: true },
+    mimeType: { type: String, trim: true, required: true },
+    size: { type: Number, min: 1, required: true },
+    dataUrl: { type: String, required: true },
+    capturedAt: { type: Date, default: null },
+    location: {
+      latitude: { type: Number, default: null },
+      longitude: { type: Number, default: null },
+    },
+  },
+  { _id: true },
+);
+
 const leadSchema = new mongoose.Schema(
   {
     customerId: { type: String, required: true, index: true },
@@ -83,13 +103,26 @@ const leadSchema = new mongoose.Schema(
     },
     notes: { type: String, trim: true, default: null },
     specialInstructions: { type: String, trim: true, default: null },
+    attachments: {
+      roofPhotos: [attachmentSchema],
+      electricityBill: [attachmentSchema],
+      photoId: [attachmentSchema],
+    },
+    calculatorEstimate: { type: mongoose.Schema.Types.Mixed, default: null },
     // Admin-set fields after verification
     adminSystemSizeKw: { type: Number, min: 0, default: null },
     estimatedCost: { type: Number, min: 0, default: null },
+    bidRange: {
+      minAmount: { type: Number, min: 0, default: null },
+      maxAmount: { type: Number, min: 0, default: null },
+    },
+    verifiedAt: { type: Date, default: null },
     commitmentFeePaid: { type: Boolean, default: false },
     commitmentFeePaidAt: { type: Date, default: null },
     assignedVendorIds: [{ type: String, trim: true }],
     vendorsAssignedAt: { type: Date, default: null },
+    biddingWindowHours: { type: Number, min: 1, default: null },
+    biddingEndsAt: { type: Date, default: null },
     selection: {
       quoteId: {
         type: mongoose.Schema.Types.ObjectId,

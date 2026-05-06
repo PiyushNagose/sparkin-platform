@@ -115,9 +115,12 @@ function getStatusConfig(lead, matchingProject, quoteCount) {
       badge: "Bidding Live",
       badgeTone: "#6C7300",
       badgeBg: "#E7F318",
-      action: quoteCount > 0 ? "View Quotes" : "Track Tender",
+      action: "View Bids",
       actionPrimary: true,
-      to: "/customer/tenders",
+      to:
+        quoteCount > 0
+          ? `/quotes/compare?leadId=${lead.id}`
+          : `/tenders/live?leadId=${lead.id}`,
     };
   }
 
@@ -126,9 +129,9 @@ function getStatusConfig(lead, matchingProject, quoteCount) {
       badge: "Under Review",
       badgeTone: "#4F89FF",
       badgeBg: "#EEF4FF",
-      action: "View Details",
+      action: "View Bids",
       actionPrimary: false,
-      to: "/customer/tenders",
+      to: `/tenders/live?leadId=${lead.id}`,
     };
   }
 
@@ -137,9 +140,9 @@ function getStatusConfig(lead, matchingProject, quoteCount) {
     badge: "Submitted",
     badgeTone: "#8F98A7",
     badgeBg: "#F2F5F8",
-    action: "View Details",
+    action: "View Bids",
     actionPrimary: false,
-    to: "/customer/tenders",
+    to: `/tenders/live?leadId=${lead.id}`,
   };
 }
 

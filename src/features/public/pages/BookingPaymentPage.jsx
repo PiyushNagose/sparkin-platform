@@ -19,10 +19,10 @@ import ShieldOutlinedIcon from "@mui/icons-material/ShieldOutlined";
 import VerifiedOutlinedIcon from "@mui/icons-material/VerifiedOutlined";
 import WbSunnyOutlinedIcon from "@mui/icons-material/WbSunnyOutlined";
 import { useEffect, useState } from "react";
-import { Link as RouterLink, useLocation, useNavigate } from "react-router-dom";
+import { Link as RouterLink, useLocation, useNavigate, useParams } from "react-router-dom";
 import styles from "@/features/public/pages/CalculatorPage.module.css";
 import { publicPageSpacing } from "@/features/public/pages/publicPageStyles";
-import { leadsApi } from "@/features/public/api/leadsApi";
+import { leadsApi, quotesApi } from "@/features/public/api/leadsApi";
 
 const rupeeFormatter = new Intl.NumberFormat("en-IN", {
   style: "currency",
@@ -117,10 +117,12 @@ function TrustBadge({ icon, title, subtitle }) {
 
 export default function BookingPaymentPage() {
   const { state } = useLocation();
+  const { quoteId } = useParams();
   const navigate = useNavigate();
   const leadId = state?.leadId;
 
   const [lead, setLead] = useState(null);
+  const [quote, setQuote] = useState(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [selectedMethod, setSelectedMethod] = useState("upi");
@@ -128,23 +130,34 @@ export default function BookingPaymentPage() {
   const [payError, setPayError] = useState("");
 
   useEffect(() => {
-    if (!leadId) {
+    if (!leadId && !quoteId) {
       navigate("/booking", { replace: true });
       return;
     }
 
     let active = true;
     setLoading(true);
+    setLoadError("");
 
-    leadsApi
-      .getLead(leadId)
-      .then((data) => {
+    async function loadPaymentContext() {
+      try {
+        if (quoteId) {
+          const quoteResult = await quotesApi.getQuote(quoteId);
+          const leadResult = await leadsApi.getLead(quoteResult.leadId);
+          if (active) {
+            setQuote(quoteResult);
+            setLead(leadResult);
+            setLoading(false);
+          }
+          return;
+        }
+
+        const data = await leadsApi.getLead(leadId);
         if (active) {
           setLead(data);
           setLoading(false);
         }
-      })
-      .catch((err) => {
+      } catch (err) {
         if (active) {
           setLoadError(
             err?.response?.data?.message ||
@@ -153,17 +166,24 @@ export default function BookingPaymentPage() {
           );
           setLoading(false);
         }
-      });
+      }
+    }
+
+    loadPaymentContext();
 
     return () => {
       active = false;
     };
-  }, [leadId, navigate]);
+  }, [leadId, navigate, quoteId]);
 
   // Derive values from lead
   const systemSizeKw =
-    lead?.adminSystemSizeKw || lead?.property?.sanctionedLoadKw || 5;
-  const estimatedTotal = lead?.estimatedCost || systemSizeKw * 65000;
+    quote?.system?.sizeKw ||
+    lead?.adminSystemSizeKw ||
+    lead?.property?.sanctionedLoadKw ||
+    5;
+  const estimatedTotal =
+    quote?.pricing?.totalPrice || lead?.estimatedCost || systemSizeKw * 65000;
   const commitmentFee = Math.round(estimatedTotal * 0.1);
   const location = [
     lead?.installationAddress?.city,
@@ -171,7 +191,10 @@ export default function BookingPaymentPage() {
   ]
     .filter(Boolean)
     .join(", ");
-  const systemLabel = `${systemSizeKw}kW Residential Solar`;
+  const systemLabel = `${systemSizeKw}kW ${lead?.property?.type === "commercial" ? "Commercial" : "Residential"} Solar`;
+  const buttonLabel = quote
+    ? `Pay ${formatMoney(commitmentFee)} & Confirm Vendor`
+    : `Pay ${formatMoney(commitmentFee)} & Unlock Quotes`;
 
   async function handlePay() {
     if (isPaying) return; // guard against double-click
@@ -179,6 +202,18 @@ export default function BookingPaymentPage() {
     setIsPaying(true);
 
     try {
+      if (quoteId) {
+        const result = await quotesApi.acceptQuote(quoteId);
+        if (result.project?.id) {
+          navigate(`/project/installation?projectId=${result.project.id}`, {
+            replace: true,
+          });
+          return;
+        }
+        navigate("/project/installation", { replace: true });
+        return;
+      }
+
       // Mark commitment fee as paid in backend
       await leadsApi.markCommitmentPaid(leadId);
       navigate("/booking/submitted", {
@@ -289,8 +324,9 @@ export default function BookingPaymentPage() {
                 lineHeight: 1.6,
               }}
             >
-              Pay 10% commitment fee to start receiving verified vendor quotes
-              and personalized engineering plans.
+              {quote
+                ? "Pay the confirmation amount to lock your selected vendor and open your project tracker."
+                : "Pay 10% commitment fee to start receiving verified vendor quotes and personalized engineering plans."}
             </Typography>
           </Box>
 
@@ -767,7 +803,7 @@ export default function BookingPaymentPage() {
                       <span>Processing...</span>
                     </Stack>
                   ) : (
-                    `Pay ${formatMoney(commitmentFee)} & Unlock Quotes`
+                    buttonLabel
                   )}
                 </Button>
 
