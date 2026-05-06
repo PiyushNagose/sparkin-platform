@@ -325,7 +325,7 @@ export default function AdminVendorAssignmentPage() {
 
     async function loadAssignmentData() {
       try {
-        const data = await getAdminDashboardData();
+        const data = await getAdminDashboardData({ force: true });
         if (!active) return;
 
         const requestedLeadId = location.state?.leadId;

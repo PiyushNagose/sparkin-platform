@@ -382,7 +382,7 @@ export default function AdminReportsPage() {
   const load = useCallback(async (active = true) => {
     setState((s) => ({ ...s, loading: true, error: "" }));
     try {
-      const data = await getAdminDashboardData();
+      const data = await getAdminDashboardData({ force: true });
       if (active) setState({ loading: false, error: "", data });
     } catch (err) {
       if (active)

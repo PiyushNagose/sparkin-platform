@@ -7,10 +7,18 @@ import { serviceRequestsApi } from "@/features/public/api/serviceRequestsApi";
 
 let dashboardInFlight = null;
 
+function readArrayResult(result, fallback = []) {
+  if (result.status !== "fulfilled") {
+    return fallback;
+  }
+
+  return Array.isArray(result.value) ? result.value : fallback;
+}
+
 export const adminVendorsApi = {
   async listVendors(options = {}) {
     const { data } = await cachedGet(businessClient, "/vendors", options);
-    return data.vendors;
+    return data.vendors || [];
   },
 
   async updateVendorStatus(vendorId, payload) {
@@ -46,7 +54,7 @@ export async function getAdminDashboardData(options = {}) {
   }
 
   const [leads, quotes, payments, projects, serviceRequests, vendors] =
-    await (dashboardInFlight = Promise.all([
+    await (dashboardInFlight = Promise.allSettled([
       leadsApi.listLeads(options),
       quotesApi.listQuotes({}, options),
       paymentsApi.listPayments(options),
@@ -58,11 +66,11 @@ export async function getAdminDashboardData(options = {}) {
     }));
 
   return {
-    leads,
-    quotes,
-    payments,
-    projects,
-    serviceRequests,
-    vendors,
+    leads: readArrayResult(leads),
+    quotes: readArrayResult(quotes),
+    payments: readArrayResult(payments),
+    projects: readArrayResult(projects),
+    serviceRequests: readArrayResult(serviceRequests),
+    vendors: readArrayResult(vendors),
   };
 }
