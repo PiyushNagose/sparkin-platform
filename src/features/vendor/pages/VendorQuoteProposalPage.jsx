@@ -63,12 +63,37 @@ function getDraftKey(leadId) {
   return `sparkin:quote-draft:${leadId}`;
 }
 
-function validateQuoteForm(form) {
+function formatPrice(value) {
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(Number(value) || 0);
+}
+
+function getBidRange(lead) {
+  const minAmount = Number(lead?.bidRange?.minAmount || 0);
+  const maxAmount = Number(lead?.bidRange?.maxAmount || 0);
+  return minAmount > 0 && maxAmount > 0 ? { minAmount, maxAmount } : null;
+}
+
+function formatBidRange(lead) {
+  const range = getBidRange(lead);
+  return range
+    ? `${formatPrice(range.minAmount)} - ${formatPrice(range.maxAmount)}`
+    : "Pending admin approval";
+}
+
+function validateQuoteForm(form, lead) {
   const totalPrice = Number(form.totalPrice);
   const sizeKw = Number(form.sizeKw);
 
   if (!Number.isFinite(totalPrice) || totalPrice <= 0)
     return "Enter a valid total proposal price.";
+  const range = getBidRange(lead);
+  if (range && (totalPrice < range.minAmount || totalPrice > range.maxAmount)) {
+    return `Total proposal price must be within ${formatPrice(range.minAmount)} - ${formatPrice(range.maxAmount)}.`;
+  }
   if (!Number.isFinite(sizeKw) || sizeKw <= 0)
     return "Enter a valid system size.";
   if (!form.inverterType.trim()) return "Enter inverter type.";
@@ -209,11 +234,13 @@ export default function VendorQuoteProposalPage() {
       ],
       [
         "System Size",
-        lead.property?.sanctionedLoadKw
-          ? `${lead.property.sanctionedLoadKw} kW`
-          : "Assessment pending",
+        lead.adminSystemSizeKw
+          ? `${lead.adminSystemSizeKw} kW`
+          : lead.property?.sanctionedLoadKw
+            ? `${lead.property.sanctionedLoadKw} kW`
+            : "Assessment pending",
       ],
-      ["Budget", "Pending quote"],
+      ["Budget Range", formatBidRange(lead)],
     ];
   }, [lead]);
 
@@ -225,7 +252,7 @@ export default function VendorQuoteProposalPage() {
     setError("");
     setSuccess("");
 
-    const validationError = validateQuoteForm(form);
+    const validationError = validateQuoteForm(form, lead);
     if (validationError) {
       setError(validationError);
       return;
@@ -444,6 +471,9 @@ export default function VendorQuoteProposalPage() {
               placeholder="310000"
               sx={inputSx}
             />
+            <Typography sx={{ mt: 0.6, color: "#6F7D8F", fontSize: "0.74rem" }}>
+              Allowed bid range for this lead: {formatBidRange(lead)}
+            </Typography>
 
             <Box
               sx={{

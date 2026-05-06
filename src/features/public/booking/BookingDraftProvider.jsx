@@ -18,25 +18,61 @@ const initialDraft = {
   },
   inspection: {
     preferredDate: "",
-    preferredTimeSlot: "morning",
+    preferredTimeSlot: "",
   },
   property: {
-    type: "independent_house",
-    roofType: "flat",
-    ownership: "owned",
+    type: "",
+    roofType: "",
+    ownership: "",
     distributionCompany: "",
-    connectionType: "single_phase",
+    connectionType: "",
     consumerNumber: "",
     sanctionedLoadKw: "",
   },
   roof: {
-    sizeRange: "500_1000",
-    shadow: "none",
-    condition: "average",
+    sizeRange: "",
+    shadow: "",
+    condition: "",
   },
+  attachments: {
+    roofPhotos: [],
+    electricityBill: [],
+    photoId: [],
+  },
+  calculatorEstimate: null,
   notes: "",
   specialInstructions: "",
 };
+
+function stateLabelFromEstimate(estimate) {
+  return (
+    estimate?.serviceability?.stateName ||
+    String(estimate?.input?.state || "")
+      .replaceAll("_", " ")
+      .replace(/\b\w/g, (letter) => letter.toUpperCase())
+  );
+}
+
+function roofSizeRangeFromArea(area) {
+  const value = Number(area) || 0;
+  if (value > 1000) return "over_1000";
+  if (value >= 500) return "500_1000";
+  return "under_500";
+}
+
+function propertyTypeFromEstimate(estimate) {
+  return estimate?.input?.propertyType === "commercial"
+    ? "commercial"
+    : "independent_house";
+}
+
+function connectionTypeFromEstimate(estimate) {
+  const connectionType = estimate?.input?.connectionType;
+  if (connectionType === "three_phase" || connectionType === "ht" || connectionType === "lt") {
+    return "three_phase";
+  }
+  return "single_phase";
+}
 
 const BookingDraftContext = React.createContext(null);
 
@@ -95,6 +131,38 @@ export function BookingDraftProvider({ children }) {
     }));
   }, []);
 
+  const applyCalculatorEstimate = React.useCallback((estimate) => {
+    setDraft((current) => {
+      const roofArea =
+        estimate?.input?.roofAreaSqFt ||
+        estimate?.system?.requiredRoofAreaSqFt ||
+        null;
+
+      return {
+        ...current,
+        installationAddress: {
+          ...current.installationAddress,
+          city: estimate?.input?.city || current.installationAddress.city,
+          state: stateLabelFromEstimate(estimate) || current.installationAddress.state,
+          pincode: estimate?.input?.pincode || current.installationAddress.pincode,
+        },
+        property: {
+          ...current.property,
+          type: propertyTypeFromEstimate(estimate),
+          connectionType: connectionTypeFromEstimate(estimate),
+          sanctionedLoadKw:
+            estimate?.input?.sanctionedLoadKw ||
+            current.property.sanctionedLoadKw,
+        },
+        roof: {
+          ...current.roof,
+          sizeRange: roofSizeRangeFromArea(roofArea),
+        },
+        calculatorEstimate: estimate,
+      };
+    });
+  }, []);
+
   const resetDraft = React.useCallback(() => {
     window.localStorage.removeItem(STORAGE_KEY);
     setDraft(initialDraft);
@@ -105,9 +173,10 @@ export function BookingDraftProvider({ children }) {
       draft,
       updateDraft,
       updateField,
+      applyCalculatorEstimate,
       resetDraft,
     }),
-    [draft, resetDraft, updateDraft, updateField],
+    [applyCalculatorEstimate, draft, resetDraft, updateDraft, updateField],
   );
 
   return <BookingDraftContext.Provider value={value}>{children}</BookingDraftContext.Provider>;

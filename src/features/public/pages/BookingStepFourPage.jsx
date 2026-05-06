@@ -4,6 +4,8 @@ import {
   Container,
   Grid,
   Alert,
+  Chip,
+  IconButton,
   Stack,
   TextField,
   Typography,
@@ -22,8 +24,9 @@ import LightbulbOutlinedIcon from "@mui/icons-material/LightbulbOutlined";
 import SecurityRoundedIcon from "@mui/icons-material/SecurityRounded";
 import BlockRoundedIcon from "@mui/icons-material/BlockRounded";
 import VerifiedRoundedIcon from "@mui/icons-material/VerifiedRounded";
+import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import uploadSummaryPlaceholder from "@/shared/assets/images/public/booking/upload-summary-placeholder.png";
 import styles from "@/features/public/pages/CalculatorPage.module.css";
 import {
@@ -237,9 +240,15 @@ function UploadZone({
   buttonLabel,
   helper,
   compact = false,
+  files = [],
+  onClick,
+  onRemove,
 }) {
   return (
     <Box
+      role="button"
+      tabIndex={0}
+      onClick={onClick}
       sx={{
         minHeight: compact ? { xs: 164, md: 184 } : { xs: 220, md: 252 },
         borderRadius: "1.1rem",
@@ -251,6 +260,7 @@ function UploadZone({
         alignItems: "center",
         justifyContent: "center",
         textAlign: "center",
+        cursor: onClick ? "pointer" : "default",
       }}
     >
       <Stack spacing={compact ? 0.95 : 1.15} alignItems="center">
@@ -325,16 +335,118 @@ function UploadZone({
             {helper}
           </Typography>
         ) : null}
+        {files.length ? (
+          <Stack spacing={0.75} sx={{ width: "100%", maxWidth: 330, mt: 0.5 }}>
+            {files.map((file, index) => (
+              <Stack
+                key={`${file.fileName}-${index}`}
+                direction="row"
+                spacing={1}
+                alignItems="center"
+                justifyContent="space-between"
+                sx={{
+                  px: 1,
+                  py: 0.7,
+                  borderRadius: "0.75rem",
+                  bgcolor: "#F5F8FC",
+                  textAlign: "left",
+                }}
+                onClick={(event) => event.stopPropagation()}
+              >
+                <Stack direction="row" spacing={0.8} alignItems="center" sx={{ minWidth: 0 }}>
+                  {file.dataUrl?.startsWith("data:image") ? (
+                    <Box
+                      component="img"
+                      src={file.dataUrl}
+                      alt={file.fileName}
+                      sx={{ width: 34, height: 34, borderRadius: "0.55rem", objectFit: "cover" }}
+                    />
+                  ) : (
+                    <DescriptionOutlinedIcon sx={{ color: "#0E56C8", fontSize: "1rem" }} />
+                  )}
+                  <Box sx={{ minWidth: 0 }}>
+                    <Typography noWrap sx={{ color: "#263244", fontSize: "0.72rem", fontWeight: 800 }}>
+                      {file.fileName}
+                    </Typography>
+                    <Typography sx={{ color: "#7A8798", fontSize: "0.62rem" }}>
+                      {(file.size / 1024).toFixed(0)} KB
+                    </Typography>
+                  </Box>
+                </Stack>
+                {onRemove ? (
+                  <IconButton size="small" onClick={() => onRemove(index)} sx={{ color: "#D74C4C" }}>
+                    <DeleteOutlineRoundedIcon sx={{ fontSize: "0.95rem" }} />
+                  </IconButton>
+                ) : null}
+              </Stack>
+            ))}
+          </Stack>
+        ) : null}
       </Stack>
     </Box>
   );
 }
 
+const maxUploadSize = 2 * 1024 * 1024;
+
+function readFileAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+async function fileToAttachment(file, category) {
+  if (file.size > maxUploadSize) {
+    throw new Error(`${file.name} is larger than 2 MB.`);
+  }
+
+  return {
+    category,
+    fileName: file.name,
+    mimeType: file.type || "application/octet-stream",
+    size: file.size,
+    dataUrl: await readFileAsDataUrl(file),
+    capturedAt: null,
+    location: { latitude: null, longitude: null },
+  };
+}
+
+function getLocationSnapshot() {
+  return new Promise((resolve) => {
+    if (!navigator.geolocation) {
+      resolve({ latitude: null, longitude: null });
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) =>
+        resolve({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        }),
+      () => resolve({ latitude: null, longitude: null }),
+      { enableHighAccuracy: true, timeout: 5000, maximumAge: 30000 },
+    );
+  });
+}
+
 export default function BookingStepFourPage() {
   const navigate = useNavigate();
-  const { draft, updateField, resetDraft } = useBookingDraft();
+  const { draft, updateDraft, updateField, resetDraft } = useBookingDraft();
+  const roofInputRef = useRef(null);
+  const billInputRef = useRef(null);
+  const idInputRef = useRef(null);
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
+  const mediaStreamRef = useRef(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [uploadError, setUploadError] = useState("");
+  const [cameraError, setCameraError] = useState("");
+  const [cameraActive, setCameraActive] = useState(false);
 
   useEffect(() => {
     if (
@@ -345,6 +457,91 @@ export default function BookingStepFourPage() {
       navigate("/booking", { replace: true });
     }
   }, []);
+
+  useEffect(() => {
+    return () => stopCamera();
+  }, []);
+
+  function updateAttachments(values) {
+    updateDraft("attachments", values);
+  }
+
+  async function handleFiles(event, bucket, category, limit) {
+    const selected = Array.from(event.target.files || []);
+    event.target.value = "";
+    if (!selected.length) return;
+
+    setUploadError("");
+    try {
+      const attachments = await Promise.all(
+        selected.slice(0, limit).map((file) => fileToAttachment(file, category)),
+      );
+      const current = draft.attachments?.[bucket] || [];
+      updateAttachments({
+        [bucket]: [...current, ...attachments].slice(0, limit),
+      });
+    } catch (uploadIssue) {
+      setUploadError(uploadIssue.message || "Unable to read selected file.");
+    }
+  }
+
+  function removeAttachment(bucket, index) {
+    const current = draft.attachments?.[bucket] || [];
+    updateAttachments({
+      [bucket]: current.filter((_, itemIndex) => itemIndex !== index),
+    });
+  }
+
+  async function startCamera() {
+    setCameraError("");
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: "environment" } },
+        audio: false,
+      });
+      mediaStreamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+      }
+      setCameraActive(true);
+    } catch {
+      setCameraError("Camera permission is blocked or unavailable on this device.");
+    }
+  }
+
+  function stopCamera() {
+    mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
+    mediaStreamRef.current = null;
+    setCameraActive(false);
+  }
+
+  async function capturePhoto() {
+    if (!videoRef.current || !canvasRef.current) return;
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    canvas.width = video.videoWidth || 1280;
+    canvas.height = video.videoHeight || 720;
+    const context = canvas.getContext("2d");
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const dataUrl = canvas.toDataURL("image/jpeg", 0.86);
+    const location = await getLocationSnapshot();
+    const current = draft.attachments?.roofPhotos || [];
+    updateAttachments({
+      roofPhotos: [
+        ...current,
+        {
+          category: "roof_photo",
+          fileName: `roof-camera-${new Date().toISOString().replace(/[:.]/g, "-")}.jpg`,
+          mimeType: "image/jpeg",
+          size: Math.round((dataUrl.length * 3) / 4),
+          dataUrl,
+          capturedAt: new Date().toISOString(),
+          location,
+        },
+      ].slice(0, 5),
+    });
+  }
 
   function buildLeadPayload() {
     return {
@@ -371,6 +568,8 @@ export default function BookingStepFourPage() {
       },
       notes: draft.notes.trim() || null,
       specialInstructions: draft.specialInstructions.trim() || null,
+      attachments: draft.attachments,
+      calculatorEstimate: draft.calculatorEstimate,
     };
   }
 
@@ -390,7 +589,7 @@ export default function BookingStepFourPage() {
     try {
       const lead = await leadsApi.createLead(buildLeadPayload());
       resetDraft();
-      navigate("/booking/payment", {
+      navigate("/booking/submitted", {
         replace: true,
         state: { leadId: lead.id },
       });
@@ -478,6 +677,16 @@ export default function BookingStepFourPage() {
 
                 <Box>
                   <SectionLabel>Roof Reference</SectionLabel>
+                  <input
+                    ref={roofInputRef}
+                    hidden
+                    type="file"
+                    accept="image/*,.pdf"
+                    multiple
+                    onChange={(event) =>
+                      handleFiles(event, "roofPhotos", "roof_photo", 5)
+                    }
+                  />
                   <Stack spacing={2}>
                     <UploadZone
                       icon={
@@ -486,18 +695,109 @@ export default function BookingStepFourPage() {
                       title="Upload roof photos (optional)"
                       description="Provide a visual reference to help experts design your perfect system"
                       buttonLabel="Browse Files"
-                      helper="JPG, PNG, PDF up to 10 MB"
+                      helper="JPG, PNG, PDF up to 2 MB"
+                      files={draft.attachments?.roofPhotos || []}
+                      onClick={() => roofInputRef.current?.click()}
+                      onRemove={(index) => removeAttachment("roofPhotos", index)}
                     />
 
-                    <UploadZone
-                      compact
-                      icon={
-                        <CameraAltOutlinedIcon sx={{ fontSize: "0.95rem" }} />
-                      }
-                      title="Capture Live Photo"
-                      description="with GPS"
-                    />
+                    <Box
+                      sx={{
+                        borderRadius: "1.1rem",
+                        border: "1.5px dashed #C9D9F4",
+                        bgcolor: "#FFFFFF",
+                        p: 2,
+                      }}
+                    >
+                      <Stack spacing={1.5} alignItems="center">
+                        <Box
+                          sx={{
+                            width: "100%",
+                            minHeight: cameraActive ? 220 : 160,
+                            borderRadius: "0.95rem",
+                            bgcolor: "#F4F7FB",
+                            overflow: "hidden",
+                            display: "grid",
+                            placeItems: "center",
+                            border: "1px solid #E5ECF6",
+                          }}
+                        >
+                          {cameraActive ? (
+                            <Box
+                              component="video"
+                              ref={videoRef}
+                              muted
+                              playsInline
+                              sx={{ width: "100%", height: 240, objectFit: "cover" }}
+                            />
+                          ) : (
+                            <Stack spacing={1} alignItems="center" textAlign="center">
+                              <Box
+                                sx={{
+                                  width: 42,
+                                  height: 42,
+                                  borderRadius: "0.9rem",
+                                  bgcolor: "#DCE4FF",
+                                  color: "#0E56C8",
+                                  display: "grid",
+                                  placeItems: "center",
+                                }}
+                              >
+                                <CameraAltOutlinedIcon sx={{ fontSize: "0.95rem" }} />
+                              </Box>
+                              <Typography sx={{ color: "#202938", fontSize: "0.92rem", fontWeight: 700 }}>
+                                Capture Live Photo
+                              </Typography>
+                              <Typography sx={{ color: "#6D7889", fontSize: "0.78rem" }}>
+                                Uses camera and location when allowed
+                              </Typography>
+                            </Stack>
+                          )}
+                        </Box>
+                        <canvas ref={canvasRef} hidden />
+                        {cameraError ? (
+                          <Alert severity="warning" sx={{ width: "100%", borderRadius: "0.85rem", fontSize: "0.78rem" }}>
+                            {cameraError}
+                          </Alert>
+                        ) : null}
+                        <Stack direction={{ xs: "column", sm: "row" }} spacing={1} sx={{ width: "100%" }}>
+                          <Button
+                            fullWidth
+                            variant={cameraActive ? "outlined" : "contained"}
+                            onClick={cameraActive ? stopCamera : startCamera}
+                            sx={{
+                              minHeight: 42,
+                              borderRadius: "0.85rem",
+                              textTransform: "none",
+                              fontWeight: 800,
+                            }}
+                          >
+                            {cameraActive ? "Stop Camera" : "Open Camera"}
+                          </Button>
+                          <Button
+                            fullWidth
+                            variant="contained"
+                            disabled={!cameraActive}
+                            onClick={capturePhoto}
+                            sx={{
+                              minHeight: 42,
+                              borderRadius: "0.85rem",
+                              textTransform: "none",
+                              fontWeight: 800,
+                              bgcolor: "#0E56C8",
+                            }}
+                          >
+                            Capture Photo
+                          </Button>
+                        </Stack>
+                      </Stack>
+                    </Box>
                   </Stack>
+                  {uploadError ? (
+                    <Alert severity="error" sx={{ mt: 1.4, borderRadius: "0.85rem", fontSize: "0.78rem" }}>
+                      {uploadError}
+                    </Alert>
+                  ) : null}
                 </Box>
 
                 <Box>
@@ -589,6 +889,26 @@ export default function BookingStepFourPage() {
                     border: "1px solid #EEF2F7",
                   }}
                 >
+                  <input
+                    ref={billInputRef}
+                    hidden
+                    type="file"
+                    accept="image/*,.pdf"
+                    multiple
+                    onChange={(event) =>
+                      handleFiles(event, "electricityBill", "electricity_bill", 3)
+                    }
+                  />
+                  <input
+                    ref={idInputRef}
+                    hidden
+                    type="file"
+                    accept="image/*,.pdf"
+                    multiple
+                    onChange={(event) =>
+                      handleFiles(event, "photoId", "photo_id", 2)
+                    }
+                  />
                   <Stack spacing={1.55}>
                     <Stack direction="row" spacing={0.8} alignItems="center">
                       <DescriptionOutlinedIcon
@@ -606,9 +926,20 @@ export default function BookingStepFourPage() {
                     </Stack>
 
                     <Grid container spacing={1.4}>
-                      {documents.map((item) => (
+                      {documents.map((item) => {
+                        const bucket =
+                          item.title === "Electricity Bill"
+                            ? "electricityBill"
+                            : "photoId";
+                        const files = draft.attachments?.[bucket] || [];
+                        const inputRef =
+                          bucket === "electricityBill" ? billInputRef : idInputRef;
+                        return (
                         <Grid key={item.title} size={{ xs: 12, md: 6 }}>
                           <Box
+                            role="button"
+                            tabIndex={0}
+                            onClick={() => inputRef.current?.click()}
                             sx={{
                               minHeight: 120,
                               borderRadius: "1rem",
@@ -616,6 +947,7 @@ export default function BookingStepFourPage() {
                               border: "1px solid #E9EDF4",
                               px: 1.5,
                               py: 1.3,
+                              cursor: "pointer",
                             }}
                           >
                             <Stack spacing={1}>
@@ -662,10 +994,32 @@ export default function BookingStepFourPage() {
                               >
                                 {item.meta}
                               </Typography>
+                              {files.length ? (
+                                <Stack spacing={0.6}>
+                                  {files.map((file, index) => (
+                                    <Chip
+                                      key={`${file.fileName}-${index}`}
+                                      label={file.fileName}
+                                      onDelete={(event) => {
+                                        event.stopPropagation();
+                                        removeAttachment(bucket, index);
+                                      }}
+                                      sx={{
+                                        justifyContent: "space-between",
+                                        maxWidth: "100%",
+                                        bgcolor: "#F4F7FB",
+                                        fontSize: "0.68rem",
+                                        fontWeight: 700,
+                                      }}
+                                    />
+                                  ))}
+                                </Stack>
+                              ) : null}
                             </Stack>
                           </Box>
                         </Grid>
-                      ))}
+                        );
+                      })}
                     </Grid>
                   </Stack>
                 </Box>

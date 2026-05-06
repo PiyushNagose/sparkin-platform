@@ -7,7 +7,7 @@ export const calculatorController = {
   },
 
   async estimate(req, res) {
-    const estimate = calculatorService.buildEstimate(req.body);
+    const estimate = await calculatorService.buildEstimate(req.body);
     res.status(200).json({ estimate });
   },
 };

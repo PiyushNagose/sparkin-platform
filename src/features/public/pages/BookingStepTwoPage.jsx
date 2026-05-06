@@ -505,7 +505,14 @@ export default function BookingStepTwoPage() {
                     >
                       <MenuItem value="">Select Company</MenuItem>
                       <MenuItem value="tsspdcl">TSSPDCL</MenuItem>
+                      <MenuItem value="tsnpdcl">TSNPDCL</MenuItem>
                       <MenuItem value="bescom">BESCOM</MenuItem>
+                      <MenuItem value="mescom">MESCOM</MenuItem>
+                      <MenuItem value="hescom">HESCOM</MenuItem>
+                      <MenuItem value="gescom">GESCOM</MenuItem>
+                      <MenuItem value="cesc">CESC</MenuItem>
+                      <MenuItem value="apspdcl">APSPDCL</MenuItem>
+                      <MenuItem value="apepdcl">APEPDCL</MenuItem>
                     </TextField>
                   </Grid>
 

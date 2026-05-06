@@ -37,6 +37,34 @@ export const quotesService = {
       throw new AppError(404, "Lead not found");
     }
 
+    if (
+      user.role === "vendor" &&
+      !lead.assignedVendorIds?.includes(user.userId)
+    ) {
+      throw new AppError(403, "You are not assigned to this lead");
+    }
+
+    if (lead.status !== "open_for_quotes") {
+      throw new AppError(409, "This lead is not open for bidding");
+    }
+
+    if (
+      lead.biddingEndsAt &&
+      new Date(lead.biddingEndsAt).getTime() < Date.now()
+    ) {
+      throw new AppError(409, "The bidding window for this lead has ended");
+    }
+
+    const totalPrice = Number(input.pricing?.totalPrice || 0);
+    const minBid = Number(lead.bidRange?.minAmount || 0);
+    const maxBid = Number(lead.bidRange?.maxAmount || 0);
+    if (minBid > 0 && maxBid > 0 && (totalPrice < minBid || totalPrice > maxBid)) {
+      throw new AppError(
+        400,
+        `Quote price must be between ₹${minBid.toLocaleString("en-IN")} and ₹${maxBid.toLocaleString("en-IN")}`,
+      );
+    }
+
     const existingQuote = await quotesRepository.findQuoteByVendorAndLead(
       user.userId,
       leadId,
@@ -82,7 +110,9 @@ export const quotesService = {
 
       const canView =
         user.role === "admin" ||
-        user.role === "vendor" ||
+        (user.role === "vendor" &&
+          (lead.assignedVendorIds?.includes(user.userId) ||
+            lead.createdByVendorId === user.userId)) ||
         lead.customerId === user.userId;
 
       if (!canView) {

@@ -8,9 +8,6 @@ import {
 } from "@mui/material";
 import PlaceOutlinedIcon from "@mui/icons-material/PlaceOutlined";
 import AccessTimeRoundedIcon from "@mui/icons-material/AccessTimeRounded";
-import PhoneOutlinedIcon from "@mui/icons-material/PhoneOutlined";
-import MailOutlineRoundedIcon from "@mui/icons-material/MailOutlineRounded";
-import ShareOutlinedIcon from "@mui/icons-material/ShareOutlined";
 import BoltRoundedIcon from "@mui/icons-material/BoltRounded";
 import CurrencyRupeeRoundedIcon from "@mui/icons-material/CurrencyRupeeRounded";
 import CottageOutlinedIcon from "@mui/icons-material/CottageOutlined";
@@ -62,6 +59,12 @@ function formatPrice(value) {
 }
 
 function getBudgetEstimate(lead) {
+  if (lead?.bidRange?.minAmount && lead?.bidRange?.maxAmount) {
+    return `${formatPrice(lead.bidRange.minAmount)} - ${formatPrice(lead.bidRange.maxAmount)}`;
+  }
+
+  if (lead?.estimatedCost) return formatPrice(lead.estimatedCost);
+
   const load = Number(lead?.property?.sanctionedLoadKw) || 0;
   return load ? formatPrice(load * 75000) : "Pending quote";
 }
@@ -388,63 +391,20 @@ export default function VendorLeadDetailPage() {
             </Box>
           </Stack>
 
-          <Stack direction="row" spacing={0.9} flexWrap="wrap">
-            {[
-              {
-                icon: PhoneOutlinedIcon,
-                component: "a",
-                href: `tel:${lead.contact?.phoneNumber || ""}`,
-              },
-              {
-                icon: MailOutlineRoundedIcon,
-                component: "a",
-                href: lead.contact?.email
-                  ? `mailto:${lead.contact.email}`
-                  : undefined,
-              },
-              {
-                icon: ShareOutlinedIcon,
-                onClick: () => {
-                  const text = `${customerName} - ${location || "Lead"} - ${window.location.href}`;
-                  if (navigator.share) {
-                    navigator
-                      .share({
-                        title: "Sparkin lead",
-                        text,
-                        url: window.location.href,
-                      })
-                      .catch(() => {});
-                  } else {
-                    navigator.clipboard?.writeText(text);
-                    setSuccess("Lead link copied.");
-                  }
-                },
-              },
-            ].map((item, index) => {
-              const Icon = item.icon;
-              return (
-                <Button
-                  key={index}
-                  component={item.component || "button"}
-                  href={item.href}
-                  onClick={item.onClick}
-                  disabled={item.component === "a" && !item.href}
-                  sx={{
-                    minWidth: 40,
-                    width: 40,
-                    height: 40,
-                    borderRadius: "0.95rem",
-                    bgcolor: "#FFFFFF",
-                    border: "1px solid rgba(225,232,241,0.96)",
-                    color: "#0E56C8",
-                    p: 0,
-                  }}
-                >
-                  <Icon sx={{ fontSize: "1rem" }} />
-                </Button>
-              );
-            })}
-          </Stack>
+          <Box
+            sx={{
+              px: 1.2,
+              py: 0.75,
+              borderRadius: "0.95rem",
+              bgcolor: "#FFFFFF",
+              border: "1px solid rgba(225,232,241,0.96)",
+              color: "#5E6A7D",
+              fontSize: "0.76rem",
+              fontWeight: 750,
+            }}
+          >
+            Customer contact is managed by Sparkin until vendor selection.
+          </Box>
         </Stack>
       </Box>
 

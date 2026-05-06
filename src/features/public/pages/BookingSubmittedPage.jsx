@@ -262,7 +262,7 @@ export default function BookingSubmittedPage() {
 
                 <Button
                   component={RouterLink}
-                  to="/customer/bookings"
+                  to={`/tenders/live?leadId=${leadId}`}
                   variant="contained"
                   sx={{
                     width: "100%",

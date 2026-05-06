@@ -31,22 +31,8 @@ import {
   AdminPrimaryButton,
   adminUi,
 } from "@/features/admin/components/AdminPortalUI";
-import { getAdminDashboardData } from "@/features/admin/api/adminApi";
+import { getAdminDashboardData, platformSettingsApi } from "@/features/admin/api/adminApi";
 import { leadsApi } from "@/features/public/api/leadsApi";
-
-const SETTINGS_KEY = "sparkin_admin_platform_settings";
-
-function getPlatformPricePerKw() {
-  try {
-    const raw = localStorage.getItem(SETTINGS_KEY);
-    if (!raw) return 65000; // default fallback
-    const parsed = JSON.parse(raw);
-    const val = Number(parsed?.pricing?.standardCostPerKw);
-    return val > 0 ? val : 65000;
-  } catch {
-    return 65000;
-  }
-}
 
 const rupeeFormatter = new Intl.NumberFormat("en-IN", {
   style: "currency",
@@ -54,11 +40,15 @@ const rupeeFormatter = new Intl.NumberFormat("en-IN", {
   maximumFractionDigits: 0,
 });
 
-// Correct flow: New → Payment → Verified → Assigned → Bidding
+function getPlatformPricePerKw() {
+  return 55000;
+}
+
+// Correct flow: New -> Verified -> Payment -> Assigned -> Bidding
 const verificationSteps = [
   { key: "submitted", label: "New", icon: RequestQuoteOutlinedIcon },
-  { key: "payment", label: "Payment", icon: PaymentsOutlinedIcon },
   { key: "verified", label: "Verified", icon: VerifiedOutlinedIcon },
+  { key: "payment", label: "Payment", icon: PaymentsOutlinedIcon },
   { key: "assigned", label: "Assigned", icon: GroupAddOutlinedIcon },
   { key: "bidding", label: "Bidding", icon: GavelOutlinedIcon },
 ];
@@ -86,6 +76,8 @@ function formatAddress(address) {
 
 function getSystemSize(lead) {
   if (lead?.adminSystemSizeKw) return lead.adminSystemSizeKw;
+  if (lead?.calculatorEstimate?.system?.recommendedSizeKw)
+    return lead.calculatorEstimate.system.recommendedSizeKw;
   const size = Number(lead?.property?.sanctionedLoadKw || 0);
   if (size > 0) return size;
   if (lead?.roof?.sizeRange === "under_500") return 3;
@@ -93,12 +85,36 @@ function getSystemSize(lead) {
   return 5;
 }
 
+function getDefaultCommercialRange(lead, settings) {
+  const size = Number(getSystemSize(lead));
+  const pricing = settings?.pricing || {};
+  const standardCostPerKw = Number(pricing.standardCostPerKw || 55000);
+  const minBidPerKw = Number(pricing.minBidAmount || 45000);
+  const maxBidPerKw = Number(pricing.maxBidAmount || 85000);
+  return {
+    systemSizeKw: size,
+    estimatedCost: Math.round(
+      Number(
+        lead?.estimatedCost ||
+          lead?.calculatorEstimate?.investment?.grossCost ||
+          size * standardCostPerKw,
+      ) / 1000,
+    ) * 1000,
+    minAmount:
+      lead?.bidRange?.minAmount ||
+      Math.round((size * minBidPerKw) / 1000) * 1000,
+    maxAmount:
+      lead?.bidRange?.maxAmount ||
+      Math.round((size * maxBidPerKw) / 1000) * 1000,
+  };
+}
+
 function getActiveStep(lead, quoteCount) {
-  // New → Payment → Verified → Assigned → Bidding
+  // New -> Verified -> Payment -> Assigned -> Bidding
   if (quoteCount > 0 || lead.status === "quote_selected") return "bidding";
   if (lead.assignedVendorIds?.length > 0) return "assigned";
-  if (lead.status === "open_for_quotes") return "verified";
   if (lead.commitmentFeePaid) return "payment";
+  if (lead.status === "open_for_quotes") return "verified";
   return "submitted";
 }
 
@@ -310,29 +326,27 @@ export default function AdminLeadDetailPage() {
   const [historyOpen, setHistoryOpen] = useState(false);
   const [editSystemSize, setEditSystemSize] = useState("");
   const [editEstimatedCost, setEditEstimatedCost] = useState("");
+  const [editMinBid, setEditMinBid] = useState("");
+  const [editMaxBid, setEditMaxBid] = useState("");
+  const [platformSettings, setPlatformSettings] = useState(null);
   const [isSavingDetails, setIsSavingDetails] = useState(false);
   const [detailsSaved, setDetailsSaved] = useState(false);
 
   async function loadDetail() {
     setState((current) => ({ ...current, loading: true, error: "" }));
     try {
-      const [lead, data] = await Promise.all([
+      const [lead, data, settings] = await Promise.all([
         leadsApi.getLead(leadId),
         getAdminDashboardData(),
+        platformSettingsApi.getSettings(),
       ]);
+      setPlatformSettings(settings);
       setState({ loading: false, error: "", data: { ...data, lead } });
-      const sysSize =
-        lead.adminSystemSizeKw || lead.property?.sanctionedLoadKw || "";
-      setEditSystemSize(String(sysSize));
-      // Auto-fill estimated cost from platform settings if admin hasn't set it yet
-      if (lead.estimatedCost) {
-        setEditEstimatedCost(String(lead.estimatedCost));
-      } else if (sysSize) {
-        const pricePerKw = getPlatformPricePerKw();
-        setEditEstimatedCost(String(Math.round(Number(sysSize) * pricePerKw)));
-      } else {
-        setEditEstimatedCost("");
-      }
+      const defaults = getDefaultCommercialRange(lead, settings);
+      setEditSystemSize(String(defaults.systemSizeKw || ""));
+      setEditEstimatedCost(String(defaults.estimatedCost || ""));
+      setEditMinBid(String(defaults.minAmount || ""));
+      setEditMaxBid(String(defaults.maxAmount || ""));
     } catch (error) {
       setState({
         loading: false,
@@ -366,9 +380,7 @@ export default function AdminLeadDetailPage() {
       quotes,
       projects,
       activeStep,
-      // Assign vendor only after payment received AND lead verified
-      canAssignVendor:
-        lead.commitmentFeePaid && lead.status === "open_for_quotes",
+      canAssignVendor: lead.status === "open_for_quotes",
     };
   }, [state.data]);
 
@@ -396,6 +408,12 @@ export default function AdminLeadDetailPage() {
       const payload = {};
       if (editSystemSize) payload.adminSystemSizeKw = Number(editSystemSize);
       if (editEstimatedCost) payload.estimatedCost = Number(editEstimatedCost);
+      if (editMinBid || editMaxBid) {
+        payload.bidRange = {
+          minAmount: Number(editMinBid),
+          maxAmount: Number(editMaxBid),
+        };
+      }
       await leadsApi.updateLeadDetails(leadId, payload);
       setDetailsSaved(true);
       setTimeout(() => setDetailsSaved(false), 2500);
@@ -422,6 +440,33 @@ export default function AdminLeadDetailPage() {
         error?.response?.data?.message ||
           error.message ||
           "Unable to update payment status",
+      );
+    } finally {
+      setIsUpdating(false);
+    }
+  }
+
+  async function verifyLead() {
+    setIsUpdating(true);
+    setActionError("");
+    try {
+      const payload = {};
+      if (editSystemSize) payload.adminSystemSizeKw = Number(editSystemSize);
+      if (editEstimatedCost) payload.estimatedCost = Number(editEstimatedCost);
+      if (editMinBid || editMaxBid) {
+        payload.bidRange = {
+          minAmount: Number(editMinBid),
+          maxAmount: Number(editMaxBid),
+        };
+      }
+      await leadsApi.updateLeadDetails(leadId, payload);
+      await leadsApi.updateLeadStatus(leadId, { status: "open_for_quotes" });
+      await loadDetail();
+    } catch (error) {
+      setActionError(
+        error?.response?.data?.message ||
+          error.message ||
+          "Unable to verify lead",
       );
     } finally {
       setIsUpdating(false);
@@ -648,9 +693,24 @@ export default function AdminLeadDetailPage() {
                     setEditSystemSize(val);
                     // Auto-recalculate estimated cost from platform settings
                     if (val && Number(val) > 0) {
-                      const pricePerKw = getPlatformPricePerKw();
+                      const pricePerKw = Number(
+                        platformSettings?.pricing?.standardCostPerKw ||
+                          getPlatformPricePerKw(),
+                      );
+                      const minBidPerKw = Number(
+                        platformSettings?.pricing?.minBidAmount || 45000,
+                      );
+                      const maxBidPerKw = Number(
+                        platformSettings?.pricing?.maxBidAmount || 85000,
+                      );
                       setEditEstimatedCost(
                         String(Math.round(Number(val) * pricePerKw)),
+                      );
+                      setEditMinBid(
+                        String(Math.round(Number(val) * minBidPerKw)),
+                      );
+                      setEditMaxBid(
+                        String(Math.round(Number(val) * maxBidPerKw)),
                       );
                     }
                   }}
@@ -735,12 +795,74 @@ export default function AdminLeadDetailPage() {
                 </Button>
               </Grid>
             </Grid>
+            <Grid container spacing={1.5} sx={{ mt: 1.5 }}>
+              <Grid item xs={12} sm={6}>
+                <Typography
+                  sx={{
+                    mb: 0.5,
+                    color: "#657386",
+                    fontSize: "0.62rem",
+                    fontWeight: 900,
+                    letterSpacing: "0.08em",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  Minimum Vendor Bid (INR)
+                </Typography>
+                <TextField
+                  fullWidth
+                  size="small"
+                  type="number"
+                  value={editMinBid}
+                  onChange={(e) => setEditMinBid(e.target.value)}
+                  placeholder="e.g. 225000"
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: "0.75rem",
+                      bgcolor: "#FFFFFF",
+                      fontSize: "0.92rem",
+                      fontWeight: 700,
+                    },
+                  }}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <Typography
+                  sx={{
+                    mb: 0.5,
+                    color: "#657386",
+                    fontSize: "0.62rem",
+                    fontWeight: 900,
+                    letterSpacing: "0.08em",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  Maximum Vendor Bid (INR)
+                </Typography>
+                <TextField
+                  fullWidth
+                  size="small"
+                  type="number"
+                  value={editMaxBid}
+                  onChange={(e) => setEditMaxBid(e.target.value)}
+                  placeholder="e.g. 425000"
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: "0.75rem",
+                      bgcolor: "#FFFFFF",
+                      fontSize: "0.92rem",
+                      fontWeight: 700,
+                    },
+                  }}
+                />
+              </Grid>
+            </Grid>
           </Box>
 
           <Box
             sx={{
               display: "grid",
-              gridTemplateColumns: "repeat(3, 1fr)",
+              gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)" },
               gap: 1.5,
             }}
           >
@@ -755,6 +877,14 @@ export default function AdminLeadDetailPage() {
             <InfoMetric
               title="Estimated Cost"
               value={formatMoney(lead.estimatedCost)}
+            />
+            <InfoMetric
+              title="Vendor Bid Range"
+              value={
+                lead.bidRange?.minAmount && lead.bidRange?.maxAmount
+                  ? `${formatMoney(lead.bidRange.minAmount)} - ${formatMoney(lead.bidRange.maxAmount)}`
+                  : "Pending"
+              }
             />
           </Box>
         </AdminPanel>
@@ -874,10 +1004,9 @@ export default function AdminLeadDetailPage() {
               startIcon={<SettingsSuggestOutlinedIcon />}
               disabled={
                 isUpdating ||
-                !lead.commitmentFeePaid ||
                 lead.status === "open_for_quotes"
               }
-              onClick={() => updateStatus("open_for_quotes")}
+              onClick={verifyLead}
               sx={{ minHeight: 50, borderRadius: "999px", fontSize: "0.88rem" }}
             >
               {lead.status === "open_for_quotes"

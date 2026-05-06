@@ -107,7 +107,14 @@ export default function CalculatorPage() {
         desiredOffsetPercent: toNumberOrUndefined(form.desiredOffsetPercent),
       });
 
-      calculatorStorage.setEstimate(estimate);
+      calculatorStorage.setEstimate({
+        ...estimate,
+        input: {
+          ...estimate.input,
+          source: "full_calculator",
+        },
+      });
+      calculatorStorage.setServiceability(estimate.serviceability);
       navigate("/calculator/processing");
     } catch (apiError) {
       const serviceability = apiError?.response?.data?.details?.serviceability;

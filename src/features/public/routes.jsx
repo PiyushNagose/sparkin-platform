@@ -176,8 +176,16 @@ export const publicRoutes = [
     element: protectedCustomerPage(<QuoteComparisonPage />),
   },
   {
+    path: "quotes/:quoteId/details",
+    element: protectedCustomerPage(<VendorTataPowerPage />),
+  },
+  {
     path: "quotes/:quoteId/confirm",
     element: protectedCustomerPage(<VendorConfirmSelectionPage />),
+  },
+  {
+    path: "quotes/:quoteId/payment",
+    element: protectedCustomerPage(<BookingPaymentPage />),
   },
   {
     path: "vendors/tata-power-solar",

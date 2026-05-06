@@ -31,6 +31,7 @@ import {
   AdminPanel,
   adminUi,
 } from "@/features/admin/components/AdminPortalUI";
+import { platformSettingsApi } from "@/features/admin/api/adminApi";
 import pricingBannerImg from "@/shared/assets/images/admin/settings/admin-settings-pricing-engine-placeholder.png";
 
 // ─── storage key ─────────────────────────────────────────────────────────────
@@ -56,9 +57,9 @@ const DEFAULT_SETTINGS = {
     residentialOnly: true,
   },
   states: [
-    { id: "ap", name: "Andhra Pradesh", rate: "7.50" },
-    { id: "ts", name: "Telangana", rate: "6.20" },
-    { id: "ka", name: "Karnataka", rate: "8.10" },
+    { id: "ap", key: "andhra_pradesh", name: "Andhra Pradesh", rate: "7.50" },
+    { id: "ts", key: "telangana", name: "Telangana", rate: "6.20" },
+    { id: "ka", key: "karnataka", name: "Karnataka", rate: "8.10" },
   ],
 };
 
@@ -76,6 +77,49 @@ function loadSettings() {
 
 function saveSettings(settings) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+}
+
+function normalizeStateKey(name = "", fallback = "") {
+  const normalized = name.trim().toLowerCase();
+  if (fallback) return fallback;
+  if (normalized.includes("andhra")) return "andhra_pradesh";
+  if (normalized.includes("telangana")) return "telangana";
+  if (normalized.includes("karnataka")) return "karnataka";
+  return "";
+}
+
+function normalizeSettingsForUi(settings) {
+  return {
+    ...settings,
+    pricing: Object.fromEntries(
+      Object.entries(settings.pricing).map(([key, value]) => [key, String(value)]),
+    ),
+    bidding: Object.fromEntries(
+      Object.entries(settings.bidding).map(([key, value]) => [key, String(value)]),
+    ),
+    subsidy: {
+      ...settings.subsidy,
+      centralPct: String(settings.subsidy.centralPct),
+      maxAmount: String(settings.subsidy.maxAmount),
+    },
+    states: settings.states.map((state) => ({
+      ...state,
+      key: normalizeStateKey(state.name, state.key),
+      rate: String(state.rate),
+    })),
+  };
+}
+
+function normalizeSettingsForApi(settings) {
+  return {
+    ...settings,
+    states: settings.states
+      .map((state) => ({
+        ...state,
+        key: normalizeStateKey(state.name, state.key),
+      }))
+      .filter((state) => state.key),
+  };
 }
 
 function formatSavedTime(ts) {
@@ -226,6 +270,25 @@ export default function AdminSettingsPage() {
   const [stateErrors, setStateErrors] = useState({});
   const [, forceRender] = useState(0);
 
+  useEffect(() => {
+    let active = true;
+    async function loadRemoteSettings() {
+      try {
+        const remote = await platformSettingsApi.getSettings();
+        if (!active) return;
+        const normalized = normalizeSettingsForUi(remote);
+        setSettings(normalized);
+        saveSettings(normalized);
+      } catch {
+        // Keep local settings if the business service is offline.
+      }
+    }
+    loadRemoteSettings();
+    return () => {
+      active = false;
+    };
+  }, []);
+
   // tick the "saved X min ago" label every 30s
   useEffect(() => {
     const id = setInterval(() => forceRender((n) => n + 1), 30_000);
@@ -348,16 +411,31 @@ export default function AdminSettingsPage() {
       return;
     }
     setIsSaving(true);
-    await new Promise((r) => setTimeout(r, 600));
-    saveSettings(settings);
-    setSavedAt(Date.now());
-    setIsDirty(false);
-    setIsSaving(false);
-    setToast({
-      open: true,
-      message: "Platform settings saved successfully.",
-      severity: "success",
-    });
+    try {
+      const saved = await platformSettingsApi.updateSettings(
+        normalizeSettingsForApi(settings),
+      );
+      const normalized = normalizeSettingsForUi(saved);
+      setSettings(normalized);
+      saveSettings(normalized);
+      setSavedAt(Date.now());
+      setIsDirty(false);
+      setToast({
+        open: true,
+        message: "Platform settings saved successfully.",
+        severity: "success",
+      });
+    } catch (error) {
+      setToast({
+        open: true,
+        message:
+          error?.response?.data?.message ||
+          "Unable to save platform settings. Check business service.",
+        severity: "error",
+      });
+    } finally {
+      setIsSaving(false);
+    }
   }
 
   // ── reset ──────────────────────────────────────────────────────────────────

@@ -659,8 +659,10 @@ export default function CustomerDashboardPage() {
                   component={RouterLink}
                   to={
                     leadQuotes.length > 0
-                      ? "/customer/tenders"
-                      : "/customer/bookings"
+                      ? `/quotes/compare?leadId=${activeLead?.id}`
+                      : activeLead
+                        ? `/tenders/live?leadId=${activeLead.id}`
+                        : "/booking"
                   }
                   fullWidth
                   sx={{

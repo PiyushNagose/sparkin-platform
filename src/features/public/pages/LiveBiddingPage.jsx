@@ -1,4 +1,4 @@
-import { Box, Button, Container, Grid, Stack, Typography } from "@mui/material";
+import { Alert, Box, Button, Container, Grid, Stack, Typography } from "@mui/material";
 import AccountBalanceWalletRoundedIcon from "@mui/icons-material/AccountBalanceWalletRounded";
 import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
 import CampaignRoundedIcon from "@mui/icons-material/CampaignRounded";
@@ -6,8 +6,8 @@ import GppGoodRoundedIcon from "@mui/icons-material/GppGoodRounded";
 import InsightsRoundedIcon from "@mui/icons-material/InsightsRounded";
 import PriceChangeRoundedIcon from "@mui/icons-material/PriceChangeRounded";
 import ShieldOutlinedIcon from "@mui/icons-material/ShieldOutlined";
-import { useEffect } from "react";
-import { Link as RouterLink, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link as RouterLink, useNavigate, useSearchParams } from "react-router-dom";
 import { quotesApi } from "@/features/public/api/leadsApi";
 import liveBiddingHeroPlaceholder from "@/shared/assets/images/public/bidding/live-bidding-hero-placeholder.png";
 import liveBiddingAdvantagePlaceholder from "@/shared/assets/images/public/bidding/live-bidding-advantage-placeholder.png";
@@ -159,6 +159,9 @@ function WorkflowCard({ title, description, step, icon, accent, tone }) {
 
 export default function LiveBiddingPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const leadId = searchParams.get("leadId");
+  const [reviewMessage, setReviewMessage] = useState("");
 
   useEffect(() => {
     let active = true;
@@ -166,9 +169,9 @@ export default function LiveBiddingPage() {
 
     async function redirectWhenQuotesArrive() {
       try {
-        const quotes = await quotesApi.listQuotes();
+        const quotes = await quotesApi.listQuotes(leadId ? { leadId } : {});
         if (active && quotes.length > 0) {
-          navigate("/quotes/compare", { replace: true });
+          navigate(`/quotes/compare${leadId ? `?leadId=${leadId}` : ""}`, { replace: true });
           return;
         }
       } catch {
@@ -186,7 +189,25 @@ export default function LiveBiddingPage() {
       active = false;
       if (timerId) window.clearTimeout(timerId);
     };
-  }, [navigate]);
+  }, [leadId, navigate]);
+
+  async function handleReviewQuotes() {
+    setReviewMessage("");
+    try {
+      const quotes = await quotesApi.listQuotes(leadId ? { leadId } : {});
+      if (quotes.length > 0) {
+        navigate(`/quotes/compare${leadId ? `?leadId=${leadId}` : ""}`);
+        return;
+      }
+
+      setReviewMessage("Vendors are still preparing proposals for this booking. Please stay on this page and check again shortly.");
+    } catch (error) {
+      setReviewMessage(
+        error?.response?.data?.message ||
+          "Unable to check live quotes right now. Please try again.",
+      );
+    }
+  }
 
   return (
     <Box className={styles.pageShell}>
@@ -268,9 +289,14 @@ export default function LiveBiddingPage() {
                     spacing={1.35}
                     sx={{ pt: 0.7, alignItems: { sm: "center" } }}
                   >
+                    {reviewMessage ? (
+                      <Alert severity="info" sx={{ borderRadius: "0.9rem", maxWidth: 430 }}>
+                        {reviewMessage}
+                      </Alert>
+                    ) : null}
+
                     <Button
-                      component={RouterLink}
-                      to="/quotes/compare"
+                      onClick={handleReviewQuotes}
                       variant="contained"
                       sx={{
                         minWidth: 186,
@@ -701,7 +727,7 @@ export default function LiveBiddingPage() {
               >
                 <Button
                   component={RouterLink}
-                  to="/quotes/compare"
+                  to={`/quotes/compare${leadId ? `?leadId=${leadId}` : ""}`}
                   variant="contained"
                   sx={{
                     minWidth: 170,

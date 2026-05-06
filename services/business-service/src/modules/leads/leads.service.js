@@ -1,6 +1,59 @@
 import { AppError } from "../../common/errors/app-error.js";
 import { leadsRepository } from "./leads.repository.js";
+import { platformSettingsService } from "../platform-settings/platform-settings.service.js";
 import mongoose from "mongoose";
+
+function roundToNearest(value, step = 1000) {
+  return Math.round(Number(value || 0) / step) * step;
+}
+
+function getLeadSystemSizeKw(lead) {
+  const directSize = Number(
+    lead?.adminSystemSizeKw ||
+      lead?.calculatorEstimate?.system?.recommendedSizeKw ||
+      lead?.property?.sanctionedLoadKw ||
+      0,
+  );
+
+  if (directSize > 0) return directSize;
+  if (lead?.roof?.sizeRange === "under_500") return 3;
+  if (lead?.roof?.sizeRange === "over_1000") return 10;
+  return 5;
+}
+
+async function buildCommercialRange(lead, input = {}) {
+  const settings = await platformSettingsService.getSettings();
+  const sizeKw = Number(input.adminSystemSizeKw || getLeadSystemSizeKw(lead));
+  const estimatedCost = Number(
+    input.estimatedCost ||
+      lead?.estimatedCost ||
+      lead?.calculatorEstimate?.investment?.grossCost ||
+      sizeKw * Number(settings.pricing.standardCostPerKw),
+  );
+  const minAmount = Number(
+    input.bidRange?.minAmount ||
+      lead?.bidRange?.minAmount ||
+      roundToNearest(sizeKw * Number(settings.pricing.minBidAmount)),
+  );
+  const maxAmount = Number(
+    input.bidRange?.maxAmount ||
+      lead?.bidRange?.maxAmount ||
+      roundToNearest(sizeKw * Number(settings.pricing.maxBidAmount)),
+  );
+
+  if (minAmount >= maxAmount) {
+    throw new AppError(400, "Minimum bid amount must be less than maximum bid amount");
+  }
+
+  return {
+    adminSystemSizeKw: Number(sizeKw.toFixed(2)),
+    estimatedCost: roundToNearest(estimatedCost),
+    bidRange: {
+      minAmount: roundToNearest(minAmount),
+      maxAmount: roundToNearest(maxAmount),
+    },
+  };
+}
 
 export const leadsService = {
   async createLead(user, input) {
@@ -76,7 +129,9 @@ export const leadsService = {
 
     const canView =
       user.role === "admin" ||
-      user.role === "vendor" ||
+      (user.role === "vendor" &&
+        (lead.assignedVendorIds?.includes(user.userId) ||
+          lead.createdByVendorId === user.userId)) ||
       lead.customerId === user.userId;
 
     if (!canView) {
@@ -100,6 +155,13 @@ export const leadsService = {
       );
     }
 
+    if (input.status === "open_for_quotes") {
+      await leadsRepository.updateDetails(
+        leadId,
+        await buildCommercialRange(lead),
+      );
+    }
+
     return leadsRepository.updateStatus(leadId, input.status);
   },
 
@@ -115,7 +177,19 @@ export const leadsService = {
     }
 
     const vendorIds = [...new Set(input.vendorIds)];
-    return leadsRepository.assignVendors(leadId, vendorIds);
+    const settings = await platformSettingsService.getSettings();
+    const windowHours = Number(settings.bidding.windowHours || 48);
+    const biddingStartsAt = new Date();
+    const biddingEndsAt = new Date(
+      biddingStartsAt.getTime() + windowHours * 60 * 60 * 1000,
+    );
+    const bidDetails = await buildCommercialRange(lead);
+
+    return leadsRepository.assignVendors(leadId, vendorIds, {
+      ...bidDetails,
+      biddingWindowHours: windowHours,
+      biddingEndsAt,
+    });
   },
 
   async updateDetails(user, leadId, input) {
@@ -123,13 +197,9 @@ export const leadsService = {
       throw new AppError(403, "Only admins can update lead details");
     }
 
-    await this.getLead(user, leadId);
+    const lead = await this.getLead(user, leadId);
 
-    const updates = {};
-    if (input.adminSystemSizeKw !== undefined)
-      updates.adminSystemSizeKw = input.adminSystemSizeKw;
-    if (input.estimatedCost !== undefined)
-      updates.estimatedCost = input.estimatedCost;
+    const updates = await buildCommercialRange(lead, input);
 
     return leadsRepository.updateDetails(leadId, updates);
   },
