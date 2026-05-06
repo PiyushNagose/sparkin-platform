@@ -91,9 +91,9 @@ export const paymentsRepository = {
       invoiceNumber,
       milestone: { key: "booking_advance", title: "Booking Advance" },
       amount: Math.round(project.pricing.totalPrice * 0.1),
-      status: "paid",
+      status: "pending",
       dueAt: new Date(),
-      paidAt: new Date(),
+      paidAt: null,
     };
 
     // findOneAndUpdate with upsert — only inserts if no document with this invoiceNumber exists

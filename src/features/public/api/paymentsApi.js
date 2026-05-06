@@ -38,4 +38,28 @@ export const paymentsApi = {
     invalidateRequestCache("/payments");
     return data.payment;
   },
+
+  // Razorpay — create an order for a pending payment
+  async createRazorpayOrder(paymentId) {
+    const { data } = await fulfillmentClient.post(
+      `/payments/razorpay/order/${requireId(paymentId, "Payment id")}`,
+    );
+    return data.order;
+  },
+
+  // Razorpay — verify signature and capture payment
+  async verifyRazorpayPayment(payload) {
+    const { data } = await fulfillmentClient.post("/payments/razorpay/verify", payload);
+    invalidateRequestCache("/payments");
+    return data.payment;
+  },
+
+  // COD — confirm booking advance as cash on delivery
+  async confirmCodPayment(paymentId) {
+    const { data } = await fulfillmentClient.post(
+      `/payments/razorpay/cod/${requireId(paymentId, "Payment id")}`,
+    );
+    invalidateRequestCache("/payments");
+    return data.payment;
+  },
 };

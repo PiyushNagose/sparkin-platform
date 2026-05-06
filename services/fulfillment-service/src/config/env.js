@@ -10,6 +10,8 @@ const envSchema = z.object({
   CLIENT_URL: z.string().min(1).default("http://localhost:5173"),
   MONGODB_URI: z.string().min(1),
   JWT_ACCESS_SECRET: z.string().min(16),
+  RAZORPAY_KEY_ID: z.string().min(1),
+  RAZORPAY_KEY_SECRET: z.string().min(1),
 });
 
 const parsed = envSchema.safeParse(process.env);
@@ -29,4 +31,6 @@ export const env = {
   clientUrl: parsed.data.CLIENT_URL,
   mongodbUri: parsed.data.MONGODB_URI,
   jwtAccessSecret: parsed.data.JWT_ACCESS_SECRET,
+  razorpayKeyId: parsed.data.RAZORPAY_KEY_ID,
+  razorpayKeySecret: parsed.data.RAZORPAY_KEY_SECRET,
 };

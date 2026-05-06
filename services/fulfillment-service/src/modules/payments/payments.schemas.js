@@ -12,6 +12,8 @@ export const createPaymentInvoiceSchema = z.object({
       "card",
       "bank_transfer",
       "cash",
+      "razorpay",
+      "cod",
       "not_recorded",
     ])
     .default("not_recorded"),
@@ -26,6 +28,8 @@ export const updatePaymentStatusSchema = z.object({
       "card",
       "bank_transfer",
       "cash",
+      "razorpay",
+      "cod",
       "not_recorded",
     ])
     .optional(),

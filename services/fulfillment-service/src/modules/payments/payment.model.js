@@ -19,7 +19,7 @@ const paymentSchema = new mongoose.Schema(
     amount: { type: Number, required: true, min: 0 },
     method: {
       type: String,
-      enum: ["upi", "net_banking", "card", "bank_transfer", "cash", "not_recorded"],
+      enum: ["upi", "net_banking", "card", "bank_transfer", "cash", "razorpay", "cod", "not_recorded"],
       default: "not_recorded",
     },
     status: {
@@ -30,6 +30,8 @@ const paymentSchema = new mongoose.Schema(
     },
     dueAt: { type: Date, default: null },
     paidAt: { type: Date, default: null },
+    razorpayOrderId: { type: String, default: null },
+    razorpayPaymentId: { type: String, default: null },
   },
   {
     timestamps: true,
