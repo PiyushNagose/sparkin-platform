@@ -31,7 +31,10 @@ import {
   AdminPrimaryButton,
   adminUi,
 } from "@/features/admin/components/AdminPortalUI";
-import { getAdminDashboardData, platformSettingsApi } from "@/features/admin/api/adminApi";
+import {
+  getAdminDashboardData,
+  platformSettingsApi,
+} from "@/features/admin/api/adminApi";
 import { leadsApi } from "@/features/public/api/leadsApi";
 
 const rupeeFormatter = new Intl.NumberFormat("en-IN", {
@@ -93,13 +96,14 @@ function getDefaultCommercialRange(lead, settings) {
   const maxBidPerKw = Number(pricing.maxBidAmount || 85000);
   return {
     systemSizeKw: size,
-    estimatedCost: Math.round(
-      Number(
-        lead?.estimatedCost ||
-          lead?.calculatorEstimate?.investment?.grossCost ||
-          size * standardCostPerKw,
-      ) / 1000,
-    ) * 1000,
+    estimatedCost:
+      Math.round(
+        Number(
+          lead?.estimatedCost ||
+            lead?.calculatorEstimate?.investment?.grossCost ||
+            size * standardCostPerKw,
+        ) / 1000,
+      ) * 1000,
     minAmount:
       lead?.bidRange?.minAmount ||
       Math.round((size * minBidPerKw) / 1000) * 1000,
@@ -337,7 +341,7 @@ export default function AdminLeadDetailPage() {
     try {
       const [lead, data, settings] = await Promise.all([
         leadsApi.getLead(leadId),
-        getAdminDashboardData(),
+        getAdminDashboardData({ force: true }),
         platformSettingsApi.getSettings(),
       ]);
       setPlatformSettings(settings);
@@ -1002,10 +1006,7 @@ export default function AdminLeadDetailPage() {
             <AdminPrimaryButton
               fullWidth
               startIcon={<SettingsSuggestOutlinedIcon />}
-              disabled={
-                isUpdating ||
-                lead.status === "open_for_quotes"
-              }
+              disabled={isUpdating || lead.status === "open_for_quotes"}
               onClick={verifyLead}
               sx={{ minHeight: 50, borderRadius: "999px", fontSize: "0.88rem" }}
             >

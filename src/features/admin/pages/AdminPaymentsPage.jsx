@@ -359,7 +359,7 @@ export default function AdminPaymentsPage() {
   async function loadPayments() {
     setState((current) => ({ ...current, loading: true, error: "" }));
     try {
-      const data = await getAdminDashboardData();
+      const data = await getAdminDashboardData({ force: true });
       setState({ loading: false, error: "", data });
     } catch (error) {
       setState({

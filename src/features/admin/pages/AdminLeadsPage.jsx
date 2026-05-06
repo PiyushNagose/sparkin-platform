@@ -470,7 +470,7 @@ export default function AdminLeadsPage() {
   async function loadLeads() {
     setState((current) => ({ ...current, loading: true, error: "" }));
     try {
-      const data = await getAdminDashboardData();
+      const data = await getAdminDashboardData({ force: true });
       setState({ loading: false, error: "", data });
     } catch (error) {
       setState({
@@ -545,7 +545,6 @@ export default function AdminLeadsPage() {
   const filteredRows = useMemo(() => {
     const now = Date.now();
     const q = filters.query.trim().toLowerCase();
-    setPage(1); // reset on filter change
 
     return rows.filter((row) => {
       const lead = row.raw;
@@ -577,6 +576,10 @@ export default function AdminLeadsPage() {
       );
     });
   }, [rows, filters]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [filters]);
 
   const metrics = useMemo(() => {
     const totalCapacity = filteredRows.reduce(

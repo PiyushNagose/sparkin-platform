@@ -204,7 +204,7 @@ export default function AdminBiddingPage() {
 
     async function loadBidding() {
       try {
-        const data = await getAdminDashboardData();
+        const data = await getAdminDashboardData({ force: true });
         if (active) setState({ loading: false, error: "", data });
       } catch (error) {
         if (active) {
@@ -313,7 +313,7 @@ export default function AdminBiddingPage() {
     try {
       await quotesApi.acceptQuote(quote.id);
       // Refresh data to reflect new project creation
-      const data = await getAdminDashboardData();
+      const data = await getAdminDashboardData({ force: true });
       setState({ loading: false, error: "", data });
       setToast({
         open: true,
