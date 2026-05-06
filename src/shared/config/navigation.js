@@ -41,6 +41,7 @@ export const portalNavigation = {
     { label: "Settings", href: "/admin/settings" },
     { label: "Notifications", href: "/admin/notifications" },
     { label: "Broadcast", href: "/admin/broadcast" },
+    { label: "Referral Management", href: "/admin/referral-management" },
     { label: "Help Desk", href: "/admin/help-desk" },
     { label: "Vendor Applications", href: "/admin/vendor-applications" },
     { label: "Offers", href: "/admin/offers" },

@@ -10,3 +10,7 @@ export const referralsRouter = Router();
 referralsRouter.use(requireAuth);
 referralsRouter.get("/", asyncHandler(referralsController.dashboard));
 referralsRouter.post("/", validate(createReferralSchema), asyncHandler(referralsController.create));
+
+// Admin routes
+referralsRouter.get("/admin/all", asyncHandler(referralsController.listAll));
+referralsRouter.patch("/admin/:referralId/reward-status", asyncHandler(referralsController.updateRewardStatus));

@@ -19,6 +19,7 @@ import AdminVendorApplicationsPage from "@/features/admin/pages/AdminVendorAppli
 import AdminVendorApplicationDetailPage from "@/features/admin/pages/AdminVendorApplicationDetailPage";
 import AdminVendorAssignmentPage from "@/features/admin/pages/AdminVendorAssignmentPage";
 import AdminVendorsPage from "@/features/admin/pages/AdminVendorsPage";
+import AdminReferralManagementPage from "@/features/admin/pages/AdminReferralManagementPage";
 
 export const adminRoutes = [
   {
@@ -108,5 +109,9 @@ export const adminRoutes = [
   {
     path: "vendor-applications/:vendorId",
     element: <AdminVendorApplicationDetailPage />,
+  },
+  {
+    path: "referral-management",
+    element: <AdminReferralManagementPage />,
   },
 ];

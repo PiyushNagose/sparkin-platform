@@ -129,7 +129,10 @@ export const projectsService = {
     const existingProject = await projectsRepository.findByQuoteId(quote.id);
 
     if (existingProject) {
-      return existingProject;
+      // Return existing project with booking advance payment id
+      const payments = await paymentsService.createScheduleForProject(existingProject);
+      const bookingAdvance = payments.find((p) => p.milestone?.key === "booking_advance");
+      return { ...existingProject, bookingAdvancePaymentId: bookingAdvance?.id ?? null };
     }
 
     const project = await projectsRepository.createProject({
@@ -156,9 +159,10 @@ export const projectsService = {
       createdFromQuoteAt: new Date(),
     });
 
-    await paymentsService.createScheduleForProject(project);
+    const payments = await paymentsService.createScheduleForProject(project);
+    const bookingAdvance = payments.find((p) => p.milestone?.key === "booking_advance");
 
-    return project;
+    return { ...project, bookingAdvancePaymentId: bookingAdvance?.id ?? null };
   },
 
   async createManualProject(user, input) {

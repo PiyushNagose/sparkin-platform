@@ -30,4 +30,18 @@ export const referralsRepository = {
     const referral = await ReferralModel.findOne({ referrerId: customerId, "friend.email": email.toLowerCase() }).lean({ virtuals: true });
     return normalizeReferral(referral);
   },
+
+  async findAll() {
+    const referrals = await ReferralModel.find({}).sort({ createdAt: -1 }).lean({ virtuals: true });
+    return normalizeReferrals(referrals);
+  },
+
+  async updateRewardStatus(referralId, rewardStatus) {
+    const referral = await ReferralModel.findByIdAndUpdate(
+      referralId,
+      { $set: { rewardStatus } },
+      { new: true },
+    ).lean({ virtuals: true });
+    return normalizeReferral(referral);
+  },
 };

@@ -57,6 +57,24 @@ export const referralsService = {
     };
   },
 
+  // Admin: list all referrals across all users
+  async listAllReferrals(user) {
+    if (user.role !== "admin") {
+      throw new AppError(403, "Admin access required");
+    }
+    return referralsRepository.findAll();
+  },
+
+  // Admin: update payout status for a referral
+  async updateRewardStatus(user, referralId, rewardStatus) {
+    if (user.role !== "admin") {
+      throw new AppError(403, "Admin access required");
+    }
+    const referral = await referralsRepository.updateRewardStatus(referralId, rewardStatus);
+    if (!referral) throw new AppError(404, "Referral not found");
+    return referral;
+  },
+
   async createReferral(user, input) {
     if (!canUseReferrals(user)) {
       throw new AppError(403, "Only customers can create referrals");
