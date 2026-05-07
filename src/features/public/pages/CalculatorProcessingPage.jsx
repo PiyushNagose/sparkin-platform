@@ -56,7 +56,7 @@ export default function CalculatorProcessingPage() {
         }}
       >
         <Container maxWidth={false} disableGutters className={styles.compactContainer}>
-          <Box sx={{ maxWidth: 780, mx: "auto", minHeight: { xs: "auto", md: 680 }, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <Box sx={{ maxWidth: 780, mx: "auto", minHeight: { xs: "auto", md: 480 }, display: "flex", alignItems: "center", justifyContent: "center", pt: { xs: 2, md: 4 } }}>
             <Stack alignItems="center" textAlign="center" sx={{ width: "100%" }}>
               <Box sx={{ width: 74, height: 74, borderRadius: "50%", display: "grid", placeItems: "center", color: "#0E56C8", bgcolor: "rgba(255,255,255,0.78)", border: "1px solid rgba(214,224,238,0.95)", boxShadow: "0 18px 40px rgba(18,38,70,0.12)", position: "relative", mb: { xs: 3.25, md: 3.6 } }}>
                 <Box sx={{ position: "absolute", inset: 9, borderRadius: "50%", border: "1.5px dashed rgba(14,86,200,0.9)" }} />

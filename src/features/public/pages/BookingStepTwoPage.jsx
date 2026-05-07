@@ -326,51 +326,64 @@ export default function BookingStepTwoPage() {
           maxWidth={false}
           disableGutters
           className={styles.compactContainer}
-          sx={{ maxWidth: "1120px !important" }}
+          sx={{ maxWidth: "1200px !important" }}
         >
-          <Box
-            sx={{
-              mx: "auto",
-              width: "100%",
-              maxWidth: 900,
-              p: { xs: 2.2, md: 3.2 },
-              borderRadius: "1.35rem",
-              bgcolor: "rgba(255,255,255,0.95)",
-              border: "1px solid rgba(221,229,239,0.98)",
-              boxShadow: "0 22px 54px rgba(20,34,56,0.08)",
-            }}
+          <Stack
+            spacing={{ xs: 3.4, md: 4.2 }}
+            alignItems="center"
+            sx={{ width: "100%" }}
           >
-            <Stack spacing={{ xs: 3.6, md: 4.4 }}>
-              <Box sx={{ maxWidth: 760, mx: "auto", width: "100%" }}>
+            <Stack alignItems="center" sx={{ width: "100%", maxWidth: 920 }}>
+              <Box sx={{ width: "100%", maxWidth: 760 }}>
                 <BookingStepper />
               </Box>
+            </Stack>
 
-              <Box sx={{ maxWidth: 540 }}>
-                <Typography
-                  variant="h1"
-                  sx={{
-                    ...publicTypography.pageTitle,
-                    color: "#18253A",
-                  }}
-                >
-                  Tell us about your property
-                  <Box component="span" sx={{ ml: 0.32 }}>
-                    {"\uD83C\uDFE0"}
-                  </Box>
-                </Typography>
-                <Typography
-                  sx={{
-                    mt: 1.15,
-                    color: "#6F7C90",
-                    fontSize: "0.96rem",
-                    lineHeight: 1.65,
-                    maxWidth: 470,
-                  }}
-                >
-                  This helps us recommend the right solar system for you and
-                  accurately calculate your potential savings.
-                </Typography>
-              </Box>
+            <Stack
+              spacing={1}
+              alignItems="center"
+              textAlign="center"
+              sx={{
+                width: "100%",
+                maxWidth: 520,
+                mx: "auto",
+              }}
+            >
+              <Typography
+                variant="h1"
+                sx={{
+                  ...publicTypography.pageTitle,
+                  color: "#18253A",
+                }}
+              >
+                Tell us about your property
+                <Box component="span" sx={{ ml: 0.32 }}>
+                  {"\uD83C\uDFE0"}
+                </Box>
+              </Typography>
+              <Typography
+                sx={{
+                  color: "#707D90",
+                  fontSize: "0.96rem",
+                  lineHeight: 1.65,
+                }}
+              >
+                This helps us recommend the right solar system for you and
+                accurately calculate your potential savings.
+              </Typography>
+            </Stack>
+
+            <Box
+              sx={{
+                width: "100%",
+                maxWidth: 1000,
+                p: { xs: 2.2, md: 3.2 },
+                borderRadius: "1.35rem",
+                bgcolor: "rgba(255,255,255,0.95)",
+                border: "1px solid rgba(221,229,239,0.98)",
+                boxShadow: "0 22px 54px rgba(20,34,56,0.08)",
+              }}
+            >
 
               <Grid container spacing={{ xs: 3.4, md: 3.8 }}>
                 <Grid size={{ xs: 12, md: 6 }}>
@@ -547,11 +560,13 @@ export default function BookingStepTwoPage() {
                     <FieldLabel>Consumer Number (from bill)</FieldLabel>
                     <TextField
                       fullWidth
-                      placeholder="e.g. 1029384756"
+                      placeholder="1234567890"
                       value={draft.property.consumerNumber}
-                      onChange={(event) =>
-                        updateProperty({ consumerNumber: event.target.value })
-                      }
+                      onChange={(event) => {
+                        // Only allow digits and limit to 10 characters
+                        const cleanedConsumerNumber = event.target.value.replace(/\D/g, '').slice(0, 10);
+                        updateProperty({ consumerNumber: cleanedConsumerNumber });
+                      }}
                       InputProps={{
                         sx: {
                           borderRadius: "0.95rem",
@@ -631,8 +646,8 @@ export default function BookingStepTwoPage() {
                   Continue
                 </Button>
               </Stack>
-            </Stack>
-          </Box>
+            </Box>
+          </Stack>
         </Container>
       </Box>
     </Box>
