@@ -228,26 +228,6 @@ function VendorCard({ vendor }) {
           >
             View Profile
           </Button>
-          <Button
-            component={RouterLink}
-            to="/quotes/compare"
-            variant="outlined"
-            sx={{
-              flex: 1,
-              minHeight: 44,
-              borderRadius: "999px",
-              fontSize: "0.82rem",
-              fontWeight: 700,
-              textTransform: "none",
-              borderColor: "rgba(223,231,241,0.9)",
-              color: "#3A4A5C",
-              bgcolor: "#F7F9FC",
-              boxShadow: "none",
-              "&:hover": { bgcolor: "#EEF2F8", borderColor: "#C8D4E4" },
-            }}
-          >
-            Compare
-          </Button>
         </Stack>
       </Box>
     </Box>

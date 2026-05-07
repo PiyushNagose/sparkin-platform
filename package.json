@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:services": "node scripts/dev-services.js",
+    "dev:all": "node scripts/dev-services.js --frontend",
     "build": "vite build",
     "preview": "vite preview"
   },

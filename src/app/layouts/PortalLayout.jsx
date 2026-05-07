@@ -491,17 +491,28 @@ export function PortalLayout({ portal }) {
         <>
           <Box sx={{ textAlign: "center", mb: 1.35 }}>
             <Box
-              component="img"
-              src={logoPlaceholder}
-              alt="Sparkin"
+              component={NavLink}
+              to="/"
               sx={{
-                width: 72,
-                height: 72,
-                objectFit: "contain",
-                mx: "auto",
                 display: "block",
+                textDecoration: "none",
+                cursor: "pointer",
               }}
-            />
+              onClick={onNavClick}
+            >
+              <Box
+                component="img"
+                src={logoPlaceholder}
+                alt="Sparkin"
+                sx={{
+                  width: 72,
+                  height: 72,
+                  objectFit: "contain",
+                  mx: "auto",
+                  display: "block",
+                }}
+              />
+            </Box>
             {portal === "admin" ? (
               <Box sx={{ mt: -0.45 }}>
                 <Typography
