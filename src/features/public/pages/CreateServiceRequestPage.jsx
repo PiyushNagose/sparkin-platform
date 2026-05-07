@@ -132,10 +132,11 @@ export default function CreateServiceRequestPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const requestedProjectId = searchParams.get("projectId") || "";
+  const requestedType = searchParams.get("type") || "repair"; // Get type from URL params
   const { user } = useAuth();
   const [form, setForm] = useState({
     projectId: requestedProjectId,
-    type: "repair",
+    type: requestedType, // Use the type from URL params
     description: "",
     preferredDate: "",
     preferredTime: "",
@@ -182,6 +183,14 @@ export default function CreateServiceRequestPage() {
       active = false;
     };
   }, [requestedProjectId]);
+
+  // Update form when URL parameters change
+  useEffect(() => {
+    setForm(current => ({
+      ...current,
+      type: requestedType,
+    }));
+  }, [requestedType]);
 
   const selectedProject = useMemo(
     () => projects.find((project) => project.id === form.projectId) ?? null,

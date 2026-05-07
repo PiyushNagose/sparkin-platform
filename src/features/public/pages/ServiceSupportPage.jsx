@@ -8,6 +8,7 @@ import {
   LinearProgress,
   Stack,
   Typography,
+  CircularProgress,
 } from "@mui/material";
 import BoltRoundedIcon from "@mui/icons-material/BoltRounded";
 import ChatBubbleOutlineRoundedIcon from "@mui/icons-material/ChatBubbleOutlineRounded";
@@ -17,6 +18,7 @@ import HeadsetMicRoundedIcon from "@mui/icons-material/HeadsetMicRounded";
 import ShieldOutlinedIcon from "@mui/icons-material/ShieldOutlined";
 import TaskAltRoundedIcon from "@mui/icons-material/TaskAltRounded";
 import WarningAmberRoundedIcon from "@mui/icons-material/WarningAmberRounded";
+import { useEffect, useState } from "react";
 import serviceSystemPlaceholder from "@/shared/assets/images/public/support/service-system-placeholder.png";
 import serviceUpgradePlaceholder from "@/shared/assets/images/public/support/service-upgrade-placeholder.png";
 import styles from "@/features/public/pages/CalculatorPage.module.css";
@@ -24,6 +26,9 @@ import {
   publicPageSpacing,
   publicTypography,
 } from "@/features/public/pages/publicPageStyles";
+import { serviceRequestsApi } from "@/features/public/api/serviceRequestsApi";
+import { projectsApi } from "@/features/public/api/projectsApi";
+import { useAuth } from "@/features/auth/AuthProvider";
 
 const quickActions = [
   {
@@ -32,7 +37,7 @@ const quickActions = [
     text: "Instant technical alert",
     tone: "#FDEBEC",
     color: "#DE524E",
-    to: "/service-support/request",
+    to: "/service-support/request?type=repair",
   },
   {
     icon: <BoltRoundedIcon sx={{ fontSize: "0.95rem" }} />,
@@ -40,7 +45,7 @@ const quickActions = [
     text: "Book annual cleanup",
     tone: "#EEF4FF",
     color: "#0E56C8",
-    to: "/service-support/request",
+    to: "/service-support/request?type=maintenance",
   },
   {
     icon: <ShieldOutlinedIcon sx={{ fontSize: "0.95rem" }} />,
@@ -48,7 +53,7 @@ const quickActions = [
     text: "File part replacements",
     tone: "#EAF8F0",
     color: "#11814E",
-    to: "/service-support/request",
+    to: "/service-support/request?type=warranty",
   },
   {
     icon: <HeadsetMicRoundedIcon sx={{ fontSize: "0.95rem" }} />,
@@ -56,42 +61,144 @@ const quickActions = [
     text: "Talk to our experts",
     tone: "#FFF3DD",
     color: "#D78E00",
-    to: "/service-support/request",
+    to: "/contact",
   },
 ];
 
-const serviceHistory = [
-  {
-    title: "Annual Maintenance",
-    text: "Completed on Feb 12, 2026",
-    badge: "Completed",
-    badgeTone: "#DCF6E6",
-    badgeColor: "#14824D",
-    icon: <TaskAltRoundedIcon sx={{ fontSize: "0.88rem" }} />,
-    iconTone: "#EAF8F0",
-    iconColor: "#14824D",
-  },
-  {
-    title: "Inverter Check",
-    text: "Scheduled for Tomorrow",
-    badge: "Processing",
-    badgeTone: "#E9F0FF",
-    badgeColor: "#0E56C8",
-    icon: <WarningAmberRoundedIcon sx={{ fontSize: "0.88rem" }} />,
-    iconTone: "#FFF9D5",
-    iconColor: "#B8A200",
-  },
-  {
-    title: "Grid Connection Test",
-    text: "Reported Jan 05, 2024",
-    badge: "Closed",
-    badgeTone: "#FCE3E1",
-    badgeColor: "#D14F48",
-    icon: <ErrorOutlineRoundedIcon sx={{ fontSize: "0.88rem" }} />,
-    iconTone: "#FDEBEC",
-    iconColor: "#D14F48",
-  },
-];
+export default function ServiceSupportPage() {
+  const { user } = useAuth();
+  const [serviceRequests, setServiceRequests] = useState([]);
+  const [projects, setProjects] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [systemData, setSystemData] = useState({
+    size: "5kW",
+    installationDate: "Oct 24, 2023",
+    warranty: "25 Years",
+    status: "Active",
+    energyGenerated: 4.2,
+    totalSavings: 124500,
+    energyProgress: 58,
+    savingsProgress: 74,
+  });
+
+  useEffect(() => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
+    let active = true;
+
+    async function loadServiceData() {
+      try {
+        const [requestsData, projectsData] = await Promise.allSettled([
+          serviceRequestsApi.listRequests(),
+          projectsApi.listProjects(),
+        ]);
+
+        if (active) {
+          const requests = requestsData.status === "fulfilled" ? requestsData.value : [];
+          const projectsList = projectsData.status === "fulfilled" ? projectsData.value : [];
+          
+          setServiceRequests(requests);
+          setProjects(projectsList);
+
+          // Update system data based on actual project data
+          if (projectsList.length > 0) {
+            const activeProject = projectsList.find(p => p.status === "active") || projectsList[0];
+            if (activeProject) {
+              setSystemData(prev => ({
+                ...prev,
+                size: `${activeProject.system?.sizeKw || 5}kW`,
+                installationDate: activeProject.createdAt ? new Date(activeProject.createdAt).toLocaleDateString('en-US', { 
+                  year: 'numeric', 
+                  month: 'short', 
+                  day: 'numeric' 
+                }) : prev.installationDate,
+                status: activeProject.status === "active" ? "Active" : "Inactive",
+              }));
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Failed to load service data:", error);
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    }
+
+    loadServiceData();
+    return () => { active = false; };
+  }, [user]);
+
+  const getStatusConfig = (status) => {
+    const configs = {
+      requested: {
+        badge: "Requested",
+        badgeTone: "#FFF3DD",
+        badgeColor: "#D78E00",
+        icon: <WarningAmberRoundedIcon sx={{ fontSize: "0.88rem" }} />,
+        iconTone: "#FFF9D5",
+        iconColor: "#B8A200",
+      },
+      under_review: {
+        badge: "Under Review",
+        badgeTone: "#E9F0FF",
+        badgeColor: "#0E56C8",
+        icon: <WarningAmberRoundedIcon sx={{ fontSize: "0.88rem" }} />,
+        iconTone: "#FFF9D5",
+        iconColor: "#B8A200",
+      },
+      technician_assigned: {
+        badge: "Processing",
+        badgeTone: "#E9F0FF",
+        badgeColor: "#0E56C8",
+        icon: <WarningAmberRoundedIcon sx={{ fontSize: "0.88rem" }} />,
+        iconTone: "#FFF9D5",
+        iconColor: "#B8A200",
+      },
+      resolved: {
+        badge: "Completed",
+        badgeTone: "#DCF6E6",
+        badgeColor: "#14824D",
+        icon: <TaskAltRoundedIcon sx={{ fontSize: "0.88rem" }} />,
+        iconTone: "#EAF8F0",
+        iconColor: "#14824D",
+      },
+      cancelled: {
+        badge: "Cancelled",
+        badgeTone: "#FCE3E1",
+        badgeColor: "#D14F48",
+        icon: <ErrorOutlineRoundedIcon sx={{ fontSize: "0.88rem" }} />,
+        iconTone: "#FDEBEC",
+        iconColor: "#D14F48",
+      },
+    };
+    return configs[status] || configs.requested;
+  };
+
+  const formatServiceHistory = (requests) => {
+    return requests.slice(0, 3).map(request => {
+      const config = getStatusConfig(request.status);
+      const createdDate = new Date(request.createdAt).toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'short', 
+        day: 'numeric' 
+      });
+      
+      return {
+        title: request.type === "maintenance" ? "Maintenance Request" : 
+               request.type === "repair" ? "Repair Request" : 
+               request.type === "warranty" ? "Warranty Claim" : "Service Request",
+        text: `${request.status === "resolved" ? "Completed" : "Requested"} on ${createdDate}`,
+        ...config,
+      };
+    });
+  };
+
+  const serviceHistory = formatServiceHistory(serviceRequests);
 
 function CardShell({ children, sx = {}, ...props }) {
   return (
@@ -111,7 +218,25 @@ function CardShell({ children, sx = {}, ...props }) {
   );
 }
 
-export default function ServiceSupportPage() {
+  if (loading) {
+    return (
+      <Box className={styles.pageShell}>
+        <Box
+          sx={{
+            py: publicPageSpacing.pageYCompact,
+            minHeight: "calc(100vh - 72px)",
+            background:
+              "radial-gradient(circle at top center, rgba(214,229,246,0.72) 0%, rgba(247,250,252,0.98) 24%, #F9FBFD 68%, #F7FAFB 100%)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <CircularProgress size={36} sx={{ color: "#0E56C8" }} />
+        </Box>
+      </Box>
+    );
+  }
   return (
     <Box className={styles.pageShell}>
       <Box
@@ -181,10 +306,10 @@ export default function ServiceSupportPage() {
 
                     <Stack spacing={1}>
                       {[
-                        ["System size", "5kW"],
-                        ["Installation date", "Oct 24, 2023"],
-                        ["Warranty", "25 Years"],
-                        ["Status", "Active"],
+                        ["System size", systemData.size],
+                        ["Installation date", systemData.installationDate],
+                        ["Warranty", systemData.warranty],
+                        ["Status", systemData.status],
                       ].map(([label, value]) => (
                         <Stack key={label} direction="row" justifyContent="space-between" spacing={1}>
                           <Typography sx={{ color: "#8A93A4", fontSize: "0.68rem" }}>{label}</Typography>
@@ -300,12 +425,12 @@ export default function ServiceSupportPage() {
                               Energy Generated
                             </Typography>
                             <Typography sx={{ color: "#0E56C8", fontSize: "1rem", fontWeight: 800 }}>
-                              4.2 MWh
+                              {systemData.energyGenerated} MWh
                             </Typography>
                           </Stack>
                           <LinearProgress
                             variant="determinate"
-                            value={58}
+                            value={systemData.energyProgress}
                             sx={{
                               mt: 0.62,
                               height: 5,
@@ -325,12 +450,12 @@ export default function ServiceSupportPage() {
                               Total Savings
                             </Typography>
                             <Typography sx={{ color: "#14824D", fontSize: "1rem", fontWeight: 800 }}>
-                              ₹1,24,500
+                              ₹{systemData.totalSavings.toLocaleString()}
                             </Typography>
                           </Stack>
                           <LinearProgress
                             variant="determinate"
-                            value={74}
+                            value={systemData.savingsProgress}
                             sx={{
                               mt: 0.62,
                               height: 5,
@@ -371,7 +496,7 @@ export default function ServiceSupportPage() {
                           <Button
                             key={label}
                             component={RouterLink}
-                            to="/service-support/request"
+                            to="/contact"
                             startIcon={icon}
                             sx={{
                               justifyContent: "flex-start",
@@ -415,62 +540,79 @@ export default function ServiceSupportPage() {
                 </Stack>
 
                 <Stack spacing={0.72}>
-                  {serviceHistory.map((item) => (
-                    <Stack
-                      key={item.title}
-                      direction={{ xs: "column", sm: "row" }}
-                      justifyContent="space-between"
-                      alignItems={{ xs: "flex-start", sm: "center" }}
-                      spacing={1}
+                  {serviceHistory.length > 0 ? (
+                    serviceHistory.map((item, index) => (
+                      <Stack
+                        key={`${item.title}-${index}`}
+                        direction={{ xs: "column", sm: "row" }}
+                        justifyContent="space-between"
+                        alignItems={{ xs: "flex-start", sm: "center" }}
+                        spacing={1}
+                        sx={{
+                          px: 1.05,
+                          py: 0.88,
+                          borderRadius: "0.95rem",
+                          bgcolor: "#FAFBFD",
+                          border: "1px solid #EEF2F7",
+                        }}
+                      >
+                        <Stack direction="row" spacing={0.8} alignItems="center">
+                          <Box
+                            sx={{
+                              width: 26,
+                              height: 26,
+                              borderRadius: "50%",
+                              bgcolor: item.iconTone,
+                              color: item.iconColor,
+                              display: "grid",
+                              placeItems: "center",
+                            }}
+                          >
+                            {item.icon}
+                          </Box>
+                          <Box>
+                            <Typography sx={{ color: "#202938", fontSize: "0.78rem", fontWeight: 700 }}>
+                              {item.title}
+                            </Typography>
+                            <Typography sx={{ color: "#7C8797", fontSize: "0.62rem", mt: 0.08 }}>
+                              {item.text}
+                            </Typography>
+                          </Box>
+                        </Stack>
+
+                        <Box
+                          sx={{
+                            px: 0.8,
+                            py: 0.28,
+                            borderRadius: 999,
+                            bgcolor: item.badgeTone,
+                            color: item.badgeColor,
+                            fontSize: "0.52rem",
+                            fontWeight: 800,
+                            letterSpacing: 0.3,
+                            textTransform: "uppercase",
+                          }}
+                        >
+                          {item.badge}
+                        </Box>
+                      </Stack>
+                    ))
+                  ) : (
+                    <Box
                       sx={{
-                        px: 1.05,
-                        py: 0.88,
+                        px: 2,
+                        py: 3,
+                        textAlign: "center",
                         borderRadius: "0.95rem",
                         bgcolor: "#FAFBFD",
                         border: "1px solid #EEF2F7",
                       }}
                     >
-                      <Stack direction="row" spacing={0.8} alignItems="center">
-                        <Box
-                          sx={{
-                            width: 26,
-                            height: 26,
-                            borderRadius: "50%",
-                            bgcolor: item.iconTone,
-                            color: item.iconColor,
-                            display: "grid",
-                            placeItems: "center",
-                          }}
-                        >
-                          {item.icon}
-                        </Box>
-                        <Box>
-                          <Typography sx={{ color: "#202938", fontSize: "0.78rem", fontWeight: 700 }}>
-                            {item.title}
-                          </Typography>
-                          <Typography sx={{ color: "#7C8797", fontSize: "0.62rem", mt: 0.08 }}>
-                            {item.text}
-                          </Typography>
-                        </Box>
-                      </Stack>
-
-                      <Box
-                        sx={{
-                          px: 0.8,
-                          py: 0.28,
-                          borderRadius: 999,
-                          bgcolor: item.badgeTone,
-                          color: item.badgeColor,
-                          fontSize: "0.52rem",
-                          fontWeight: 800,
-                          letterSpacing: 0.3,
-                          textTransform: "uppercase",
-                        }}
-                      >
-                        {item.badge}
-                      </Box>
-                    </Stack>
-                  ))}
+                      <Typography sx={{ color: "#7C8797", fontSize: "0.78rem" }}>
+                        No service requests yet. Your system is running smoothly!
+                      </Typography>
+                    </Box>
+                  )}
                 </Stack>
               </Stack>
             </CardShell>
