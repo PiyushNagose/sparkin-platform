@@ -164,7 +164,7 @@ const serviceCards = [
   },
   {
     title: "System Maintenance",
-    text: "Regular health checks and preventative maintenance to ensure your system performs at peak efficiency.",
+    text: "Regular health checks and preventative maintenance to ensure your system performance.",
     image: serviceMaintenancePlaceholder,
     icon: <SettingsSuggestRoundedIcon />,
     action: "Book Maintenance",
@@ -802,7 +802,11 @@ function HomePage() {
     const monthlySavings = Math.min(monthlyBill * 0.82, recommendedKw * 1150);
     const annualSavings = monthlySavings * 12;
     const co2Reduced = clamp(recommendedKw * 0.84, 2.1, 8.8);
-    const roofUtilization = clamp((recommendedKw / roofCapacityKw) * 100, 0, 100);
+    const roofUtilization = clamp(
+      (recommendedKw / roofCapacityKw) * 100,
+      0,
+      100,
+    );
 
     return {
       monthlySavings,
@@ -1484,7 +1488,9 @@ function HomePage() {
                         fullWidth
                         value={pinCode}
                         onChange={(event) =>
-                          setPinCode(event.target.value.replace(/\D/g, "").slice(0, 6))
+                          setPinCode(
+                            event.target.value.replace(/\D/g, "").slice(0, 6),
+                          )
                         }
                         label="Pin Code"
                         inputProps={{ inputMode: "numeric", maxLength: 6 }}
@@ -1656,7 +1662,9 @@ function HomePage() {
                     boxShadow: "0 10px 22px rgba(14,86,200,0.18)",
                   }}
                 >
-                  {estimateLoading ? "Checking Availability..." : "See Full Report"}
+                  {estimateLoading
+                    ? "Checking Availability..."
+                    : "See Full Report"}
                 </Button>
                 <Typography
                   variant="caption"

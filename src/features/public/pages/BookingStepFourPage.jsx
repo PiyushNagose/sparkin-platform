@@ -433,6 +433,35 @@ function getLocationSnapshot() {
   });
 }
 
+function waitForVideoReady(video) {
+  if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA && video.videoWidth > 0) {
+    return Promise.resolve();
+  }
+
+  return new Promise((resolve, reject) => {
+    const timeoutId = window.setTimeout(() => {
+      cleanup();
+      reject(new Error("Camera preview is not ready yet. Please wait a moment and try again."));
+    }, 5000);
+
+    function cleanup() {
+      window.clearTimeout(timeoutId);
+      video.removeEventListener("loadedmetadata", handleReady);
+      video.removeEventListener("canplay", handleReady);
+    }
+
+    function handleReady() {
+      if (video.videoWidth > 0) {
+        cleanup();
+        resolve();
+      }
+    }
+
+    video.addEventListener("loadedmetadata", handleReady);
+    video.addEventListener("canplay", handleReady);
+  });
+}
+
 export default function BookingStepFourPage() {
   const navigate = useNavigate();
   const { draft, updateDraft, updateField, resetDraft } = useBookingDraft();
@@ -461,6 +490,18 @@ export default function BookingStepFourPage() {
   useEffect(() => {
     return () => stopCamera();
   }, []);
+
+  useEffect(() => {
+    if (!cameraActive || !videoRef.current || !mediaStreamRef.current) {
+      return;
+    }
+
+    const video = videoRef.current;
+    video.srcObject = mediaStreamRef.current;
+    video.play().catch(() => {
+      setCameraError("Camera preview could not start. Please stop and open the camera again.");
+    });
+  }, [cameraActive]);
 
   function updateAttachments(values) {
     updateDraft("attachments", values);
@@ -496,14 +537,14 @@ export default function BookingStepFourPage() {
     setCameraError("");
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: "environment" } },
+        video: {
+          facingMode: { ideal: "environment" },
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+        },
         audio: false,
       });
       mediaStreamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-      }
       setCameraActive(true);
     } catch {
       setCameraError("Camera permission is blocked or unavailable on this device.");
@@ -520,9 +561,22 @@ export default function BookingStepFourPage() {
     if (!videoRef.current || !canvasRef.current) return;
     const video = videoRef.current;
     const canvas = canvasRef.current;
-    canvas.width = video.videoWidth || 1280;
-    canvas.height = video.videoHeight || 720;
+    try {
+      await waitForVideoReady(video);
+      await new Promise((resolve) => window.requestAnimationFrame(resolve));
+    } catch (captureError) {
+      setCameraError(captureError.message || "Camera preview is not ready yet.");
+      return;
+    }
+
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
     const context = canvas.getContext("2d");
+    if (!context || canvas.width === 0 || canvas.height === 0) {
+      setCameraError("Camera preview is not ready yet. Please wait a moment and try again.");
+      return;
+    }
+
     context.drawImage(video, 0, 0, canvas.width, canvas.height);
     const dataUrl = canvas.toDataURL("image/jpeg", 0.86);
     const location = await getLocationSnapshot();
@@ -728,7 +782,14 @@ export default function BookingStepFourPage() {
                               ref={videoRef}
                               muted
                               playsInline
-                              sx={{ width: "100%", height: 240, objectFit: "cover" }}
+                              autoPlay
+                              sx={{
+                                width: "100%",
+                                minHeight: 240,
+                                bgcolor: "#101828",
+                                objectFit: "cover",
+                                transform: "scaleX(-1)",
+                              }}
                             />
                           ) : (
                             <Stack spacing={1} alignItems="center" textAlign="center">

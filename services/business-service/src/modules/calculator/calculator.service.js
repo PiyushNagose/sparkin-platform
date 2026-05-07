@@ -41,9 +41,9 @@ const stateProfiles = {
 };
 
 const stateByPincodeHints = [
-  { test: (pin) => /^50[0-9]{4}$/.test(pin), state: "telangana" },
-  { test: (pin) => /^5[1-3][0-9]{4}$/.test(pin), state: "andhra_pradesh" },
-  { test: (pin) => /^5[6-9][0-9]{4}$/.test(pin), state: "karnataka" },
+  { test: (pin) => /^50[0-9]{4}$/.test(pin), states: ["telangana", "andhra_pradesh"] },
+  { test: (pin) => /^5[1-3][0-9]{4}$/.test(pin), states: ["andhra_pradesh"] },
+  { test: (pin) => /^5[6-9][0-9]{4}$/.test(pin), states: ["karnataka"] },
 ];
 
 function round(value, digits = 0) {
@@ -63,22 +63,23 @@ function normalizeState(value) {
 }
 
 function inferStateFromPincode(pincode) {
-  return stateByPincodeHints.find((hint) => hint.test(pincode))?.state || null;
+  return stateByPincodeHints.find((hint) => hint.test(pincode))?.states || [];
 }
 
 function getServiceability({ pincode, state }) {
   const selectedState = normalizeState(state);
-  const inferredState = inferStateFromPincode(pincode);
-  const resolvedState = selectedState || inferredState;
+  const inferredStates = inferStateFromPincode(pincode);
+  const resolvedState = selectedState || inferredStates[0];
   const profile = resolvedState ? stateProfiles[resolvedState] : null;
 
-  if (!profile || (selectedState && inferredState !== selectedState)) {
+  if (!profile || (selectedState && inferredStates.length && !inferredStates.includes(selectedState))) {
     return {
       serviceable: false,
       reason: "This pincode is outside Sparkin's current calculator coverage.",
       pincode,
       selectedState: selectedState || null,
-      inferredState: inferredState || null,
+      inferredState: inferredStates[0] || null,
+      inferredStates,
       supportedStates: Object.values(stateProfiles).map((item) => item.label),
     };
   }
@@ -90,7 +91,7 @@ function getServiceability({ pincode, state }) {
     city: profile.cityFallback,
     discoms: profile.discoms,
     pincode,
-    confidence: inferredState === resolvedState ? "pincode_match" : "state_selected",
+    confidence: inferredStates.includes(resolvedState) ? "pincode_match" : "state_selected",
   };
 }
 
@@ -126,13 +127,19 @@ async function buildEstimate(input) {
   const annualConsumption = monthlyUnits * 12;
   const desiredOffset = (input.desiredOffsetPercent || (isCommercial ? 75 : 90)) / 100;
   const derateFactor = 0.82;
-  const rawSystemSize = annualConsumption * desiredOffset / (profile.solarYieldPerKwYear * derateFactor);
+  const billDrivenSystemSize = annualConsumption * desiredOffset / (profile.solarYieldPerKwYear * derateFactor);
+  const requestedSystemSize = Number(input.systemSizeKw || 0);
+  const rawSystemSize = requestedSystemSize > 0 ? requestedSystemSize : billDrivenSystemSize;
   const sanctionedLimit = input.sanctionedLoadKw ? input.sanctionedLoadKw * 1.15 : Infinity;
   const roofLimit = input.roofAreaSqFt ? input.roofAreaSqFt / 90 : Infinity;
   const recommendedSystemSizeKw = clamp(rawSystemSize, 1, Math.min(roofLimit, sanctionedLimit, isCommercial ? 500 : 10));
   const roundedSystemSizeKw = round(recommendedSystemSizeKw, 1);
   const annualGenerationKwh = Math.round(roundedSystemSizeKw * profile.solarYieldPerKwYear * derateFactor);
   const monthlyGenerationKwh = Math.round(annualGenerationKwh / 12);
+  const requiredRoofAreaSqFt = Math.ceil(roundedSystemSizeKw * 90);
+  const roofUtilizationPercent = input.roofAreaSqFt
+    ? Math.min(100, Math.round((requiredRoofAreaSqFt / input.roofAreaSqFt) * 100))
+    : null;
   const firstYearSavings = Math.round(Math.min(annualGenerationKwh, annualConsumption) * tariff);
   const monthlySavings = Math.round(firstYearSavings / 12);
   const costPerKw = Number(settings.pricing.standardCostPerKw) || (isCommercial ? profile.costPerWattCommercial : profile.costPerWattResidential);
@@ -160,6 +167,7 @@ async function buildEstimate(input) {
       ...input,
       monthlyUnits: Math.round(monthlyUnits),
       desiredOffsetPercent: Math.round(desiredOffset * 100),
+      systemSizeKw: requestedSystemSize > 0 ? requestedSystemSize : null,
     },
     serviceability,
     assumptions: {
@@ -174,7 +182,9 @@ async function buildEstimate(input) {
     },
     system: {
       recommendedSizeKw: roundedSystemSizeKw,
-      requiredRoofAreaSqFt: Math.ceil(roundedSystemSizeKw * 90),
+      requiredRoofAreaSqFt,
+      availableRoofAreaSqFt: input.roofAreaSqFt || null,
+      roofUtilizationPercent,
       panelCount: Math.ceil((roundedSystemSizeKw * 1000) / 540),
       annualGenerationKwh,
       monthlyGenerationKwh,

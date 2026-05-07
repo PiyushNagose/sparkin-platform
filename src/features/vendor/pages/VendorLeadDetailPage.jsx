@@ -137,8 +137,8 @@ export default function VendorLeadDetailPage() {
 
       try {
         const [result, quote] = await Promise.all([
-          leadsApi.getLead(leadId),
-          quotesApi.getMyQuoteForLead(leadId),
+          leadsApi.getLead(leadId, { force: true }),
+          quotesApi.listQuotes({ leadId }, { force: true }).then((quotes) => quotes[0] ?? null),
         ]);
         if (active) {
           setLead(result);
@@ -182,6 +182,17 @@ export default function VendorLeadDetailPage() {
           : getBudgetEstimate(lead),
         tone: "#239654",
         bg: "#EAF7EF",
+      },
+      {
+        icon: BoltRoundedIcon,
+        label: "Admin Verified Size",
+        value: lead.adminSystemSizeKw
+          ? `${lead.adminSystemSizeKw} kW`
+          : lead.calculatorEstimate?.system?.recommendedSizeKw
+            ? `${lead.calculatorEstimate.system.recommendedSizeKw} kW`
+            : "Assessment pending",
+        tone: "#2F73FF",
+        bg: "#EEF4FF",
       },
       {
         icon: CottageOutlinedIcon,

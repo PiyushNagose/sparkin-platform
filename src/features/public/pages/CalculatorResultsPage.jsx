@@ -26,6 +26,10 @@ function formatNumber(value) {
   return new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(Number(value) || 0);
 }
 
+function getAvailableRoofArea(estimate) {
+  return estimate.system.availableRoofAreaSqFt || estimate.input.roofAreaSqFt || null;
+}
+
 function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);
 }
@@ -170,8 +174,12 @@ function QuickPreview({ estimate, onGetFullReport, onProceedToBooking }) {
         <Grid size={{ xs: 12, md: 4 }}>
           <MetricCard
             title="Roof Fit"
-            value={`${roofUtilizationPercent}%`}
-            text={`${formatNumber(estimate.system.requiredRoofAreaSqFt)} sq. ft. estimated roof requirement.`}
+            value={getAvailableRoofArea(estimate) ? `${roofUtilizationPercent}%` : "Pending"}
+            text={
+              getAvailableRoofArea(estimate)
+                ? `${formatNumber(estimate.system.requiredRoofAreaSqFt)} sq. ft. needed from ${formatNumber(getAvailableRoofArea(estimate))} sq. ft. available.`
+                : `${formatNumber(estimate.system.requiredRoofAreaSqFt)} sq. ft. estimated roof requirement.`
+            }
             icon={<TrendingUpRoundedIcon sx={{ fontSize: "0.92rem" }} />}
           />
         </Grid>
@@ -252,9 +260,14 @@ function FullResult({ estimate, onProceedToBooking }) {
               <Grid container spacing={{ xs: 1.4, md: 1.6 }} sx={{ mt: 2.55 }}>
                 {[
                   ["System Size", `${estimate.system.recommendedSizeKw} kW`],
-                  ["Roof Area", `${formatNumber(estimate.system.requiredRoofAreaSqFt)} sq. ft.`],
+                  [
+                    "Available Roof",
+                    getAvailableRoofArea(estimate)
+                      ? `${formatNumber(getAvailableRoofArea(estimate))} sq. ft.`
+                      : "Not provided",
+                  ],
+                  ["Roof Needed", `${formatNumber(estimate.system.requiredRoofAreaSqFt)} sq. ft.`],
                   ["Payback", `${estimate.savings.paybackYears || "-"} years`],
-                  ["Panels", `${estimate.system.panelCount} modules`],
                 ].map(([label, value]) => (
                   <Grid key={label} size={{ xs: 6, sm: 3 }}>
                     <Typography sx={{ color: "#7B889B", fontSize: "0.6rem", fontWeight: 700 }}>{label}</Typography>

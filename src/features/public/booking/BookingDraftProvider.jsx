@@ -74,6 +74,35 @@ function connectionTypeFromEstimate(estimate) {
   return "single_phase";
 }
 
+function distributionCompanyFromEstimate(estimate) {
+  return String(estimate?.serviceability?.discoms?.[0] || "").toLowerCase();
+}
+
+function calculatorSystemSizeFromEstimate(estimate) {
+  return (
+    estimate?.system?.recommendedSizeKw ||
+    estimate?.input?.systemSizeKw ||
+    estimate?.input?.sanctionedLoadKw ||
+    ""
+  );
+}
+
+function defaultRoofTypeFromEstimate(estimate) {
+  return estimate?.input?.propertyType === "commercial" ? "flat" : "flat";
+}
+
+function defaultOwnershipFromEstimate() {
+  return "owned";
+}
+
+function defaultShadowFromEstimate() {
+  return "partial";
+}
+
+function defaultRoofConditionFromEstimate() {
+  return "average";
+}
+
 const BookingDraftContext = React.createContext(null);
 
 function readDraft() {
@@ -149,14 +178,19 @@ export function BookingDraftProvider({ children }) {
         property: {
           ...current.property,
           type: propertyTypeFromEstimate(estimate),
+          roofType: current.property.roofType || defaultRoofTypeFromEstimate(estimate),
+          ownership: current.property.ownership || defaultOwnershipFromEstimate(estimate),
           connectionType: connectionTypeFromEstimate(estimate),
-          sanctionedLoadKw:
-            estimate?.input?.sanctionedLoadKw ||
-            current.property.sanctionedLoadKw,
+          distributionCompany:
+            distributionCompanyFromEstimate(estimate) ||
+            current.property.distributionCompany,
+          sanctionedLoadKw: calculatorSystemSizeFromEstimate(estimate),
         },
         roof: {
           ...current.roof,
           sizeRange: roofSizeRangeFromArea(roofArea),
+          shadow: current.roof.shadow || defaultShadowFromEstimate(estimate),
+          condition: current.roof.condition || defaultRoofConditionFromEstimate(estimate),
         },
         calculatorEstimate: estimate,
       };
