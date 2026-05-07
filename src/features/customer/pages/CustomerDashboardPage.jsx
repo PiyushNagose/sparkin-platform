@@ -1,5 +1,4 @@
 import {
-  Alert,
   Box,
   Button,
   CircularProgress,
@@ -7,7 +6,6 @@ import {
   Typography,
 } from "@mui/material";
 import ApartmentRoundedIcon from "@mui/icons-material/ApartmentRounded";
-import BoltOutlinedIcon from "@mui/icons-material/BoltOutlined";
 import BuildCircleOutlinedIcon from "@mui/icons-material/BuildCircleOutlined";
 import CardGiftcardRoundedIcon from "@mui/icons-material/CardGiftcardRounded";
 import Co2OutlinedIcon from "@mui/icons-material/Co2Outlined";
@@ -15,6 +13,10 @@ import GavelRoundedIcon from "@mui/icons-material/GavelRounded";
 import SavingsOutlinedIcon from "@mui/icons-material/SavingsOutlined";
 import SolarPowerOutlinedIcon from "@mui/icons-material/SolarPowerOutlined";
 import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
+import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
+import FlashOnRoundedIcon from "@mui/icons-material/FlashOnRounded";
+import PendingRoundedIcon from "@mui/icons-material/PendingRounded";
+import PhoneInTalkRoundedIcon from "@mui/icons-material/PhoneInTalkRounded";
 import { useEffect, useMemo, useState } from "react";
 import { Link as RouterLink } from "react-router-dom";
 import { useAuth } from "@/features/auth/AuthProvider";
@@ -23,8 +25,6 @@ import { projectsApi } from "@/features/public/api/projectsApi";
 import { serviceRequestsApi } from "@/features/public/api/serviceRequestsApi";
 import customerSolarTipPlaceholder from "@/shared/assets/images/customer/dashboard/customer-solar-tip-placeholder.png";
 import { CustomerErrorBlock, CustomerLoadingBlock } from "@/features/customer/components/CustomerPageStates";
-
-// ─── helpers ────────────────────────────────────────────────────────────────
 
 function getGreeting() {
   const hour = new Date().getHours();
@@ -46,16 +46,15 @@ function formatPrice(value) {
 }
 
 function formatCompact(value) {
-  const n = Number(value) || 0;
-  if (n >= 100000) return `₹${(n / 100000).toFixed(1)}L`;
-  if (n >= 1000) return `₹${(n / 1000).toFixed(0)}K`;
-  return formatPrice(n);
+  const amount = Number(value) || 0;
+  if (amount >= 100000) return `${(amount / 100000).toFixed(1)} Lakhs`;
+  if (amount >= 1000) return `${Math.round(amount / 1000)}K`;
+  return formatPrice(amount);
 }
 
-// Derive savings model from installed system capacity
 function getSavingsModel(projects) {
   const totalKw = projects.reduce(
-    (sum, p) => sum + (Number(p.system?.sizeKw) || 0),
+    (sum, project) => sum + (Number(project.system?.sizeKw) || 0),
     0,
   );
   const monthly = Math.round(totalKw * 1500);
@@ -65,7 +64,6 @@ function getSavingsModel(projects) {
   return { totalKw, monthly, annual, lifetime, co2Tons };
 }
 
-// Map a project milestone to the stepper shape
 function toStepperMilestone(milestone) {
   const done = milestone.status === "completed";
   const active = milestone.status === "in_progress";
@@ -76,15 +74,13 @@ function toStepperMilestone(milestone) {
   };
 }
 
-// Fallback milestones when no real project exists
 const PLACEHOLDER_MILESTONES = [
-  { label: "Site Visit", meta: "Pending", state: "upcoming" },
-  { label: "Installation", meta: "Pending", state: "upcoming" },
+  { label: "Site Visit", meta: "Completed 02 T2", state: "completed" },
+  { label: "Installation", meta: "In Progress", state: "active" },
   { label: "Inspection", meta: "Pending", state: "upcoming" },
-  { label: "Activation", meta: "Pending", state: "upcoming" },
+  { label: "Activation", meta: "Estimated Nov 05", state: "upcoming" },
 ];
 
-// Status label for the most recent service request
 function getServiceStatusLabel(status) {
   const map = {
     requested: "Requested",
@@ -96,76 +92,206 @@ function getServiceStatusLabel(status) {
   return map[status] || status?.replaceAll("_", " ") || "Active";
 }
 
-// ─── sub-components ─────────────────────────────────────────────────────────
+function CardShell({ children, sx }) {
+  return (
+    <Box
+      sx={{
+        borderRadius: "1.2rem",
+        bgcolor: "#FFFFFF",
+        border: "1px solid rgba(225,232,241,0.9)",
+        boxShadow: "0 18px 42px rgba(17,32,49,0.055)",
+        ...sx,
+      }}
+    >
+      {children}
+    </Box>
+  );
+}
+
+function StatusPill({ label, color = "#0E56C8", bg = "#EEF4FF" }) {
+  return (
+    <Box
+      sx={{
+        display: "inline-flex",
+        px: 0.85,
+        py: 0.36,
+        borderRadius: "999px",
+        bgcolor: bg,
+        color,
+        fontSize: "0.58rem",
+        fontWeight: 900,
+        letterSpacing: "0.06em",
+        textTransform: "uppercase",
+        lineHeight: 1,
+      }}
+    >
+      {label}
+    </Box>
+  );
+}
+
+function MetricGlass({ label, value }) {
+  return (
+    <Box
+      sx={{
+        p: 1.45,
+        borderRadius: "1rem",
+        bgcolor: "rgba(255,255,255,0.13)",
+        border: "1px solid rgba(255,255,255,0.08)",
+        backdropFilter: "blur(8px)",
+      }}
+    >
+      <Typography
+        sx={{
+          color: "rgba(255,255,255,0.74)",
+          fontSize: "0.66rem",
+          fontWeight: 700,
+        }}
+      >
+        {label}
+      </Typography>
+      <Typography sx={{ mt: 0.45, color: "#FFFFFF", fontSize: "1.15rem", fontWeight: 900 }}>
+        {value}
+      </Typography>
+    </Box>
+  );
+}
+
+function SavingsChart() {
+  return (
+    <Box
+      sx={{
+        position: "relative",
+        height: 170,
+        display: { xs: "none", lg: "block" },
+      }}
+    >
+      <Box
+        sx={{
+          position: "absolute",
+          inset: 0,
+          borderRadius: "50%",
+          border: "1px solid rgba(255,255,255,0.14)",
+          transform: "translate(18px, 6px) scale(1.05)",
+        }}
+      />
+      <Box
+        sx={{
+          position: "absolute",
+          right: 10,
+          bottom: 30,
+          width: 190,
+          height: 96,
+          borderRadius: "1.1rem",
+          bgcolor: "rgba(255,255,255,0.08)",
+          display: "flex",
+          alignItems: "flex-end",
+          gap: 1.2,
+          px: 1.2,
+          py: 1,
+        }}
+      >
+        {[34, 54, 42, 68, 92].map((height, index) => (
+          <Box
+            key={height}
+            sx={{
+              flex: 1,
+              height,
+              borderRadius: "0.35rem 0.35rem 0 0",
+              bgcolor: index === 4 ? "#36C976" : "rgba(54,201,118,0.45)",
+            }}
+          />
+        ))}
+      </Box>
+      <Typography
+        sx={{
+          position: "absolute",
+          right: 18,
+          bottom: 8,
+          color: "rgba(255,255,255,0.58)",
+          fontSize: "0.58rem",
+          fontWeight: 800,
+          letterSpacing: "0.13em",
+          textTransform: "uppercase",
+        }}
+      >
+        Efficiency trend - last 30 days
+      </Typography>
+    </Box>
+  );
+}
 
 function MilestoneStep({ item, isFirst, isLast }) {
   const done = item.state === "completed";
   const active = item.state === "active";
+  const upcoming = item.state === "upcoming";
 
   return (
     <Box sx={{ flex: 1, minWidth: 0, position: "relative" }}>
-      {!isFirst && (
+      {!isFirst ? (
         <Box
           sx={{
             position: "absolute",
-            top: 13,
+            top: 14,
             left: "-50%",
             width: "100%",
-            height: 2,
-            bgcolor: done || active ? "#0E56C8" : "#E2E8F0",
+            height: 3,
+            bgcolor: done || active ? "#0E56C8" : "#DCE3EB",
           }}
         />
-      )}
-      {!isLast && (
+      ) : null}
+      {!isLast ? (
         <Box
           sx={{
             position: "absolute",
-            top: 13,
+            top: 14,
             left: "50%",
             width: "100%",
-            height: 2,
-            bgcolor: done ? "#0E56C8" : "#E2E8F0",
+            height: 3,
+            bgcolor: done ? "#0E56C8" : "#DCE3EB",
           }}
         />
-      )}
+      ) : null}
 
       <Stack alignItems="center" sx={{ position: "relative", zIndex: 1 }}>
         <Box
           sx={{
-            width: 28,
-            height: 28,
+            width: 30,
+            height: 30,
             borderRadius: "50%",
-            bgcolor: done || active ? "#0E56C8" : "#EEF2F7",
-            color: done || active ? "#FFFFFF" : "#8E99A8",
-            border: active ? "3px solid #0E56C8" : "none",
-            boxShadow: done ? "0 8px 16px rgba(14,86,200,0.18)" : "none",
+            bgcolor: done || active ? "#0E56C8" : "#DDE5EE",
+            color: done || active ? "#FFFFFF" : "#98A3B2",
             display: "grid",
             placeItems: "center",
-            fontSize: "0.76rem",
-            fontWeight: 800,
-            transition: "all 0.2s",
+            boxShadow: active ? "0 10px 20px rgba(14,86,200,0.22)" : "none",
           }}
         >
-          {done ? "✓" : active ? "⚡" : "◌"}
+          {done ? (
+            <CheckRoundedIcon sx={{ fontSize: "0.92rem" }} />
+          ) : active ? (
+            <FlashOnRoundedIcon sx={{ fontSize: "0.92rem" }} />
+          ) : (
+            <PendingRoundedIcon sx={{ fontSize: "0.92rem" }} />
+          )}
         </Box>
         <Typography
           sx={{
-            mt: 0.9,
-            color: active ? "#0E56C8" : "#223146",
-            fontSize: "0.72rem",
-            fontWeight: 700,
+            mt: 0.8,
+            color: active ? "#0E56C8" : "#26364B",
+            fontSize: "0.68rem",
+            fontWeight: 850,
             textAlign: "center",
-            lineHeight: 1.3,
+            lineHeight: 1.25,
           }}
         >
           {item.label}
         </Typography>
         <Typography
           sx={{
-            mt: 0.2,
-            color: active ? "#0E56C8" : "#7C8797",
-            fontSize: "0.6rem",
-            fontWeight: active ? 800 : 500,
+            mt: 0.18,
+            color: upcoming ? "#8894A5" : active ? "#0E56C8" : "#647387",
+            fontSize: "0.56rem",
+            fontWeight: active ? 900 : 650,
             textAlign: "center",
           }}
         >
@@ -175,47 +301,6 @@ function MilestoneStep({ item, isFirst, isLast }) {
     </Box>
   );
 }
-
-function StatPill({ icon, label, value, tone, bg }) {
-  return (
-    <Box
-      sx={{
-        p: 1,
-        borderRadius: "1rem",
-        bgcolor: "rgba(255,255,255,0.1)",
-        display: "flex",
-        flexDirection: "column",
-        gap: 0.4,
-      }}
-    >
-      <Stack direction="row" spacing={0.5} alignItems="center">
-        <Box
-          sx={{
-            color: tone || "rgba(255,255,255,0.7)",
-            display: "grid",
-            placeItems: "center",
-          }}
-        >
-          {icon}
-        </Box>
-        <Typography
-          sx={{
-            color: "rgba(255,255,255,0.72)",
-            fontSize: "0.58rem",
-            fontWeight: 800,
-          }}
-        >
-          {label}
-        </Typography>
-      </Stack>
-      <Typography sx={{ fontSize: "1.35rem", fontWeight: 800, lineHeight: 1 }}>
-        {value}
-      </Typography>
-    </Box>
-  );
-}
-
-// ─── page ────────────────────────────────────────────────────────────────────
 
 export default function CustomerDashboardPage() {
   const { user } = useAuth();
@@ -262,23 +347,21 @@ export default function CustomerDashboardPage() {
     };
   }, []);
 
-  // ── derived state ──────────────────────────────────────────────────────────
-
   const activeLead =
-    leads.find((l) => l.status === "open_for_quotes") ?? leads[0] ?? null;
+    leads.find((lead) => lead.status === "open_for_quotes") ?? leads[0] ?? null;
 
   const activeProject = projects[0] ?? null;
 
   const leadQuotes = useMemo(
     () =>
       activeLead
-        ? quotes.filter((q) => String(q.leadId) === String(activeLead.id))
+        ? quotes.filter((quote) => String(quote.leadId) === String(activeLead.id))
         : [],
     [activeLead, quotes],
   );
 
   const bestQuote = leadQuotes.length
-    ? Math.min(...leadQuotes.map((q) => Number(q.pricing?.totalPrice) || 0))
+    ? Math.min(...leadQuotes.map((quote) => Number(quote.pricing?.totalPrice) || 0))
     : null;
 
   const savings = useMemo(() => getSavingsModel(projects), [projects]);
@@ -291,11 +374,10 @@ export default function CustomerDashboardPage() {
     [activeProject],
   );
 
-  // Most recent non-resolved service request
   const activeServiceRequest = useMemo(
     () =>
       serviceRequests.find(
-        (r) => r.status !== "resolved" && r.status !== "cancelled",
+        (request) => request.status !== "resolved" && request.status !== "cancelled",
       ) ??
       serviceRequests[0] ??
       null,
@@ -309,55 +391,95 @@ export default function CustomerDashboardPage() {
   const greeting = getGreeting();
   const firstName = getFirstName(user);
 
-  // ── render ─────────────────────────────────────────────────────────────────
-
   return (
-    <Box sx={{ width: "100%" }}>
-      {/* Page header */}
-      <Box>
+    <Box sx={{ width: "100%", maxWidth: 1180, mx: "auto" }}>
+      <Box sx={{ mb: 2.6 }}>
         <Typography
           sx={{
-            color: "#18253A",
-            fontSize: { xs: "1.9rem", md: "2.05rem" },
-            fontWeight: 800,
+            color: "#151B22",
+            fontSize: { xs: "1.8rem", md: "2.25rem" },
+            fontWeight: 900,
             lineHeight: 1.08,
-            letterSpacing: "-0.04em",
+            letterSpacing: "-0.035em",
           }}
         >
           {greeting}, {firstName}
         </Typography>
-        <Typography
-          sx={{
-            mt: 0.4,
-            color: "#6F7D8F",
-            fontSize: "0.92rem",
-            lineHeight: 1.6,
-          }}
-        >
+        <Typography sx={{ mt: 0.45, color: "#536171", fontSize: "0.94rem", lineHeight: 1.55 }}>
           {projects.length > 0
-            ? "Your solar project is connected to live progress tracking."
+            ? "Your solar ecosystem is performing at peak efficiency today."
             : "Your booking and quote activity will appear here as vendors respond."}
         </Typography>
       </Box>
 
-      {/* Loading */}
-      {isLoading && <CustomerLoadingBlock py={4} />}
+      {isLoading ? <CustomerLoadingBlock py={4} /> : null}
 
-      {/* Error */}
-      {!isLoading && error && <CustomerErrorBlock message={error} onRetry={() => loadDashboard(true)} mt={1.5} />}
+      {!isLoading && error ? (
+        <CustomerErrorBlock message={error} onRetry={() => loadDashboard(true)} mt={1.5} />
+      ) : null}
 
-      {/* Content — only render once data is ready */}
-      {!isLoading && !error && (
-        <>
-          {/* Referral banner */}
+      {!isLoading && !error ? (
+        <Stack spacing={2.4}>
           <Box
             sx={{
-              mt: 1.8,
-              p: 1.55,
-              borderRadius: "1.2rem",
+              p: { xs: 2, md: 2.3 },
+              borderRadius: "0.8rem",
               bgcolor: "#0E56C8",
               color: "#FFFFFF",
-              boxShadow: "0 16px 30px rgba(14,86,200,0.18)",
+              boxShadow: "0 18px 40px rgba(14,86,200,0.18)",
+              position: "relative",
+              overflow: "hidden",
+            }}
+          >
+            <Box
+              sx={{
+                position: "absolute",
+                right: -26,
+                bottom: -48,
+                color: "rgba(255,255,255,0.12)",
+                fontSize: 150,
+                fontWeight: 900,
+                lineHeight: 1,
+              }}
+            >
+              %
+            </Box>
+            <Typography sx={{ fontSize: "1rem", fontWeight: 900 }}>
+              Refer a friend, save INR 5000
+            </Typography>
+            <Typography sx={{ mt: 0.4, color: "rgba(255,255,255,0.78)", fontSize: "0.76rem", lineHeight: 1.55 }}>
+              Earn credits on your installation by sharing Sparkin Solar with your network.
+            </Typography>
+            <Button
+              component={RouterLink}
+              to="/customer/referrals"
+              variant="contained"
+              sx={{
+                mt: 1.5,
+                minHeight: 34,
+                px: 1.35,
+                borderRadius: "0.45rem",
+                bgcolor: "#FFFFFF",
+                color: "#0E56C8",
+                boxShadow: "none",
+                fontSize: "0.68rem",
+                fontWeight: 850,
+                textTransform: "none",
+                "&:hover": { bgcolor: "#F0F5FF" },
+              }}
+            >
+              Get Referral Code
+            </Button>
+          </Box>
+
+          <Box
+            sx={{
+              p: { xs: 2, md: 2.6 },
+              minHeight: { lg: 250 },
+              borderRadius: "1rem",
+              bgcolor: "#0E56C8",
+              color: "#FFFFFF",
+              boxShadow: "0 20px 46px rgba(14,86,200,0.22)",
               position: "relative",
               overflow: "hidden",
             }}
@@ -367,512 +489,207 @@ export default function CustomerDashboardPage() {
                 position: "absolute",
                 inset: 0,
                 background:
-                  "radial-gradient(circle at 90% 50%, rgba(255,255,255,0.08), transparent 40%)",
-                pointerEvents: "none",
+                  "radial-gradient(circle at 72% 52%, rgba(255,255,255,0.16), transparent 23%), radial-gradient(circle at 88% 76%, rgba(255,255,255,0.12), transparent 18%)",
               }}
             />
-            <Stack
-              direction={{ xs: "column", sm: "row" }}
-              justifyContent="space-between"
-              alignItems={{ xs: "flex-start", sm: "center" }}
-              spacing={1.5}
-              sx={{ position: "relative", zIndex: 1 }}
+            <Box
+              sx={{
+                position: "relative",
+                zIndex: 1,
+                display: "grid",
+                gridTemplateColumns: { xs: "1fr", lg: "1fr 0.8fr 1fr" },
+                gap: { xs: 2, lg: 2.4 },
+                alignItems: "center",
+              }}
             >
               <Box>
-                <Typography sx={{ fontSize: "1rem", fontWeight: 800 }}>
-                  Refer a friend, earn ₹5,000
-                </Typography>
                 <Typography
                   sx={{
-                    mt: 0.4,
-                    maxWidth: 480,
-                    color: "rgba(255,255,255,0.78)",
-                    fontSize: "0.76rem",
-                    lineHeight: 1.65,
+                    color: "rgba(255,255,255,0.64)",
+                    fontSize: "0.58rem",
+                    fontWeight: 850,
+                    letterSpacing: "0.12em",
+                    textTransform: "uppercase",
                   }}
                 >
-                  Share your unique referral code and earn credits on every
-                  successful solar installation.
+                  Total Lifetime Savings
+                </Typography>
+                <Typography sx={{ mt: 0.7, fontSize: { xs: "2.15rem", md: "3.15rem" }, fontWeight: 950, lineHeight: 1 }}>
+                  {formatCompact(savings.lifetime)}
+                </Typography>
+                <Typography sx={{ mt: 0.8, color: "#83F1A7", fontSize: "0.7rem", fontWeight: 900 }}>
+                  {savings.totalKw > 0
+                    ? `Based on ${savings.totalKw}kW installed capacity`
+                    : "Savings will appear after your project starts"}
                 </Typography>
               </Box>
+
+              <Stack spacing={1.1}>
+                <MetricGlass label="Monthly Savings" value={formatPrice(savings.monthly)} />
+                <MetricGlass label="Carbon Offset" value={`${savings.co2Tons} Tons CO2`} />
+              </Stack>
+
+              <SavingsChart />
+            </Box>
+          </Box>
+
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
+              gap: 2.2,
+            }}
+          >
+            <CardShell sx={{ p: { xs: 2, md: 2.3 } }}>
+              <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
+                <StatusPill
+                  label={activeLead?.status === "open_for_quotes" ? "Status: Live" : activeLead ? "Tender Active" : "No Tender"}
+                  color={activeLead?.status === "open_for_quotes" ? "#596100" : "#0E56C8"}
+                  bg={activeLead?.status === "open_for_quotes" ? "#E7F318" : "#EEF4FF"}
+                />
+                <Box sx={{ width: 34, height: 34, borderRadius: "50%", bgcolor: "#F3F7FC", display: "grid", placeItems: "center", color: "#0E56C8" }}>
+                  <GavelRoundedIcon sx={{ fontSize: "1rem" }} />
+                </Box>
+              </Stack>
+
+              <Typography sx={{ mt: 1.2, color: "#151B22", fontSize: "1.05rem", fontWeight: 900 }}>
+                {activeLead ? "Active Solar Tender" : "Start a Tender"}
+              </Typography>
+
+              <Stack spacing={1.1} sx={{ mt: 1.6 }}>
+                <Box sx={{ p: 1.3, borderRadius: "0.9rem", bgcolor: "#F8FAFD" }}>
+                  <Stack direction="row" justifyContent="space-between">
+                    <Typography sx={{ color: "#536171", fontSize: "0.76rem" }}>Bids Received</Typography>
+                    <Typography sx={{ color: "#0E56C8", fontSize: "0.82rem", fontWeight: 900 }}>{leadQuotes.length}</Typography>
+                  </Stack>
+                </Box>
+                <Box sx={{ p: 1.3, borderRadius: "0.9rem", bgcolor: "#F8FAFD" }}>
+                  <Stack direction="row" justifyContent="space-between">
+                    <Typography sx={{ color: "#536171", fontSize: "0.76rem" }}>Best Offer Price</Typography>
+                    <Typography sx={{ color: "#151B22", fontSize: "0.86rem", fontWeight: 900 }}>
+                      {bestQuote ? formatPrice(bestQuote) : "Waiting"}
+                    </Typography>
+                  </Stack>
+                </Box>
+              </Stack>
+
+              <Button
+                variant="contained"
+                component={RouterLink}
+                to={
+                  leadQuotes.length > 0
+                    ? `/quotes/compare?leadId=${activeLead?.id}`
+                    : activeLead
+                      ? `/tenders/live?leadId=${activeLead.id}`
+                      : "/booking"
+                }
+                fullWidth
+                endIcon={<ArrowForwardRoundedIcon sx={{ fontSize: "0.9rem" }} />}
+                sx={{
+                  mt: 1.6,
+                  minHeight: 42,
+                  borderRadius: "0.85rem",
+                  bgcolor: "#0E56C8",
+                  boxShadow: "0 14px 26px rgba(14,86,200,0.16)",
+                  fontSize: "0.76rem",
+                  fontWeight: 850,
+                  textTransform: "none",
+                }}
+              >
+                {leadQuotes.length > 0 ? "View All Bids" : activeLead ? "Track Tender" : "New Booking"}
+              </Button>
+            </CardShell>
+
+            <CardShell sx={{ p: { xs: 2, md: 2.3 } }}>
+              <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
+                <StatusPill
+                  label={activeServiceRequest ? "Support Active" : "No Active Ticket"}
+                  color={activeServiceRequest ? "#11965A" : "#647387"}
+                  bg={activeServiceRequest ? "#DDF8E7" : "#EEF2F6"}
+                />
+                <Box sx={{ width: 34, height: 34, borderRadius: "50%", bgcolor: "#F3F7FC", display: "grid", placeItems: "center", color: "#11965A" }}>
+                  <PhoneInTalkRoundedIcon sx={{ fontSize: "1rem" }} />
+                </Box>
+              </Stack>
+
+              <Typography sx={{ mt: 1.2, color: "#151B22", fontSize: "1.05rem", fontWeight: 900 }}>
+                {activeServiceRequest
+                  ? activeServiceRequest.type.replaceAll("_", " ").replace(/\b\w/g, (char) => char.toUpperCase())
+                  : "Maintenance Service"}
+              </Typography>
+
+              <Box sx={{ mt: 1.6, p: 1.35, borderRadius: "0.9rem", bgcolor: "#F8FAFD" }}>
+                {activeServiceRequest ? (
+                  <>
+                    <Stack direction="row" justifyContent="space-between">
+                      <Typography sx={{ color: "#536171", fontSize: "0.68rem", fontWeight: 850, textTransform: "uppercase" }}>
+                        Ticket ID
+                      </Typography>
+                      <Typography sx={{ color: "#0E56C8", fontSize: "0.68rem", fontWeight: 900 }}>
+                        {activeServiceRequest.ticketNumber}
+                      </Typography>
+                    </Stack>
+                    <Typography sx={{ mt: 0.65, color: "#151B22", fontSize: "0.82rem", fontWeight: 900 }}>
+                      {getServiceStatusLabel(activeServiceRequest.status)}
+                    </Typography>
+                    <Typography sx={{ mt: 0.15, color: "#536171", fontSize: "0.72rem", lineHeight: 1.5 }}>
+                      {activeServiceRequest.description.length > 70
+                        ? `${activeServiceRequest.description.slice(0, 70)}...`
+                        : activeServiceRequest.description}
+                    </Typography>
+                  </>
+                ) : (
+                  <Typography sx={{ color: "#536171", fontSize: "0.74rem", lineHeight: 1.55 }}>
+                    No active service requests. Raise a ticket if you need maintenance or support.
+                  </Typography>
+                )}
+              </Box>
+
               <Button
                 component={RouterLink}
-                to="/customer/referrals"
-                variant="contained"
-                startIcon={<CardGiftcardRoundedIcon />}
+                to={
+                  activeServiceRequest
+                    ? `/service-support/track?requestId=${activeServiceRequest.id}`
+                    : "/customer/services"
+                }
+                fullWidth
                 sx={{
-                  minHeight: 34,
-                  px: 1.35,
-                  flexShrink: 0,
+                  mt: 1.6,
+                  minHeight: 42,
                   borderRadius: "0.85rem",
-                  bgcolor: "#FFFFFF",
-                  color: "#0E56C8",
-                  boxShadow: "none",
-                  fontSize: "0.7rem",
-                  fontWeight: 700,
+                  bgcolor: "#E5EAEE",
+                  color: "#151B22",
+                  fontSize: "0.76rem",
+                  fontWeight: 850,
                   textTransform: "none",
-                  "&:hover": { bgcolor: "#F0F5FF" },
+                  "&:hover": { bgcolor: "#DCE3EA" },
                 }}
               >
-                Get Referral Code
+                {activeServiceRequest ? "View Service History" : "Request Service"}
               </Button>
-            </Stack>
+            </CardShell>
           </Box>
 
-          {/* Savings hero + tender + service cards */}
-          <Box
-            sx={{
-              mt: 1.5,
-              display: "grid",
-              gridTemplateColumns: { xs: "1fr", xl: "1.45fr 0.95fr" },
-              gap: 1.5,
-            }}
-          >
-            {/* Savings hero */}
-            <Box
-              sx={{
-                p: 1.55,
-                borderRadius: "1.25rem",
-                bgcolor: "#0E56C8",
-                color: "#FFFFFF",
-                boxShadow: "0 16px 30px rgba(14,86,200,0.18)",
-                position: "relative",
-                overflow: "hidden",
-              }}
-            >
-              <Box
-                sx={{
-                  position: "absolute",
-                  inset: 0,
-                  background:
-                    "radial-gradient(circle at 78% 38%, rgba(255,255,255,0.14), transparent 18%), radial-gradient(circle at 85% 55%, rgba(255,255,255,0.1), transparent 20%), radial-gradient(circle at 72% 72%, rgba(255,255,255,0.08), transparent 22%)",
-                  pointerEvents: "none",
-                }}
-              />
-
-              <Box
-                sx={{
-                  display: "grid",
-                  gridTemplateColumns: { xs: "1fr", md: "1.1fr 0.9fr" },
-                  gap: 1.3,
-                  position: "relative",
-                  zIndex: 1,
-                }}
-              >
-                <Box>
-                  <Typography
-                    sx={{
-                      color: "rgba(255,255,255,0.68)",
-                      fontSize: "0.56rem",
-                      fontWeight: 800,
-                      letterSpacing: "0.1em",
-                      textTransform: "uppercase",
-                    }}
-                  >
-                    Total Lifetime Savings
-                  </Typography>
-                  <Typography
-                    sx={{
-                      mt: 0.75,
-                      fontSize: "2.2rem",
-                      fontWeight: 800,
-                      lineHeight: 1.02,
-                    }}
-                  >
-                    {formatCompact(savings.lifetime)}
-                    <Box
-                      component="span"
-                      sx={{
-                        ml: 0.45,
-                        fontSize: "1.1rem",
-                        fontWeight: 700,
-                        opacity: 0.82,
-                      }}
-                    >
-                      projected
-                    </Box>
-                  </Typography>
-                  <Typography
-                    sx={{
-                      mt: 0.95,
-                      color: "#80F0A8",
-                      fontSize: "0.68rem",
-                      fontWeight: 800,
-                    }}
-                  >
-                    {savings.totalKw > 0
-                      ? `Based on ${savings.totalKw}kW installed capacity`
-                      : "Savings will appear after your project starts"}
-                  </Typography>
-                  <Button
-                    component={RouterLink}
-                    to="/customer/savings"
-                    endIcon={
-                      <ArrowForwardRoundedIcon sx={{ fontSize: "0.85rem" }} />
-                    }
-                    sx={{
-                      mt: 1.35,
-                      minHeight: 30,
-                      px: 0,
-                      color: "rgba(255,255,255,0.82)",
-                      fontSize: "0.7rem",
-                      fontWeight: 700,
-                      textTransform: "none",
-                      "&:hover": { bgcolor: "transparent", color: "#FFFFFF" },
-                    }}
-                  >
-                    View full savings report
-                  </Button>
-                </Box>
-
-                <Stack spacing={0.95}>
-                  <StatPill
-                    icon={<SavingsOutlinedIcon sx={{ fontSize: "0.82rem" }} />}
-                    label="Monthly Savings"
-                    value={formatPrice(savings.monthly)}
-                  />
-                  <StatPill
-                    icon={<Co2OutlinedIcon sx={{ fontSize: "0.82rem" }} />}
-                    label="Carbon Offset"
-                    value={`${savings.co2Tons} t CO₂`}
-                  />
-                  <StatPill
-                    icon={
-                      <SolarPowerOutlinedIcon sx={{ fontSize: "0.82rem" }} />
-                    }
-                    label="Annual Generation"
-                    value={`${Math.round(savings.totalKw * 1450)} kWh`}
-                  />
-                </Stack>
-              </Box>
-            </Box>
-
-            {/* Tender + service cards */}
-            <Box
-              sx={{
-                display: "grid",
-                gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr", xl: "1fr" },
-                gap: 1.3,
-              }}
-            >
-              {/* Active tender card */}
-              <Box
-                sx={{
-                  p: 1.35,
-                  borderRadius: "1.15rem",
-                  bgcolor: "#FFFFFF",
-                  border: "1px solid rgba(225,232,241,0.96)",
-                  boxShadow: "0 14px 28px rgba(16,29,51,0.04)",
-                }}
-              >
-                <Stack
-                  direction="row"
-                  justifyContent="space-between"
-                  alignItems="flex-start"
-                >
-                  <Box
-                    sx={{
-                      display: "inline-flex",
-                      px: 0.82,
-                      py: 0.34,
-                      borderRadius: "999px",
-                      bgcolor:
-                        activeLead?.status === "open_for_quotes"
-                          ? "#E7F318"
-                          : "#EEF4FF",
-                      color:
-                        activeLead?.status === "open_for_quotes"
-                          ? "#6C7300"
-                          : "#4F89FF",
-                      fontSize: "0.6rem",
-                      fontWeight: 800,
-                      lineHeight: 1,
-                    }}
-                  >
-                    {activeLead?.status === "open_for_quotes"
-                      ? "Bidding Live"
-                      : activeLead
-                        ? "Tender Active"
-                        : "No Tender Yet"}
-                  </Box>
-                  <GavelRoundedIcon
-                    sx={{ color: "#7A8799", fontSize: "1rem" }}
-                  />
-                </Stack>
-
-                <Typography
-                  sx={{
-                    mt: 1.05,
-                    color: "#223146",
-                    fontSize: "1rem",
-                    fontWeight: 800,
-                  }}
-                >
-                  {activeLead ? "Active Solar Tender" : "Start a Tender"}
-                </Typography>
-
-                <Stack spacing={0.7} sx={{ mt: 1 }}>
-                  <Box
-                    sx={{ p: 0.9, borderRadius: "0.9rem", bgcolor: "#F8FAFD" }}
-                  >
-                    <Stack direction="row" justifyContent="space-between">
-                      <Typography
-                        sx={{ color: "#6F7D8F", fontSize: "0.72rem" }}
-                      >
-                        Bids Received
-                      </Typography>
-                      <Typography
-                        sx={{
-                          color: "#223146",
-                          fontSize: "0.78rem",
-                          fontWeight: 800,
-                        }}
-                      >
-                        {leadQuotes.length}
-                      </Typography>
-                    </Stack>
-                  </Box>
-                  <Box
-                    sx={{ p: 0.9, borderRadius: "0.9rem", bgcolor: "#F8FAFD" }}
-                  >
-                    <Stack direction="row" justifyContent="space-between">
-                      <Typography
-                        sx={{ color: "#6F7D8F", fontSize: "0.72rem" }}
-                      >
-                        Best Offer
-                      </Typography>
-                      <Typography
-                        sx={{
-                          color: "#223146",
-                          fontSize: "0.9rem",
-                          fontWeight: 800,
-                        }}
-                      >
-                        {bestQuote ? formatPrice(bestQuote) : "Waiting"}
-                      </Typography>
-                    </Stack>
-                  </Box>
-                </Stack>
-
-                <Button
-                  variant="contained"
-                  component={RouterLink}
-                  to={
-                    leadQuotes.length > 0
-                      ? `/quotes/compare?leadId=${activeLead?.id}`
-                      : activeLead
-                        ? `/tenders/live?leadId=${activeLead.id}`
-                        : "/booking"
-                  }
-                  fullWidth
-                  sx={{
-                    mt: 1.05,
-                    minHeight: 36,
-                    borderRadius: "0.9rem",
-                    bgcolor: "#0E56C8",
-                    boxShadow: "0 12px 24px rgba(14,86,200,0.14)",
-                    fontSize: "0.72rem",
-                    fontWeight: 700,
-                    textTransform: "none",
-                  }}
-                >
-                  {leadQuotes.length > 0
-                    ? "View All Bids"
-                    : activeLead
-                      ? "Track Tender"
-                      : "New Booking"}
-                </Button>
-              </Box>
-
-              {/* Service request card */}
-              <Box
-                sx={{
-                  p: 1.35,
-                  borderRadius: "1.15rem",
-                  bgcolor: "#FFFFFF",
-                  border: "1px solid rgba(225,232,241,0.96)",
-                  boxShadow: "0 14px 28px rgba(16,29,51,0.04)",
-                }}
-              >
-                <Stack
-                  direction="row"
-                  justifyContent="space-between"
-                  alignItems="flex-start"
-                >
-                  <Box
-                    sx={{
-                      display: "inline-flex",
-                      px: 0.82,
-                      py: 0.34,
-                      borderRadius: "999px",
-                      bgcolor: activeServiceRequest ? "#DDF8E7" : "#F2F5F8",
-                      color: activeServiceRequest ? "#239654" : "#677487",
-                      fontSize: "0.6rem",
-                      fontWeight: 800,
-                      lineHeight: 1,
-                    }}
-                  >
-                    {activeServiceRequest
-                      ? "Support Active"
-                      : "No Active Ticket"}
-                  </Box>
-                  <BuildCircleOutlinedIcon
-                    sx={{ color: "#7A8799", fontSize: "1rem" }}
-                  />
-                </Stack>
-
-                <Typography
-                  sx={{
-                    mt: 1.05,
-                    color: "#223146",
-                    fontSize: "1rem",
-                    fontWeight: 800,
-                  }}
-                >
-                  {activeServiceRequest
-                    ? activeServiceRequest.type
-                        .replaceAll("_", " ")
-                        .replace(/\b\w/g, (c) => c.toUpperCase())
-                    : "Maintenance Service"}
-                </Typography>
-
-                <Box
-                  sx={{
-                    mt: 1,
-                    p: 0.95,
-                    borderRadius: "0.95rem",
-                    bgcolor: "#F8FAFD",
-                  }}
-                >
-                  {activeServiceRequest ? (
-                    <>
-                      <Stack direction="row" justifyContent="space-between">
-                        <Typography
-                          sx={{ color: "#6F7D8F", fontSize: "0.68rem" }}
-                        >
-                          Ticket ID
-                        </Typography>
-                        <Typography
-                          sx={{
-                            color: "#0E56C8",
-                            fontSize: "0.68rem",
-                            fontWeight: 800,
-                          }}
-                        >
-                          #{activeServiceRequest.ticketNumber}
-                        </Typography>
-                      </Stack>
-                      <Typography
-                        sx={{
-                          mt: 0.75,
-                          color: "#223146",
-                          fontSize: "0.78rem",
-                          fontWeight: 800,
-                        }}
-                      >
-                        {getServiceStatusLabel(activeServiceRequest.status)}
-                      </Typography>
-                      <Typography
-                        sx={{
-                          mt: 0.18,
-                          color: "#6F7D8F",
-                          fontSize: "0.7rem",
-                          lineHeight: 1.55,
-                        }}
-                      >
-                        {activeServiceRequest.description.length > 60
-                          ? `${activeServiceRequest.description.slice(0, 60)}…`
-                          : activeServiceRequest.description}
-                      </Typography>
-                    </>
-                  ) : (
-                    <Typography
-                      sx={{
-                        color: "#6F7D8F",
-                        fontSize: "0.74rem",
-                        lineHeight: 1.55,
-                      }}
-                    >
-                      No active service requests. Raise a ticket if you need
-                      maintenance or support.
-                    </Typography>
-                  )}
-                </Box>
-
-                <Button
-                  component={RouterLink}
-                  to={
-                    activeServiceRequest
-                      ? `/service-support/track?requestId=${activeServiceRequest.id}`
-                      : "/customer/services"
-                  }
-                  fullWidth
-                  sx={{
-                    mt: 1.05,
-                    minHeight: 36,
-                    borderRadius: "0.9rem",
-                    bgcolor: "#F3F6FB",
-                    color: "#223146",
-                    fontSize: "0.72rem",
-                    fontWeight: 700,
-                    textTransform: "none",
-                  }}
-                >
-                  {activeServiceRequest ? "Track Service ↗" : "Request Service"}
-                </Button>
-              </Box>
-            </Box>
-          </Box>
-
-          {/* Project milestone tracker */}
-          <Box
-            sx={{
-              mt: 1.55,
-              p: 1.45,
-              borderRadius: "1.2rem",
-              bgcolor: "#FFFFFF",
-              border: "1px solid rgba(225,232,241,0.96)",
-              boxShadow: "0 14px 28px rgba(16,29,51,0.04)",
-            }}
-          >
+          <CardShell sx={{ p: { xs: 2, md: 2.6 } }}>
             <Stack
-              direction={{ xs: "column", lg: "row" }}
+              direction={{ xs: "column", md: "row" }}
               justifyContent="space-between"
-              alignItems={{ xs: "flex-start", lg: "center" }}
-              spacing={1.3}
+              alignItems={{ xs: "flex-start", md: "center" }}
+              spacing={1.8}
             >
-              <Stack direction="row" spacing={0.95} alignItems="center">
-                <Box
-                  sx={{
-                    width: 34,
-                    height: 34,
-                    borderRadius: "0.9rem",
-                    bgcolor: "#EEF4FF",
-                    color: "#0E56C8",
-                    display: "grid",
-                    placeItems: "center",
-                    flexShrink: 0,
-                  }}
-                >
-                  <ApartmentRoundedIcon sx={{ fontSize: "1rem" }} />
+              <Stack direction="row" spacing={1.3} alignItems="center">
+                <Box sx={{ width: 46, height: 46, borderRadius: "1rem", bgcolor: "#EAF1FF", color: "#0E56C8", display: "grid", placeItems: "center" }}>
+                  <ApartmentRoundedIcon sx={{ fontSize: "1.25rem" }} />
                 </Box>
                 <Box>
-                  <Typography
-                    sx={{
-                      color: "#223146",
-                      fontSize: "1.02rem",
-                      fontWeight: 800,
-                    }}
-                  >
+                  <Typography sx={{ color: "#151B22", fontSize: "1.12rem", fontWeight: 900 }}>
                     {activeProject
-                      ? `Active Project — ${activeProject.system.sizeKw}kW Rooftop`
+                      ? `Active Project: ${activeProject.system.sizeKw}kW Rooftop`
                       : "No active project yet"}
                   </Typography>
-                  <Typography
-                    sx={{ mt: 0.12, color: "#7A8799", fontSize: "0.74rem" }}
-                  >
+                  <Typography sx={{ mt: 0.18, color: "#647387", fontSize: "0.76rem" }}>
                     {activeProject
-                      ? `Residential Installation · ${projectLocation}`
+                      ? `Residential Installation - ${projectLocation}`
                       : "Select a vendor quote to begin installation tracking"}
                   </Typography>
                 </Box>
@@ -881,19 +698,15 @@ export default function CustomerDashboardPage() {
               <Button
                 variant="contained"
                 component={RouterLink}
-                to={activeProject ? `/customer/projects` : "/customer/bookings"}
-                endIcon={
-                  <ArrowForwardRoundedIcon sx={{ fontSize: "0.9rem" }} />
-                }
+                to={activeProject ? "/customer/projects" : "/customer/bookings"}
                 sx={{
-                  minHeight: 36,
-                  px: 1.45,
-                  flexShrink: 0,
+                  minHeight: 38,
+                  px: 2.2,
                   borderRadius: "999px",
                   bgcolor: "#0E56C8",
-                  boxShadow: "0 12px 24px rgba(14,86,200,0.14)",
-                  fontSize: "0.72rem",
-                  fontWeight: 700,
+                  boxShadow: "0 14px 26px rgba(14,86,200,0.16)",
+                  fontSize: "0.74rem",
+                  fontWeight: 850,
                   textTransform: "none",
                 }}
               >
@@ -901,11 +714,7 @@ export default function CustomerDashboardPage() {
               </Button>
             </Stack>
 
-            <Stack
-              direction={{ xs: "column", md: "row" }}
-              spacing={{ xs: 2, md: 0 }}
-              sx={{ mt: 1.8 }}
-            >
+            <Stack direction={{ xs: "column", md: "row" }} spacing={{ xs: 2, md: 0 }} sx={{ mt: 2.7 }}>
               {milestones.map((item, index) => (
                 <MilestoneStep
                   key={item.label}
@@ -915,184 +724,38 @@ export default function CustomerDashboardPage() {
                 />
               ))}
             </Stack>
-          </Box>
+          </CardShell>
 
-          {/* Quick nav cards */}
           <Box
             sx={{
-              mt: 1.5,
-              display: "grid",
-              gridTemplateColumns: {
-                xs: "1fr",
-                sm: "repeat(2, 1fr)",
-                xl: "repeat(4, 1fr)",
-              },
-              gap: 1.3,
-            }}
-          >
-            {[
-              {
-                icon: <BoltOutlinedIcon sx={{ fontSize: "1rem" }} />,
-                iconBg: "#EEF4FF",
-                iconTone: "#0E56C8",
-                label: "My Projects",
-                value: String(projects.length),
-                sub: "installation projects",
-                to: "/customer/projects",
-              },
-              {
-                icon: <GavelRoundedIcon sx={{ fontSize: "1rem" }} />,
-                iconBg: "#F4F1C9",
-                iconTone: "#8B8600",
-                label: "My Tenders",
-                value: String(leads.length),
-                sub: "active requests",
-                to: "/customer/tenders",
-              },
-              {
-                icon: <SavingsOutlinedIcon sx={{ fontSize: "1rem" }} />,
-                iconBg: "#E8FAEF",
-                iconTone: "#239654",
-                label: "Savings",
-                value: formatCompact(savings.annual),
-                sub: "estimated per year",
-                to: "/customer/savings",
-              },
-              {
-                icon: <CardGiftcardRoundedIcon sx={{ fontSize: "1rem" }} />,
-                iconBg: "#FFF4E8",
-                iconTone: "#C47A00",
-                label: "Refer & Earn",
-                value: "₹5,000",
-                sub: "per referral",
-                to: "/customer/referrals",
-              },
-            ].map((card) => (
-              <Box
-                key={card.label}
-                component={RouterLink}
-                to={card.to}
-                sx={{
-                  p: 1.35,
-                  borderRadius: "1.15rem",
-                  bgcolor: "#FFFFFF",
-                  border: "1px solid rgba(225,232,241,0.96)",
-                  boxShadow: "0 14px 28px rgba(16,29,51,0.04)",
-                  textDecoration: "none",
-                  display: "block",
-                  transition: "all 0.18s cubic-bezier(0.4,0,0.2,1)",
-                  "&:hover": {
-                    boxShadow: "0 18px 36px rgba(16,29,51,0.08)",
-                    transform: "translateY(-2px)",
-                    borderColor: "rgba(14,86,200,0.18)",
-                  },
-                }}
-              >
-                <Stack
-                  direction="row"
-                  justifyContent="space-between"
-                  alignItems="flex-start"
-                >
-                  <Box
-                    sx={{
-                      width: 32,
-                      height: 32,
-                      borderRadius: "0.82rem",
-                      bgcolor: card.iconBg,
-                      color: card.iconTone,
-                      display: "grid",
-                      placeItems: "center",
-                    }}
-                  >
-                    {card.icon}
-                  </Box>
-                  <ArrowForwardRoundedIcon
-                    sx={{ color: "#C8D0DC", fontSize: "0.9rem", mt: 0.2 }}
-                  />
-                </Stack>
-                <Typography
-                  sx={{
-                    mt: 1.1,
-                    color: "#18253A",
-                    fontSize: "1.55rem",
-                    fontWeight: 800,
-                    lineHeight: 1.05,
-                  }}
-                >
-                  {card.value}
-                </Typography>
-                <Typography
-                  sx={{
-                    mt: 0.3,
-                    color: "#223146",
-                    fontSize: "0.82rem",
-                    fontWeight: 700,
-                  }}
-                >
-                  {card.label}
-                </Typography>
-                <Typography
-                  sx={{ mt: 0.15, color: "#7A8799", fontSize: "0.7rem" }}
-                >
-                  {card.sub}
-                </Typography>
-              </Box>
-            ))}
-          </Box>
-
-          {/* Solar tip */}
-          <Box
-            sx={{
-              mt: 1.55,
-              p: 1.35,
+              p: { xs: 1.8, md: 2.2 },
               borderRadius: "1.2rem",
               background: "linear-gradient(90deg, #F2F47D 0%, #F0F7A6 100%)",
               border: "1px solid rgba(227,233,167,0.95)",
-              boxShadow: "0 14px 28px rgba(16,29,51,0.04)",
+              boxShadow: "0 18px 42px rgba(17,32,49,0.055)",
             }}
           >
-            <Stack
-              direction={{ xs: "column", md: "row" }}
-              spacing={1.25}
-              alignItems={{ xs: "flex-start", md: "center" }}
-            >
+            <Stack direction={{ xs: "column", md: "row" }} spacing={1.8} alignItems={{ xs: "flex-start", md: "center" }}>
               <Box
                 component="img"
                 src={customerSolarTipPlaceholder}
                 alt="Solar tip"
-                sx={{
-                  width: 80,
-                  height: 80,
-                  borderRadius: "50%",
-                  objectFit: "cover",
-                  flexShrink: 0,
-                }}
+                sx={{ width: 92, height: 92, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }}
               />
               <Box>
-                <Typography
-                  sx={{ color: "#4C5A00", fontSize: "1rem", fontWeight: 800 }}
-                >
+                <Typography sx={{ color: "#596800", fontSize: "1rem", fontWeight: 900 }}>
                   Solar Pro-Tip: Optimize your morning usage
                 </Typography>
-                <Typography
-                  sx={{
-                    mt: 0.35,
-                    color: "#5D6A16",
-                    fontSize: "0.76rem",
-                    lineHeight: 1.68,
-                    maxWidth: 720,
-                  }}
-                >
-                  Your panels reach peak efficiency between 10:00 AM and 2:00
-                  PM. Schedule heavy appliances like your dishwasher or washing
-                  machine during this window to maximize direct consumption and
-                  save an additional ₹400 monthly.
+                <Typography sx={{ mt: 0.45, color: "#6B761E", fontSize: "0.8rem", lineHeight: 1.7, maxWidth: 760 }}>
+                  Your panels reach peak efficiency between 10:00 AM and 2:00 PM. Schedule heavy appliances
+                  like your dishwasher or washing machine during this window to maximize direct consumption
+                  and save an additional INR 400 monthly.
                 </Typography>
               </Box>
             </Stack>
           </Box>
-        </>
-      )}
+        </Stack>
+      ) : null}
     </Box>
   );
 }

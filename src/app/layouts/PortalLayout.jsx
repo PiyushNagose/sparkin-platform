@@ -1023,10 +1023,21 @@ export function PortalLayout({ portal }) {
           <Box
             sx={{
               width: "100%",
-              py: { xs: 3.8, md: 4.6 },
-              px: { xs: 2.2, md: 3.6, lg: 4.2 },
+              py:
+                portal === "customer"
+                  ? { xs: 4.4, md: 5.2, lg: 5.6 }
+                  : { xs: 3.8, md: 4.6 },
+              px:
+                portal === "customer"
+                  ? { xs: 2.2, md: 4, lg: 5 }
+                  : { xs: 2.2, md: 3.6, lg: 4.2 },
               flex: 1,
-              bgcolor: portal === "admin" ? "#F5F8F6" : "#FFFFFF",
+              bgcolor:
+                portal === "admin"
+                  ? "#F5F8F6"
+                  : portal === "customer"
+                    ? "#EEF4F1"
+                    : "#FFFFFF",
               borderLeft: { lg: "1px solid rgba(220,228,238,0.92)" },
               borderRight: { lg: "1px solid rgba(220,228,238,0.92)" },
               borderBottom: { lg: "1px solid rgba(220,228,238,0.92)" },
