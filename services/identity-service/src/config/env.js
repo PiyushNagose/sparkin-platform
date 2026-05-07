@@ -4,7 +4,9 @@ import { z } from "zod";
 dotenv.config();
 
 const envSchema = z.object({
-  NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
+  NODE_ENV: z
+    .enum(["development", "test", "production"])
+    .default("development"),
   PORT: z.coerce.number().int().positive().default(4001),
   SERVICE_NAME: z.string().min(1).default("identity-service"),
   CLIENT_URL: z.string().min(1).default("http://localhost:5173"),
@@ -23,6 +25,20 @@ if (!parsed.success) {
     .join("; ");
 
   throw new Error(`Invalid identity-service environment: ${message}`);
+}
+
+// Warn in production if JWT secrets look like the default dev values
+if (parsed.data.NODE_ENV === "production") {
+  if (parsed.data.JWT_ACCESS_SECRET.includes("dev-")) {
+    process.stderr.write(
+      "[identity-service] WARNING: JWT_ACCESS_SECRET appears to be the default dev value. Rotate before going live.\n",
+    );
+  }
+  if (parsed.data.JWT_REFRESH_SECRET.includes("dev-")) {
+    process.stderr.write(
+      "[identity-service] WARNING: JWT_REFRESH_SECRET appears to be the default dev value. Rotate before going live.\n",
+    );
+  }
 }
 
 export const env = {

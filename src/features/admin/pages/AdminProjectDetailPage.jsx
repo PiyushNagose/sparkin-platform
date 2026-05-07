@@ -33,7 +33,7 @@ import projectMapPlaceholder from "@/shared/assets/images/vendor/project/vendor-
 
 const fulfillmentOrigin = (
   import.meta.env.VITE_FULFILLMENT_API_BASE_URL ||
-  "http://localhost:4003/api/v1"
+  "http://localhost:4000/api/v1"
 ).replace(/\/api\/v1\/?$/, "");
 
 const TABS = ["Installation Details", "Customer Info", "Documents"];

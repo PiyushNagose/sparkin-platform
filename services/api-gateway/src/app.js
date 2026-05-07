@@ -26,9 +26,8 @@ export function createApp() {
     }),
   );
 
-  // Parse JSON bodies for any gateway-level processing
-  app.use(express.json({ limit: "8mb" }));
-  app.use(express.urlencoded({ extended: true }));
+  // Keep request bodies untouched so proxied POST/PATCH uploads and auth
+  // requests stream cleanly to downstream services.
 
   // Request tracking
   app.use(requestId);

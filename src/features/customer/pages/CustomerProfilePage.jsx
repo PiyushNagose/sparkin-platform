@@ -28,7 +28,7 @@ import customerProfileAvatarPlaceholder from "@/shared/assets/images/customer/pr
 
 const PREFS_KEY = "sparkin.customer.preferences";
 const IDENTITY_ORIGIN = (
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:4001/api/v1"
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:4000/api/v1"
 ).replace(/\/api\/v1\/?$/, "");
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
