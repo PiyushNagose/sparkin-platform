@@ -30,6 +30,7 @@ import DownloadRoundedIcon from "@mui/icons-material/DownloadRounded";
 import ErrorOutlineRoundedIcon from "@mui/icons-material/ErrorOutlineRounded";
 import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
 import PaymentsOutlinedIcon from "@mui/icons-material/PaymentsOutlined";
+import PrintOutlinedIcon from "@mui/icons-material/PrintOutlined";
 import RefreshRoundedIcon from "@mui/icons-material/RefreshRounded";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
@@ -47,6 +48,10 @@ import {
 } from "@/features/admin/components/AdminPortalUI";
 import { getAdminDashboardData } from "@/features/admin/api/adminApi";
 import { paymentsApi } from "@/features/public/api/paymentsApi";
+import {
+  downloadInvoicePdf,
+  printInvoiceHtml,
+} from "@/shared/invoice/InvoiceTemplate";
 
 const moneyFormatter = new Intl.NumberFormat("en-IN", {
   style: "currency",
@@ -884,6 +889,36 @@ export default function AdminPaymentsPage() {
                                 sx={{ color: "#0E56C8", fontSize: "1rem" }}
                               />
                             </IconButton>
+                            <Tooltip title="Download Invoice">
+                              <IconButton
+                                size="small"
+                                aria-label="Download invoice"
+                                onClick={() => downloadInvoicePdf(payment)}
+                                sx={{
+                                  color: "#0E56C8",
+                                  bgcolor: "#EAF2FF",
+                                  borderRadius: "0.6rem",
+                                  "&:hover": { bgcolor: "#DCE9FF" },
+                                }}
+                              >
+                                <DownloadRoundedIcon sx={{ fontSize: "1rem" }} />
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title="Print Invoice">
+                              <IconButton
+                                size="small"
+                                aria-label="Print invoice"
+                                onClick={() => printInvoiceHtml(payment)}
+                                sx={{
+                                  color: "#1F2C40",
+                                  bgcolor: "#EFF3F7",
+                                  borderRadius: "0.6rem",
+                                  "&:hover": { bgcolor: "#E3E9F0" },
+                                }}
+                              >
+                                <PrintOutlinedIcon sx={{ fontSize: "1rem" }} />
+                              </IconButton>
+                            </Tooltip>
                             {payment.status === "pending" && (
                               <Tooltip title="Mark as Paid">
                                 <IconButton

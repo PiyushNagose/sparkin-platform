@@ -10,6 +10,11 @@ import ReceiptLongOutlinedIcon from "@mui/icons-material/ReceiptLongOutlined";
 import { useEffect, useMemo, useState } from "react";
 import { Link as RouterLink, useParams } from "react-router-dom";
 import { paymentsApi } from "@/features/vendor/api/paymentsApi";
+import {
+  InvoiceTemplatePreview,
+  downloadInvoicePdf,
+  printInvoiceHtml,
+} from "@/shared/invoice/InvoiceTemplate";
 import invoiceBannerPlaceholder from "@/shared/assets/images/vendor/payments/invoice-banner-placeholder.png";
 
 const summaryStats = [
@@ -108,7 +113,7 @@ function getPaymentView(payment) {
     summaryStats: [
       ["Invoice ID", payment.invoiceNumber],
       ["Issued Date", formatDate(payment.createdAt)],
-      ["Status", payment.status.replaceAll("_", " ")],
+      ["Status", String(payment.status || "pending").replaceAll("_", " ")],
     ],
     customerRows: [
       ["Full Name", payment.customer.fullName],
@@ -236,7 +241,11 @@ export default function VendorInvoiceDetailPage() {
   }
 
   function downloadInvoice() {
-    downloadFile(`${payment?.invoiceNumber || invoiceId || "sparkin-invoice"}.csv`, buildInvoiceCsv());
+    if (payment) {
+      downloadInvoicePdf(payment);
+      return;
+    }
+    downloadFile(`${invoiceId || "sparkin-invoice"}.csv`, buildInvoiceCsv());
   }
 
   function shareInvoice() {
@@ -357,7 +366,13 @@ export default function VendorInvoiceDetailPage() {
           <Button
             variant="outlined"
             startIcon={<PrintOutlinedIcon />}
-            onClick={() => window.print()}
+            onClick={() => {
+              if (payment) {
+                printInvoiceHtml(payment);
+              } else {
+                window.print();
+              }
+            }}
             sx={{
               minHeight: 42,
               px: 1.6,
@@ -392,6 +407,12 @@ export default function VendorInvoiceDetailPage() {
           </Button>
         </Stack>
       </Stack>
+
+      {payment ? (
+        <Box sx={{ mb: 2.4 }}>
+          <InvoiceTemplatePreview payment={payment} />
+        </Box>
+      ) : null}
 
       <Box
         sx={{
