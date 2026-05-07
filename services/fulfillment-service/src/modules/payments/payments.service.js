@@ -148,27 +148,15 @@ export const paymentsService = {
 
   async listPayments(user) {
     if (user.role === "admin") {
-      const projects = await projectsRepository.findAll();
-      await Promise.all(
-        projects.map((project) => this.createScheduleForProject(project)),
-      );
       return attachProjects(await paymentsRepository.findAll());
     }
 
     if (user.role === "vendor") {
-      const projects = await projectsRepository.findForVendor(user.userId);
-      await Promise.all(
-        projects.map((project) => this.createScheduleForProject(project)),
-      );
       return attachProjects(
         await paymentsRepository.findForVendor(user.userId),
       );
     }
 
-    const projects = await projectsRepository.findForCustomer(user.userId);
-    await Promise.all(
-      projects.map((project) => this.createScheduleForProject(project)),
-    );
     return attachProjects(
       await paymentsRepository.findForCustomer(user.userId),
     );

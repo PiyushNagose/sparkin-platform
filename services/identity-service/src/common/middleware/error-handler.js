@@ -1,5 +1,6 @@
 import { ZodError } from "zod";
 import { AppError } from "../errors/app-error.js";
+import { logger } from "../utils/logger.js";
 
 export function errorHandler(error, req, res, next) {
   if (res.headersSent) {
@@ -15,12 +16,30 @@ export function errorHandler(error, req, res, next) {
   }
 
   if (error instanceof AppError) {
+    // Log 5xx AppErrors as warnings; 4xx are expected client errors
+    if (error.statusCode >= 500) {
+      logger.error("Application error", {
+        requestId: req.requestId,
+        method: req.method,
+        path: req.path,
+        statusCode: error.statusCode,
+        message: error.message,
+      });
+    }
     return res.status(error.statusCode).json({
       message: error.message,
       details: error.details ?? null,
       requestId: req.requestId,
     });
   }
+
+  logger.error("Unhandled error", {
+    requestId: req.requestId,
+    method: req.method,
+    path: req.path,
+    error: error.message,
+    stack: process.env.NODE_ENV !== "production" ? error.stack : undefined,
+  });
 
   return res.status(500).json({
     message: "Internal server error",

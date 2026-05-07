@@ -49,6 +49,7 @@ import { leadsApi, quotesApi } from "@/features/public/api/leadsApi";
 import { projectsApi } from "@/features/public/api/projectsApi";
 import { paymentsApi } from "@/features/public/api/paymentsApi";
 import { serviceRequestsApi } from "@/features/public/api/serviceRequestsApi";
+import { chatApi } from "@/features/chat/chatApi";
 
 // ─── constants ────────────────────────────────────────────────────────────────
 
@@ -91,10 +92,10 @@ const ADMIN_NAV_ICONS = {
   Reports: BarChartOutlinedIcon,
   Settings: SettingsOutlinedIcon,
   Notifications: NotificationsNoneRoundedIcon,
-  "Broadcast": CampaignOutlinedIcon,
+  Broadcast: CampaignOutlinedIcon,
   "Help Desk": HeadsetMicOutlinedIcon,
   "Vendor Applications": GroupAddOutlinedIcon,
-  "Offers": LocalOfferOutlinedIcon,
+  Offers: LocalOfferOutlinedIcon,
 };
 
 const VENDOR_SEARCH_ROUTES = [
@@ -364,6 +365,12 @@ export function PortalLayout({ portal }) {
     };
   }, [portal]);
 
+  // Register admin contact for chat — so vendors/customers can find the admin
+  useEffect(() => {
+    if (portal !== "admin") return;
+    chatApi.registerAdmin().catch(() => {});
+  }, [portal]);
+
   // ── notification config ────────────────────────────────────────────────────
 
   const notificationCount =
@@ -464,12 +471,12 @@ export function PortalLayout({ portal }) {
       await logout();
       navigate(
         portal === "admin"
-          ? "/auth/admin-login"
+          ? "/auth/login"
           : portal === "vendor"
             ? "/vendor/login"
             : "/auth/login",
         {
-        replace: true,
+          replace: true,
         },
       );
     },

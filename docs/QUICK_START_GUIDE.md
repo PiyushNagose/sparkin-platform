@@ -115,18 +115,18 @@ npm run dev
 
 ```bash
 cd services/identity-service
-node scripts/seed-admin.js
+npm run seed:admin
 ```
 
 This creates:
 
-- Email: admin@sparkin.com
-- Password: Admin@123
+- Email: admin@sparkin.local
+- Password: Admin@12345
 - Role: admin
 
 ### Step 2: Login as Admin
 
-1. Go to http://localhost:5173/login
+1. Go to http://localhost:5173/auth/login
 2. Enter admin credentials
 3. You'll be redirected to admin dashboard
 

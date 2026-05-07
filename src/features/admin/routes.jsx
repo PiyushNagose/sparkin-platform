@@ -6,6 +6,7 @@ import AdminBroadcastPage from "@/features/admin/pages/AdminBroadcastPage";
 import AdminHelpDeskPage from "@/features/admin/pages/AdminHelpDeskPage";
 import AdminLeadDetailPage from "@/features/admin/pages/AdminLeadDetailPage";
 import AdminLeadsPage from "@/features/admin/pages/AdminLeadsPage";
+import AdminPaymentDetailPage from "@/features/admin/pages/AdminPaymentDetailPage";
 import AdminPaymentsPage from "@/features/admin/pages/AdminPaymentsPage";
 import AdminProjectDetailPage from "@/features/admin/pages/AdminProjectDetailPage";
 import AdminProjectsPage from "@/features/admin/pages/AdminProjectsPage";
@@ -18,6 +19,7 @@ import AdminTicketDetailPage from "@/features/admin/pages/AdminTicketDetailPage"
 import AdminVendorApplicationsPage from "@/features/admin/pages/AdminVendorApplicationsPage";
 import AdminVendorApplicationDetailPage from "@/features/admin/pages/AdminVendorApplicationDetailPage";
 import AdminVendorAssignmentPage from "@/features/admin/pages/AdminVendorAssignmentPage";
+import AdminVendorDetailPage from "@/features/admin/pages/AdminVendorDetailPage";
 import AdminVendorsPage from "@/features/admin/pages/AdminVendorsPage";
 import AdminReferralManagementPage from "@/features/admin/pages/AdminReferralManagementPage";
 
@@ -40,7 +42,7 @@ export const adminRoutes = [
   },
   {
     path: "payments/:paymentId",
-    element: makeAdminPlaceholder("Payment Details"),
+    element: <AdminPaymentDetailPage />,
   },
   {
     path: "vendor-assignment",
@@ -52,7 +54,7 @@ export const adminRoutes = [
   },
   {
     path: "vendors/:vendorId",
-    element: makeAdminPlaceholder("Vendor Details"),
+    element: <AdminVendorDetailPage />,
   },
   {
     path: "bidding",
