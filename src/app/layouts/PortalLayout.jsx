@@ -54,7 +54,7 @@ import { chatApi } from "@/features/chat/chatApi";
 // ─── constants ────────────────────────────────────────────────────────────────
 
 const IDENTITY_ORIGIN = (
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:4001/api/v1"
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:4000/api/v1"
 ).replace(/\/api\/v1\/?$/, "");
 
 const VENDOR_NAV_ICONS = {

@@ -54,7 +54,7 @@ const STATUS_META = {
 };
 
 const BUSINESS_SERVICE_ORIGIN = (
-  import.meta.env.VITE_BUSINESS_API_BASE_URL || "http://localhost:4002/api/v1"
+  import.meta.env.VITE_BUSINESS_API_BASE_URL || "http://localhost:4000/api/v1"
 ).replace(/\/api\/v1\/?$/, "");
 
 // ─── helpers ──────────────────────────────────────────────────────────────────

@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { io } from "socket.io-client";
 
-// ── Fix: use VITE_BUSINESS_API_BASE_URL (port 4002) not VITE_API_BASE_URL (port 4001 / gateway)
-const SOCKET_URL = (
-  import.meta.env.VITE_BUSINESS_API_BASE_URL || "http://localhost:4002/api/v1"
-).replace(/\/api\/v1\/?$/, "");
+// Socket traffic connects directly to business-service for realtime chat.
+const SOCKET_URL =
+  import.meta.env.VITE_BUSINESS_SOCKET_URL || "http://localhost:4002";
 
 /**
  * Hook that manages a Socket.io connection to the business-service chat.
@@ -140,3 +139,4 @@ export function useChatSocket(token, { onNewRoom, onRoomUpdated } = {}) {
     seedMessages,
   };
 }
+

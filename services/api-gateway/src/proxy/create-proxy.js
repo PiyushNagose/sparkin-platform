@@ -11,11 +11,12 @@ export function createProxy(targetUrl, options = {}) {
   const { pathPrefix = "" } = options;
 
   return proxy(targetUrl, {
-    // Strip the gateway prefix so downstream receives /api/v1/...
+    // Use originalUrl so mounted gateway routes keep their full downstream path.
     proxyReqPathResolver(req) {
+      const originalPath = req.originalUrl || req.url;
       const path = pathPrefix
-        ? req.url.replace(new RegExp(`^${pathPrefix}`), "")
-        : req.url;
+        ? originalPath.replace(new RegExp(`^${pathPrefix}`), "")
+        : originalPath;
       return path || "/";
     },
 
@@ -35,7 +36,24 @@ export function createProxy(targetUrl, options = {}) {
 
     // Handle proxy errors (downstream service unreachable)
     proxyErrorHandler(err, res, next) {
-      console.error(`[api-gateway] Proxy error → ${targetUrl}: ${err.message}`);
+      const ts = new Date().toISOString();
+      const isProd = process.env.NODE_ENV === "production";
+      if (isProd) {
+        process.stdout.write(
+          JSON.stringify({
+            ts,
+            level: "error",
+            service: "api-gateway",
+            message: "Proxy error",
+            target: targetUrl,
+            error: err.message,
+          }) + "\n",
+        );
+      } else {
+        process.stderr.write(
+          `\x1b[31m[ERROR]\x1b[0m ${ts} [api-gateway] Proxy error → ${targetUrl}: ${err.message}\n`,
+        );
+      }
       res.status(502).json({
         message:
           "Downstream service is temporarily unavailable. Please try again.",

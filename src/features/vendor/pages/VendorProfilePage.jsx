@@ -31,7 +31,8 @@ import { VendorPageHeader, VendorPrimaryButton } from "@/features/vendor/compone
 import vendorProfileAvatar from "@/shared/assets/images/vendor/profile/vendor-profile-avatar-placeholder.svg";
 
 const tabs = ["Profile", "Business Details"];
-const identityApiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:4001/api/v1";
+const identityApiBaseUrl =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:4000/api/v1";
 const identityOrigin = identityApiBaseUrl.replace(/\/api\/v1\/?$/, "");
 
 const serviceItems = [

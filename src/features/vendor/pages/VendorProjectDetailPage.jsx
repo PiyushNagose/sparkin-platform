@@ -58,10 +58,10 @@ const customerInfoBlocks = [
   { title: "Current Stage", rows: ["Pending"] },
 ];
 
-const fulfillmentOrigin = (import.meta.env.VITE_FULFILLMENT_API_BASE_URL || "http://localhost:4003/api/v1").replace(
-  /\/api\/v1\/?$/,
-  "",
-);
+const fulfillmentOrigin = (
+  import.meta.env.VITE_FULFILLMENT_API_BASE_URL ||
+  "http://localhost:4000/api/v1"
+).replace(/\/api\/v1\/?$/, "");
 
 function formatPrice(value) {
   return new Intl.NumberFormat("en-IN", {

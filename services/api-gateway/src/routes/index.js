@@ -26,6 +26,19 @@ export function createRouter() {
     });
   });
 
+  // ── Static file uploads ──────────────────────────────────────────────────────
+  // Vendor documents are stored in business-service; project documents in fulfillment-service.
+  // Both services serve their own /uploads/* routes. The gateway proxies them here
+  // so the frontend only needs one base URL regardless of which service owns the file.
+  //
+  // URL pattern:
+  //   /uploads/vendor-documents/*   → business-service
+  //   /uploads/project-documents/*  → fulfillment-service
+  //   /uploads/*                    → identity-service (avatars)
+  router.use("/uploads/vendor-documents", standardRateLimit, businessProxy);
+  router.use("/uploads/project-documents", standardRateLimit, fulfillmentProxy);
+  router.use("/uploads", standardRateLimit, identityProxy);
+
   // ── Identity Service ─────────────────────────────────────────────────────────
   // Public auth routes (login, register, refresh) — rate limited
   router.use("/api/v1/auth", authRateLimit, identityProxy);

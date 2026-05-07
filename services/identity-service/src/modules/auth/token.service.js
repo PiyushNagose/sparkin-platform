@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import jwt from "jsonwebtoken";
 import { env } from "../../config/env.js";
 
@@ -11,6 +12,7 @@ export const tokenService = {
   createRefreshToken(payload) {
     return jwt.sign(payload, env.jwtRefreshSecret, {
       expiresIn: env.jwtRefreshTtl,
+      jwtid: crypto.randomUUID(),
     });
   },
 

@@ -4,13 +4,18 @@ import { z } from "zod";
 dotenv.config();
 
 const envSchema = z.object({
-  NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
+  NODE_ENV: z
+    .enum(["development", "test", "production"])
+    .default("development"),
   PORT: z.coerce.number().int().positive().default(4002),
   SERVICE_NAME: z.string().min(1).default("business-service"),
   CLIENT_URL: z.string().min(1).default("http://localhost:5173"),
   MONGODB_URI: z.string().min(1),
   JWT_ACCESS_SECRET: z.string().min(16),
-  FULFILLMENT_SERVICE_URL: z.string().url().default("http://localhost:4003/api/v1"),
+  FULFILLMENT_SERVICE_URL: z
+    .string()
+    .url()
+    .default("http://localhost:4003/api/v1"),
 });
 
 const parsed = envSchema.safeParse(process.env);
@@ -21,6 +26,16 @@ if (!parsed.success) {
     .join("; ");
 
   throw new Error(`Invalid business-service environment: ${message}`);
+}
+
+// Warn in production if JWT secret looks like the default dev value
+if (
+  parsed.data.NODE_ENV === "production" &&
+  parsed.data.JWT_ACCESS_SECRET.includes("dev-")
+) {
+  process.stderr.write(
+    "[business-service] WARNING: JWT_ACCESS_SECRET appears to be the default dev value. Rotate before going live.\n",
+  );
 }
 
 export const env = {
