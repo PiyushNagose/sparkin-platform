@@ -1,7 +1,8 @@
 export const publicPrimaryNav = [
   { label: "Home", href: "/" },
-  { label: "About Us", href: "/about-us" },
+  { label: "About", href: "/about-us" },
   { label: "Calculator", href: "/calculator" },
+  { label: "Vendors", href: "/vendors" },
   { label: "Partners", href: "/partners" },
   { label: "Resources", href: "/resources" },
 ];

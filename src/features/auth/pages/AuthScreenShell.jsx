@@ -602,38 +602,17 @@ export function AuthScreenShell({
             </Typography>
 
             {isSignup && (
-              <>
-                <Divider sx={{ pt: 0, "&::before, &::after": { borderColor: "#E5EAF2" } }}>
-                  <Typography
-                    sx={{
-                      color: "#98A2B3",
-                      fontSize: "0.7rem",
-                      fontWeight: 700,
-                      letterSpacing: "0.12em",
-                      textTransform: "uppercase",
-                    }}
-                  >
-                    Or sign up with
-                  </Typography>
-                </Divider>
-
-                <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
-                  <SocialButton onClick={() => handleUnavailableProvider("Google")}>Google</SocialButton>
-                  <SocialButton onClick={() => handleUnavailableProvider("Apple")}>Apple</SocialButton>
-                </Stack>
-
-                <Typography sx={{ color: "#98A2B3", fontSize: "0.7rem", lineHeight: 1.45, textAlign: "center" }}>
-                  By signing up, you agree to Sparkin Solar&apos;s{" "}
-                  <Box component={RouterLink} to="/terms" sx={{ color: "#0E56C8", textDecoration: "none", fontWeight: 700 }}>
-                    Terms of Service
-                  </Box>{" "}
-                  and{" "}
-                  <Box component={RouterLink} to="/privacy" sx={{ color: "#0E56C8", textDecoration: "none", fontWeight: 700 }}>
-                    Privacy Policy
-                  </Box>
-                  .
-                </Typography>
-              </>
+              <Typography sx={{ color: "#98A2B3", fontSize: "0.7rem", lineHeight: 1.45, textAlign: "center" }}>
+                By signing up, you agree to Sparkin Solar&apos;s{" "}
+                <Box component={RouterLink} to="/terms" sx={{ color: "#0E56C8", textDecoration: "none", fontWeight: 700 }}>
+                  Terms of Service
+                </Box>{" "}
+                and{" "}
+                <Box component={RouterLink} to="/privacy" sx={{ color: "#0E56C8", textDecoration: "none", fontWeight: 700 }}>
+                  Privacy Policy
+                </Box>
+                .
+              </Typography>
             )}
 
             {!isSignup && (
