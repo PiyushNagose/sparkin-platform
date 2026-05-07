@@ -14,6 +14,26 @@ const stateRateSchema = new mongoose.Schema(
   { _id: false },
 );
 
+const discomSchema = new mongoose.Schema(
+  {
+    id: { type: String, trim: true, required: true },
+    stateKey: {
+      type: String,
+      enum: ["andhra_pradesh", "telangana", "karnataka"],
+      required: true,
+    },
+    name: { type: String, trim: true, required: true },
+    code: { type: String, trim: true, required: true },
+    status: {
+      type: String,
+      enum: ["active", "disabled"],
+      default: "active",
+      required: true,
+    },
+  },
+  { _id: false },
+);
+
 const platformSettingsSchema = new mongoose.Schema(
   {
     settingsId: {
@@ -38,6 +58,7 @@ const platformSettingsSchema = new mongoose.Schema(
       residentialOnly: { type: Boolean, default: true },
     },
     states: [stateRateSchema],
+    discoms: [discomSchema],
     updatedBy: { type: String, trim: true, default: "" },
   },
   {

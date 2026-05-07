@@ -21,6 +21,11 @@ export const vendorsController = {
     res.status(200).json({ vendorProfile });
   },
 
+  async getPublicByVendorId(req, res) {
+    const vendorProfile = await vendorsService.getPublicVendorProfile(req.params.vendorId);
+    res.status(200).json({ vendorProfile });
+  },
+
   async updateMe(req, res) {
     const vendorProfile = await vendorsService.updateMyProfile(req.auth, req.body);
     res.status(200).json({ vendorProfile });

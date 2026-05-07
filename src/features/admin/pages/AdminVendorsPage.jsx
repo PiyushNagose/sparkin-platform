@@ -53,7 +53,7 @@ function getLocation(vendor) {
 }
 
 function getStatus(vendor) {
-  if (vendor.verificationStatus === "verified" || vendor.verificationStatus === "submitted") {
+  if (vendor.verificationStatus === "verified") {
     return { key: "active", label: "Active", color: "#10985E", bg: "#DDF8E7" };
   }
   if (vendor.verificationStatus === "rejected") {
@@ -73,7 +73,9 @@ function buildVendorRows(data) {
   const quotes = data?.quotes || [];
   const vendors = data?.vendors || [];
 
-  return vendors.map((vendor) => {
+  return vendors
+    .filter((vendor) => vendor.verificationStatus === "verified")
+    .map((vendor) => {
     const assignedLeads = leads.filter((lead) => lead.assignedVendorIds?.includes(vendor.vendorId));
     const vendorQuotes = quotes.filter((quote) => quote.vendorId === vendor.vendorId);
     const rejectedQuotes = vendorQuotes.filter((quote) => quote.status === "rejected");
@@ -87,7 +89,7 @@ function buildVendorRows(data) {
       rejectedCount: rejectedQuotes.length,
       capacityMw: Number(vendor.company?.totalCapacityMw || 0),
     };
-  });
+    });
 }
 
 function StatusPill({ status }) {

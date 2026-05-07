@@ -613,8 +613,8 @@ export default function CustomerReferralEarningsPage() {
                   zIndex: 1,
                 }}
               >
-                Earn ₹5,000 for every home that goes solar with your unique
-                referral link.
+                Earn {formatPrice(dashboard.summary?.rewardAmount || 0)} for every
+                home that goes solar with your unique referral link.
               </Typography>
               <Button
                 component={RouterLink}

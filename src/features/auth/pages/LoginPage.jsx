@@ -5,6 +5,7 @@ export default function LoginPage() {
   return (
     <AuthScreenShell
       mode="login"
+      fixedRole="customer"
       title="Welcome Back"
       subtitle="Please enter your details to access your dashboard."
       heroEyebrow="Atmospheric Precision"

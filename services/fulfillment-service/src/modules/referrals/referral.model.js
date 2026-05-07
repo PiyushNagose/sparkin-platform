@@ -5,6 +5,12 @@ const referralSchema = new mongoose.Schema(
     referrerId: { type: String, required: true, index: true },
     referrerEmail: { type: String, trim: true, lowercase: true, default: null },
     referralCode: { type: String, required: true, index: true },
+    channel: {
+      type: String,
+      enum: ["direct_invite", "social_share", "email_campaign"],
+      default: "direct_invite",
+      index: true,
+    },
     friend: {
       fullName: { type: String, trim: true, required: true },
       email: { type: String, trim: true, lowercase: true, required: true },

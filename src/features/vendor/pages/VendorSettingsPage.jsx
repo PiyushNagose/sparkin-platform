@@ -156,7 +156,7 @@ export default function VendorSettingsPage() {
     try {
       await logout();
     } finally {
-      navigate("/auth/login", { replace: true });
+      navigate("/vendor/login", { replace: true });
     }
   }
 

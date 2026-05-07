@@ -156,6 +156,9 @@ export function AuthScreenShell({
           "radial-gradient(circle at 64% 82%, rgba(178,220,255,0.16) 0%, rgba(178,220,255,0) 38%)",
         ].join(", ");
 
+  const loginLink = fixedRole === "vendor" ? "/vendor/login" : "/auth/login";
+  const signupLink = fixedRole === "vendor" ? "/vendor/signup" : "/auth/signup";
+
   function getRedirectPath(user) {
     if (isSignup && user.role === "vendor") {
       return "/vendor/onboarding";
@@ -163,7 +166,11 @@ export function AuthScreenShell({
 
     const fromPath = location.state?.from?.pathname;
 
-    const isAuthPath = fromPath === "/auth/login" || fromPath === "/auth/signup";
+    const isAuthPath =
+      fromPath === "/auth/login" ||
+      fromPath === "/auth/signup" ||
+      fromPath === "/vendor/login" ||
+      fromPath === "/vendor/signup";
     const isVendorPath = fromPath?.startsWith("/vendor");
     const canUseFromPath =
       fromPath &&
@@ -582,7 +589,7 @@ export function AuthScreenShell({
               {isSignup ? "Already have an account? " : "Don't have an account? "}
               <Typography
                 component={RouterLink}
-                to={isSignup ? "/auth/login" : "/auth/signup"}
+                to={isSignup ? loginLink : signupLink}
                 sx={{
                   color: "#0E56C8",
                   fontSize: "0.94rem",

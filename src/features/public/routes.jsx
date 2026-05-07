@@ -92,6 +92,10 @@ export const publicRoutes = [
     element: <CalculatorUnavailablePage />,
   },
   {
+    path: "partners",
+    element: <TrustedPartnersPage />,
+  },
+  {
     path: "vendors",
     element: <VendorDiscoveryPage />,
   },

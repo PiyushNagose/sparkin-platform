@@ -1,6 +1,7 @@
 import { AppError } from "../../common/errors/app-error.js";
 import { fulfillmentClient } from "../../common/http/fulfillment-client.js";
 import { leadsRepository } from "../leads/leads.repository.js";
+import { vendorsRepository } from "../vendors/vendors.repository.js";
 import { quotesRepository } from "./quotes.repository.js";
 import mongoose from "mongoose";
 
@@ -25,6 +26,14 @@ export const quotesService = {
   async createQuote(user, leadId, input) {
     if (user.role !== "vendor" && user.role !== "admin") {
       throw new AppError(403, "Only vendors can submit quotes");
+    }
+
+    if (user.role === "vendor") {
+      const vendorProfile = await vendorsRepository.findByVendorId(user.userId);
+
+      if (vendorProfile?.verificationStatus !== "verified") {
+        throw new AppError(403, "Vendor account is waiting for admin approval");
+      }
     }
 
     if (!mongoose.isValidObjectId(leadId)) {
@@ -123,6 +132,12 @@ export const quotesService = {
     }
 
     if (user.role === "vendor") {
+      const vendorProfile = await vendorsRepository.findByVendorId(user.userId);
+
+      if (vendorProfile?.verificationStatus !== "verified") {
+        throw new AppError(403, "Vendor account is waiting for admin approval");
+      }
+
       return attachLeads(
         await quotesRepository.findQuotesByVendor(user.userId),
       );

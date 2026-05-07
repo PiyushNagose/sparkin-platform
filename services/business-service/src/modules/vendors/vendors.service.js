@@ -118,6 +118,16 @@ export const vendorsService = {
     return profile;
   },
 
+  async getPublicVendorProfile(vendorId) {
+    const profile = await vendorsRepository.findByVendorId(vendorId);
+
+    if (!profile || profile.verificationStatus !== "verified") {
+      throw new AppError(404, "Approved vendor profile not found");
+    }
+
+    return profile;
+  },
+
   async updateMyProfile(user, input) {
     assertVendor(user);
     await ensureProfile(user);
