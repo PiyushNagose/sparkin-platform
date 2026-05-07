@@ -38,6 +38,21 @@ export const offersRepository = {
     return { offers: normalizeMany(offers), total };
   },
 
+  async findPublicActive({ limit = 3 } = {}) {
+    const now = new Date();
+    const offers = await OfferModel.find({
+      status: "active",
+      campaignType: "public",
+      validFrom: { $lte: now },
+      validTo: { $gte: now },
+    })
+      .sort({ usedCount: -1, createdAt: -1 })
+      .limit(limit)
+      .lean({ virtuals: true });
+
+    return normalizeMany(offers);
+  },
+
   async findById(id) {
     const doc = await OfferModel.findById(id).lean({ virtuals: true });
     return normalize(doc);

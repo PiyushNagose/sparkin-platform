@@ -9,6 +9,10 @@ import PhoneOutlinedIcon from "@mui/icons-material/PhoneOutlined";
 import VisibilityOffOutlinedIcon from "@mui/icons-material/VisibilityOffOutlined";
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import { useAuth } from "@/features/auth/AuthProvider";
+import { referralsApi } from "@/features/customer/api/referralsApi";
+import {
+  getReferralAttribution,
+} from "@/features/customer/referrals/referralTracking";
 
 const accountTypes = ["customer", "vendor"];
 
@@ -164,6 +168,10 @@ export function AuthScreenShell({
       return "/vendor/onboarding";
     }
 
+    if (user.role === "customer" && getReferralAttribution()?.referralCode) {
+      return "/booking";
+    }
+
     const fromPath = location.state?.from?.pathname;
 
     const isAuthPath =
@@ -247,6 +255,11 @@ export function AuthScreenShell({
         await logout();
         setError(`This account is registered as ${user.role === "vendor" ? "a vendor" : "a user"}. Please choose the matching account type.`);
         return;
+      }
+
+      const referralAttribution = getReferralAttribution();
+      if (user.role === "customer" && referralAttribution?.referralCode) {
+        referralsApi.trackSignup(referralAttribution).catch(() => {});
       }
 
       navigate(getRedirectPath(user), { replace: true });

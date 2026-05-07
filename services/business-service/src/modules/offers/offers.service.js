@@ -82,6 +82,14 @@ export const offersService = {
     });
   },
 
+  async listPublicOffers(query = {}) {
+    const limit = Math.min(6, Math.max(1, parseInt(query.limit) || 3));
+    return {
+      offers: await offersRepository.findPublicActive({ limit }),
+      total: limit,
+    };
+  },
+
   async getOffer(user, offerId) {
     if (user.role !== "admin")
       throw new AppError(403, "Only admins can view offers");

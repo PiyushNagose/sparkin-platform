@@ -14,7 +14,7 @@ function makeReferralCode(user) {
 }
 
 function buildReferralLink(code) {
-  return `https://sparkin.in/ref/${encodeURIComponent(code)}`;
+  return `/ref/${encodeURIComponent(code)}`;
 }
 
 function buildSummary(user, referrals, settings) {
@@ -52,6 +52,12 @@ export const referralsService = {
     }
 
     const settings = await referralSettingsRepository.getSettings();
+    const referralCode = makeReferralCode(user);
+    await referralsRepository.ensureReferralCode({
+      referrerId: user.userId,
+      referrerEmail: user.email ?? null,
+      referralCode,
+    });
     const referrals = await referralsRepository.findForCustomer(user.userId);
 
     return {
@@ -116,6 +122,11 @@ export const referralsService = {
     }
 
     const referralCode = makeReferralCode(user);
+    await referralsRepository.ensureReferralCode({
+      referrerId: user.userId,
+      referrerEmail: user.email ?? null,
+      referralCode,
+    });
     const referral = await referralsRepository.create({
       referrerId: user.userId,
       referrerEmail: user.email ?? null,
@@ -144,5 +155,74 @@ export const referralsService = {
       referral,
       summary: buildSummary(user, referrals, settings),
     };
+  },
+
+  async trackSignup(user, input) {
+    if (user.role !== "customer") {
+      throw new AppError(403, "Only customers can use referral links");
+    }
+
+    const settings = await referralSettingsRepository.getSettings();
+    if (!settings.programActive) {
+      throw new AppError(409, "Referral program is currently inactive");
+    }
+
+    const codeRecord = await referralsRepository.findReferralCode(input.referralCode);
+    if (!codeRecord) {
+      throw new AppError(404, "Referral code not found");
+    }
+
+    if (codeRecord.referrerId === user.userId) {
+      throw new AppError(400, "You cannot use your own referral code");
+    }
+
+    const existing = await referralsRepository.findByReferredUserId(user.userId);
+    if (
+      ["installed", "rewarded"].includes(existing?.status) ||
+      ["earned", "paid"].includes(existing?.rewardStatus)
+    ) {
+      return { referral: existing };
+    }
+
+    const referral = await referralsRepository.upsertTrackedReferral({
+      codeRecord,
+      user,
+      channel: input.channel || "direct_invite",
+      status: "signed_up",
+      rewardAmount: settings.rewardAmount,
+    });
+
+    return { referral };
+  },
+
+  async trackBooking(user, input) {
+    if (user.role !== "customer") {
+      throw new AppError(403, "Only customers can complete referral bookings");
+    }
+
+    const settings = await referralSettingsRepository.getSettings();
+    if (!settings.programActive) {
+      throw new AppError(409, "Referral program is currently inactive");
+    }
+
+    const codeRecord = await referralsRepository.findReferralCode(input.referralCode);
+    if (!codeRecord) {
+      throw new AppError(404, "Referral code not found");
+    }
+
+    if (codeRecord.referrerId === user.userId) {
+      throw new AppError(400, "You cannot use your own referral code");
+    }
+
+    const referral = await referralsRepository.upsertTrackedReferral({
+      codeRecord,
+      user,
+      channel: input.channel || "direct_invite",
+      status: "installed",
+      leadId: input.leadId,
+      rewardAmount: settings.rewardAmount,
+    });
+
+    return { referral };
   },
 };

@@ -12,4 +12,17 @@ export const referralsApi = {
     invalidateRequestCache("/referrals");
     return data;
   },
+
+  async trackSignup(payload) {
+    const { data } = await fulfillmentClient.post("/referrals/track-signup", payload);
+    invalidateRequestCache("/referrals");
+    return data.referral;
+  },
+
+  async trackBooking(payload) {
+    const { data } = await fulfillmentClient.post("/referrals/track-booking", payload);
+    invalidateRequestCache("/referrals");
+    invalidateRequestCache("/referrals/admin/all");
+    return data.referral;
+  },
 };

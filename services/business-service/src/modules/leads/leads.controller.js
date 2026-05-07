@@ -6,6 +6,11 @@ export const leadsController = {
     res.status(201).json({ lead });
   },
 
+  async analyzeRoof(req, res) {
+    const analysis = await leadsService.analyzeRoof(req.auth, req.body);
+    res.status(200).json({ analysis });
+  },
+
   async list(req, res) {
     const leads = await leadsService.listLeads(req.auth);
     const page = parseInt(req.query.page, 10) || 0;

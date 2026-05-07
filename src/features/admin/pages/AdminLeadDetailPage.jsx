@@ -47,12 +47,12 @@ function getPlatformPricePerKw() {
   return 55000;
 }
 
-// Correct flow: New -> Verified -> Payment -> Assigned -> Bidding
+// Correct flow: New -> Verified -> Assigned -> Payment -> Bidding
 const verificationSteps = [
   { key: "submitted", label: "New", icon: RequestQuoteOutlinedIcon },
   { key: "verified", label: "Verified", icon: VerifiedOutlinedIcon },
-  { key: "payment", label: "Payment", icon: PaymentsOutlinedIcon },
   { key: "assigned", label: "Assigned", icon: GroupAddOutlinedIcon },
+  { key: "payment", label: "Payment", icon: PaymentsOutlinedIcon },
   { key: "bidding", label: "Bidding", icon: GavelOutlinedIcon },
 ];
 
@@ -114,11 +114,21 @@ function getDefaultCommercialRange(lead, settings) {
 }
 
 function getActiveStep(lead, quoteCount) {
-  // New -> Verified -> Payment -> Assigned -> Bidding
-  if (quoteCount > 0 || lead.status === "quote_selected") return "bidding";
-  if (lead.assignedVendorIds?.length > 0) return "assigned";
+  if (
+    quoteCount > 0 ||
+    ["open_for_quotes", "quote_selected"].includes(lead.status)
+  )
+    return "bidding";
   if (lead.commitmentFeePaid) return "payment";
-  if (lead.status === "open_for_quotes") return "verified";
+  if (lead.assignedVendorIds?.length > 0 || lead.status === "vendors_assigned")
+    return "assigned";
+  if (
+    lead.verifiedAt ||
+    ["verified", "vendors_assigned", "open_for_quotes", "quote_selected"].includes(
+      lead.status,
+    )
+  )
+    return "verified";
   return "submitted";
 }
 
@@ -378,13 +388,20 @@ export default function AdminLeadDetailPage() {
       (project) => String(project.leadId) === String(lead.id),
     );
     const activeStep = getActiveStep(lead, quotes.length);
+    const isVerified =
+      Boolean(lead.verifiedAt) ||
+      ["verified", "vendors_assigned", "open_for_quotes", "quote_selected"].includes(
+        lead.status,
+      );
 
     return {
       lead,
       quotes,
       projects,
       activeStep,
-      canAssignVendor: lead.status === "open_for_quotes",
+      isVerified,
+      canAssignVendor:
+        isVerified && !["quote_selected", "closed"].includes(lead.status),
     };
   }, [state.data]);
 
@@ -464,7 +481,7 @@ export default function AdminLeadDetailPage() {
         };
       }
       await leadsApi.updateLeadDetails(leadId, payload);
-      await leadsApi.updateLeadStatus(leadId, { status: "open_for_quotes" });
+      await leadsApi.updateLeadStatus(leadId, { status: "verified" });
       await loadDetail();
     } catch (error) {
       setActionError(
@@ -487,7 +504,10 @@ export default function AdminLeadDetailPage() {
     );
   }
 
-  const { lead, quotes, projects, activeStep, canAssignVendor } = detail;
+  const { lead, quotes, projects, activeStep, canAssignVendor, isVerified } =
+    detail;
+  const hasAssignedVendors =
+    lead.assignedVendorIds?.length > 0 || lead.status === "vendors_assigned";
 
   return (
     <AdminPageShell>
@@ -908,7 +928,7 @@ export default function AdminLeadDetailPage() {
             Verification Actions
           </Typography>
 
-          {/* Step 1 — Payment */}
+          {/* Step 1 — Lead Verification */}
           <Typography
             sx={{
               color: adminUi.colors.muted,
@@ -919,9 +939,9 @@ export default function AdminLeadDetailPage() {
               mb: 1,
             }}
           >
-            Step 1 — Commitment Payment
+            Step 1 — Lead Verification
           </Typography>
-          {lead.commitmentFeePaid ? (
+          {isVerified ? (
             <Box
               sx={{
                 p: 1.4,
@@ -934,62 +954,66 @@ export default function AdminLeadDetailPage() {
               <Typography
                 sx={{ color: "#10985E", fontSize: "0.78rem", fontWeight: 900 }}
               >
-                ✓ Commitment fee received
-                {lead.commitmentFeePaidAt
-                  ? ` · ${new Date(lead.commitmentFeePaidAt).toLocaleDateString("en-IN")}`
+                Verified
+                {lead.verifiedAt
+                  ? ` · ${new Date(lead.verifiedAt).toLocaleDateString("en-IN")}`
                   : ""}
               </Typography>
             </Box>
           ) : (
-            <Stack spacing={1} sx={{ mb: 2 }}>
-              <Box
-                sx={{
-                  p: 1.4,
-                  borderRadius: "0.85rem",
-                  bgcolor: "#FFF8E6",
-                  border: "1px solid #F0C419",
-                }}
+            <Stack spacing={1.2} sx={{ mb: 2 }}>
+              <AdminPrimaryButton
+                fullWidth
+                startIcon={<SettingsSuggestOutlinedIcon />}
+                disabled={isUpdating}
+                onClick={verifyLead}
+                sx={{ minHeight: 50, borderRadius: "999px", fontSize: "0.88rem" }}
               >
-                <Typography
-                  sx={{
-                    color: "#7A6B00",
-                    fontSize: "0.76rem",
-                    fontWeight: 800,
-                  }}
-                >
-                  ⏳ Awaiting customer payment
-                </Typography>
-                <Typography
-                  sx={{ color: "#9A8A20", fontSize: "0.68rem", mt: 0.3 }}
-                >
-                  Customer must pay the 10% commitment fee before verification.
-                </Typography>
-              </Box>
+                {isUpdating ? "Verifying..." : "Mark as Verified"}
+              </AdminPrimaryButton>
               <Button
                 fullWidth
-                startIcon={<PaymentsOutlinedIcon />}
-                disabled={isUpdating}
-                onClick={markPaymentReceived}
+                startIcon={<HelpOutlineRoundedIcon />}
+                disabled={isUpdating || lead.status === "reviewing"}
+                onClick={() => updateStatus("reviewing")}
                 sx={{
                   minHeight: 46,
                   borderRadius: "999px",
-                  bgcolor: "#FFF5D6",
-                  color: "#7A6B00",
-                  border: "1.5px solid #F0C419",
+                  bgcolor: "#E1E4E8",
+                  color: "#1F2C40",
                   fontSize: "0.84rem",
                   fontWeight: 850,
                   textTransform: "none",
-                  "&:hover": { bgcolor: "#FFF0B0" },
+                  "&:hover": { bgcolor: "#D6DBE1" },
                 }}
               >
-                {isUpdating ? "Updating..." : "Confirm Payment Received"}
+                Need More Info
+              </Button>
+              <Button
+                fullWidth
+                startIcon={<CloseRoundedIcon />}
+                disabled={isUpdating || lead.status === "closed"}
+                onClick={() => updateStatus("closed")}
+                sx={{
+                  minHeight: 46,
+                  borderRadius: "999px",
+                  border: "1.5px solid #FFC9C9",
+                  bgcolor: "#FFF7F7",
+                  color: "#E32626",
+                  fontSize: "0.84rem",
+                  fontWeight: 850,
+                  textTransform: "none",
+                  "&:hover": { bgcolor: "#FFECEC" },
+                }}
+              >
+                Reject Lead
               </Button>
             </Stack>
           )}
 
           <Box sx={{ my: 2, borderTop: "1px solid #E5EAF1" }} />
 
-          {/* Step 2 — Verify */}
+          {/* Step 2 — Assign Vendors */}
           <Typography
             sx={{
               color: adminUi.colors.muted,
@@ -1000,73 +1024,7 @@ export default function AdminLeadDetailPage() {
               mb: 1,
             }}
           >
-            Step 2 — Lead Verification
-          </Typography>
-          <Stack spacing={1.2} sx={{ mb: 2 }}>
-            <AdminPrimaryButton
-              fullWidth
-              startIcon={<SettingsSuggestOutlinedIcon />}
-              disabled={isUpdating || lead.status === "open_for_quotes"}
-              onClick={verifyLead}
-              sx={{ minHeight: 50, borderRadius: "999px", fontSize: "0.88rem" }}
-            >
-              {lead.status === "open_for_quotes"
-                ? "✓ Verified"
-                : "Mark as Verified"}
-            </AdminPrimaryButton>
-            <Button
-              fullWidth
-              startIcon={<HelpOutlineRoundedIcon />}
-              disabled={isUpdating || lead.status === "reviewing"}
-              onClick={() => updateStatus("reviewing")}
-              sx={{
-                minHeight: 46,
-                borderRadius: "999px",
-                bgcolor: "#E1E4E8",
-                color: "#1F2C40",
-                fontSize: "0.84rem",
-                fontWeight: 850,
-                textTransform: "none",
-                "&:hover": { bgcolor: "#D6DBE1" },
-              }}
-            >
-              Need More Info
-            </Button>
-            <Button
-              fullWidth
-              startIcon={<CloseRoundedIcon />}
-              disabled={isUpdating || lead.status === "closed"}
-              onClick={() => updateStatus("closed")}
-              sx={{
-                minHeight: 46,
-                borderRadius: "999px",
-                border: "1.5px solid #FFC9C9",
-                bgcolor: "#FFF7F7",
-                color: "#E32626",
-                fontSize: "0.84rem",
-                fontWeight: 850,
-                textTransform: "none",
-                "&:hover": { bgcolor: "#FFECEC" },
-              }}
-            >
-              Reject Lead
-            </Button>
-          </Stack>
-
-          <Box sx={{ my: 2, borderTop: "1px solid #E5EAF1" }} />
-
-          {/* Step 3 — Assign Vendor */}
-          <Typography
-            sx={{
-              color: adminUi.colors.muted,
-              fontSize: "0.68rem",
-              fontWeight: 900,
-              letterSpacing: "0.08em",
-              textTransform: "uppercase",
-              mb: 1,
-            }}
-          >
-            Step 3 — Assign Vendors {canAssignVendor ? "" : "(Locked)"}
+            Step 2 — Assign Vendors {canAssignVendor ? "" : "(Locked)"}
           </Typography>
           <Button
             fullWidth
@@ -1089,8 +1047,98 @@ export default function AdminLeadDetailPage() {
               "&:hover": { bgcolor: canAssignVendor ? "#DCE9FF" : "#EDF1F6" },
             }}
           >
-            Assign Vendor
+            {hasAssignedVendors ? "Manage Assigned Vendors" : "Assign Vendor"}
           </Button>
+
+          <Box sx={{ my: 2, borderTop: "1px solid #E5EAF1" }} />
+
+          {/* Step 3 — Payment */}
+          <Typography
+            sx={{
+              color: adminUi.colors.muted,
+              fontSize: "0.68rem",
+              fontWeight: 900,
+              letterSpacing: "0.08em",
+              textTransform: "uppercase",
+              mb: 1,
+            }}
+          >
+            Step 3 — Commitment Payment
+          </Typography>
+          {lead.commitmentFeePaid ? (
+            <Box
+              sx={{
+                p: 1.4,
+                borderRadius: "0.85rem",
+                bgcolor: "#E7F8EF",
+                border: "1px solid #B8EAC8",
+              }}
+            >
+              <Typography
+                sx={{ color: "#10985E", fontSize: "0.78rem", fontWeight: 900 }}
+              >
+                Commitment fee received
+                {lead.commitmentFeePaidAt
+                  ? ` · ${new Date(lead.commitmentFeePaidAt).toLocaleDateString("en-IN")}`
+                  : ""}
+              </Typography>
+            </Box>
+          ) : (
+            <Stack spacing={1}>
+              <Box
+                sx={{
+                  p: 1.4,
+                  borderRadius: "0.85rem",
+                  bgcolor: hasAssignedVendors ? "#FFF8E6" : "#F3F5F8",
+                  border: hasAssignedVendors
+                    ? "1px solid #F0C419"
+                    : "1px solid #DDE5EF",
+                }}
+              >
+                <Typography
+                  sx={{
+                    color: hasAssignedVendors ? "#7A6B00" : "#667386",
+                    fontSize: "0.76rem",
+                    fontWeight: 800,
+                  }}
+                >
+                  {hasAssignedVendors
+                    ? "Awaiting customer payment"
+                    : "Assign vendors before collecting payment"}
+                </Typography>
+                <Typography
+                  sx={{
+                    color: hasAssignedVendors ? "#9A8A20" : "#7D8999",
+                    fontSize: "0.68rem",
+                    mt: 0.3,
+                  }}
+                >
+                  Payment opens the bidding window for assigned vendors.
+                </Typography>
+              </Box>
+              <Button
+                fullWidth
+                startIcon={<PaymentsOutlinedIcon />}
+                disabled={isUpdating || !hasAssignedVendors}
+                onClick={markPaymentReceived}
+                sx={{
+                  minHeight: 46,
+                  borderRadius: "999px",
+                  bgcolor: hasAssignedVendors ? "#FFF5D6" : "#EDF1F6",
+                  color: hasAssignedVendors ? "#7A6B00" : "#A3AFBF",
+                  border: `1.5px solid ${hasAssignedVendors ? "#F0C419" : "#D9E2EF"}`,
+                  fontSize: "0.84rem",
+                  fontWeight: 850,
+                  textTransform: "none",
+                  "&:hover": {
+                    bgcolor: hasAssignedVendors ? "#FFF0B0" : "#EDF1F6",
+                  },
+                }}
+              >
+                {isUpdating ? "Updating..." : "Confirm Payment Received"}
+              </Button>
+            </Stack>
+          )}
         </AdminPanel>
       </Box>
 

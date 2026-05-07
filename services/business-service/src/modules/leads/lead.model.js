@@ -31,6 +31,29 @@ const attachmentSchema = new mongoose.Schema(
   { _id: true },
 );
 
+const roofAnalysisSchema = new mongoose.Schema(
+  {
+    status: {
+      type: String,
+      enum: ["ideal", "good", "needs_review", "limited"],
+      default: "needs_review",
+    },
+    statusLabel: { type: String, trim: true, default: "Needs Review" },
+    accuracyPercent: { type: Number, min: 0, max: 100, default: 0 },
+    potentialKw: { type: Number, min: 0, default: 0 },
+    message: { type: String, trim: true, default: "" },
+    findings: [{ type: String, trim: true }],
+    image: {
+      fileName: { type: String, trim: true, default: "" },
+      mimeType: { type: String, trim: true, default: "" },
+      size: { type: Number, min: 0, default: 0 },
+      capturedAt: { type: Date, default: null },
+    },
+    evaluatedAt: { type: Date, default: null },
+  },
+  { _id: false },
+);
+
 const leadSchema = new mongoose.Schema(
   {
     customerId: { type: String, required: true, index: true },
@@ -46,6 +69,8 @@ const leadSchema = new mongoose.Schema(
       enum: [
         "submitted",
         "reviewing",
+        "verified",
+        "vendors_assigned",
         "open_for_quotes",
         "quote_selected",
         "closed",
@@ -108,6 +133,7 @@ const leadSchema = new mongoose.Schema(
       electricityBill: [attachmentSchema],
       photoId: [attachmentSchema],
     },
+    roofAnalysis: { type: roofAnalysisSchema, default: null },
     calculatorEstimate: { type: mongoose.Schema.Types.Mixed, default: null },
     // Admin-set fields after verification
     adminSystemSizeKw: { type: Number, min: 0, default: null },

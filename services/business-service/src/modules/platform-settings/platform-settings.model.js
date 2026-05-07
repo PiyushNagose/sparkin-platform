@@ -53,8 +53,9 @@ const platformSettingsSchema = new mongoose.Schema(
       maxVendorsPerLead: { type: Number, min: 1, required: true },
     },
     subsidy: {
-      centralPct: { type: Number, min: 0, max: 100, required: true },
-      maxAmount: { type: Number, min: 0, required: true },
+      for1Kw: { type: Number, min: 0, required: true },
+      for2Kw: { type: Number, min: 0, required: true },
+      above3Kw: { type: Number, min: 0, required: true },
       residentialOnly: { type: Boolean, default: true },
     },
     states: [stateRateSchema],

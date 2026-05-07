@@ -173,9 +173,11 @@ function LeadSummary({ lead, quotes }) {
                       letterSpacing: "0.06em",
                     }}
                   >
-                    {lead.status === "open_for_quotes"
+                    {lead.commitmentFeePaid
                       ? "PAID"
-                      : lead.status?.replaceAll("_", " ").toUpperCase()}
+                      : lead.status === "vendors_assigned"
+                        ? "PAYMENT PENDING"
+                        : lead.status?.replaceAll("_", " ").toUpperCase()}
                   </Box>
                 </Stack>
                 <Typography
@@ -334,7 +336,9 @@ export default function AdminVendorAssignmentPage() {
             (item) => String(item.id) === String(requestedLeadId),
           ) ||
           data.leads.find((item) =>
-            ["open_for_quotes", "reviewing", "submitted"].includes(item.status),
+            ["verified", "vendors_assigned", "open_for_quotes"].includes(
+              item.status,
+            ),
           ) ||
           data.leads[0] ||
           null;
@@ -478,7 +482,7 @@ export default function AdminVendorAssignmentPage() {
     <AdminPageShell>
       <AdminPageHeader
         title="Assign Qualified Vendors"
-        subtitle="Select qualified vendors and start the bidding process for this lead."
+        subtitle="Select qualified vendors for this verified lead."
       />
 
       <LeadSummary lead={lead} quotes={state.data.quotes || []} />
@@ -890,7 +894,11 @@ export default function AdminVendorAssignmentPage() {
               fontWeight: 900,
             }}
           >
-            {isAssigning ? "Assigning..." : "Assign Vendors & Start Bidding"}
+            {isAssigning
+              ? "Assigning..."
+              : lead.commitmentFeePaid
+                ? "Assign Vendors & Start Bidding"
+                : "Assign Vendors"}
           </AdminPrimaryButton>
         </Stack>
       </AdminPanel>

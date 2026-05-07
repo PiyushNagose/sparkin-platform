@@ -22,6 +22,27 @@ const attachmentSchema = z.object({
     .optional(),
 });
 
+const roofAnalysisSchema = z
+  .object({
+    status: z.enum(["ideal", "good", "needs_review", "limited"]),
+    statusLabel: z.string().trim().min(2).max(80),
+    accuracyPercent: z.coerce.number().min(0).max(100),
+    potentialKw: z.coerce.number().min(0),
+    message: z.string().trim().max(240),
+    findings: z.array(z.string().trim().min(1).max(120)).max(8).default([]),
+    image: z
+      .object({
+        fileName: z.string().trim().max(160).optional().default(""),
+        mimeType: z.string().trim().max(120).optional().default(""),
+        size: z.coerce.number().min(0).optional().default(0),
+        capturedAt: z.string().datetime().nullable().optional(),
+      })
+      .optional(),
+    evaluatedAt: z.string().datetime(),
+  })
+  .nullable()
+  .optional();
+
 export const createLeadSchema = z.object({
   contact: z.object({
     fullName: z.string().trim().min(2).max(120),
@@ -68,13 +89,28 @@ export const createLeadSchema = z.object({
       photoId: z.array(attachmentSchema).max(2).optional().default([]),
     })
     .optional(),
+  roofAnalysis: roofAnalysisSchema,
   calculatorEstimate: z.unknown().nullable().optional(),
   notes: nullableTrimmedString,
   specialInstructions: nullableTrimmedString,
 });
 
+export const analyzeRoofSchema = z.object({
+  attachment: attachmentSchema,
+  roof: z.object({
+    sizeRange: z.enum(["under_500", "500_1000", "over_1000"]).optional(),
+    shadow: z.enum(["none", "partial", "heavy"]).optional(),
+    condition: z.enum(["excellent", "average", "needs_repair"]).optional(),
+  }).optional(),
+  property: z.object({
+    roofType: z.enum(["flat", "sloped"]).optional(),
+    sanctionedLoadKw: z.coerce.number().min(0).nullable().optional(),
+  }).optional(),
+  calculatorEstimate: z.unknown().nullable().optional(),
+});
+
 export const updateLeadStatusSchema = z.object({
-  status: z.enum(["reviewing", "open_for_quotes", "closed"]),
+  status: z.enum(["reviewing", "verified", "open_for_quotes", "closed"]),
 });
 
 export const updateLeadDetailsSchema = z.object({

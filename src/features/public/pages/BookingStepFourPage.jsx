@@ -5,6 +5,7 @@ import {
   Grid,
   Alert,
   Chip,
+  CircularProgress,
   IconButton,
   Stack,
   TextField,
@@ -35,6 +36,11 @@ import {
 } from "@/features/public/pages/publicPageStyles";
 import { useBookingDraft } from "@/features/public/booking/BookingDraftProvider";
 import { leadsApi } from "@/features/public/api/leadsApi";
+import { referralsApi } from "@/features/customer/api/referralsApi";
+import {
+  clearReferralAttribution,
+  getReferralAttribution,
+} from "@/features/customer/referrals/referralTracking";
 import {
   isStep1Complete,
   isStep2Complete,
@@ -476,6 +482,7 @@ export default function BookingStepFourPage() {
   const [uploadError, setUploadError] = useState("");
   const [cameraError, setCameraError] = useState("");
   const [cameraActive, setCameraActive] = useState(false);
+  const [isAnalyzingRoof, setIsAnalyzingRoof] = useState(false);
 
   useEffect(() => {
     if (
@@ -507,6 +514,30 @@ export default function BookingStepFourPage() {
     updateDraft("attachments", values);
   }
 
+  async function analyzeRoofAttachment(attachment) {
+    if (!attachment) return null;
+
+    setIsAnalyzingRoof(true);
+    try {
+      const analysis = await leadsApi.analyzeRoof({
+        attachment,
+        roof: draft.roof,
+        property: draft.property,
+        calculatorEstimate: draft.calculatorEstimate,
+      });
+      updateField("roofAnalysis", analysis);
+      return analysis;
+    } catch (analysisError) {
+      setUploadError(
+        analysisError?.response?.data?.message ||
+          "Roof image uploaded, but automatic evaluation could not complete.",
+      );
+      return null;
+    } finally {
+      setIsAnalyzingRoof(false);
+    }
+  }
+
   async function handleFiles(event, bucket, category, limit) {
     const selected = Array.from(event.target.files || []);
     event.target.value = "";
@@ -521,6 +552,9 @@ export default function BookingStepFourPage() {
       updateAttachments({
         [bucket]: [...current, ...attachments].slice(0, limit),
       });
+      if (bucket === "roofPhotos") {
+        await analyzeRoofAttachment(attachments[0]);
+      }
     } catch (uploadIssue) {
       setUploadError(uploadIssue.message || "Unable to read selected file.");
     }
@@ -528,9 +562,13 @@ export default function BookingStepFourPage() {
 
   function removeAttachment(bucket, index) {
     const current = draft.attachments?.[bucket] || [];
+    const next = current.filter((_, itemIndex) => itemIndex !== index);
     updateAttachments({
-      [bucket]: current.filter((_, itemIndex) => itemIndex !== index),
+      [bucket]: next,
     });
+    if (bucket === "roofPhotos" && next.length === 0) {
+      updateField("roofAnalysis", null);
+    }
   }
 
   async function startCamera() {
@@ -581,20 +619,19 @@ export default function BookingStepFourPage() {
     const dataUrl = canvas.toDataURL("image/jpeg", 0.86);
     const location = await getLocationSnapshot();
     const current = draft.attachments?.roofPhotos || [];
+    const capturedAttachment = {
+      category: "roof_photo",
+      fileName: `roof-camera-${new Date().toISOString().replace(/[:.]/g, "-")}.jpg`,
+      mimeType: "image/jpeg",
+      size: Math.round((dataUrl.length * 3) / 4),
+      dataUrl,
+      capturedAt: new Date().toISOString(),
+      location,
+    };
     updateAttachments({
-      roofPhotos: [
-        ...current,
-        {
-          category: "roof_photo",
-          fileName: `roof-camera-${new Date().toISOString().replace(/[:.]/g, "-")}.jpg`,
-          mimeType: "image/jpeg",
-          size: Math.round((dataUrl.length * 3) / 4),
-          dataUrl,
-          capturedAt: new Date().toISOString(),
-          location,
-        },
-      ].slice(0, 5),
+      roofPhotos: [...current, capturedAttachment].slice(0, 5),
     });
+    await analyzeRoofAttachment(capturedAttachment);
   }
 
   function buildLeadPayload() {
@@ -623,6 +660,7 @@ export default function BookingStepFourPage() {
       notes: draft.notes.trim() || null,
       specialInstructions: draft.specialInstructions.trim() || null,
       attachments: draft.attachments,
+      roofAnalysis: draft.roofAnalysis,
       calculatorEstimate: draft.calculatorEstimate,
     };
   }
@@ -641,7 +679,27 @@ export default function BookingStepFourPage() {
     setIsSubmitting(true);
 
     try {
-      const lead = await leadsApi.createLead(buildLeadPayload());
+      let roofAnalysisForSubmit = draft.roofAnalysis;
+      if (!draft.roofAnalysis && draft.attachments?.roofPhotos?.[0]) {
+        roofAnalysisForSubmit = await analyzeRoofAttachment(draft.attachments.roofPhotos[0]);
+      }
+      const payload = {
+        ...buildLeadPayload(),
+        roofAnalysis: roofAnalysisForSubmit,
+      };
+      const lead = await leadsApi.createLead(payload);
+      const referralAttribution = getReferralAttribution();
+      if (referralAttribution?.referralCode) {
+        try {
+          await referralsApi.trackBooking({
+            ...referralAttribution,
+            leadId: lead.id,
+          });
+          clearReferralAttribution();
+        } catch {
+          // Referral tracking should never block the primary booking flow.
+        }
+      }
       resetDraft();
       navigate("/booking/submitted", {
         replace: true,
@@ -653,6 +711,28 @@ export default function BookingStepFourPage() {
       setIsSubmitting(false);
     }
   }
+
+  const roofAnalysis = draft.roofAnalysis;
+  const primaryRoofPhoto = draft.attachments?.roofPhotos?.find((file) =>
+    file.dataUrl?.startsWith("data:image"),
+  );
+  const summaryImage = primaryRoofPhoto?.dataUrl || uploadSummaryPlaceholder;
+  const statusTone = {
+    ideal: { bg: "#62F082", color: "#174B22", label: "Ready" },
+    good: { bg: "#DDFBEF", color: "#0B7D44", label: "Ready" },
+    needs_review: { bg: "#FFF4D6", color: "#8A5A00", label: "Review" },
+    limited: { bg: "#FFE0E0", color: "#B42318", label: "Limited" },
+  }[roofAnalysis?.status || "ideal"];
+  const systemStatus = roofAnalysis?.statusLabel || "Upload roof image";
+  const systemMessage =
+    roofAnalysis?.message ||
+    "Upload or capture a roof photo to evaluate solar fitment.";
+  const accuracyLabel = roofAnalysis
+    ? `${roofAnalysis.accuracyPercent}% Data Accuracy`
+    : "Waiting for roof image";
+  const potentialLabel = roofAnalysis
+    ? `${roofAnalysis.potentialKw}kW peak generation potential`
+    : "Roof photo needed for potential estimate";
 
   return (
     <Box className={styles.pageShell}>
@@ -1119,15 +1199,15 @@ export default function BookingStepFourPage() {
                               px: 0.7,
                               py: 0.2,
                               borderRadius: 999,
-                              bgcolor: "#62F082",
-                              color: "#174B22",
+                              bgcolor: isAnalyzingRoof ? "#EAF1FF" : statusTone.bg,
+                              color: isAnalyzingRoof ? "#0E56C8" : statusTone.color,
                               fontSize: "0.46rem",
                               fontWeight: 800,
                               letterSpacing: 0.38,
                               textTransform: "uppercase",
                             }}
                           >
-                            Ready
+                            {isAnalyzingRoof ? "Scanning" : statusTone.label}
                           </Box>
                         </Stack>
 
@@ -1138,7 +1218,7 @@ export default function BookingStepFourPage() {
                             fontWeight: 800,
                           }}
                         >
-                          Ideal
+                          {isAnalyzingRoof ? "Evaluating..." : systemStatus}
                         </Typography>
 
                         <Typography
@@ -1149,7 +1229,7 @@ export default function BookingStepFourPage() {
                             maxWidth: 190,
                           }}
                         >
-                          High potential for solar efficiency at your location.
+                          {systemMessage}
                         </Typography>
 
                         <Box
@@ -1161,16 +1241,33 @@ export default function BookingStepFourPage() {
                             width: "fit-content",
                           }}
                         >
-                          <Typography
-                            sx={{
-                              color: "#233044",
-                              fontSize: "0.58rem",
-                              fontWeight: 700,
-                            }}
-                          >
-                            98% Data Accuracy
-                          </Typography>
+                          <Stack direction="row" spacing={0.7} alignItems="center">
+                            {isAnalyzingRoof ? (
+                              <CircularProgress size={12} sx={{ color: "#0E56C8" }} />
+                            ) : null}
+                            <Typography
+                              sx={{
+                                color: "#233044",
+                                fontSize: "0.58rem",
+                                fontWeight: 700,
+                              }}
+                            >
+                              {isAnalyzingRoof ? "Analyzing image" : accuracyLabel}
+                            </Typography>
+                          </Stack>
                         </Box>
+                        {roofAnalysis?.findings?.length ? (
+                          <Stack spacing={0.45}>
+                            {roofAnalysis.findings.slice(0, 2).map((finding) => (
+                              <Typography
+                                key={finding}
+                                sx={{ color: "#6A778A", fontSize: "0.56rem", lineHeight: 1.4 }}
+                              >
+                                {finding}
+                              </Typography>
+                            ))}
+                          </Stack>
+                        ) : null}
                       </Stack>
                     </Box>
                   </Grid>
@@ -1181,7 +1278,7 @@ export default function BookingStepFourPage() {
                         minHeight: 126,
                         borderRadius: "1rem",
                         overflow: "hidden",
-                        backgroundImage: `linear-gradient(180deg, rgba(7,18,31,0.02) 0%, rgba(8,17,28,0.62) 100%), url(${uploadSummaryPlaceholder})`,
+                        backgroundImage: `linear-gradient(180deg, rgba(7,18,31,0.02) 0%, rgba(8,17,28,0.62) 100%), url(${summaryImage})`,
                         backgroundSize: "cover",
                         backgroundPosition: "center",
                         display: "flex",
@@ -1210,7 +1307,7 @@ export default function BookingStepFourPage() {
                             maxWidth: 240,
                           }}
                         >
-                          12kW peak generation potential
+                          {potentialLabel}
                         </Typography>
                       </Stack>
                     </Box>

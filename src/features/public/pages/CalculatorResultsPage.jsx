@@ -56,6 +56,84 @@ function MetricCard({ title, value, text, icon, highlight = false }) {
   );
 }
 
+function GovernmentSupportSection({ estimate }) {
+  const support = estimate.governmentSupport || {
+    schemeName: "PM Surya Ghar: Muft Bijli Yojana",
+    totalSubsidy: estimate.investment.subsidy,
+    benefitCards: [
+      { title: "Subsidy Value", description: "Direct support based on configured system-size subsidy slabs." },
+      { title: "Lowered Loan Load", description: "Reduced upfront amount keeps financing lighter for the customer." },
+      { title: "DBT / DISCOM Ready", description: "Prepared to align with residential rooftop subsidy processing." },
+    ],
+  };
+
+  return (
+    <Box
+      sx={{
+        p: { xs: 2.3, md: 2.7 },
+        borderRadius: "1.3rem",
+        background: "linear-gradient(180deg, #0E7A3B 0%, #07672E 100%)",
+        color: "white",
+        boxShadow: "0 20px 40px rgba(6, 103, 46, 0.18)",
+      }}
+    >
+      <Stack
+        direction={{ xs: "column", md: "row" }}
+        justifyContent="space-between"
+        alignItems={{ xs: "flex-start", md: "center" }}
+        spacing={2}
+      >
+        <Box>
+          <Stack direction="row" spacing={0.8} alignItems="center">
+            <Box sx={{ px: 1, py: 0.35, borderRadius: 999, bgcolor: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.16)" }}>
+              <Typography sx={{ fontSize: "0.56rem", fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+                Available Government Support
+              </Typography>
+            </Box>
+            <Box sx={{ px: 0.9, py: 0.3, borderRadius: 999, bgcolor: "rgba(234,245,111,0.18)", border: "1px solid rgba(234,245,111,0.28)" }}>
+              <Typography sx={{ color: "#EAF56F", fontSize: "0.56rem", fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+                Central Scheme
+              </Typography>
+            </Box>
+          </Stack>
+          <Typography sx={{ mt: 1.2, fontSize: "1.18rem", fontWeight: 800 }}>
+            {support.schemeName}
+          </Typography>
+          <Typography sx={{ mt: 0.55, color: "rgba(236,247,240,0.82)", fontSize: "0.84rem", lineHeight: 1.65, maxWidth: 640 }}>
+            Residential rooftop subsidy is calculated directly from the platform settings configured by admin for 1kW, 2kW, and 3kW+ systems.
+          </Typography>
+        </Box>
+        <Box sx={{ minWidth: { md: 220 }, textAlign: { xs: "left", md: "right" } }}>
+          <Typography sx={{ color: "rgba(236,247,240,0.72)", fontSize: "0.6rem", fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+            Total Consumer Benefit
+          </Typography>
+          <Typography sx={{ mt: 0.55, fontSize: { xs: "2rem", md: "2.3rem" }, fontWeight: 800, lineHeight: 1 }}>
+            {formatMoney(support.totalSubsidy)}
+          </Typography>
+          <Typography sx={{ mt: 0.35, color: "rgba(236,247,240,0.72)", fontSize: "0.74rem" }}>
+            Estimated direct subsidy
+          </Typography>
+        </Box>
+      </Stack>
+
+      <Grid container spacing={1.5} sx={{ mt: 2 }}>
+        {support.benefitCards.map((item) => (
+          <Grid key={item.title} size={{ xs: 12, md: 4 }}>
+            <Box sx={{ p: 1.6, borderRadius: "1rem", bgcolor: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)", height: "100%" }}>
+              <Typography sx={{ color: "#EAF56F", fontSize: "0.72rem", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                {item.title}
+              </Typography>
+              <Typography sx={{ mt: 0.7, color: "rgba(248,252,249,0.9)", fontSize: "0.8rem", lineHeight: 1.65 }}>
+                {item.description}
+              </Typography>
+            </Box>
+          </Grid>
+        ))}
+      </Grid>
+    </Box>
+  );
+}
+
 // Quick preview shown when coming from the home page savings tool (limited inputs)
 function QuickPreview({ estimate, onGetFullReport, onProceedToBooking }) {
   const roofUtilizationPercent =
@@ -348,6 +426,8 @@ function FullResult({ estimate, onProceedToBooking }) {
           </Box>
         </Grid>
       </Grid>
+
+      {!isCommercial ? <GovernmentSupportSection estimate={estimate} /> : null}
 
       <Box sx={{ p: 1.6, borderRadius: "1rem", bgcolor: "#F3F7FC", border: "1px solid rgba(220,228,239,0.96)" }}>
         <Stack direction="row" spacing={1.1} alignItems="flex-start">

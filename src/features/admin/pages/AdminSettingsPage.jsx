@@ -35,11 +35,11 @@ import {
 import { platformSettingsApi } from "@/features/admin/api/adminApi";
 import pricingBannerImg from "@/shared/assets/images/admin/settings/admin-settings-pricing-engine-placeholder.png";
 
-// ─── storage key ─────────────────────────────────────────────────────────────
+// â”€â”€â”€ storage key â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const STORAGE_KEY = "sparkin_admin_platform_settings";
 
-// ─── defaults ─────────────────────────────────────────────────────────────────
+// â”€â”€â”€ defaults â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const DEFAULT_SETTINGS = {
   pricing: {
@@ -53,8 +53,9 @@ const DEFAULT_SETTINGS = {
     maxVendorsPerLead: "5",
   },
   subsidy: {
-    centralPct: "40",
-    maxAmount: "78000",
+    for1Kw: "30000",
+    for2Kw: "60000",
+    above3Kw: "78000",
     residentialOnly: true,
   },
   states: [
@@ -71,13 +72,27 @@ const DEFAULT_SETTINGS = {
   ],
 };
 
-// ─── helpers ─────────────────────────────────────────────────────────────────
+// â”€â”€â”€ helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function loadSettings() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return structuredClone(DEFAULT_SETTINGS);
-    return { ...structuredClone(DEFAULT_SETTINGS), ...JSON.parse(raw) };
+    const parsed = JSON.parse(raw);
+    return {
+      ...structuredClone(DEFAULT_SETTINGS),
+      ...parsed,
+      pricing: { ...structuredClone(DEFAULT_SETTINGS).pricing, ...parsed.pricing },
+      bidding: { ...structuredClone(DEFAULT_SETTINGS).bidding, ...parsed.bidding },
+      subsidy: {
+        ...structuredClone(DEFAULT_SETTINGS).subsidy,
+        ...parsed.subsidy,
+        above3Kw:
+          parsed.subsidy?.above3Kw ??
+          parsed.subsidy?.maxAmount ??
+          structuredClone(DEFAULT_SETTINGS).subsidy.above3Kw,
+      },
+    };
   } catch {
     return structuredClone(DEFAULT_SETTINGS);
   }
@@ -107,8 +122,10 @@ function normalizeSettingsForUi(settings) {
     ),
     subsidy: {
       ...settings.subsidy,
-      centralPct: String(settings.subsidy.centralPct),
-      maxAmount: String(settings.subsidy.maxAmount),
+      for1Kw: String(settings.subsidy.for1Kw ?? 30000),
+      for2Kw: String(settings.subsidy.for2Kw ?? 60000),
+      above3Kw: String(settings.subsidy.above3Kw ?? settings.subsidy.maxAmount ?? 78000),
+      residentialOnly: settings.subsidy.residentialOnly !== false,
     },
     states: settings.states.map((state) => ({
       ...state,
@@ -163,7 +180,7 @@ function uid() {
   return Math.random().toString(36).slice(2, 9);
 }
 
-// ─── sub-components ──────────────────────────────────────────────────────────
+// â”€â”€â”€ sub-components â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const fieldLabelSx = {
   mb: 0.7,
@@ -277,7 +294,7 @@ function ValidationHint({ value, label }) {
   );
 }
 
-// ─── main page ────────────────────────────────────────────────────────────────
+// â”€â”€â”€ main page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export default function AdminSettingsPage() {
   const [settings, setSettings] = useState(loadSettings);
@@ -329,7 +346,7 @@ export default function AdminSettingsPage() {
     return () => window.removeEventListener("beforeunload", onBeforeUnload);
   }, [isDirty]);
 
-  // ── field updaters ─────────────────────────────────────────────────────────
+  // â”€â”€ field updaters â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   const updatePricing = useCallback((field, value) => {
     setSettings((s) => ({ ...s, pricing: { ...s.pricing, [field]: value } }));
@@ -443,7 +460,7 @@ export default function AdminSettingsPage() {
     setIsDirty(true);
   }, []);
 
-  // ── validation ─────────────────────────────────────────────────────────────
+  // â”€â”€ validation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   function validate() {
     const errors = [];
@@ -464,9 +481,21 @@ export default function AdminSettingsPage() {
     if (!isPositiveNumber(b.windowHours)) errors.push("Bidding Window Hours");
     if (!isPositiveNumber(b.maxVendorsPerLead))
       errors.push("Max Vendors Per Lead");
-    if (!isPositiveNumber(sub.centralPct) || Number(sub.centralPct) > 100)
-      errors.push("Central Subsidy % (0–100)");
-    if (!isPositiveNumber(sub.maxAmount)) errors.push("Max Subsidy Amount");
+    if (!isPositiveNumber(sub.for1Kw)) errors.push("Subsidy for 1kW");
+    if (!isPositiveNumber(sub.for2Kw)) errors.push("Subsidy for 2kW");
+    if (!isPositiveNumber(sub.above3Kw)) errors.push("Subsidy above 3kW");
+    if (
+      isPositiveNumber(sub.for1Kw) &&
+      isPositiveNumber(sub.for2Kw) &&
+      Number(sub.for2Kw) < Number(sub.for1Kw)
+    )
+      errors.push("2kW subsidy must be greater than or equal to 1kW subsidy");
+    if (
+      isPositiveNumber(sub.for2Kw) &&
+      isPositiveNumber(sub.above3Kw) &&
+      Number(sub.above3Kw) < Number(sub.for2Kw)
+    )
+      errors.push("3kW+ subsidy must be greater than or equal to 2kW subsidy");
     settings.states.forEach((st, i) => {
       if (!st.name.trim()) errors.push(`State row ${i + 1}: name required`);
       if (!isPositiveNumber(st.rate))
@@ -483,7 +512,7 @@ export default function AdminSettingsPage() {
     return errors;
   }
 
-  // ── save ───────────────────────────────────────────────────────────────────
+  // â”€â”€ save â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   async function handleSave() {
     const errors = validate();
@@ -523,7 +552,7 @@ export default function AdminSettingsPage() {
     }
   }
 
-  // ── reset ──────────────────────────────────────────────────────────────────
+  // â”€â”€ reset â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   function handleReset() {
     if (
@@ -545,7 +574,7 @@ export default function AdminSettingsPage() {
     });
   }
 
-  // ── render ─────────────────────────────────────────────────────────────────
+  // â”€â”€ render â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   const hasStateErrors = Object.values(stateErrors).some(Boolean);
 
@@ -572,7 +601,7 @@ export default function AdminSettingsPage() {
         >
           <Box>
             <FieldLabel tooltip="Base cost used by the calculator to estimate project value">
-              Standard Cost Per kW (₹)
+              Standard Cost Per kW (â‚¹)
             </FieldLabel>
             <TextField
               fullWidth
@@ -592,7 +621,7 @@ export default function AdminSettingsPage() {
 
           <Box>
             <FieldLabel tooltip="Vendors cannot submit quotes below this amount">
-              Minimum Bid Amount (₹)
+              Minimum Bid Amount (â‚¹)
             </FieldLabel>
             <TextField
               fullWidth
@@ -610,7 +639,7 @@ export default function AdminSettingsPage() {
 
           <Box sx={{ gridColumn: { xs: "auto", sm: "1 / -1" } }}>
             <FieldLabel tooltip="Bids above this amount are auto-flagged for admin review">
-              Maximum Bid Amount (₹)
+              Maximum Bid Amount (â‚¹)
             </FieldLabel>
             <TextField
               fullWidth
@@ -781,74 +810,58 @@ export default function AdminSettingsPage() {
           }}
         >
           <Box>
-            <FieldLabel tooltip="PM Surya Ghar subsidy percentage applied to residential systems">
-              Central Subsidy Percentage (%)
+            <FieldLabel tooltip="Configured subsidy amount applied when the recommended system size is 1kW.">
+              For 1kW
             </FieldLabel>
             <TextField
               size="small"
-              value={settings.subsidy.centralPct}
-              onChange={(e) => updateSubsidy("centralPct", e.target.value)}
-              inputProps={{ inputMode: "numeric", max: 100 }}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <Typography
-                      sx={{
-                        color: "#8B97A8",
-                        fontSize: "0.88rem",
-                        fontWeight: 700,
-                      }}
-                    >
-                      %
-                    </Typography>
-                  </InputAdornment>
-                ),
-              }}
+              fullWidth
+              value={settings.subsidy.for1Kw}
+              onChange={(e) => updateSubsidy("for1Kw", e.target.value)}
+              inputProps={{ inputMode: "numeric" }}
               sx={{ ...inputSx, width: "100%" }}
             />
-            {isPositiveNumber(settings.subsidy.centralPct) &&
-            Number(settings.subsidy.centralPct) > 100 ? (
-              <Stack
-                direction="row"
-                spacing={0.5}
-                alignItems="center"
-                sx={{ mt: 0.6 }}
-              >
-                <WarningAmberRoundedIcon
-                  sx={{ color: "#E07B00", fontSize: "0.82rem" }}
-                />
-                <Typography
-                  sx={{ color: "#E07B00", fontSize: "0.7rem", fontWeight: 700 }}
-                >
-                  Percentage cannot exceed 100%.
-                </Typography>
-              </Stack>
-            ) : (
-              <ValidationHint
-                value={settings.subsidy.centralPct}
-                label="Subsidy %"
-              />
-            )}
+            <ValidationHint
+              value={settings.subsidy.for1Kw}
+              label="1kW subsidy"
+            />
           </Box>
 
           <Box>
-            <FieldLabel tooltip="Maximum subsidy cap per installation regardless of system size">
-              Max Subsidy Amount (₹)
+            <FieldLabel tooltip="Configured subsidy amount applied when the recommended system size reaches 2kW.">
+              For 2kW
             </FieldLabel>
             <TextField
               fullWidth
               size="small"
-              value={settings.subsidy.maxAmount}
-              onChange={(e) => updateSubsidy("maxAmount", e.target.value)}
+              value={settings.subsidy.for2Kw}
+              onChange={(e) => updateSubsidy("for2Kw", e.target.value)}
               inputProps={{ inputMode: "numeric" }}
               sx={inputSx}
             />
             <ValidationHint
-              value={settings.subsidy.maxAmount}
-              label="Max subsidy"
+              value={settings.subsidy.for2Kw}
+              label="2kW subsidy"
             />
           </Box>
 
+          <Box sx={{ gridColumn: { xs: "auto", sm: "1 / -1" } }}>
+            <FieldLabel tooltip="Configured subsidy cap applied for 3kW and higher residential systems.">
+              Above 3kW
+            </FieldLabel>
+            <TextField
+              fullWidth
+              size="small"
+              value={settings.subsidy.above3Kw}
+              onChange={(e) => updateSubsidy("above3Kw", e.target.value)}
+              inputProps={{ inputMode: "numeric" }}
+              sx={inputSx}
+            />
+            <ValidationHint
+              value={settings.subsidy.above3Kw}
+              label="3kW+ subsidy"
+            />
+          </Box>
           <Box sx={{ gridColumn: { xs: "auto", sm: "1 / -1" } }}>
             <Stack direction="row" spacing={1} alignItems="center">
               <Chip
@@ -911,7 +924,7 @@ export default function AdminSettingsPage() {
               px: 0.5,
             }}
           >
-            {["State / UT", "Rate Per Unit (₹)", "Actions"].map((h) => (
+            {["State / UT", "Rate Per Unit (â‚¹)", "Actions"].map((h) => (
               <Typography key={h} sx={fieldLabelSx}>
                 {h}
               </Typography>
@@ -1328,7 +1341,7 @@ export default function AdminSettingsPage() {
               "&:disabled": { bgcolor: "#A0B8E0", boxShadow: "none" },
             }}
           >
-            {isSaving ? "Saving…" : "Save Global Settings"}
+            {isSaving ? "Savingâ€¦" : "Save Global Settings"}
           </Button>
         </Stack>
       </Box>

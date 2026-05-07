@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { calculatorApi } from "@/features/public/api/calculatorApi";
 import { calculatorStorage } from "@/features/public/calculator/calculatorStorage";
-import { offersApi } from "@/features/admin/api/offersApi";
+import { publicOffersApi } from "@/features/public/api/offersApi";
 import { leadsApi } from "@/features/public/api/leadsApi";
 import {
   Accordion,
@@ -725,7 +725,7 @@ function HomePage() {
     let active = true;
     async function loadOffers() {
       try {
-        const result = await offersApi.list({ status: "active", limit: 3 });
+        const result = await publicOffersApi.list({ limit: 3 });
         if (active && result?.offers?.length) {
           setLiveOffers(result.offers);
         }
@@ -880,13 +880,19 @@ function HomePage() {
     liveOffers.length > 0
       ? liveOffers.slice(0, 3).map((offer) => ({
           badge:
-            offer.type === "subsidy"
+            offer.tags?.includes("subsidy")
               ? "Govt Scheme"
-              : offer.type === "discount"
+              : offer.discountType === "percentage" || offer.discountType === "flat"
                 ? "Limited Time"
                 : "Financing",
-          title: offer.title,
-          text: offer.description,
+          title: offer.name,
+          text:
+            offer.description ||
+            `${offer.couponCode} gives ${
+              offer.discountType === "percentage"
+                ? `${offer.discountValue}% off`
+                : `₹${Number(offer.discountValue).toLocaleString("en-IN")} benefit`
+            } on eligible solar bookings.`,
           action: "View Details",
           href: "/booking",
         }))

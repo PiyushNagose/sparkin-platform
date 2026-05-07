@@ -11,6 +11,8 @@ import {
 
 export const offersRouter = Router();
 
+offersRouter.get("/public", asyncHandler(offersController.listPublic));
+
 offersRouter.use(requireAuth);
 
 // Stats summary (active count, total redemptions)

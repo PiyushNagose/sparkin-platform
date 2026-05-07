@@ -370,7 +370,13 @@ export default function AdminDashboardPage() {
     const vendors = data.vendors || [];
 
     const verifiedLeads = leads.filter((lead) =>
-      ["open_for_quotes", "quote_selected", "closed"].includes(lead.status),
+      [
+        "verified",
+        "vendors_assigned",
+        "open_for_quotes",
+        "quote_selected",
+        "closed",
+      ].includes(lead.status),
     );
     const paidAmount = payments
       .filter((payment) => payment.status === "paid")

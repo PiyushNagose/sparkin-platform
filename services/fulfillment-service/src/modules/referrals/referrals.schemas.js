@@ -5,7 +5,22 @@ export const createReferralSchema = z.object({
   email: z.string().trim().email().max(180),
   phoneNumber: z.string().trim().max(30).nullable().optional(),
   channel: z
-    .enum(["direct_invite", "social_share", "email_campaign"])
+    .enum(["direct_invite", "social_share", "email_campaign", "whatsapp", "qr", "copy_link"])
+    .optional(),
+});
+
+export const trackReferralSignupSchema = z.object({
+  referralCode: z.string().trim().min(3).max(80),
+  channel: z
+    .enum(["direct_invite", "social_share", "email_campaign", "whatsapp", "qr", "copy_link"])
+    .optional(),
+});
+
+export const trackReferralBookingSchema = z.object({
+  referralCode: z.string().trim().min(3).max(80),
+  leadId: z.string().trim().min(3).max(80),
+  channel: z
+    .enum(["direct_invite", "social_share", "email_campaign", "whatsapp", "qr", "copy_link"])
     .optional(),
 });
 

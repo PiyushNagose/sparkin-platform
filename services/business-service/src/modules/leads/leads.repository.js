@@ -17,6 +17,29 @@ function normalizeLeads(leads) {
   return leads.map((lead) => normalizeLead(lead));
 }
 
+function stripAttachmentBodies(lead) {
+  if (!lead?.attachments) return lead;
+
+  const stripFiles = (files = []) =>
+    files.map(({ dataUrl, ...file }) => ({
+      ...file,
+      hasData: Boolean(dataUrl),
+    }));
+
+  return {
+    ...lead,
+    attachments: {
+      roofPhotos: stripFiles(lead.attachments.roofPhotos),
+      electricityBill: stripFiles(lead.attachments.electricityBill),
+      photoId: stripFiles(lead.attachments.photoId),
+    },
+  };
+}
+
+function normalizeLeanList(leads) {
+  return normalizeLeads(leads).map(stripAttachmentBodies);
+}
+
 export const leadsRepository = {
   async createLead(lead) {
     const created = await LeadModel.create(lead);
@@ -27,14 +50,14 @@ export const leadsRepository = {
     const leads = await LeadModel.find({ customerId })
       .sort({ createdAt: -1 })
       .lean({ virtuals: true });
-    return normalizeLeads(leads);
+    return normalizeLeanList(leads);
   },
 
   async findAll() {
     const leads = await LeadModel.find({})
       .sort({ createdAt: -1 })
       .lean({ virtuals: true });
-    return normalizeLeads(leads);
+    return normalizeLeanList(leads);
   },
 
   async findLeadById(id) {
@@ -46,7 +69,7 @@ export const leadsRepository = {
     const leads = await LeadModel.find({ _id: { $in: ids } }).lean({
       virtuals: true,
     });
-    return normalizeLeads(leads);
+    return normalizeLeanList(leads);
   },
 
   async findVendorVisibleLeads(vendorId) {
@@ -58,7 +81,7 @@ export const leadsRepository = {
       .sort({ createdAt: -1 })
       .lean({ virtuals: true });
 
-    return normalizeLeads(leads);
+    return normalizeLeanList(leads);
   },
 
   async markOpenForQuotes(id) {
@@ -72,14 +95,17 @@ export const leadsRepository = {
   },
 
   async assignVendors(id, vendorIds, biddingMeta = {}) {
+    const nextStatus = biddingMeta.status || "vendors_assigned";
+    const { status, ...meta } = biddingMeta;
     const lead = await LeadModel.findByIdAndUpdate(
       id,
       {
         $set: {
           assignedVendorIds: vendorIds,
           vendorsAssignedAt: new Date(),
-          status: "open_for_quotes",
-          ...biddingMeta,
+          verifiedAt: new Date(),
+          status: nextStatus,
+          ...meta,
         },
       },
       { new: true },
@@ -90,7 +116,9 @@ export const leadsRepository = {
 
   async updateStatus(id, status) {
     const extra =
-      status === "open_for_quotes" ? { verifiedAt: new Date() } : {};
+      status === "verified" || status === "open_for_quotes"
+        ? { verifiedAt: new Date() }
+        : {};
     const lead = await LeadModel.findByIdAndUpdate(
       id,
       { $set: { status, ...extra } },
@@ -125,10 +153,23 @@ export const leadsRepository = {
     return normalizeLead(lead);
   },
 
-  async markCommitmentPaid(id) {
+  async markCommitmentPaid(id, biddingMeta = null) {
+    const paidAt = new Date();
+    const paymentUpdate = {
+      commitmentFeePaid: true,
+      commitmentFeePaidAt: paidAt,
+    };
+    const update = biddingMeta
+      ? {
+          ...paymentUpdate,
+          status: "open_for_quotes",
+          verifiedAt: paidAt,
+          ...biddingMeta,
+        }
+      : paymentUpdate;
     const lead = await LeadModel.findByIdAndUpdate(
       id,
-      { $set: { commitmentFeePaid: true, commitmentFeePaidAt: new Date() } },
+      { $set: update },
       { new: true },
     ).lean({ virtuals: true });
 
