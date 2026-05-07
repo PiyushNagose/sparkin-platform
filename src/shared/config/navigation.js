@@ -2,8 +2,7 @@ export const publicPrimaryNav = [
   { label: "Home", href: "/" },
   { label: "About Us", href: "/about-us" },
   { label: "Calculator", href: "/calculator" },
-  { label: "Vendors", href: "/vendors" },
-  { label: "Partner", href: "/vendors/partners" },
+  { label: "Partners", href: "/partners" },
   { label: "Resources", href: "/resources" },
 ];
 
@@ -43,7 +42,7 @@ export const portalNavigation = {
     { label: "Broadcast", href: "/admin/broadcast" },
     { label: "Referral Management", href: "/admin/referral-management" },
     { label: "Help Desk", href: "/admin/help-desk" },
-    { label: "Vendor Applications", href: "/admin/vendor-applications" },
+    { label: "Partner Applications", href: "/admin/vendor-applications" },
     { label: "Offers", href: "/admin/offers" },
   ],
 };

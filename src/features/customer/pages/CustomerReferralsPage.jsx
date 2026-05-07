@@ -226,6 +226,8 @@ export default function CustomerReferralsPage() {
     () => dashboard.referrals.slice(0, 5).map(toActivityItem),
     [dashboard.referrals],
   );
+  const rewardAmountLabel = formatPrice(summary?.rewardAmount || 0);
+  const friendDiscountLabel = formatPrice(summary?.friendDiscountAmount || 0);
 
   async function copyReferralLink() {
     if (!summary?.referralLink) return;
@@ -341,7 +343,7 @@ export default function CustomerReferralsPage() {
           }}
         >
           <AutoAwesomeRoundedIcon sx={{ fontSize: "0.9rem" }} />
-          Earn ₹5,000 per referral
+          Earn {rewardAmountLabel} per referral
         </Box>
       </Stack>
 
@@ -420,7 +422,7 @@ export default function CustomerReferralsPage() {
                   lineHeight: 1.7,
                 }}
               >
-                Share this code with friends. They get a ₹2,000 discount, and
+                Share this code with friends. They get a {friendDiscountLabel} discount, and
                 you earn ₹500 instantly when they sign up.
               </Typography>
 

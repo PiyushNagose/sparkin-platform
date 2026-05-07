@@ -517,7 +517,7 @@ export default function CustomerShareEarnPage() {
                     lineHeight: 1.68,
                   }}
                 >
-                  Earn {formatPrice(summary?.rewardAmount || 5000)} for every
+                  Earn {formatPrice(summary?.rewardAmount || 0)} for every
                   successful solar installation referred by you. Credited within
                   15 days of activation.
                 </Typography>

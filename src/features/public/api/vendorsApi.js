@@ -18,7 +18,7 @@ export const publicVendorsApi = {
   async getVendorProfile(vendorId, options = {}) {
     const { data } = await cachedGet(
       businessClient,
-      `/vendors/${requireId(vendorId, "Vendor id")}`,
+      `/vendors/public/${requireId(vendorId, "Vendor id")}`,
       options,
     );
     return data.vendorProfile;

@@ -5,6 +5,7 @@ export default function SignupPage() {
   return (
     <AuthScreenShell
       mode="signup"
+      fixedRole="customer"
       title="Create an account"
       subtitle="Start your journey towards energy independence."
       heroEyebrow="Join the Transition"

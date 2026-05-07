@@ -122,7 +122,7 @@ function getParticipationRate(vendor) {
 }
 
 function isVendorActive(vendor) {
-  return ["submitted", "verified"].includes(vendor.verificationStatus);
+  return vendor.verificationStatus === "verified";
 }
 
 function LeadSummary({ lead, quotes }) {
@@ -366,6 +366,7 @@ export default function AdminVendorAssignmentPage() {
     const allVendors = state.data?.vendors || [];
 
     return allVendors
+      .filter((vendor) => vendor.verificationStatus === "verified")
       .map((vendor) => ({
         ...vendor,
         rating: getVendorRating(vendor),

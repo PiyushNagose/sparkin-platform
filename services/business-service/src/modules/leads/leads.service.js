@@ -1,6 +1,7 @@
 import { AppError } from "../../common/errors/app-error.js";
 import { leadsRepository } from "./leads.repository.js";
 import { platformSettingsService } from "../platform-settings/platform-settings.service.js";
+import { vendorsRepository } from "../vendors/vendors.repository.js";
 import mongoose from "mongoose";
 
 function roundToNearest(value, step = 1000) {
@@ -110,6 +111,12 @@ export const leadsService = {
     }
 
     if (user.role === "vendor") {
+      const vendorProfile = await vendorsRepository.findByVendorId(user.userId);
+
+      if (vendorProfile?.verificationStatus !== "verified") {
+        throw new AppError(403, "Vendor account is waiting for admin approval");
+      }
+
       return leadsRepository.findVendorVisibleLeads(user.userId);
     }
 
@@ -177,6 +184,17 @@ export const leadsService = {
     }
 
     const vendorIds = [...new Set(input.vendorIds)];
+    const vendorProfiles = await Promise.all(
+      vendorIds.map((vendorId) => vendorsRepository.findByVendorId(vendorId)),
+    );
+    const unapprovedVendor = vendorProfiles.find(
+      (profile) => !profile || profile.verificationStatus !== "verified",
+    );
+
+    if (unapprovedVendor) {
+      throw new AppError(400, "Only approved partners can be assigned to leads");
+    }
+
     const settings = await platformSettingsService.getSettings();
     const windowHours = Number(settings.bidding.windowHours || 48);
     const biddingStartsAt = new Date();

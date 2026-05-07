@@ -462,9 +462,16 @@ export function PortalLayout({ portal }) {
     async (onNavClick) => {
       onNavClick?.();
       await logout();
-      navigate(portal === "admin" ? "/auth/admin-login" : "/auth/login", {
+      navigate(
+        portal === "admin"
+          ? "/auth/admin-login"
+          : portal === "vendor"
+            ? "/vendor/login"
+            : "/auth/login",
+        {
         replace: true,
-      });
+        },
+      );
     },
     [logout, navigate, portal],
   );

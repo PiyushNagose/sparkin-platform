@@ -8,6 +8,7 @@ import { updateVendorProfileSchema, updateVendorStatusSchema, uploadVendorDocume
 export const vendorsRouter = Router();
 
 vendorsRouter.get("/public/featured", asyncHandler(vendorsController.listFeatured));
+vendorsRouter.get("/public/:vendorId", asyncHandler(vendorsController.getPublicByVendorId));
 
 vendorsRouter.get("/", requireAuth, asyncHandler(vendorsController.list));
 vendorsRouter.get("/me", requireAuth, asyncHandler(vendorsController.getMe));
@@ -22,4 +23,4 @@ vendorsRouter.delete("/me/documents/:documentId", requireAuth, asyncHandler(vend
 vendorsRouter.post("/me/submit", requireAuth, asyncHandler(vendorsController.submitApplication));
 
 vendorsRouter.patch("/:vendorId/status", requireAuth, validate(updateVendorStatusSchema), asyncHandler(vendorsController.updateStatus));
-vendorsRouter.get("/:vendorId", asyncHandler(vendorsController.getByVendorId));
+vendorsRouter.get("/:vendorId", requireAuth, asyncHandler(vendorsController.getByVendorId));

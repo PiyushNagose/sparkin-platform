@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 const positiveNumber = z.coerce.number().positive();
+const supportedStates = ["andhra_pradesh", "telangana", "karnataka"];
 
 export const updatePlatformSettingsSchema = z.object({
   pricing: z.object({
@@ -22,10 +23,21 @@ export const updatePlatformSettingsSchema = z.object({
     .array(
       z.object({
         id: z.string().trim().min(1),
-        key: z.enum(["andhra_pradesh", "telangana", "karnataka"]),
+        key: z.enum(supportedStates),
         name: z.string().trim().min(2),
         rate: positiveNumber,
       }),
     )
     .min(3),
+  discoms: z
+    .array(
+      z.object({
+        id: z.string().trim().min(1),
+        stateKey: z.enum(supportedStates),
+        name: z.string().trim().min(2),
+        code: z.string().trim().min(2).max(24),
+        status: z.enum(["active", "disabled"]),
+      }),
+    )
+    .default([]),
 });

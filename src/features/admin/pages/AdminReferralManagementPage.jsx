@@ -237,11 +237,10 @@ function StatusChip({ status }) {
 
 function PayoutChip({ rewardStatus, referralId, onUpdate }) {
   const isPaid = rewardStatus === "paid";
-  const isEarned = rewardStatus === "earned";
   const [loading, setLoading] = useState(false);
 
   async function handleToggle() {
-    if (loading || isPaid) return;
+    if (loading) return;
     setLoading(true);
     try {
       await onUpdate(referralId, isPaid ? "earned" : "paid");
@@ -264,10 +263,10 @@ function PayoutChip({ rewardStatus, referralId, onUpdate }) {
         color: isPaid ? "#0F6A38" : "#B91C1C",
         fontSize: "0.7rem",
         fontWeight: 900,
-        cursor: isPaid ? "default" : "pointer",
+        cursor: "pointer",
         userSelect: "none",
         transition: "opacity 0.15s",
-        "&:hover": { opacity: isPaid ? 1 : 0.8 },
+        "&:hover": { opacity: 0.8 },
       }}
     >
       {loading ? (
@@ -329,10 +328,9 @@ function OverviewTab({ referrals }) {
     .filter((r) => r.rewardStatus === "earned")
     .reduce((s, r) => s + r.rewardAmount, 0);
 
-  // Channel breakdown — derive from referralCode prefix patterns (mock channels for demo)
-  const directCount = referrals.filter((_, i) => i % 3 === 0).length;
-  const socialCount = referrals.filter((_, i) => i % 3 === 1).length;
-  const emailCount = referrals.filter((_, i) => i % 3 === 2).length;
+  const directCount = referrals.filter((r) => r.channel === "direct_invite").length;
+  const socialCount = referrals.filter((r) => r.channel === "social_share").length;
+  const emailCount = referrals.filter((r) => r.channel === "email_campaign").length;
   const maxChannel = Math.max(directCount, socialCount, emailCount, 1);
 
   // Recent high-value referrals (top 3 by reward)
@@ -637,7 +635,8 @@ function ReferralsListTab({ referrals, onUpdateRewardStatus }) {
     return referrals.filter((r) => {
       if (cutoff && new Date(r.createdAt) < cutoff) return false;
       if (statusFilter !== "all" && r.status !== statusFilter) return false;
-      if (payoutFilter !== "all" && r.rewardStatus !== payoutFilter) return false;
+      if (payoutFilter === "paid" && r.rewardStatus !== "paid") return false;
+      if (payoutFilter === "unpaid" && r.rewardStatus === "paid") return false;
       return true;
     });
   }, [referrals, cutoff, statusFilter, payoutFilter]);
@@ -712,8 +711,7 @@ function ReferralsListTab({ referrals, onUpdateRewardStatus }) {
           }}
         >
           <MenuItem value="all">Payout Status</MenuItem>
-          <MenuItem value="pending">Pending</MenuItem>
-          <MenuItem value="earned">Earned</MenuItem>
+          <MenuItem value="unpaid">Unpaid</MenuItem>
           <MenuItem value="paid">Paid</MenuItem>
         </TextField>
 
@@ -874,7 +872,7 @@ function ReferralsListTab({ referrals, onUpdateRewardStatus }) {
 
 // ─── Settings Tab ─────────────────────────────────────────────────────────────
 
-function SettingsTab() {
+function SettingsTab({ settings, onSave }) {
   const [config, setConfig] = useState({
     rewardType: "Referral Reward",
     rewardAmount: 1000,
@@ -885,12 +883,34 @@ function SettingsTab() {
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  useEffect(() => {
+    if (!settings) return;
+
+    setConfig({
+      rewardType: settings.rewardType || "Referral Reward",
+      rewardAmount: Number(settings.rewardAmount || 0),
+      minPurchase:
+        settings.minimumPurchaseCondition || "Min. 5kW Solar Installation",
+      expiryDays: String(settings.referralExpiryDays || 60),
+      programActive: Boolean(settings.programActive),
+    });
+  }, [settings]);
+
   async function handleSave() {
     setSaving(true);
-    await new Promise((r) => setTimeout(r, 800));
-    setSaving(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+    try {
+      await onSave({
+        rewardType: config.rewardType,
+        rewardAmount: Number(config.rewardAmount || 0),
+        minimumPurchaseCondition: config.minPurchase,
+        referralExpiryDays: Number(config.expiryDays || 60),
+        programActive: Boolean(config.programActive),
+      });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -1156,19 +1176,35 @@ const TABS = ["Overview", "Referrals List", "Settings"];
 
 export default function AdminReferralManagementPage() {
   const [activeTab, setActiveTab] = useState(0);
-  const [state, setState] = useState({ loading: true, error: "", referrals: [] });
+  const [state, setState] = useState({
+    loading: true,
+    error: "",
+    referrals: [],
+    settings: null,
+  });
 
   const load = useCallback(async (active = true) => {
     setState((s) => ({ ...s, loading: true, error: "" }));
     try {
-      const referrals = await adminReferralsApi.listAll();
-      if (active) setState({ loading: false, error: "", referrals });
+      const [referrals, settings] = await Promise.all([
+        adminReferralsApi.listAll(),
+        adminReferralsApi.getSettings(),
+      ]);
+      if (active) {
+        setState({
+          loading: false,
+          error: "",
+          referrals,
+          settings,
+        });
+      }
     } catch (err) {
       if (active)
         setState({
           loading: false,
           error: err?.response?.data?.message || err.message || "Unable to load referrals",
           referrals: [],
+          settings: null,
         });
     }
   }, []);
@@ -1185,6 +1221,12 @@ export default function AdminReferralManagementPage() {
       ...s,
       referrals: s.referrals.map((r) => (r.id === referralId ? { ...r, rewardStatus: updated.rewardStatus } : r)),
     }));
+  }
+
+  async function handleSaveSettings(payload) {
+    const settings = await adminReferralsApi.updateSettings(payload);
+    setState((s) => ({ ...s, settings }));
+    return settings;
   }
 
   function handleExport() {
@@ -1259,7 +1301,9 @@ export default function AdminReferralManagementPage() {
               onUpdateRewardStatus={handleUpdateRewardStatus}
             />
           )}
-          {activeTab === 2 && <SettingsTab />}
+          {activeTab === 2 && (
+            <SettingsTab settings={state.settings} onSave={handleSaveSettings} />
+          )}
         </>
       ) : null}
     </AdminPageShell>

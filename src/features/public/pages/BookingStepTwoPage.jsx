@@ -16,7 +16,7 @@ import BusinessRoundedIcon from "@mui/icons-material/BusinessRounded";
 import HomeRoundedIcon from "@mui/icons-material/HomeRounded";
 import KeyboardArrowDownRoundedIcon from "@mui/icons-material/KeyboardArrowDownRounded";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import styles from "@/features/public/pages/CalculatorPage.module.css";
 import {
   publicPageSpacing,
@@ -27,6 +27,7 @@ import {
   validateStep2,
   isStep1Complete,
 } from "@/features/public/booking/bookingValidation";
+import { publicPlatformSettingsApi } from "@/features/public/api/platformSettingsApi";
 
 const steps = [
   { label: "Step 1", state: "complete" },
@@ -62,6 +63,26 @@ const ownershipTypes = [
   { title: "Owned", value: "owned" },
   { title: "Rented", value: "rented" },
 ];
+
+const fallbackDiscoms = [
+  { value: "apspdcl", label: "APSPDCL", stateKey: "andhra_pradesh" },
+  { value: "apepdcl", label: "APEPDCL", stateKey: "andhra_pradesh" },
+  { value: "tsspdcl", label: "TSSPDCL", stateKey: "telangana" },
+  { value: "tsnpdcl", label: "TSNPDCL", stateKey: "telangana" },
+  { value: "bescom", label: "BESCOM", stateKey: "karnataka" },
+  { value: "mescom", label: "MESCOM", stateKey: "karnataka" },
+  { value: "hescom", label: "HESCOM", stateKey: "karnataka" },
+  { value: "gescom", label: "GESCOM", stateKey: "karnataka" },
+  { value: "cesc", label: "CESC", stateKey: "karnataka" },
+];
+
+function normalizeStateKey(value = "") {
+  const normalized = value.trim().toLowerCase().replaceAll(/\s+/g, "_");
+  if (normalized.includes("andhra")) return "andhra_pradesh";
+  if (normalized.includes("telangana")) return "telangana";
+  if (normalized.includes("karnataka")) return "karnataka";
+  return normalized;
+}
 
 function BookingStepper() {
   return (
@@ -292,12 +313,68 @@ export default function BookingStepTwoPage() {
   const { draft, updateDraft } = useBookingDraft();
   const navigate = useNavigate();
   const [errors, setErrors] = useState({});
+  const [discomOptions, setDiscomOptions] = useState(fallbackDiscoms);
 
   useEffect(() => {
     if (!isStep1Complete(draft)) {
       navigate("/booking", { replace: true });
     }
   }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadDiscoms() {
+      try {
+        const settings = await publicPlatformSettingsApi.getSettings();
+        if (!active) return;
+
+        const activeDiscoms = (settings.discoms || [])
+          .filter((discom) => discom.status !== "disabled")
+          .map((discom) => ({
+            value: String(discom.code || discom.id).toLowerCase(),
+            label: discom.code || discom.name,
+            stateKey: discom.stateKey,
+          }));
+
+        if (activeDiscoms.length) {
+          setDiscomOptions(activeDiscoms);
+        }
+      } catch {
+        setDiscomOptions(fallbackDiscoms);
+      }
+    }
+
+    loadDiscoms();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const stateDiscomOptions = useMemo(
+    () =>
+      discomOptions.filter(
+        (option) =>
+          option.stateKey === normalizeStateKey(draft.installationAddress.state),
+      ),
+    [discomOptions, draft.installationAddress.state],
+  );
+
+  useEffect(() => {
+    if (!stateDiscomOptions.length) return;
+
+    const hasCurrent = stateDiscomOptions.some(
+      (option) => option.value === draft.property.distributionCompany,
+    );
+
+    if (!hasCurrent) {
+      updateProperty({ distributionCompany: stateDiscomOptions[0].value });
+    }
+  }, [
+    draft.installationAddress.state,
+    draft.property.distributionCompany,
+    stateDiscomOptions,
+  ]);
 
   function updateProperty(values) {
     updateDraft("property", values);
@@ -516,16 +593,16 @@ export default function BookingStepTwoPage() {
                         },
                       }}
                     >
-                      <MenuItem value="">Select Company</MenuItem>
-                      <MenuItem value="tsspdcl">TSSPDCL</MenuItem>
-                      <MenuItem value="tsnpdcl">TSNPDCL</MenuItem>
-                      <MenuItem value="bescom">BESCOM</MenuItem>
-                      <MenuItem value="mescom">MESCOM</MenuItem>
-                      <MenuItem value="hescom">HESCOM</MenuItem>
-                      <MenuItem value="gescom">GESCOM</MenuItem>
-                      <MenuItem value="cesc">CESC</MenuItem>
-                      <MenuItem value="apspdcl">APSPDCL</MenuItem>
-                      <MenuItem value="apepdcl">APEPDCL</MenuItem>
+                      <MenuItem value="">
+                        {stateDiscomOptions.length
+                          ? "Select Company"
+                          : "Select state first"}
+                      </MenuItem>
+                      {stateDiscomOptions.map((option) => (
+                        <MenuItem key={option.value} value={option.value}>
+                          {option.label}
+                        </MenuItem>
+                      ))}
                     </TextField>
                   </Grid>
 

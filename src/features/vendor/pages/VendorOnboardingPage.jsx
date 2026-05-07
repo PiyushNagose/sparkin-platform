@@ -108,8 +108,13 @@ export default function VendorOnboardingPage() {
         setCompany({ ...defaultCompany, ...(profile.company || {}) });
         setDocuments(profile.documents || []);
         setStatus(profile.verificationStatus || "draft");
-        if (profile.verificationStatus && profile.verificationStatus !== "draft") {
+        if (profile.verificationStatus === "verified") {
           navigate("/vendor", { replace: true });
+        } else if (
+          profile.verificationStatus &&
+          profile.verificationStatus !== "draft"
+        ) {
+          navigate("/vendor/pending-approval", { replace: true });
         }
       } catch (apiError) {
         if (active) setError(apiError?.response?.data?.message || "Could not load onboarding profile.");
@@ -227,7 +232,7 @@ export default function VendorOnboardingPage() {
     try {
       const submittedProfile = await vendorsApi.submitApplication();
       window.dispatchEvent(new CustomEvent("sparkin:vendor-profile-updated", { detail: submittedProfile }));
-      navigate("/vendor", { replace: true });
+      navigate("/vendor/pending-approval", { replace: true });
     } catch (apiError) {
       setError(apiError?.response?.data?.message || "Could not submit application.");
     } finally {

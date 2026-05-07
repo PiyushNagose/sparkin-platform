@@ -15,7 +15,13 @@ export function RequireAuth({ allowedRoles, children }) {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/auth/login" replace state={{ from: location }} />;
+    const loginPath = location.pathname.startsWith("/vendor")
+      ? "/vendor/login"
+      : location.pathname.startsWith("/admin")
+        ? "/auth/admin-login"
+        : "/auth/login";
+
+    return <Navigate to={loginPath} replace state={{ from: location }} />;
   }
 
   if (allowedRoles?.length && !allowedRoles.includes(user.role)) {

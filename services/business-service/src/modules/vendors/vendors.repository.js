@@ -20,7 +20,7 @@ function normalizeVendorProfile(profile) {
 export const vendorsRepository = {
   async listFeatured(limit = 6) {
     const profiles = await VendorProfileModel.find({
-      verificationStatus: { $in: ["submitted", "verified"] },
+      verificationStatus: "verified",
     })
       .sort({ updatedAt: -1, createdAt: -1 })
       .limit(limit)
@@ -31,6 +31,14 @@ export const vendorsRepository = {
 
   async findAll() {
     const profiles = await VendorProfileModel.find({})
+      .sort({ updatedAt: -1, createdAt: -1 })
+      .lean({ virtuals: true });
+
+    return profiles.map((profile) => normalizeVendorProfile(profile));
+  },
+
+  async findApproved() {
+    const profiles = await VendorProfileModel.find({ verificationStatus: "verified" })
       .sort({ updatedAt: -1, createdAt: -1 })
       .lean({ virtuals: true });
 

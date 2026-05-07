@@ -12,6 +12,7 @@ function mergeWithDefaults(settings) {
     bidding: { ...defaultPlatformSettings.bidding, ...settings.bidding },
     subsidy: { ...defaultPlatformSettings.subsidy, ...settings.subsidy },
     states: settings.states?.length ? settings.states : defaultPlatformSettings.states,
+    discoms: settings.discoms?.length ? settings.discoms : defaultPlatformSettings.discoms,
   };
 }
 

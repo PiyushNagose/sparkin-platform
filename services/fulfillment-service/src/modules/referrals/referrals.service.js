@@ -1,9 +1,7 @@
 import crypto from "node:crypto";
 import { AppError } from "../../common/errors/app-error.js";
+import { referralSettingsRepository } from "./referral-settings.repository.js";
 import { referralsRepository } from "./referrals.repository.js";
-
-const referrerRewardAmount = 5000;
-const friendDiscountAmount = 2000;
 
 function canUseReferrals(user) {
   return user.role === "customer" || user.role === "admin";
@@ -19,7 +17,7 @@ function buildReferralLink(code) {
   return `https://sparkin.in/ref/${encodeURIComponent(code)}`;
 }
 
-function buildSummary(user, referrals) {
+function buildSummary(user, referrals, settings) {
   const successfulReferrals = referrals.filter((referral) => ["installed", "rewarded"].includes(referral.status)).length;
   const pendingReferrals = referrals.filter((referral) => !["installed", "rewarded"].includes(referral.status)).length;
   const totalEarnings = referrals
@@ -33,8 +31,12 @@ function buildSummary(user, referrals) {
   return {
     referralCode,
     referralLink: buildReferralLink(referralCode),
-    rewardAmount: referrerRewardAmount,
-    friendDiscountAmount,
+    rewardAmount: settings.rewardAmount,
+    friendDiscountAmount: settings.rewardAmount,
+    rewardType: settings.rewardType,
+    minimumPurchaseCondition: settings.minimumPurchaseCondition,
+    referralExpiryDays: settings.referralExpiryDays,
+    programActive: settings.programActive,
     invitesSent: referrals.length,
     successfulReferrals,
     pendingReferrals,
@@ -49,10 +51,11 @@ export const referralsService = {
       throw new AppError(403, "Only customers can use referrals");
     }
 
+    const settings = await referralSettingsRepository.getSettings();
     const referrals = await referralsRepository.findForCustomer(user.userId);
 
     return {
-      summary: buildSummary(user, referrals),
+      summary: buildSummary(user, referrals, settings),
       referrals,
     };
   },
@@ -63,6 +66,22 @@ export const referralsService = {
       throw new AppError(403, "Admin access required");
     }
     return referralsRepository.findAll();
+  },
+
+  async getAdminReferralSettings(user) {
+    if (user.role !== "admin") {
+      throw new AppError(403, "Admin access required");
+    }
+
+    return referralSettingsRepository.getSettings();
+  },
+
+  async updateAdminReferralSettings(user, input) {
+    if (user.role !== "admin") {
+      throw new AppError(403, "Admin access required");
+    }
+
+    return referralSettingsRepository.updateSettings(input);
   },
 
   // Admin: update payout status for a referral
@@ -90,18 +109,25 @@ export const referralsService = {
       throw new AppError(409, "This friend has already been referred");
     }
 
+    const settings = await referralSettingsRepository.getSettings();
+
+    if (!settings.programActive) {
+      throw new AppError(409, "Referral program is currently inactive");
+    }
+
     const referralCode = makeReferralCode(user);
     const referral = await referralsRepository.create({
       referrerId: user.userId,
       referrerEmail: user.email ?? null,
       referralCode,
+      channel: input.channel || "email_campaign",
       friend: {
         fullName: input.fullName,
         email: input.email,
         phoneNumber: input.phoneNumber ?? null,
       },
       status: "invited",
-      rewardAmount: referrerRewardAmount,
+      rewardAmount: settings.rewardAmount,
       rewardStatus: "pending",
       activity: [
         {
@@ -116,7 +142,7 @@ export const referralsService = {
 
     return {
       referral,
-      summary: buildSummary(user, referrals),
+      summary: buildSummary(user, referrals, settings),
     };
   },
 };

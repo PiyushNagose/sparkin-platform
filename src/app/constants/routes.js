@@ -4,6 +4,7 @@ export const appRoutes = {
     about: "/about",
     howItWorks: "/how-it-works",
     calculator: "/calculator",
+    partners: "/partners",
     vendors: "/vendors",
     financing: "/loan-financing",
     contact: "/contact",
@@ -16,6 +17,8 @@ export const appRoutes = {
   auth: {
     login: "/auth/login",
     signup: "/auth/signup",
+    vendorLogin: "/vendor/login",
+    vendorSignup: "/vendor/signup",
   },
   customer: {
     dashboard: "/customer",
@@ -37,4 +40,3 @@ export const appRoutes = {
     profile: "/vendor/profile",
   },
 };
-

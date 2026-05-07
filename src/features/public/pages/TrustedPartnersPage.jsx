@@ -143,7 +143,7 @@ export default function TrustedPartnersPage() {
             >
               <Button
                 component={RouterLink}
-                to="/auth/login"
+                to="/vendor/signup"
                 variant="contained"
                 sx={{
                   minHeight: 42,
@@ -160,7 +160,7 @@ export default function TrustedPartnersPage() {
               </Button>
               <Button
                 component={RouterLink}
-                to="/resources"
+                to="/vendor/login"
                 variant="contained"
                 sx={{
                   minHeight: 42,
@@ -176,7 +176,7 @@ export default function TrustedPartnersPage() {
                   backdropFilter: "blur(8px)",
                 }}
               >
-                Learn More
+                Partner Login
               </Button>
             </Stack>
           </Box>
@@ -540,7 +540,7 @@ export default function TrustedPartnersPage() {
           >
             <Button
               component={RouterLink}
-              to="/auth/login"
+              to="/vendor/signup"
               variant="contained"
               endIcon={<ArrowForwardRoundedIcon />}
               sx={{

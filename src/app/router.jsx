@@ -5,8 +5,12 @@ import { PublicLayout } from "@/app/layouts/PublicLayout";
 import { RequireAuth } from "@/features/auth/RequireAuth";
 import { adminRoutes } from "@/features/admin/routes";
 import { authRoutes } from "@/features/auth/routes";
+import VendorLoginPage from "@/features/auth/pages/VendorLoginPage";
+import VendorSignupPage from "@/features/auth/pages/VendorSignupPage";
 import { customerRoutes } from "@/features/customer/routes";
 import { publicRoutes } from "@/features/public/routes";
+import VendorApprovalGate from "@/features/vendor/VendorApprovalGate";
+import VendorPendingApprovalPage from "@/features/vendor/pages/VendorPendingApprovalPage";
 import { vendorRoutes } from "@/features/vendor/routes";
 import VendorOnboardingPage from "@/features/vendor/pages/VendorOnboardingPage";
 
@@ -25,6 +29,16 @@ export const appRouter = createBrowserRouter([
         path: "/auth",
         element: <AuthLayout />,
         children: authRoutes,
+      },
+      {
+        path: "/vendor/login",
+        element: <AuthLayout />,
+        children: [{ index: true, element: <VendorLoginPage /> }],
+      },
+      {
+        path: "/vendor/signup",
+        element: <AuthLayout />,
+        children: [{ index: true, element: <VendorSignupPage /> }],
       },
       {
         path: "/admin",
@@ -55,8 +69,17 @@ export const appRouter = createBrowserRouter([
             element: <VendorOnboardingPage />,
           },
           {
-            element: <PortalLayout portal="vendor" />,
-            children: vendorRoutes,
+            path: "pending-approval",
+            element: <VendorPendingApprovalPage />,
+          },
+          {
+            element: <VendorApprovalGate />,
+            children: [
+              {
+                element: <PortalLayout portal="vendor" />,
+                children: vendorRoutes,
+              },
+            ],
           },
         ],
       },

@@ -6,6 +6,7 @@ import {
   Divider,
   IconButton,
   InputAdornment,
+  MenuItem,
   Snackbar,
   Stack,
   TextField,
@@ -61,6 +62,13 @@ const DEFAULT_SETTINGS = {
     { id: "ts", key: "telangana", name: "Telangana", rate: "6.20" },
     { id: "ka", key: "karnataka", name: "Karnataka", rate: "8.10" },
   ],
+  discoms: [
+    { id: "apspdcl", stateKey: "andhra_pradesh", name: "Southern Power Distribution Company of AP", code: "APSPDCL", status: "active" },
+    { id: "apepdcl", stateKey: "andhra_pradesh", name: "Eastern Power Distribution Company of AP", code: "APEPDCL", status: "active" },
+    { id: "tsspdcl", stateKey: "telangana", name: "Southern Power Distribution Company of Telangana", code: "TSSPDCL", status: "active" },
+    { id: "tsnpdcl", stateKey: "telangana", name: "Northern Power Distribution Company of Telangana", code: "TSNPDCL", status: "active" },
+    { id: "bescom", stateKey: "karnataka", name: "Bangalore Electricity Supply Company", code: "BESCOM", status: "active" },
+  ],
 };
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
@@ -107,6 +115,11 @@ function normalizeSettingsForUi(settings) {
       key: normalizeStateKey(state.name, state.key),
       rate: String(state.rate),
     })),
+    discoms: (settings.discoms || DEFAULT_SETTINGS.discoms).map((discom) => ({
+      ...discom,
+      stateKey: normalizeStateKey("", discom.stateKey),
+      status: discom.status === "disabled" ? "disabled" : "active",
+    })),
   };
 }
 
@@ -119,6 +132,15 @@ function normalizeSettingsForApi(settings) {
         key: normalizeStateKey(state.name, state.key),
       }))
       .filter((state) => state.key),
+    discoms: (settings.discoms || [])
+      .map((discom) => ({
+        ...discom,
+        code: String(discom.code || "").trim().toUpperCase(),
+        name: String(discom.name || "").trim(),
+        stateKey: normalizeStateKey("", discom.stateKey),
+        status: discom.status === "disabled" ? "disabled" : "active",
+      }))
+      .filter((discom) => discom.stateKey && discom.name && discom.code),
   };
 }
 
@@ -366,6 +388,61 @@ export default function AdminSettingsPage() {
     setIsDirty(true);
   }, []);
 
+  const addDiscom = useCallback(() => {
+    setSettings((s) => ({
+      ...s,
+      discoms: [
+        ...(s.discoms || []),
+        {
+          id: uid(),
+          stateKey: s.states[0]?.key || "telangana",
+          name: "",
+          code: "",
+          status: "active",
+        },
+      ],
+    }));
+    setIsDirty(true);
+  }, []);
+
+  const updateDiscom = useCallback((id, field, value) => {
+    setSettings((s) => ({
+      ...s,
+      discoms: (s.discoms || []).map((discom) =>
+        discom.id === id
+          ? {
+              ...discom,
+              [field]: field === "code" ? value.toUpperCase() : value,
+            }
+          : discom,
+      ),
+    }));
+    setIsDirty(true);
+  }, []);
+
+  const toggleDiscomStatus = useCallback((id) => {
+    setSettings((s) => ({
+      ...s,
+      discoms: (s.discoms || []).map((discom) =>
+        discom.id === id
+          ? {
+              ...discom,
+              status: discom.status === "disabled" ? "active" : "disabled",
+            }
+          : discom,
+      ),
+    }));
+    setIsDirty(true);
+  }, []);
+
+  const removeDiscom = useCallback((id) => {
+    setSettings((s) => ({
+      ...s,
+      discoms: (s.discoms || []).filter((discom) => discom.id !== id),
+    }));
+    setIsDirty(true);
+  }, []);
+
   // ── validation ─────────────────────────────────────────────────────────────
 
   function validate() {
@@ -394,6 +471,14 @@ export default function AdminSettingsPage() {
       if (!st.name.trim()) errors.push(`State row ${i + 1}: name required`);
       if (!isPositiveNumber(st.rate))
         errors.push(`State row ${i + 1}: valid rate required`);
+    });
+    (settings.discoms || []).forEach((discom, i) => {
+      if (!normalizeStateKey("", discom.stateKey))
+        errors.push(`DISCOM row ${i + 1}: state required`);
+      if (!String(discom.name || "").trim())
+        errors.push(`DISCOM row ${i + 1}: company name required`);
+      if (!String(discom.code || "").trim())
+        errors.push(`DISCOM row ${i + 1}: company code required`);
     });
     return errors;
   }
@@ -945,6 +1030,141 @@ export default function AdminSettingsPage() {
             }}
           >
             + Add New State
+          </Button>
+        </Box>
+      </SectionRow>
+
+      <Divider
+        sx={{ my: { xs: 3, md: 3.5 }, borderColor: "rgba(225,232,241,0.96)" }}
+      />
+
+      {/* Distribution Companies */}
+      <SectionRow
+        icon={LocationOnOutlinedIcon}
+        title="Distribution Companies (DISCOMs)"
+        description="Manage electricity distribution companies for each state. Booking forms will show only active companies for the customer's selected state."
+        accent="#0E56C8"
+      >
+        <Box>
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: {
+                xs: "1fr",
+                md: "160px 1.2fr 150px 120px 120px",
+              },
+              gap: 1.2,
+              px: { xs: 0, md: 0.5 },
+              pb: 1.2,
+              borderBottom: "1px solid #EEF2F7",
+            }}
+          >
+            {["State", "Distribution Company Name", "Code", "Status", "Actions"].map((h) => (
+              <Typography key={h} sx={fieldLabelSx}>
+                {h}
+              </Typography>
+            ))}
+          </Box>
+
+          <Stack spacing={1}>
+            {(settings.discoms || []).map((discom) => (
+              <Box
+                key={discom.id}
+                sx={{
+                  display: "grid",
+                  gridTemplateColumns: {
+                    xs: "1fr",
+                    md: "160px 1.2fr 150px 120px 120px",
+                  },
+                  gap: 1.2,
+                  alignItems: "center",
+                  py: 1.1,
+                  borderBottom: "1px solid #F1F4F8",
+                }}
+              >
+                <TextField
+                  select
+                  size="small"
+                  value={discom.stateKey}
+                  onChange={(e) => updateDiscom(discom.id, "stateKey", e.target.value)}
+                  sx={inputSx}
+                >
+                  {settings.states.map((state) => (
+                    <MenuItem key={state.id} value={state.key}>
+                      {state.name}
+                    </MenuItem>
+                  ))}
+                </TextField>
+                <TextField
+                  size="small"
+                  value={discom.name}
+                  onChange={(e) => updateDiscom(discom.id, "name", e.target.value)}
+                  placeholder="Distribution company name"
+                  sx={inputSx}
+                />
+                <TextField
+                  size="small"
+                  value={discom.code}
+                  onChange={(e) => updateDiscom(discom.id, "code", e.target.value)}
+                  placeholder="BESCOM"
+                  sx={inputSx}
+                />
+                <Chip
+                  label={discom.status === "disabled" ? "Disabled" : "Active"}
+                  size="small"
+                  sx={{
+                    width: "fit-content",
+                    bgcolor: discom.status === "disabled" ? "#EEF2F6" : "#DDFBEF",
+                    color: discom.status === "disabled" ? "#667386" : "#0B7D44",
+                    fontWeight: 900,
+                    fontSize: "0.66rem",
+                    textTransform: "uppercase",
+                  }}
+                />
+                <Stack direction="row" spacing={0.4} alignItems="center">
+                  <Button
+                    size="small"
+                    onClick={() => toggleDiscomStatus(discom.id)}
+                    sx={{
+                      color: "#4B5565",
+                      fontSize: "0.78rem",
+                      fontWeight: 800,
+                      textTransform: "none",
+                      minWidth: 0,
+                    }}
+                  >
+                    {discom.status === "disabled" ? "Enable" : "Disable"}
+                  </Button>
+                  <Tooltip title="Remove DISCOM" placement="top">
+                    <IconButton
+                      size="small"
+                      onClick={() => removeDiscom(discom.id)}
+                      sx={{ color: "#D74C4C", borderRadius: "0.65rem" }}
+                    >
+                      <DeleteOutlineRoundedIcon sx={{ fontSize: "0.95rem" }} />
+                    </IconButton>
+                  </Tooltip>
+                </Stack>
+              </Box>
+            ))}
+          </Stack>
+
+          <Button
+            startIcon={<AddRoundedIcon />}
+            onClick={addDiscom}
+            variant="contained"
+            sx={{
+              mt: 2,
+              minHeight: 42,
+              borderRadius: "0.85rem",
+              bgcolor: "#0E56C8",
+              boxShadow: "0 10px 22px rgba(14,86,200,0.18)",
+              fontSize: "0.8rem",
+              fontWeight: 900,
+              textTransform: "none",
+            }}
+          >
+            Add Distribution Company
           </Button>
         </Box>
       </SectionRow>
