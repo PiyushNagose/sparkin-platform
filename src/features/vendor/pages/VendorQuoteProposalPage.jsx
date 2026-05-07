@@ -84,6 +84,22 @@ function formatBidRange(lead) {
     : "Pending admin approval";
 }
 
+function getVerifiedSystemSize(lead) {
+  return (
+    lead?.adminSystemSizeKw ||
+    lead?.calculatorEstimate?.system?.recommendedSizeKw ||
+    lead?.property?.sanctionedLoadKw ||
+    ""
+  );
+}
+
+function isPriceInsideRange(value, lead) {
+  const totalPrice = Number(value || 0);
+  const range = getBidRange(lead);
+  if (!range || !totalPrice) return true;
+  return totalPrice >= range.minAmount && totalPrice <= range.maxAmount;
+}
+
 function validateQuoteForm(form, lead) {
   const totalPrice = Number(form.totalPrice);
   const sizeKw = Number(form.sizeKw);
@@ -152,8 +168,8 @@ export default function VendorQuoteProposalPage() {
 
       try {
         const [result, quote] = await Promise.all([
-          leadsApi.getLead(leadId),
-          quotesApi.getMyQuoteForLead(leadId),
+          leadsApi.getLead(leadId, { force: true }),
+          quotesApi.listQuotes({ leadId }, { force: true }).then((quotes) => quotes[0] ?? null),
         ]);
 
         if (!active) return;
@@ -166,12 +182,17 @@ export default function VendorQuoteProposalPage() {
               window.localStorage.getItem(getDraftKey(leadId)) || "null",
             );
 
+        const verifiedSystemSize = getVerifiedSystemSize(result);
+        const draftTotalPrice = isPriceInsideRange(draft?.totalPrice, result)
+          ? draft?.totalPrice
+          : "";
+
         setForm((current) => ({
           ...current,
           ...(draft || {}),
           totalPrice: quote?.pricing?.totalPrice
             ? String(quote.pricing.totalPrice)
-            : draft?.totalPrice || current.totalPrice,
+            : draftTotalPrice || current.totalPrice,
           equipmentCost: quote?.pricing?.equipmentCost
             ? String(quote.pricing.equipmentCost)
             : draft?.equipmentCost || current.equipmentCost,
@@ -183,11 +204,9 @@ export default function VendorQuoteProposalPage() {
             : draft?.permittingCost || current.permittingCost,
           sizeKw: quote?.system?.sizeKw
             ? String(quote.system.sizeKw)
-            : draft?.sizeKw
-              ? draft.sizeKw
-              : result.property?.sanctionedLoadKw
-                ? String(result.property.sanctionedLoadKw)
-                : current.sizeKw,
+            : verifiedSystemSize
+              ? String(verifiedSystemSize)
+              : draft?.sizeKw || current.sizeKw,
           panelType:
             quote?.system?.panelType || draft?.panelType || current.panelType,
           inverterType:
@@ -234,11 +253,9 @@ export default function VendorQuoteProposalPage() {
       ],
       [
         "System Size",
-        lead.adminSystemSizeKw
-          ? `${lead.adminSystemSizeKw} kW`
-          : lead.property?.sanctionedLoadKw
-            ? `${lead.property.sanctionedLoadKw} kW`
-            : "Assessment pending",
+        getVerifiedSystemSize(lead)
+          ? `${getVerifiedSystemSize(lead)} kW`
+          : "Assessment pending",
       ],
       ["Budget Range", formatBidRange(lead)],
     ];
@@ -469,6 +486,10 @@ export default function VendorQuoteProposalPage() {
                 updateField("totalPrice", event.target.value)
               }
               placeholder="310000"
+              inputProps={{
+                min: getBidRange(lead)?.minAmount || undefined,
+                max: getBidRange(lead)?.maxAmount || undefined,
+              }}
               sx={inputSx}
             />
             <Typography sx={{ mt: 0.6, color: "#6F7D8F", fontSize: "0.74rem" }}>
@@ -535,6 +556,7 @@ export default function VendorQuoteProposalPage() {
                   onChange={(event) =>
                     updateField("sizeKw", event.target.value)
                   }
+                  placeholder={getVerifiedSystemSize(lead) ? String(getVerifiedSystemSize(lead)) : "5"}
                   sx={inputSx}
                 />
               </Box>

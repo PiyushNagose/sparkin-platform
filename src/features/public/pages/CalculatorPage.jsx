@@ -46,6 +46,7 @@ const initialForm = {
   monthlyBill: "",
   monthlyUnits: "",
   roofAreaSqFt: "",
+  systemSizeKw: "",
   sanctionedLoadKw: "",
   connectionType: "single_phase",
   daytimeUsagePercent: "75",
@@ -101,6 +102,7 @@ export default function CalculatorPage() {
         monthlyBill: Number(form.monthlyBill),
         monthlyUnits: toNumberOrUndefined(form.monthlyUnits),
         roofAreaSqFt: toNumberOrUndefined(form.roofAreaSqFt),
+        systemSizeKw: toNumberOrUndefined(form.systemSizeKw),
         sanctionedLoadKw: toNumberOrUndefined(form.sanctionedLoadKw),
         connectionType: form.connectionType,
         daytimeUsagePercent: isCommercial ? toNumberOrUndefined(form.daytimeUsagePercent) : undefined,
@@ -208,7 +210,8 @@ export default function CalculatorPage() {
                 <TextField label="Average Monthly Bill" type="number" value={form.monthlyBill} onChange={(event) => updateForm("monthlyBill", event.target.value)} placeholder="1200" />
                 <TextField label="Monthly Units (optional)" type="number" value={form.monthlyUnits} onChange={(event) => updateForm("monthlyUnits", event.target.value)} placeholder="Auto from bill" />
                 <TextField label="Available Roof Area sq. ft. (optional)" type="number" value={form.roofAreaSqFt} onChange={(event) => updateForm("roofAreaSqFt", event.target.value)} placeholder="600" />
-                <TextField label="Sanctioned Load kW (optional)" type="number" value={form.sanctionedLoadKw} onChange={(event) => updateForm("sanctionedLoadKw", event.target.value)} placeholder={isCommercial ? "25" : "5"} />
+                <TextField label="Preferred System Size kW (optional)" type="number" value={form.systemSizeKw} onChange={(event) => updateForm("systemSizeKw", event.target.value)} placeholder={isCommercial ? "25" : "5"} />
+                <TextField label="Sanctioned Load kW (optional)" type="number" value={form.sanctionedLoadKw} onChange={(event) => updateForm("sanctionedLoadKw", event.target.value)} placeholder={isCommercial ? "30" : "5"} />
                 <TextField select label="Connection Type" value={form.connectionType} onChange={(event) => updateForm("connectionType", event.target.value)}>
                   {(isCommercial ? [["lt", "LT"], ["ht", "HT"]] : [["single_phase", "Single Phase"], ["three_phase", "Three Phase"]]).map(([value, label]) => (
                     <MenuItem key={value} value={value}>{label}</MenuItem>

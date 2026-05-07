@@ -15,6 +15,7 @@ export const estimateSchema = z.object({
   monthlyBill: z.coerce.number().min(500).max(500000),
   monthlyUnits: z.coerce.number().min(50).max(100000).optional().nullable(),
   roofAreaSqFt: z.coerce.number().min(100).max(100000).optional().nullable(),
+  systemSizeKw: z.coerce.number().min(1).max(10000).optional().nullable(),
   sanctionedLoadKw: z.coerce.number().min(1).max(10000).optional().nullable(),
   connectionType: z.enum(["single_phase", "three_phase", "lt", "ht"]).optional().nullable(),
   daytimeUsagePercent: z.coerce.number().min(20).max(100).optional().nullable(),
