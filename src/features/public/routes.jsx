@@ -28,6 +28,7 @@ import AboutPage from "@/features/public/pages/AboutPage";
 import ArticlesPage from "@/features/public/pages/ArticlesPage";
 import BlogPage from "@/features/public/pages/BlogPage";
 import ReferEarnPage from "@/features/public/pages/ReferEarnPage";
+import ReferralLandingPage from "@/features/public/pages/ReferralLandingPage";
 import ResourcesPage from "@/features/public/pages/ResourcesPage";
 import TrustedPartnersPage from "@/features/public/pages/TrustedPartnersPage";
 import VendorDiscoveryPage from "@/features/public/pages/VendorDiscoveryPage";
@@ -138,6 +139,10 @@ export const publicRoutes = [
   {
     path: "refer-earn",
     element: <ReferEarnPage />,
+  },
+  {
+    path: "ref/:referralCode",
+    element: <ReferralLandingPage />,
   },
   {
     path: "articles",

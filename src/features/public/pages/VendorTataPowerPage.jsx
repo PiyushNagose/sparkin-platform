@@ -9,10 +9,15 @@ import WorkspacePremiumRoundedIcon from "@mui/icons-material/WorkspacePremiumRou
 import { Link as RouterLink, useParams } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import { leadsApi, quotesApi } from "@/features/public/api/leadsApi";
+import { publicPlatformSettingsApi } from "@/features/public/api/platformSettingsApi";
 import { publicVendorsApi } from "@/features/public/api/vendorsApi";
 import styles from "@/features/public/pages/CalculatorPage.module.css";
 import tataPowerHeroPlaceholder from "@/shared/assets/images/public/vendors/tata-power-hero-placeholder.png";
 import tataPowerSpecPlaceholder from "@/shared/assets/images/public/vendors/tata-power-spec-placeholder.png";
+import {
+  buildGovernmentSupportSummary,
+  calculateSubsidyAmount,
+} from "@/shared/lib/subsidy/subsidy";
 import {
   publicPageSpacing,
   publicTypography,
@@ -164,6 +169,7 @@ export default function VendorTataPowerPage() {
   const [quote, setQuote] = useState(null);
   const [lead, setLead] = useState(null);
   const [vendor, setVendor] = useState(null);
+  const [platformSettings, setPlatformSettings] = useState(null);
   const [isLoading, setIsLoading] = useState(Boolean(quoteId));
   const [error, setError] = useState("");
 
@@ -177,17 +183,19 @@ export default function VendorTataPowerPage() {
     async function loadQuoteDetails() {
       try {
         const quoteResult = await quotesApi.getQuote(quoteId);
-        const [leadResult, vendorResult] = await Promise.all([
+        const [leadResult, vendorResult, settingsResult] = await Promise.all([
           quoteResult.leadId ? leadsApi.getLead(quoteResult.leadId) : null,
           quoteResult.vendorId
             ? publicVendorsApi.getVendorProfile(quoteResult.vendorId).catch(() => null)
             : null,
+          publicPlatformSettingsApi.getSettings().catch(() => null),
         ]);
 
         if (!active) return;
         setQuote(quoteResult);
         setLead(leadResult);
         setVendor(vendorResult);
+        setPlatformSettings(settingsResult);
       } catch (apiError) {
         if (active) {
           setError(
@@ -209,8 +217,18 @@ export default function VendorTataPowerPage() {
 
   const vendorName = getVendorName(quote, vendor);
   const totalPrice = quote?.pricing?.totalPrice || 285000;
-  const netPayable = Math.round(totalPrice * 0.94);
   const systemSize = quote?.system?.sizeKw || 5;
+  const propertyType = lead?.property?.type || "residential";
+  const subsidyAmount = calculateSubsidyAmount(
+    platformSettings?.subsidy,
+    systemSize,
+    propertyType,
+  );
+  const netPayable = Math.max(0, totalPrice - subsidyAmount);
+  const governmentSupport = buildGovernmentSupportSummary(
+    platformSettings?.subsidy,
+    subsidyAmount,
+  );
   const panelType = quote?.system?.panelType || "Mono-PERC Half Cut";
   const inverterType = quote?.system?.inverterType || "String Inverter (MPPT)";
   const location = getLocation(vendor, lead);
@@ -516,6 +534,16 @@ export default function VendorTataPowerPage() {
                               >
                                 {formatPrice(netPayable)}
                               </Typography>
+                              <Typography
+                                sx={{
+                                  mt: 0.35,
+                                  color: "#6D788A",
+                                  fontSize: "0.72rem",
+                                  lineHeight: 1.5,
+                                }}
+                              >
+                                After estimated subsidy of {formatPrice(subsidyAmount)}
+                              </Typography>
                             </Box>
                           </Stack>
 
@@ -633,6 +661,42 @@ export default function VendorTataPowerPage() {
                   />
                 </Grid>
               </Grid>
+            </Box>
+
+            {/* Government Support */}
+            <Box
+              sx={{
+                p: { xs: 2.4, md: 3 },
+                borderRadius: "1.6rem",
+                background: "linear-gradient(180deg, #0E7A3B 0%, #07672E 100%)",
+                boxShadow: "0 16px 34px rgba(17,31,54,0.08)",
+              }}
+            >
+              <Stack
+                direction={{ xs: "column", md: "row" }}
+                justifyContent="space-between"
+                spacing={2}
+              >
+                <Box>
+                  <Typography sx={{ color: "#EAF56F", fontSize: "0.66rem", fontWeight: 800, letterSpacing: 0.35, textTransform: "uppercase" }}>
+                    Available Government Support
+                  </Typography>
+                  <Typography sx={{ mt: 0.8, color: "white", fontSize: "1.15rem", fontWeight: 800 }}>
+                    {governmentSupport.schemeName}
+                  </Typography>
+                  <Typography sx={{ mt: 0.55, color: "rgba(235,246,239,0.84)", fontSize: "0.84rem", lineHeight: 1.65, maxWidth: 620 }}>
+                    This subsidy estimate follows the same platform settings used in calculator and admin pricing, so the value stays consistent across your flow.
+                  </Typography>
+                </Box>
+                <Box sx={{ textAlign: { xs: "left", md: "right" } }}>
+                  <Typography sx={{ color: "rgba(235,246,239,0.68)", fontSize: "0.62rem", fontWeight: 800, letterSpacing: 0.35, textTransform: "uppercase" }}>
+                    Estimated Subsidy
+                  </Typography>
+                  <Typography sx={{ mt: 0.55, color: "white", fontSize: { xs: "2rem", md: "2.25rem" }, fontWeight: 800, lineHeight: 1 }}>
+                    {formatPrice(subsidyAmount)}
+                  </Typography>
+                </Box>
+              </Stack>
             </Box>
 
             {/* Warranty & Service */}

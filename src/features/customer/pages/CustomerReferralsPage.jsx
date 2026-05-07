@@ -21,6 +21,7 @@ import ChevronRightRoundedIcon from "@mui/icons-material/ChevronRightRounded";
 import RedeemRoundedIcon from "@mui/icons-material/RedeemRounded";
 import { Link as RouterLink } from "react-router-dom";
 import { referralsApi } from "@/features/customer/api/referralsApi";
+import { buildReferralUrl } from "@/features/customer/referrals/referralTracking";
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -232,21 +233,34 @@ export default function CustomerReferralsPage() {
   async function copyReferralLink() {
     if (!summary?.referralLink) return;
     try {
-      await navigator.clipboard.writeText(summary.referralLink);
+      await navigator.clipboard.writeText(buildReferralUrl(summary.referralLink));
       setNotice("Referral link copied to clipboard.");
     } catch {
       setNotice("Could not copy — please copy the link manually.");
     }
   }
 
+  async function copyReferralLinkForChannel(channel) {
+    if (!summary?.referralLink) return;
+    try {
+      await navigator.clipboard.writeText(
+        `${buildReferralUrl(summary.referralLink)}?channel=${channel}`,
+      );
+      setNotice(`${channel === "qr" ? "QR" : "Referral"} link copied to clipboard.`);
+    } catch {
+      setNotice("Could not copy the referral link.");
+    }
+  }
+
   async function shareReferral() {
     if (!summary?.referralLink) return;
+    const referralUrl = buildReferralUrl(summary.referralLink);
     if (navigator.share) {
       try {
         await navigator.share({
           title: "Sparkin Solar referral",
           text: "Go solar with Sparkin and use my referral link for a discount.",
-          url: summary.referralLink,
+          url: referralUrl,
         });
         return;
       } catch {
@@ -258,7 +272,8 @@ export default function CustomerReferralsPage() {
 
   function openWhatsApp() {
     if (!summary?.referralLink) return;
-    const msg = `Hey! I'm saving on electricity with Sparkin Solar. Use my referral link: ${summary.referralLink}`;
+    const referralUrl = `${buildReferralUrl(summary.referralLink)}?channel=whatsapp`;
+    const msg = `Hey! I'm saving on electricity with Sparkin Solar. Use my referral link: ${referralUrl}`;
     window.open(
       `https://wa.me/?text=${encodeURIComponent(msg)}`,
       "_blank",
@@ -278,7 +293,7 @@ export default function CustomerReferralsPage() {
     {
       label: "Copy Link",
       description:
-        summary?.referralLink?.replace("https://", "") || "Link unavailable",
+        buildReferralUrl(summary?.referralLink || "").replace(/^https?:\/\//, "") || "Link unavailable",
       icon: <LinkRoundedIcon sx={{ fontSize: "0.95rem" }} />,
       iconBg: "#EEF4FF",
       iconTone: "#0E56C8",
@@ -286,11 +301,11 @@ export default function CustomerReferralsPage() {
     },
     {
       label: "QR Code",
-      description: "Coming soon",
+      description: "Copy QR-ready link",
       icon: <QrCode2RoundedIcon sx={{ fontSize: "0.95rem" }} />,
       iconBg: "#F2F5F8",
       iconTone: "#647387",
-      onClick: () => {},
+      onClick: () => copyReferralLinkForChannel("qr"),
     },
   ];
 

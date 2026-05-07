@@ -22,6 +22,97 @@ function getLeadSystemSizeKw(lead) {
   return 5;
 }
 
+function roofSizePotential(sizeRange) {
+  if (sizeRange === "under_500") return 3;
+  if (sizeRange === "over_1000") return 12;
+  return 6;
+}
+
+function scoreRoof({ attachment, roof = {}, property = {}, calculatorEstimate = null }) {
+  const isImage = String(attachment?.mimeType || "").startsWith("image/");
+  const hasCaptureContext = Boolean(attachment?.capturedAt || attachment?.location?.latitude);
+  const imageQualityScore = isImage ? (attachment.size > 80_000 ? 20 : 14) : 6;
+  const shadowScore = roof.shadow === "none" ? 28 : roof.shadow === "partial" ? 18 : 7;
+  const conditionScore =
+    roof.condition === "excellent" ? 24 : roof.condition === "average" ? 17 : 8;
+  const contextScore = hasCaptureContext ? 14 : 9;
+  const roofTypeScore = property.roofType === "flat" ? 12 : 10;
+  const accuracyPercent = Math.min(
+    98,
+    Math.max(58, imageQualityScore + shadowScore + conditionScore + contextScore + roofTypeScore),
+  );
+  const basePotential =
+    Number(calculatorEstimate?.system?.recommendedSizeKw) ||
+    Number(property.sanctionedLoadKw) ||
+    roofSizePotential(roof.sizeRange);
+  const shadowFactor = roof.shadow === "heavy" ? 0.62 : roof.shadow === "partial" ? 0.82 : 1;
+  const conditionFactor = roof.condition === "needs_repair" ? 0.72 : roof.condition === "average" ? 0.9 : 1;
+  const potentialKw = Number((basePotential * shadowFactor * conditionFactor).toFixed(1));
+  const status =
+    accuracyPercent >= 90 && potentialKw >= 3
+      ? "ideal"
+      : accuracyPercent >= 78
+        ? "good"
+        : potentialKw < 2
+          ? "limited"
+          : "needs_review";
+  const statusLabel = {
+    ideal: "Ideal",
+    good: "Good",
+    needs_review: "Needs Review",
+    limited: "Limited",
+  }[status];
+
+  const findings = [
+    isImage ? "Roof reference image detected" : "PDF/reference document uploaded",
+    roof.shadow === "heavy"
+      ? "Heavy shadow may reduce generation"
+      : roof.shadow === "partial"
+        ? "Partial shade considered in estimate"
+        : "Clear solar exposure indicated",
+    roof.condition === "needs_repair"
+      ? "Roof condition needs engineer review"
+      : "Roof condition supports design planning",
+  ];
+
+  return {
+    status,
+    statusLabel,
+    accuracyPercent,
+    potentialKw,
+    message:
+      status === "ideal"
+        ? "High potential for solar efficiency at your location."
+        : status === "good"
+          ? "Good solar potential. Engineer will validate exact layout."
+          : status === "limited"
+            ? "Solar potential is limited from the current roof inputs."
+            : "Photo received. Expert review will confirm final fitment.",
+    findings,
+    image: {
+      fileName: attachment.fileName,
+      mimeType: attachment.mimeType,
+      size: attachment.size,
+      capturedAt: attachment.capturedAt || null,
+    },
+    evaluatedAt: new Date().toISOString(),
+  };
+}
+
+async function buildBiddingMeta(lead) {
+  const settings = await platformSettingsService.getSettings();
+  const windowHours = Number(settings.bidding.windowHours || 48);
+  const biddingStartsAt = new Date();
+  const biddingEndsAt = new Date(
+    biddingStartsAt.getTime() + windowHours * 60 * 60 * 1000,
+  );
+
+  return {
+    biddingWindowHours: windowHours,
+    biddingEndsAt,
+  };
+}
+
 async function buildCommercialRange(lead, input = {}) {
   const settings = await platformSettingsService.getSettings();
   const sizeKw = Number(input.adminSystemSizeKw || getLeadSystemSizeKw(lead));
@@ -105,6 +196,14 @@ export const leadsService = {
     return lead;
   },
 
+  async analyzeRoof(user, input) {
+    if (!["customer", "vendor", "admin"].includes(user.role)) {
+      throw new AppError(403, "You do not have permission to analyze roof images");
+    }
+
+    return scoreRoof(input);
+  },
+
   async listLeads(user) {
     if (user.role === "admin") {
       return leadsRepository.findAll();
@@ -149,8 +248,12 @@ export const leadsService = {
   },
 
   async updateLeadStatus(user, leadId, input) {
-    if (user.role !== "vendor" && user.role !== "admin") {
-      throw new AppError(403, "Only vendors can update lead status");
+    if (user.role === "vendor" && input.status === "reviewing") {
+      return this.getLead(user, leadId);
+    }
+
+    if (user.role !== "admin") {
+      throw new AppError(403, "Only admins can update lead status");
     }
 
     const lead = await this.getLead(user, leadId);
@@ -162,7 +265,21 @@ export const leadsService = {
       );
     }
 
+    if (input.status === "verified") {
+      await leadsRepository.updateDetails(
+        leadId,
+        await buildCommercialRange(lead),
+      );
+      return leadsRepository.updateStatus(leadId, "verified");
+    }
+
     if (input.status === "open_for_quotes") {
+      if (!lead.assignedVendorIds?.length) {
+        throw new AppError(409, "Assign vendors before opening bidding");
+      }
+      if (!lead.commitmentFeePaid) {
+        throw new AppError(409, "Confirm customer payment before opening bidding");
+      }
       await leadsRepository.updateDetails(
         leadId,
         await buildCommercialRange(lead),
@@ -182,6 +299,14 @@ export const leadsService = {
     if (lead.status === "closed") {
       throw new AppError(409, "Closed leads cannot be assigned to vendors");
     }
+    if (
+      !lead.verifiedAt &&
+      !["verified", "vendors_assigned", "open_for_quotes", "quote_selected"].includes(
+        lead.status,
+      )
+    ) {
+      throw new AppError(409, "Verify this lead before assigning vendors");
+    }
 
     const vendorIds = [...new Set(input.vendorIds)];
     const vendorProfiles = await Promise.all(
@@ -195,18 +320,15 @@ export const leadsService = {
       throw new AppError(400, "Only approved partners can be assigned to leads");
     }
 
-    const settings = await platformSettingsService.getSettings();
-    const windowHours = Number(settings.bidding.windowHours || 48);
-    const biddingStartsAt = new Date();
-    const biddingEndsAt = new Date(
-      biddingStartsAt.getTime() + windowHours * 60 * 60 * 1000,
-    );
     const bidDetails = await buildCommercialRange(lead);
+    const isPaid = Boolean(lead.commitmentFeePaid);
+    const biddingMeta = isPaid ? await buildBiddingMeta(lead) : {};
 
     return leadsRepository.assignVendors(leadId, vendorIds, {
       ...bidDetails,
-      biddingWindowHours: windowHours,
-      biddingEndsAt,
+      ...biddingMeta,
+      status: isPaid ? "open_for_quotes" : "vendors_assigned",
+      biddingEndsAt: isPaid ? biddingMeta.biddingEndsAt : null,
     });
   },
 
@@ -230,6 +352,11 @@ export const leadsService = {
       throw new AppError(403, "You can only update your own lead");
     }
 
-    return leadsRepository.markCommitmentPaid(leadId);
+    const shouldOpenBidding =
+      lead.assignedVendorIds?.length &&
+      !["quote_selected", "closed"].includes(lead.status);
+    const biddingMeta = shouldOpenBidding ? await buildBiddingMeta(lead) : null;
+
+    return leadsRepository.markCommitmentPaid(leadId, biddingMeta);
   },
 };

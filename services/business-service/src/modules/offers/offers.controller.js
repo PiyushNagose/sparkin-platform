@@ -11,6 +11,11 @@ export const offersController = {
     res.status(200).json(result);
   },
 
+  async listPublic(req, res) {
+    const result = await offersService.listPublicOffers(req.query);
+    res.status(200).json(result);
+  },
+
   async getById(req, res) {
     const offer = await offersService.getOffer(req.auth, req.params.offerId);
     res.status(200).json({ offer });

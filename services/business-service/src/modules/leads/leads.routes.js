@@ -5,6 +5,7 @@ import { asyncHandler } from "../../common/utils/async-handler.js";
 import { leadsController } from "./leads.controller.js";
 import {
   assignLeadVendorsSchema,
+  analyzeRoofSchema,
   createLeadSchema,
   markCommitmentPaidSchema,
   updateLeadDetailsSchema,
@@ -15,6 +16,11 @@ export const leadsRouter = Router();
 
 leadsRouter.use(requireAuth);
 leadsRouter.get("/", asyncHandler(leadsController.list));
+leadsRouter.post(
+  "/analyze-roof",
+  validate(analyzeRoofSchema),
+  asyncHandler(leadsController.analyzeRoof),
+);
 leadsRouter.post(
   "/",
   validate(createLeadSchema),

@@ -68,8 +68,10 @@ const statusOptions = [
   { value: "all", label: "All Statuses" },
   { value: "submitted", label: "New" },
   { value: "reviewing", label: "Reviewing" },
-  { value: "open_for_quotes", label: "Verified" },
-  { value: "quote_selected", label: "Assigned" },
+  { value: "verified", label: "Verified" },
+  { value: "vendors_assigned", label: "Vendors Assigned" },
+  { value: "open_for_quotes", label: "Bidding" },
+  { value: "quote_selected", label: "Selected" },
   { value: "closed", label: "Closed" },
 ];
 
@@ -90,8 +92,10 @@ const dateOptions = [
 const leadStatusMeta = {
   submitted: { label: "New", color: "#0E56C8", bg: "#EAF1FF" },
   reviewing: { label: "Reviewing", color: "#9A6B00", bg: "#FFF5D6" },
-  open_for_quotes: { label: "Verified", color: "#10985E", bg: "#E7F8EF" },
-  quote_selected: { label: "Assigned", color: "#7B3FE4", bg: "#F1E9FF" },
+  verified: { label: "Verified", color: "#10985E", bg: "#E7F8EF" },
+  vendors_assigned: { label: "Vendors Assigned", color: "#7B3FE4", bg: "#F1E9FF" },
+  open_for_quotes: { label: "Bidding", color: "#0E56C8", bg: "#EAF1FF" },
+  quote_selected: { label: "Selected", color: "#7B3FE4", bg: "#F1E9FF" },
   closed: { label: "Closed", color: "#657386", bg: "#EEF2F6" },
 };
 
@@ -591,8 +595,10 @@ export default function AdminLeadsPage() {
       (sum, quote) => sum + Number(quote.pricing?.totalPrice || 0),
       0,
     );
-    const assigned = rows.filter(
-      (row) => row.raw.status === "quote_selected",
+    const assigned = rows.filter((row) =>
+      ["vendors_assigned", "open_for_quotes", "quote_selected"].includes(
+        row.raw.status,
+      ),
     ).length;
 
     return {

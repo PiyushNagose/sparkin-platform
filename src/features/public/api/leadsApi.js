@@ -16,6 +16,11 @@ export const leadsApi = {
     return data.lead;
   },
 
+  async analyzeRoof(payload) {
+    const { data } = await businessClient.post("/leads/analyze-roof", payload);
+    return data.analysis;
+  },
+
   async listLeads(options = {}) {
     const { data } = await cachedGet(businessClient, "/leads", options);
     return data.leads;

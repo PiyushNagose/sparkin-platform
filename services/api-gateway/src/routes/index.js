@@ -56,6 +56,9 @@ export function createRouter() {
   // Public platform settings read (no auth required)
   router.get("/api/v1/platform-settings", standardRateLimit, businessProxy);
 
+  // Public offers shown on the home page (no auth required)
+  router.get("/api/v1/offers/public", standardRateLimit, businessProxy);
+
   // All other business routes require auth
   router.use("/api/v1/leads", standardRateLimit, requireAuth, businessProxy);
 

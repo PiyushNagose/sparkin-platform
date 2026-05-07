@@ -15,8 +15,9 @@ export const updatePlatformSettingsSchema = z.object({
     maxVendorsPerLead: positiveNumber,
   }),
   subsidy: z.object({
-    centralPct: z.coerce.number().min(0).max(100),
-    maxAmount: z.coerce.number().min(0),
+    for1Kw: z.coerce.number().min(0),
+    for2Kw: z.coerce.number().min(0),
+    above3Kw: z.coerce.number().min(0),
     residentialOnly: z.boolean(),
   }),
   states: z

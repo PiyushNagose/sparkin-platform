@@ -16,8 +16,10 @@ import SolarPowerRoundedIcon from "@mui/icons-material/SolarPowerRounded";
 import StarRoundedIcon from "@mui/icons-material/StarRounded";
 import { useEffect, useMemo, useState } from "react";
 import { Link as RouterLink, useNavigate, useParams } from "react-router-dom";
-import { quotesApi } from "@/features/public/api/leadsApi";
+import { leadsApi, quotesApi } from "@/features/public/api/leadsApi";
+import { publicPlatformSettingsApi } from "@/features/public/api/platformSettingsApi";
 import styles from "@/features/public/pages/CalculatorPage.module.css";
+import { calculateSubsidyAmount } from "@/shared/lib/subsidy/subsidy";
 import {
   publicPageSpacing,
   publicTypography,
@@ -28,7 +30,7 @@ function formatPrice(value) {
     style: "currency",
     currency: "INR",
     maximumFractionDigits: 0,
-  }).format(value);
+  }).format(Number(value) || 0);
 }
 
 function formatWindow(value) {
@@ -45,6 +47,8 @@ export default function VendorConfirmSelectionPage() {
   const { quoteId } = useParams();
   const navigate = useNavigate();
   const [quote, setQuote] = useState(null);
+  const [lead, setLead] = useState(null);
+  const [platformSettings, setPlatformSettings] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -58,7 +62,16 @@ export default function VendorConfirmSelectionPage() {
 
       try {
         const result = await quotesApi.getQuote(quoteId);
-        if (active) setQuote(result);
+        const [leadResult, settingsResult] = await Promise.all([
+          result.leadId ? leadsApi.getLead(result.leadId).catch(() => null) : null,
+          publicPlatformSettingsApi.getSettings().catch(() => null),
+        ]);
+
+        if (active) {
+          setQuote(result);
+          setLead(leadResult);
+          setPlatformSettings(settingsResult);
+        }
       } catch (apiError) {
         if (active) setError(apiError?.response?.data?.message || "Could not load this quote.");
       } finally {
@@ -74,6 +87,13 @@ export default function VendorConfirmSelectionPage() {
   }, [quoteId]);
 
   const vendorName = quote?.vendorEmail ? quote.vendorEmail.split("@")[0] : "Selected Vendor";
+  const totalProjectValue = Number(quote?.pricing?.totalPrice || 0);
+  const subsidyAmount = calculateSubsidyAmount(
+    platformSettings?.subsidy,
+    quote?.system?.sizeKw,
+    lead?.property?.type || "residential",
+  );
+  const netProjectValue = Math.max(0, totalProjectValue - subsidyAmount);
   const metricCards = useMemo(
     () => [
       {
@@ -252,7 +272,17 @@ export default function VendorConfirmSelectionPage() {
                             letterSpacing: "-0.045em",
                           }}
                         >
-                          {formatPrice(quote.pricing.totalPrice)}
+                          {formatPrice(totalProjectValue)}
+                        </Typography>
+                        <Typography
+                          sx={{
+                            mt: 0.4,
+                            color: "#6D788A",
+                            fontSize: "0.76rem",
+                            fontWeight: 600,
+                          }}
+                        >
+                          Net after subsidy: {formatPrice(netProjectValue)}
                         </Typography>
                       </Stack>
                     </Grid>
@@ -322,6 +352,57 @@ export default function VendorConfirmSelectionPage() {
                       bgcolor: "#F1F5FB",
                     }}
                   >
+                    <Stack
+                      direction={{ xs: "column", md: "row" }}
+                      justifyContent="space-between"
+                      spacing={1.5}
+                      sx={{ mb: 1.1 }}
+                    >
+                      <Box>
+                        <Typography
+                          sx={{
+                            color: "#0E56C8",
+                            fontSize: "0.68rem",
+                            fontWeight: 800,
+                            letterSpacing: 0.32,
+                            textTransform: "uppercase",
+                          }}
+                        >
+                          Estimated Subsidy
+                        </Typography>
+                        <Typography
+                          sx={{
+                            mt: 0.45,
+                            color: "#1E2736",
+                            fontSize: "1.15rem",
+                            fontWeight: 800,
+                          }}
+                        >
+                          {formatPrice(subsidyAmount)}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ textAlign: { xs: "left", md: "right" } }}>
+                        <Typography
+                          sx={{
+                            color: "#6D788A",
+                            fontSize: "0.72rem",
+                            fontWeight: 700,
+                          }}
+                        >
+                          Adjusted project value
+                        </Typography>
+                        <Typography
+                          sx={{
+                            mt: 0.4,
+                            color: "#1E2736",
+                            fontSize: "1rem",
+                            fontWeight: 800,
+                          }}
+                        >
+                          {formatPrice(netProjectValue)}
+                        </Typography>
+                      </Box>
+                    </Stack>
                     <Stack direction="row" spacing={1.05} alignItems="flex-start">
                       <InfoOutlinedIcon sx={{ mt: 0.08, fontSize: "1rem", color: "#0E56C8" }} />
                       <Typography

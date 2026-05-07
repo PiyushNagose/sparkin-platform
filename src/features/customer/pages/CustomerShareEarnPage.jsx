@@ -16,6 +16,7 @@ import WhatsAppIcon from "@mui/icons-material/WhatsApp";
 import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
 import { Link as RouterLink } from "react-router-dom";
 import { referralsApi } from "@/features/customer/api/referralsApi";
+import { buildReferralUrl } from "@/features/customer/referrals/referralTracking";
 import customerShareEarnHeroPlaceholder from "@/shared/assets/images/customer/referrals/customer-share-earn-hero-placeholder.png";
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
@@ -136,7 +137,7 @@ export default function CustomerShareEarnPage() {
   async function copyReferralLink() {
     if (!summary?.referralLink) return;
     try {
-      await navigator.clipboard.writeText(summary.referralLink);
+      await navigator.clipboard.writeText(buildReferralUrl(summary.referralLink));
       setSuccess("Referral link copied to clipboard.");
     } catch {
       setSuccess("Could not copy — please copy the link manually.");
@@ -145,7 +146,8 @@ export default function CustomerShareEarnPage() {
 
   function shareOnWhatsApp() {
     if (!summary?.referralLink) return;
-    const msg = `Hey! I'm saving on electricity with Sparkin Solar. Use my referral link: ${summary.referralLink}`;
+    const referralUrl = `${buildReferralUrl(summary.referralLink)}?channel=whatsapp`;
+    const msg = `Hey! I'm saving on electricity with Sparkin Solar. Use my referral link: ${referralUrl}`;
     window.open(
       `https://wa.me/?text=${encodeURIComponent(msg)}`,
       "_blank",
@@ -335,7 +337,7 @@ export default function CustomerShareEarnPage() {
                   flex: 1,
                 }}
               >
-                {summary?.referralLink?.replace("https://", "") ||
+                {buildReferralUrl(summary?.referralLink || "").replace(/^https?:\/\//, "") ||
                   "Referral link unavailable"}
               </Typography>
 

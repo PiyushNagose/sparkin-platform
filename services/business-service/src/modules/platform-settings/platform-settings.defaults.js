@@ -10,8 +10,9 @@ export const defaultPlatformSettings = {
     maxVendorsPerLead: 5,
   },
   subsidy: {
-    centralPct: 40,
-    maxAmount: 78000,
+    for1Kw: 30000,
+    for2Kw: 60000,
+    above3Kw: 78000,
     residentialOnly: true,
   },
   states: [

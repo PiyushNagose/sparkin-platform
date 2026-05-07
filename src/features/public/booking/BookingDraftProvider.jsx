@@ -39,6 +39,7 @@ const initialDraft = {
     electricityBill: [],
     photoId: [],
   },
+  roofAnalysis: null,
   calculatorEstimate: null,
   notes: "",
   specialInstructions: "",

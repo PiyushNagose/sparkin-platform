@@ -95,13 +95,6 @@ function getServiceability({ pincode, state }) {
   };
 }
 
-function calculateResidentialSubsidy(systemSizeKw) {
-  if (systemSizeKw < 1) return 0;
-  if (systemSizeKw <= 2) return Math.round(systemSizeKw * 30000);
-  if (systemSizeKw <= 3) return Math.round(60000 + (systemSizeKw - 2) * 18000);
-  return 78000;
-}
-
 function calculateEmi(principal, annualRate = 0.0865, months = 60) {
   if (principal <= 0) return 0;
   const monthlyRate = annualRate / 12;
@@ -144,9 +137,11 @@ async function buildEstimate(input) {
   const monthlySavings = Math.round(firstYearSavings / 12);
   const costPerKw = Number(settings.pricing.standardCostPerKw) || (isCommercial ? profile.costPerWattCommercial : profile.costPerWattResidential);
   const grossCost = Math.round(roundedSystemSizeKw * costPerKw);
-  const subsidy = isCommercial && settings.subsidy.residentialOnly
-    ? 0
-    : Math.min(settings.subsidy.maxAmount, calculateResidentialSubsidy(roundedSystemSizeKw));
+  const subsidy = platformSettingsService.calculateResidentialSubsidy(
+    settings,
+    roundedSystemSizeKw,
+    input.propertyType,
+  );
   const netCost = Math.max(0, grossCost - subsidy);
   const paybackYears = firstYearSavings ? round(netCost / firstYearSavings, 1) : null;
   const degradation = 0.01;
@@ -178,7 +173,9 @@ async function buildEstimate(input) {
       annualPanelDegradationPercent: 1,
       annualElectricityInflationPercent: 3,
       roofAreaPerKwSqFt: 90,
-      subsidyNote: isCommercial ? "Commercial projects are not eligible for residential PM Surya Ghar subsidy." : "Residential central subsidy estimated under PM Surya Ghar and capped at Rs 78,000.",
+      subsidyNote: isCommercial
+        ? "Commercial projects are not eligible for residential PM Surya Ghar subsidy."
+        : `Residential central subsidy estimated from platform settings slabs: 1kW ${settings.subsidy.for1Kw}, 2kW ${settings.subsidy.for2Kw}, 3kW+ ${settings.subsidy.above3Kw}.`,
     },
     system: {
       recommendedSizeKw: roundedSystemSizeKw,
@@ -205,6 +202,30 @@ async function buildEstimate(input) {
       emi: calculateEmi(netCost),
       emiTenureMonths: 60,
       downPayment: isCommercial ? Math.round(netCost * 0.2) : 0,
+    },
+    governmentSupport: {
+      schemeName: "PM Surya Ghar: Muft Bijli Yojana",
+      totalSubsidy: subsidy,
+      residentialOnly: settings.subsidy.residentialOnly,
+      slabs: {
+        for1Kw: Number(settings.subsidy.for1Kw) || 0,
+        for2Kw: Number(settings.subsidy.for2Kw) || 0,
+        above3Kw: Number(settings.subsidy.above3Kw) || 0,
+      },
+      benefitCards: [
+        {
+          title: "Subsidy Value",
+          description: "Direct central government support based on your configured system size slab.",
+        },
+        {
+          title: "Lowered Loan Load",
+          description: "Reduced upfront project cost helps improve loan eligibility and EMI comfort.",
+        },
+        {
+          title: "DBT / DISCOM Ready",
+          description: "Designed to align with residential rooftop subsidy planning and approval workflows.",
+        },
+      ],
     },
     impact: {
       co2OffsetKgYear,
