@@ -169,7 +169,9 @@ export default function VendorQuoteProposalPage() {
       try {
         const [result, quote] = await Promise.all([
           leadsApi.getLead(leadId, { force: true }),
-          quotesApi.listQuotes({ leadId }, { force: true }).then((quotes) => quotes[0] ?? null),
+          quotesApi
+            .listQuotes({ leadId }, { force: true })
+            .then((quotes) => quotes[0] ?? null),
         ]);
 
         if (!active) return;
@@ -556,7 +558,11 @@ export default function VendorQuoteProposalPage() {
                   onChange={(event) =>
                     updateField("sizeKw", event.target.value)
                   }
-                  placeholder={getVerifiedSystemSize(lead) ? String(getVerifiedSystemSize(lead)) : "5"}
+                  placeholder={
+                    getVerifiedSystemSize(lead)
+                      ? String(getVerifiedSystemSize(lead))
+                      : "5"
+                  }
                   sx={inputSx}
                 />
               </Box>
@@ -724,7 +730,18 @@ export default function VendorQuoteProposalPage() {
 
         <Box>
           <Typography sx={fieldLabelSx}>
-            Upload Detailed Quotation (PDF)
+            Upload Detailed Quotation (PDF){" "}
+            <Box
+              component="span"
+              sx={{
+                color: "#8B97A8",
+                fontWeight: 500,
+                textTransform: "none",
+                fontSize: "0.62rem",
+              }}
+            >
+              — optional, saved locally for your reference
+            </Box>
           </Typography>
           <input
             ref={pdfInputRef}
@@ -808,6 +825,17 @@ export default function VendorQuoteProposalPage() {
               </>
             )}
           </Box>
+          <Typography
+            sx={{
+              mt: 0.8,
+              color: "#A0ACBA",
+              fontSize: "0.7rem",
+              lineHeight: 1.5,
+            }}
+          >
+            PDF uploads are stored locally on your device for reference. Your
+            quote is submitted using the form fields above.
+          </Typography>
         </Box>
       </Box>
 

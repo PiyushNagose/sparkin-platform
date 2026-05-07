@@ -134,4 +134,21 @@ export const leadsRepository = {
 
     return normalizeLead(lead);
   },
+
+  // Rollback: revert a lead from "quote_selected" back to "open_for_quotes".
+  // Called when project creation fails after quote acceptance.
+  async revertQuoteSelection(id) {
+    const lead = await LeadModel.findByIdAndUpdate(
+      id,
+      {
+        $set: {
+          status: "open_for_quotes",
+          selection: { quoteId: null, vendorId: null, selectedAt: null },
+        },
+      },
+      { new: true },
+    ).lean({ virtuals: true });
+
+    return normalizeLead(lead);
+  },
 };

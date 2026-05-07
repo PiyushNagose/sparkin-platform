@@ -3,6 +3,7 @@ import { fulfillmentClient } from "../../common/http/fulfillment-client.js";
 import { leadsRepository } from "../leads/leads.repository.js";
 import { vendorsRepository } from "../vendors/vendors.repository.js";
 import { quotesRepository } from "./quotes.repository.js";
+import { logger } from "../../common/utils/logger.js";
 import mongoose from "mongoose";
 
 async function attachLeads(quotes) {
@@ -67,7 +68,11 @@ export const quotesService = {
     const totalPrice = Number(input.pricing?.totalPrice || 0);
     const minBid = Number(lead.bidRange?.minAmount || 0);
     const maxBid = Number(lead.bidRange?.maxAmount || 0);
-    if (minBid > 0 && maxBid > 0 && (totalPrice < minBid || totalPrice > maxBid)) {
+    if (
+      minBid > 0 &&
+      maxBid > 0 &&
+      (totalPrice < minBid || totalPrice > maxBid)
+    ) {
       throw new AppError(
         400,
         `Quote price must be between ₹${minBid.toLocaleString("en-IN")} and ₹${maxBid.toLocaleString("en-IN")}`,
@@ -250,11 +255,31 @@ export const quotesService = {
       vendorId: quote.vendorId,
       selectedAt: new Date(),
     });
-    const project = await fulfillmentClient.createProjectFromAcceptedQuote({
-      lead: selectedLead,
-      quote: acceptedQuote,
-      authorization,
-    });
+
+    let project;
+    try {
+      project = await fulfillmentClient.createProjectFromAcceptedQuote({
+        lead: selectedLead,
+        quote: acceptedQuote,
+        authorization,
+      });
+    } catch (fulfillmentError) {
+      // Rollback: revert quote and lead to their pre-acceptance state so the
+      // admin/customer can safely retry without the system being left inconsistent.
+      logger.error(
+        "Project creation failed after quote acceptance — rolling back",
+        {
+          quoteId,
+          leadId: quote.leadId?.toString(),
+          error: fulfillmentError.message,
+        },
+      );
+      await Promise.allSettled([
+        quotesRepository.revertQuoteAcceptance(quoteId),
+        leadsRepository.revertQuoteSelection(quote.leadId),
+      ]);
+      throw fulfillmentError;
+    }
 
     return {
       quote: acceptedQuote,

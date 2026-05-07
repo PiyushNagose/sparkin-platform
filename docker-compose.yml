@@ -1,0 +1,140 @@
+version: "3.9"
+
+# ─── Sparkin Platform — Local Development Stack ───────────────────────────────
+#
+# Usage:
+#   docker compose up -d          # start all services
+#   docker compose up -d mongo    # start only MongoDB
+#   docker compose logs -f        # tail all logs
+#   docker compose down           # stop and remove containers
+#   docker compose down -v        # stop and remove containers + volumes
+#
+# First-time setup:
+#   1. Copy .env.example to .env and fill in secrets
+#   2. docker compose up -d
+#   3. docker compose exec identity-service npm run seed:admin
+#
+# Services:
+#   mongo             → mongodb://localhost:27017
+#   identity-service  → http://localhost:4001
+#   business-service  → http://localhost:4002
+#   fulfillment-service → http://localhost:4003
+#   frontend          → http://localhost:5173 (run separately with npm run dev)
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+  # ── MongoDB ──────────────────────────────────────────────────────────────────
+  mongo:
+    image: mongo:7
+    container_name: sparkin-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  # ── Identity Service ─────────────────────────────────────────────────────────
+  identity-service:
+    build:
+      context: ./services/identity-service
+      dockerfile: Dockerfile
+    container_name: sparkin-identity
+    restart: unless-stopped
+    depends_on:
+      mongo:
+        condition: service_healthy
+    ports:
+      - "4001:4001"
+    environment:
+      NODE_ENV: development
+      PORT: 4001
+      SERVICE_NAME: identity-service
+      CLIENT_URL: ${CLIENT_URL:-http://localhost:5173}
+      MONGODB_URI: mongodb://mongo:27017/sparkin_identity
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-dev-access-secret-change-before-production}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-dev-refresh-secret-change-before-production}
+      JWT_ACCESS_TTL: ${JWT_ACCESS_TTL:-15m}
+      JWT_REFRESH_TTL: ${JWT_REFRESH_TTL:-7d}
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:4001/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  # ── Business Service ─────────────────────────────────────────────────────────
+  business-service:
+    build:
+      context: ./services/business-service
+      dockerfile: Dockerfile
+    container_name: sparkin-business
+    restart: unless-stopped
+    depends_on:
+      mongo:
+        condition: service_healthy
+      identity-service:
+        condition: service_healthy
+    ports:
+      - "4002:4002"
+    volumes:
+      - business_uploads:/app/uploads
+    environment:
+      NODE_ENV: development
+      PORT: 4002
+      SERVICE_NAME: business-service
+      CLIENT_URL: ${CLIENT_URL:-http://localhost:5173}
+      MONGODB_URI: mongodb://mongo:27017/sparkin_business
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-dev-access-secret-change-before-production}
+      FULFILLMENT_SERVICE_URL: http://fulfillment-service:4003/api/v1
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:4002/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  # ── Fulfillment Service ──────────────────────────────────────────────────────
+  fulfillment-service:
+    build:
+      context: ./services/fulfillment-service
+      dockerfile: Dockerfile
+    container_name: sparkin-fulfillment
+    restart: unless-stopped
+    depends_on:
+      mongo:
+        condition: service_healthy
+      identity-service:
+        condition: service_healthy
+    ports:
+      - "4003:4003"
+    volumes:
+      - fulfillment_uploads:/app/uploads
+    environment:
+      NODE_ENV: development
+      PORT: 4003
+      SERVICE_NAME: fulfillment-service
+      CLIENT_URL: ${CLIENT_URL:-http://localhost:5173}
+      MONGODB_URI: mongodb://mongo:27017/sparkin_fulfillment
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-dev-access-secret-change-before-production}
+      RAZORPAY_KEY_ID: ${RAZORPAY_KEY_ID:-}
+      RAZORPAY_KEY_SECRET: ${RAZORPAY_KEY_SECRET:-}
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:4003/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+volumes:
+  mongo_data:
+    driver: local
+  business_uploads:
+    driver: local
+  fulfillment_uploads:
+    driver: local

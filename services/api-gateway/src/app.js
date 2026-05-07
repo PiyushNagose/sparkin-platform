@@ -1,0 +1,41 @@
+import cors from "cors";
+import express from "express";
+import helmet from "helmet";
+import { env } from "./config/env.js";
+import { requestLogger } from "./middleware/logger.js";
+import { requestId } from "./middleware/request-id.js";
+import { createRouter } from "./routes/index.js";
+
+export function createApp() {
+  const app = express();
+
+  app.disable("x-powered-by");
+
+  app.use(
+    helmet({
+      crossOriginResourcePolicy: { policy: "cross-origin" },
+    }),
+  );
+
+  app.use(
+    cors({
+      origin: env.CLIENT_URL,
+      credentials: true,
+      methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+      allowedHeaders: ["Content-Type", "Authorization", "x-request-id"],
+    }),
+  );
+
+  // Parse JSON bodies for any gateway-level processing
+  app.use(express.json({ limit: "8mb" }));
+  app.use(express.urlencoded({ extended: true }));
+
+  // Request tracking
+  app.use(requestId);
+  app.use(requestLogger);
+
+  // All routes
+  app.use(createRouter());
+
+  return app;
+}

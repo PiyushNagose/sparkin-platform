@@ -8,6 +8,19 @@ export const leadsController = {
 
   async list(req, res) {
     const leads = await leadsService.listLeads(req.auth);
+    const page = parseInt(req.query.page, 10) || 0;
+    const limit = parseInt(req.query.limit, 10) || 0;
+
+    if (page > 0 && limit > 0) {
+      const total = leads.length;
+      const start = (page - 1) * limit;
+      const paginated = leads.slice(start, start + limit);
+      return res.status(200).json({
+        leads: paginated,
+        pagination: { page, limit, total, pages: Math.ceil(total / limit) },
+      });
+    }
+
     res.status(200).json({ leads });
   },
 

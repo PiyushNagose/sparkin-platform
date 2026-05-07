@@ -24,7 +24,9 @@ export const quotesRepository = {
   },
 
   async findQuoteByVendorAndLead(vendorId, leadId) {
-    const quote = await QuoteModel.findOne({ vendorId, leadId }).lean({ virtuals: true });
+    const quote = await QuoteModel.findOne({ vendorId, leadId }).lean({
+      virtuals: true,
+    });
     return normalizeQuote(quote);
   },
 
@@ -54,17 +56,23 @@ export const quotesRepository = {
   },
 
   async findQuotesByLeadId(leadId) {
-    const quotes = await QuoteModel.find({ leadId }).sort({ createdAt: -1 }).lean({ virtuals: true });
+    const quotes = await QuoteModel.find({ leadId })
+      .sort({ createdAt: -1 })
+      .lean({ virtuals: true });
     return normalizeQuotes(quotes);
   },
 
   async findAll() {
-    const quotes = await QuoteModel.find({}).sort({ createdAt: -1 }).lean({ virtuals: true });
+    const quotes = await QuoteModel.find({})
+      .sort({ createdAt: -1 })
+      .lean({ virtuals: true });
     return normalizeQuotes(quotes);
   },
 
   async findQuotesByLeadIds(leadIds) {
-    const quotes = await QuoteModel.find({ leadId: { $in: leadIds } }).sort({ createdAt: -1 }).lean({ virtuals: true });
+    const quotes = await QuoteModel.find({ leadId: { $in: leadIds } })
+      .sort({ createdAt: -1 })
+      .lean({ virtuals: true });
     return normalizeQuotes(quotes);
   },
 
@@ -74,12 +82,16 @@ export const quotesRepository = {
         ? { $or: [{ customerId }, { leadId: { $in: leadIds } }] }
         : { customerId };
 
-    const quotes = await QuoteModel.find(query).sort({ createdAt: -1 }).lean({ virtuals: true });
+    const quotes = await QuoteModel.find(query)
+      .sort({ createdAt: -1 })
+      .lean({ virtuals: true });
     return normalizeQuotes(quotes);
   },
 
   async findQuotesByVendor(vendorId) {
-    const quotes = await QuoteModel.find({ vendorId }).sort({ createdAt: -1 }).lean({ virtuals: true });
+    const quotes = await QuoteModel.find({ vendorId })
+      .sort({ createdAt: -1 })
+      .lean({ virtuals: true });
     return normalizeQuotes(quotes);
   },
 
@@ -96,5 +108,23 @@ export const quotesRepository = {
     ).lean({ virtuals: true });
 
     return normalizeQuote(quote);
+  },
+
+  // Rollback: revert a quote from "accepted" back to "submitted" and un-reject
+  // the other quotes for the same lead. Called when project creation fails.
+  async revertQuoteAcceptance(quoteId) {
+    const quote = await QuoteModel.findById(quoteId).lean({ virtuals: true });
+    if (!quote) return;
+
+    // Restore the accepted quote to submitted
+    await QuoteModel.findByIdAndUpdate(quoteId, {
+      $set: { status: "submitted" },
+    });
+
+    // Restore other quotes for the same lead from rejected back to submitted
+    await QuoteModel.updateMany(
+      { leadId: quote.leadId, _id: { $ne: quoteId }, status: "rejected" },
+      { $set: { status: "submitted" } },
+    );
   },
 };

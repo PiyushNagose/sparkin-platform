@@ -4,6 +4,7 @@ import { createApp } from "./app.js";
 import { connectDatabase, disconnectDatabase } from "./config/database.js";
 import { env } from "./config/env.js";
 import { attachChatSocket } from "./modules/chat/chat.socket.js";
+import { logger } from "./common/utils/logger.js";
 
 async function startServer() {
   await connectDatabase();
@@ -29,21 +30,31 @@ async function startServer() {
   httpServer.on("request", app);
 
   httpServer.listen(env.port, () => {
-    console.log(`[${env.serviceName}] listening on port ${env.port} (HTTP + WS)`);
+    logger.info("Service started", {
+      service: env.serviceName,
+      port: env.port,
+      transport: "HTTP + WS",
+    });
   });
 
   httpServer.on("error", async (error) => {
     if (error.code === "EADDRINUSE") {
-      console.error(`[${env.serviceName}] port ${env.port} is already in use`);
+      logger.error("Port already in use", {
+        service: env.serviceName,
+        port: env.port,
+      });
     } else {
-      console.error(`[${env.serviceName}] server error`, error);
+      logger.error("Server error", {
+        service: env.serviceName,
+        error: error.message,
+      });
     }
     await disconnectDatabase();
     process.exit(1);
   });
 
   const shutdown = async (signal) => {
-    console.log(`[${env.serviceName}] received ${signal}, shutting down`);
+    logger.info("Shutting down", { service: env.serviceName, signal });
     httpServer.close(async () => {
       await disconnectDatabase();
       process.exit(0);
@@ -55,6 +66,9 @@ async function startServer() {
 }
 
 startServer().catch((error) => {
-  console.error(`[${env.serviceName}] failed to start`, error);
+  console.error(
+    `[${process.env.SERVICE_NAME || "business-service"}] failed to start`,
+    error,
+  );
   process.exit(1);
 });

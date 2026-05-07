@@ -177,11 +177,89 @@
 
 ## 🔧 FIXED ISSUES
 
-### Critical Bug Fixed:
+### Bug 1 — payments.service.js unreachable code (previously fixed)
 
 **File**: `services/fulfillment-service/src/modules/payments/payments.service.js`
 **Issue**: `getPayment` method had unreachable code after `return` statement in `updateStatus` method
 **Fix**: Moved `getPayment` method definition to proper location
+
+### Bug 2 — Admin login redirect to non-existent route (fixed)
+
+**File**: `src/features/auth/RequireAuth.jsx`
+**Issue**: Admin paths redirected to `/auth/admin-login` which had no route defined
+**Fix**: Changed redirect to `/auth/login` (the existing admin login page)
+
+### Bug 3 — VendorApprovalGate silent failure on API error (fixed)
+
+**File**: `src/features/vendor/VendorApprovalGate.jsx`
+**Issue**: When vendor profile API failed, gate silently redirected to `pending-approval` with no error message
+**Fix**: Added proper error screen with "Try Again" button when API fails
+
+### Bug 4 — listPayments triggering createScheduleForProject on every list call (fixed)
+
+**File**: `services/fulfillment-service/src/modules/payments/payments.service.js`
+**Issue**: Every `GET /payments` call ran `createScheduleForProject` for every project — unnecessary DB writes on every page load
+**Fix**: Removed lazy schedule creation from `listPayments`. Schedules are created at project creation time only.
+
+### Bug 5 — Quote PDF upload UI-only with no backend support (fixed)
+
+**File**: `src/features/vendor/pages/VendorQuoteProposalPage.jsx`
+**Issue**: PDF upload section captured file in state but never sent it to the backend. Vendors could think their PDF was submitted.
+**Fix**: Added clear label "optional, saved locally for your reference" and explanatory note below the upload zone.
+
+### Bug 6 — Admin vendor detail page was a placeholder (fixed)
+
+**File**: `src/features/admin/pages/AdminVendorDetailPage.jsx` (new)
+**Issue**: `/admin/vendors/:vendorId` showed a generic placeholder page
+**Fix**: Created full `AdminVendorDetailPage` with vendor info, documents, vetting score, and approve/reject actions
+
+### Bug 7 — Admin payment detail page was a placeholder (fixed)
+
+**File**: `src/features/admin/pages/AdminPaymentDetailPage.jsx` (new)
+**Issue**: `/admin/payments/:paymentId` showed a generic placeholder page
+**Fix**: Created full `AdminPaymentDetailPage` with invoice details, project context, and mark paid/failed actions
+
+### Bug 8 — Seed script command incorrect in docs (fixed)
+
+**File**: `docs/QUICK_START_GUIDE.md`
+**Issue**: Docs referenced `node scripts/seed-admin.js` but the script uses ES modules requiring `npm run seed:admin`. Also had wrong credentials.
+**Fix**: Updated to `npm run seed:admin` with correct credentials (admin@sparkin.local / Admin@12345)
+
+### Bug 9 — Quote accept leaves system inconsistent when fulfillment-service is down (fixed)
+
+**Files**: `services/business-service/src/modules/quotes/quotes.service.js`, `quotes.repository.js`, `leads.repository.js`
+**Issue**: If fulfillment-service was down during quote acceptance, the quote was marked "accepted" and the lead was marked "quote_selected" but no project was created. System left in inconsistent state with no way to retry.
+**Fix**: Wrapped fulfillment-service call in try/catch. On failure, rolls back quote to "submitted" and lead to "open_for_quotes". Logs the failure with structured logger.
+
+### Bug 10 — Pagination missing on all list endpoints (fixed)
+
+**Files**: All list controllers in business-service and fulfillment-service
+**Issue**: `GET /leads`, `GET /quotes`, `GET /projects`, `GET /payments`, `GET /service-requests` returned full collections with no pagination support.
+**Fix**: Added optional `?page=1&limit=20` query params to all list endpoints. Returns `pagination` metadata when params are provided. Backward-compatible.
+
+### Bug 11 — Docker/docker-compose missing (fixed)
+
+**Files**: `Dockerfile`, `docker-compose.yml`, `services/*/Dockerfile`, `services/*/.dockerignore`, `.dockerignore`
+**Issue**: No Docker setup existed. Platform couldn't be deployed.
+**Fix**: Created Dockerfiles for all 4 services + frontend. docker-compose with MongoDB, health checks, named volumes for uploads, proper service startup order.
+
+### Bug 12 — Structured logging missing (fixed)
+
+**Files**: `services/*/src/common/utils/logger.js`, error handlers, request-context middleware, server.js files
+**Issue**: All services used `console.log` with no structure. No request logging, no error context.
+**Fix**: Created zero-dependency structured logger in all 3 services. JSON output in production, coloured human-readable in dev. Every HTTP request logs method, path, status, duration.
+
+### Bug 13 — Chat Socket.io not wired up (fixed)
+
+**File**: `src/app/layouts/PortalLayout.jsx`
+**Issue**: Chat pages and socket hook were complete, but admin never registered their contact. Vendors/customers couldn't find the admin to start a chat.
+**Fix**: Added `chatApi.registerAdmin()` call in PortalLayout when admin portal loads.
+
+### Bug 14 — Admin logout redirected to non-existent route (fixed)
+
+**File**: `src/app/layouts/PortalLayout.jsx`
+**Issue**: Admin logout navigated to `/auth/admin-login` which doesn't exist.
+**Fix**: Changed to `/auth/login`.
 
 ---
 
