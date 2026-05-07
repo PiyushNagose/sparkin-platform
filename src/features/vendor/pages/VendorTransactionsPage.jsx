@@ -20,6 +20,7 @@ import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import { Link as RouterLink, useLocation } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import { paymentsApi } from "@/features/vendor/api/paymentsApi";
+import { downloadInvoicePdf } from "@/shared/invoice/InvoiceTemplate";
 import {
   VendorEmptyState,
   VendorFilterPanel,
@@ -97,6 +98,7 @@ function toTransaction(payment) {
     statusBg: status.bg,
     rawStatus: payment.status,
     date: formatDate(payment.paidAt || payment.dueAt),
+    payment,
   };
 }
 
@@ -551,8 +553,7 @@ export default function VendorTransactionsPage() {
                     <VisibilityOutlinedIcon sx={{ fontSize: "0.95rem" }} />
                   </Button>
                   <Button
-                    component={RouterLink}
-                    to={`/vendor/payments/transactions/${item.id}`}
+                    onClick={() => downloadInvoicePdf(item.payment)}
                     sx={{
                       minWidth: 28,
                       width: 28,
@@ -684,8 +685,7 @@ export default function VendorTransactionsPage() {
                       <VisibilityOutlinedIcon sx={{ fontSize: "0.95rem" }} />
                     </Button>
                     <Button
-                      component={RouterLink}
-                      to={`/vendor/payments/transactions/${item.id}`}
+                      onClick={() => downloadInvoicePdf(item.payment)}
                       sx={{
                         minWidth: 30,
                         width: 30,
