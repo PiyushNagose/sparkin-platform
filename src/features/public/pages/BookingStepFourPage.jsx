@@ -615,7 +615,7 @@ export default function BookingStepFourPage() {
           disableGutters
           className={styles.compactContainer}
           sx={{
-            maxWidth: "1120px !important",
+            maxWidth: "1200px !important",
             display: "flex",
             justifyContent: "center",
           }}
@@ -628,7 +628,7 @@ export default function BookingStepFourPage() {
             <Box
               sx={{
                 width: "100%",
-                maxWidth: 620,
+                maxWidth: 720,
                 p: { xs: 2.2, md: 3 },
                 borderRadius: "1.65rem",
                 bgcolor: "rgba(255,255,255,0.96)",
@@ -650,7 +650,7 @@ export default function BookingStepFourPage() {
                   <BookingStepper />
                 </Box>
 
-                <Stack spacing={1}>
+                <Stack spacing={1} sx={{ textAlign: "center", mx: "auto" }}>
                   <Typography
                     variant="h1"
                     sx={{
@@ -1240,7 +1240,7 @@ export default function BookingStepFourPage() {
             <Grid
               container
               spacing={1.15}
-              sx={{ width: "100%", maxWidth: 620 }}
+              sx={{ width: "100%", maxWidth: 720 }}
             >
               {trustItems.map((item) => (
                 <Grid key={item.title} size={{ xs: 12, md: 4 }}>

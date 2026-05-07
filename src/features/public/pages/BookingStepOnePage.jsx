@@ -298,7 +298,7 @@ export default function BookingStepOnePage() {
             <Box
               sx={{
                 width: "100%",
-                maxWidth: 920,
+                maxWidth: 1000,
                 p: { xs: 2.2, md: 3.2 },
                 borderRadius: "1.35rem",
                 bgcolor: "rgba(255,255,255,0.95)",
@@ -332,10 +332,12 @@ export default function BookingStepOnePage() {
                     />
                     <InputField
                       label="Phone number"
-                      placeholder="+1 (555) 000-0000"
+                      placeholder="1234567890"
                       value={draft.contact.phoneNumber}
                       onChange={(phoneNumber) => {
-                        updateContact({ phoneNumber });
+                        // Only allow digits and limit to 10 characters
+                        const cleanedPhone = phoneNumber.replace(/\D/g, '').slice(0, 10);
+                        updateContact({ phoneNumber: cleanedPhone });
                         setErrors((prev) => {
                           const next = { ...prev };
                           delete next["contact.phoneNumber"];

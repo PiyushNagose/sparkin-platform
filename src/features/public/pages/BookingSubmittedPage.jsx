@@ -143,7 +143,7 @@ export default function BookingSubmittedPage() {
           disableGutters
           className={styles.compactContainer}
           sx={{
-            maxWidth: "1120px !important",
+            maxWidth: "1200px !important",
             display: "flex",
             justifyContent: "center",
           }}
@@ -156,7 +156,7 @@ export default function BookingSubmittedPage() {
             <Box
               sx={{
                 width: "100%",
-                maxWidth: 444,
+                maxWidth: 544,
                 px: { xs: 2.2, md: 2.55 },
                 py: { xs: 2.9, md: 3.1 },
                 borderRadius: "1.45rem",

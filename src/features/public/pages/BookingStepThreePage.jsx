@@ -305,7 +305,7 @@ export default function BookingStepThreePage() {
           disableGutters
           className={styles.compactContainer}
           sx={{
-            maxWidth: "1120px !important",
+            maxWidth: "1200px !important",
             display: "flex",
             justifyContent: "center",
           }}
@@ -322,7 +322,7 @@ export default function BookingStepThreePage() {
             >
               <Stack
                 alignItems="center"
-                sx={{ width: "100%", maxWidth: 980, mx: "auto" }}
+                sx={{ width: "100%", maxWidth: 1080, mx: "auto" }}
               >
                 <Box sx={{ width: "100%", maxWidth: 880 }}>
                   <BookingStepper />
@@ -330,7 +330,7 @@ export default function BookingStepThreePage() {
               </Stack>
 
               <Stack
-                sx={{ width: "100%", maxWidth: 660, mx: "auto" }}
+                sx={{ width: "100%", maxWidth: 760, mx: "auto" }}
                 spacing={{ xs: 3.8, md: 4.4 }}
                 alignItems="center"
               >
@@ -548,8 +548,8 @@ export default function BookingStepThreePage() {
                           fontWeight: 700,
                           fontSize: "0.92rem",
                           background:
-                            "linear-gradient(180deg, #17B2D3 0%, #1BC17B 100%)",
-                          boxShadow: "0 14px 28px rgba(27,193,123,0.22)",
+                            "linear-gradient(180deg, #0E56C8 0%, #0D49B0 100%)",
+                          boxShadow: "0 14px 28px rgba(14,86,200,0.22)",
                         }}
                       >
                         Continue
@@ -576,7 +576,7 @@ export default function BookingStepThreePage() {
                 <Grid
                   container
                   spacing={{ xs: 1.5, md: 1.8 }}
-                  sx={{ width: "100%", maxWidth: 660, mx: "auto" }}
+                  sx={{ width: "100%", maxWidth: 760, mx: "auto" }}
                 >
                   <Grid size={{ xs: 12, md: 5.3 }}>
                     <Box

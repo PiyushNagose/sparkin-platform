@@ -88,7 +88,7 @@ function QuickPreview({ estimate, onGetFullReport, onProceedToBooking }) {
             onClick={onProceedToBooking}
             variant="contained"
             endIcon={<ArrowForwardRoundedIcon />}
-            sx={{ minHeight: 44, px: 2.2, borderRadius: "0.9rem", bgcolor: "#0E56C8", fontWeight: 800, textTransform: "none" }}
+            sx={{ minHeight: 52, px: 3.2, borderRadius: "0.9rem", bgcolor: "#0E56C8", fontWeight: 800, textTransform: "none", fontSize: "1rem" }}
           >
             Proceed to Booking
           </Button>
@@ -230,7 +230,7 @@ function FullResult({ estimate, onProceedToBooking }) {
             Estimate for {estimate.input.city}, {estimate.serviceability.stateName} based on a monthly bill of {formatMoney(estimate.input.monthlyBill)}.
           </Typography>
         </Box>
-        <Button onClick={onProceedToBooking} variant="contained" endIcon={<ArrowForwardRoundedIcon />} sx={{ alignSelf: { md: "center" }, minHeight: 44, px: 2.2, borderRadius: "0.9rem", bgcolor: "#0E56C8", fontWeight: 800, textTransform: "none" }}>
+        <Button onClick={onProceedToBooking} variant="contained" endIcon={<ArrowForwardRoundedIcon />} sx={{ alignSelf: { md: "center" }, minHeight: 52, px: 3.2, borderRadius: "0.9rem", bgcolor: "#0E56C8", fontWeight: 800, textTransform: "none", fontSize: "1rem" }}>
           Proceed to Booking
         </Button>
       </Stack>
