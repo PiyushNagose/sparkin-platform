@@ -3,6 +3,10 @@ import {
   Badge,
   Box,
   Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Drawer,
   IconButton,
   InputAdornment,
@@ -216,6 +220,7 @@ export function PortalLayout({ portal }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [notificationAnchor, setNotificationAnchor] = useState(null);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
 
   // Vendor summary for notification badge
   const [vendorSummary, setVendorSummary] = useState({
@@ -466,8 +471,16 @@ export function PortalLayout({ portal }) {
         : "/service-support";
 
   const handleSidebarLogout = useCallback(
-    async (onNavClick) => {
+    (onNavClick) => {
       onNavClick?.();
+      setLogoutDialogOpen(true);
+    },
+    [],
+  );
+
+  const handleConfirmLogout = useCallback(
+    async () => {
+      setLogoutDialogOpen(false);
       await logout();
       navigate(
         portal === "admin"
@@ -482,6 +495,10 @@ export function PortalLayout({ portal }) {
     },
     [logout, navigate, portal],
   );
+
+  const handleCancelLogout = useCallback(() => {
+    setLogoutDialogOpen(false);
+  }, []);
 
   // ── sidebar content — defined outside render to avoid remount ─────────────
 
@@ -1061,6 +1078,83 @@ export function PortalLayout({ portal }) {
       </Box>
 
       {portal === "customer" ? <AppFooter /> : null}
+
+      {/* Logout Confirmation Dialog */}
+      <Dialog
+        open={logoutDialogOpen}
+        onClose={handleCancelLogout}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: "1.2rem",
+            p: 1,
+          },
+        }}
+      >
+        <DialogTitle sx={{ textAlign: "center", pb: 1 }}>
+          <Box
+            sx={{
+              width: 64,
+              height: 64,
+              borderRadius: "50%",
+              bgcolor: "#FFF3E0",
+              color: "#F57C00",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              mx: "auto",
+              mb: 2,
+            }}
+          >
+            <LogoutRoundedIcon sx={{ fontSize: "2rem" }} />
+          </Box>
+          <Typography variant="h6" sx={{ fontWeight: 700, color: "#1a1a1a" }}>
+            Confirm Logout
+          </Typography>
+        </DialogTitle>
+        
+        <DialogContent sx={{ textAlign: "center", pb: 2 }}>
+          <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
+            Are you sure you want to logout from your {portal} account?
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            You'll need to sign in again to access your dashboard.
+          </Typography>
+        </DialogContent>
+        
+        <DialogActions sx={{ justifyContent: "center", gap: 1, pb: 2 }}>
+          <Button
+            onClick={handleCancelLogout}
+            variant="outlined"
+            sx={{
+              minWidth: 100,
+              borderRadius: "0.8rem",
+              textTransform: "none",
+              fontWeight: 600,
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleConfirmLogout}
+            variant="contained"
+            color="error"
+            sx={{
+              minWidth: 100,
+              borderRadius: "0.8rem",
+              textTransform: "none",
+              fontWeight: 600,
+              background: "linear-gradient(135deg, #f44336 0%, #d32f2f 100%)",
+              "&:hover": {
+                background: "linear-gradient(135deg, #d32f2f 0%, #c62828 100%)",
+              },
+            }}
+          >
+            Logout
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
