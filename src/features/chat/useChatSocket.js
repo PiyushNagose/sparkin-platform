@@ -3,7 +3,7 @@ import { io } from "socket.io-client";
 
 // Socket traffic connects directly to business-service for realtime chat.
 const SOCKET_URL =
-  import.meta.env.VITE_BUSINESS_SOCKET_URL || "http://localhost:4002";
+  import.meta.env.VITE_BUSINESS_SOCKET_URL || "http://34-180-1-251.nip.io/";
 
 /**
  * Hook that manages a Socket.io connection to the business-service chat.
