@@ -1,4 +1,4 @@
-import { Alert, Box, Button, Container, Grid, Stack, Typography } from "@mui/material";
+import { Box, Button, Container, Grid, Stack, Typography, Fade, Chip, keyframes, Dialog, DialogContent, useMediaQuery, useTheme } from "@mui/material";
 import AccountBalanceWalletRoundedIcon from "@mui/icons-material/AccountBalanceWalletRounded";
 import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
 import CampaignRoundedIcon from "@mui/icons-material/CampaignRounded";
@@ -6,6 +6,8 @@ import GppGoodRoundedIcon from "@mui/icons-material/GppGoodRounded";
 import InsightsRoundedIcon from "@mui/icons-material/InsightsRounded";
 import PriceChangeRoundedIcon from "@mui/icons-material/PriceChangeRounded";
 import ShieldOutlinedIcon from "@mui/icons-material/ShieldOutlined";
+import HourglassEmptyIcon from "@mui/icons-material/HourglassEmpty";
+import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import { useEffect, useState } from "react";
 import { Link as RouterLink, useNavigate, useSearchParams } from "react-router-dom";
 import { quotesApi } from "@/features/public/api/leadsApi";
@@ -157,6 +159,391 @@ function WorkflowCard({ title, description, step, icon, accent, tone }) {
   );
 }
 
+// Mobile Animated Loading Message Component (Simple)
+function MobileLoadingMessage() {
+  const [dots, setDots] = useState("");
+
+  useEffect(() => {
+    const dotsInterval = setInterval(() => {
+      setDots(prev => prev.length >= 3 ? "" : prev + ".");
+    }, 500);
+
+    return () => {
+      clearInterval(dotsInterval);
+    };
+  }, []);
+
+  const shimmerAnimation = keyframes`
+    0% { background-position: -200px 0; }
+    100% { background-position: calc(200px + 100%) 0; }
+  `;
+
+  return (
+    <Fade in timeout={800}>
+      <Box
+        sx={{
+          position: "relative",
+          p: 3,
+          borderRadius: "1.5rem",
+          background: "linear-gradient(135deg, #F8FAFF 0%, #EEF4FF 100%)",
+          border: "2px solid #E3EDFF",
+          boxShadow: "0 8px 32px rgba(14, 86, 200, 0.08)",
+          overflow: "hidden",
+          maxWidth: 480,
+        }}
+      >
+        {/* Animated background shimmer */}
+        <Box
+          sx={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            height: "2px",
+            background: "linear-gradient(90deg, transparent, #0E56C8, transparent)",
+            backgroundSize: "200px 100%",
+            animation: `${shimmerAnimation} 2s infinite`,
+          }}
+        />
+
+        <Stack spacing={2} alignItems="center" textAlign="center">
+          {/* Animated icon */}
+          <Box
+            sx={{
+              width: 56,
+              height: 56,
+              borderRadius: "50%",
+              background: "linear-gradient(135deg, #0E56C8 0%, #1976D2 100%)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "white",
+              boxShadow: "0 8px 24px rgba(14, 86, 200, 0.3)",
+            }}
+          >
+            <HourglassEmptyIcon sx={{ fontSize: "1.5rem" }} />
+          </Box>
+
+          {/* Main message */}
+          <Box>
+            <Typography
+              sx={{
+                color: "#0E56C8",
+                fontSize: "1.1rem",
+                fontWeight: 700,
+                lineHeight: 1.4,
+                mb: 0.5,
+              }}
+            >
+              Vendors are crafting your proposals{dots}
+            </Typography>
+            <Typography
+              sx={{
+                color: "#4F5B6C",
+                fontSize: "0.9rem",
+                lineHeight: 1.5,
+                maxWidth: 380,
+              }}
+            >
+              Our elite network is analyzing your requirements and preparing competitive bids. This usually takes 2-5 minutes.
+            </Typography>
+          </Box>
+
+          {/* Status indicators */}
+          <Stack direction="row" spacing={1} flexWrap="wrap" justifyContent="center">
+            <Chip
+              icon={<TrendingUpIcon sx={{ fontSize: "0.9rem" }} />}
+              label="Live Bidding Active"
+              size="small"
+              sx={{
+                bgcolor: "#E8F5E8",
+                color: "#2E7D32",
+                fontWeight: 600,
+                fontSize: "0.75rem",
+                "& .MuiChip-icon": { color: "#2E7D32" },
+              }}
+            />
+            <Chip
+              label="3-5 Vendors Responding"
+              size="small"
+              sx={{
+                bgcolor: "#FFF3E0",
+                color: "#F57C00",
+                fontWeight: 600,
+                fontSize: "0.75rem",
+              }}
+            />
+          </Stack>
+        </Stack>
+      </Box>
+    </Fade>
+  );
+}
+
+// Desktop Popup Loading Message Component
+function DesktopLoadingPopup({ open, onClose }) {
+  const [dots, setDots] = useState("");
+  const [showPulse, setShowPulse] = useState(true);
+
+  useEffect(() => {
+    const dotsInterval = setInterval(() => {
+      setDots(prev => prev.length >= 3 ? "" : prev + ".");
+    }, 500);
+
+    const pulseInterval = setInterval(() => {
+      setShowPulse(prev => !prev);
+    }, 1500);
+
+    return () => {
+      clearInterval(dotsInterval);
+      clearInterval(pulseInterval);
+    };
+  }, []);
+
+  const pulseAnimation = keyframes`
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.05); opacity: 0.8; }
+    100% { transform: scale(1); opacity: 1; }
+  `;
+
+  const shimmerAnimation = keyframes`
+    0% { background-position: -200px 0; }
+    100% { background-position: calc(200px + 100%) 0; }
+  `;
+
+  const floatAnimation = keyframes`
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-8px); }
+  `;
+
+  return (
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth="sm"
+      fullWidth
+      PaperProps={{
+        sx: {
+          borderRadius: "2rem",
+          background: "linear-gradient(135deg, #F8FAFF 0%, #EEF4FF 50%, #E3EDFF 100%)",
+          border: "2px solid #E3EDFF",
+          boxShadow: "0 24px 64px rgba(14, 86, 200, 0.15)",
+          overflow: "hidden",
+          position: "relative",
+        }
+      }}
+    >
+      <DialogContent sx={{ p: 5, position: "relative" }}>
+        {/* Animated background shimmer */}
+        <Box
+          sx={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            height: "3px",
+            background: "linear-gradient(90deg, transparent, #0E56C8, transparent)",
+            backgroundSize: "200px 100%",
+            animation: `${shimmerAnimation} 2s infinite`,
+          }}
+        />
+
+        {/* Floating background elements */}
+        <Box
+          sx={{
+            position: "absolute",
+            top: 30,
+            right: 40,
+            width: 80,
+            height: 80,
+            borderRadius: "50%",
+            background: "linear-gradient(135deg, rgba(14, 86, 200, 0.05) 0%, rgba(14, 86, 200, 0.02) 100%)",
+            animation: `${floatAnimation} 3s ease-in-out infinite`,
+          }}
+        />
+
+        <Stack spacing={4} alignItems="center" textAlign="center">
+          {/* Animated icon */}
+          <Box
+            sx={{
+              width: 80,
+              height: 80,
+              borderRadius: "50%",
+              background: "linear-gradient(135deg, #0E56C8 0%, #1976D2 100%)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "white",
+              animation: showPulse ? `${pulseAnimation} 1.5s ease-in-out` : "none",
+              boxShadow: "0 16px 40px rgba(14, 86, 200, 0.4)",
+              position: "relative",
+              "&::before": {
+                content: '""',
+                position: "absolute",
+                top: -6,
+                left: -6,
+                right: -6,
+                bottom: -6,
+                borderRadius: "50%",
+                background: "linear-gradient(135deg, rgba(14, 86, 200, 0.2) 0%, rgba(25, 118, 210, 0.1) 100%)",
+                animation: `${pulseAnimation} 2s ease-in-out infinite`,
+                zIndex: -1,
+              }
+            }}
+          >
+            <HourglassEmptyIcon sx={{ fontSize: "2.2rem" }} />
+          </Box>
+
+          {/* Main message */}
+          <Box sx={{ maxWidth: 500 }}>
+            <Typography
+              sx={{
+                color: "#0E56C8",
+                fontSize: "1.6rem",
+                fontWeight: 700,
+                lineHeight: 1.3,
+                mb: 1.5,
+                letterSpacing: "-0.02em",
+              }}
+            >
+              Vendors are crafting your proposals{dots}
+            </Typography>
+            <Typography
+              sx={{
+                color: "#4F5B6C",
+                fontSize: "1.1rem",
+                lineHeight: 1.6,
+                fontWeight: 400,
+              }}
+            >
+              Our elite network is analyzing your requirements and preparing competitive bids. This usually takes 2-5 minutes.
+            </Typography>
+          </Box>
+
+          {/* Status indicators */}
+          <Stack 
+            direction="row" 
+            spacing={2} 
+            flexWrap="wrap" 
+            justifyContent="center"
+            alignItems="center"
+          >
+            <Chip
+              icon={<TrendingUpIcon sx={{ fontSize: "1rem" }} />}
+              label="Live Bidding Active"
+              size="medium"
+              sx={{
+                bgcolor: "#E8F5E8",
+                color: "#2E7D32",
+                fontWeight: 600,
+                fontSize: "0.9rem",
+                px: 2,
+                py: 1,
+                "& .MuiChip-icon": { color: "#2E7D32" },
+                boxShadow: "0 6px 16px rgba(46, 125, 50, 0.2)",
+              }}
+            />
+            <Chip
+              label="3-5 Vendors Responding"
+              size="medium"
+              sx={{
+                bgcolor: "#FFF3E0",
+                color: "#F57C00",
+                fontWeight: 600,
+                fontSize: "0.9rem",
+                px: 2,
+                py: 1,
+                boxShadow: "0 6px 16px rgba(245, 124, 0, 0.2)",
+              }}
+            />
+          </Stack>
+
+          {/* Progress indicator */}
+          <Box sx={{ width: "100%", maxWidth: 350 }}>
+            <Box
+              sx={{
+                height: 8,
+                borderRadius: "999px",
+                bgcolor: "rgba(14, 86, 200, 0.1)",
+                overflow: "hidden",
+                position: "relative",
+              }}
+            >
+              <Box
+                sx={{
+                  height: "100%",
+                  width: "65%",
+                  borderRadius: "999px",
+                  background: "linear-gradient(90deg, #0E56C8 0%, #1976D2 100%)",
+                  animation: `${shimmerAnimation} 2s infinite`,
+                  backgroundSize: "200% 100%",
+                }}
+              />
+            </Box>
+            <Typography
+              sx={{
+                color: "#6B7280",
+                fontSize: "0.85rem",
+                fontWeight: 500,
+                mt: 1.5,
+                textAlign: "center",
+              }}
+            >
+              Analyzing proposals and preparing competitive bids...
+            </Typography>
+          </Box>
+
+          {/* Close button */}
+          <Button
+            onClick={onClose}
+            variant="outlined"
+            sx={{
+              mt: 2,
+              borderColor: "#E3EDFF",
+              color: "#4F5B6C",
+              fontWeight: 600,
+              fontSize: "0.9rem",
+              px: 3,
+              py: 1,
+              borderRadius: "999px",
+              "&:hover": {
+                borderColor: "#0E56C8",
+                color: "#0E56C8",
+              }
+            }}
+          >
+            Continue in Background
+          </Button>
+        </Stack>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// Main Animated Loading Message Component
+function AnimatedLoadingMessage() {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const [showDesktopPopup, setShowDesktopPopup] = useState(false);
+
+  useEffect(() => {
+    if (!isMobile) {
+      setShowDesktopPopup(true);
+    }
+  }, [isMobile]);
+
+  if (isMobile) {
+    return <MobileLoadingMessage />;
+  }
+
+  return (
+    <DesktopLoadingPopup 
+      open={showDesktopPopup} 
+      onClose={() => setShowDesktopPopup(false)} 
+    />
+  );
+}
+
 export default function LiveBiddingPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -200,7 +587,7 @@ export default function LiveBiddingPage() {
         return;
       }
 
-      setReviewMessage("Vendors are still preparing proposals for this booking. Please stay on this page and check again shortly.");
+      setReviewMessage("Our elite vendor network is crafting personalized proposals for your solar project. Please stay on this page while we finalize the competitive bids.");
     } catch (error) {
       setReviewMessage(
         error?.response?.data?.message ||
@@ -290,9 +677,7 @@ export default function LiveBiddingPage() {
                     sx={{ pt: 0.7, alignItems: { sm: "center" } }}
                   >
                     {reviewMessage ? (
-                      <Alert severity="info" sx={{ borderRadius: "0.9rem", maxWidth: 430 }}>
-                        {reviewMessage}
-                      </Alert>
+                      <AnimatedLoadingMessage />
                     ) : null}
 
                     <Button
