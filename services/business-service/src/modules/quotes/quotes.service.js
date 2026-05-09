@@ -54,7 +54,7 @@ export const quotesService = {
       throw new AppError(403, "You are not assigned to this lead");
     }
 
-    if (lead.status !== "open_for_quotes") {
+    if (!["vendors_assigned", "open_for_quotes"].includes(lead.status)) {
       throw new AppError(409, "This lead is not open for bidding");
     }
 

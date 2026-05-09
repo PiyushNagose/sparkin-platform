@@ -106,6 +106,7 @@ function formatLeadStatus(status) {
   const labels = {
     submitted: "New",
     reviewing: "In Review",
+    vendors_assigned: "Assigned",
     open_for_quotes: "Open",
     quote_selected: "Selected",
     closed: "Closed",
@@ -117,6 +118,10 @@ function formatLeadStatus(status) {
 function getStatusStyle(status) {
   if (status === "reviewing") {
     return { statusTone: "#7D7B00", statusBg: "#F2F08E" };
+  }
+
+  if (status === "vendors_assigned") {
+    return { statusTone: "#FF8C00", statusBg: "#FFF4E6" };
   }
 
   if (status === "open_for_quotes") {
