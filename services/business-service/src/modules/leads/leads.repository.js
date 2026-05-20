@@ -73,9 +73,10 @@ export const leadsRepository = {
   },
 
   async findVendorVisibleLeads(vendorId) {
-    // Only show leads where this vendor is explicitly assigned
+    // Show leads where this vendor is explicitly assigned
+    // Include vendors_assigned status so vendors can see leads even before payment
     const leads = await LeadModel.find({
-      status: { $in: ["open_for_quotes", "quote_selected"] },
+      status: { $in: ["vendors_assigned", "open_for_quotes", "quote_selected"] },
       assignedVendorIds: vendorId,
     })
       .sort({ createdAt: -1 })

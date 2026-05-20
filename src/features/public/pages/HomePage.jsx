@@ -14,6 +14,7 @@ import {
   Container,
   Divider,
   Grid,
+  IconButton,
   MenuItem,
   Slider,
   Stack,
@@ -21,6 +22,8 @@ import {
   Typography,
 } from "@mui/material";
 import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
+import ArrowBackIosRoundedIcon from "@mui/icons-material/ArrowBackIosRounded";
+import ArrowForwardIosRoundedIcon from "@mui/icons-material/ArrowForwardIosRounded";
 import BoltRoundedIcon from "@mui/icons-material/BoltRounded";
 import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
 import ExpandMoreRoundedIcon from "@mui/icons-material/ExpandMoreRounded";
@@ -691,6 +694,8 @@ function HomePage() {
   const [featuredVendors, setFeaturedVendors] = useState([]);
   const [liveOffers, setLiveOffers] = useState([]);
   const [userLeads, setUserLeads] = useState([]);
+  const [currentOfferIndex, setCurrentOfferIndex] = useState(0);
+  const offersCarouselRef = useRef(null);
 
   useEffect(() => {
     const timerId = window.setInterval(() => {
@@ -725,7 +730,7 @@ function HomePage() {
     let active = true;
     async function loadOffers() {
       try {
-        const result = await publicOffersApi.list({ limit: 3 });
+        const result = await publicOffersApi.list({ limit: 20 }); // Fetch more offers for carousel
         if (active && result?.offers?.length) {
           setLiveOffers(result.offers);
         }
@@ -878,7 +883,7 @@ function HomePage() {
 
   const displayOffers =
     liveOffers.length > 0
-      ? liveOffers.slice(0, 3).map((offer) => ({
+      ? liveOffers.map((offer) => ({
           badge:
             offer.tags?.includes("subsidy")
               ? "Govt Scheme"
@@ -930,6 +935,49 @@ function HomePage() {
     if (navigator.clipboard?.writeText) {
       await navigator.clipboard.writeText(shareMessage);
     }
+  };
+
+  // Carousel navigation functions
+  const nextOffer = () => {
+    if (displayOffers.length > 0) {
+      setCurrentOfferIndex((prev) => (prev + 1) % displayOffers.length);
+    }
+  };
+
+  const prevOffer = () => {
+    if (displayOffers.length > 0) {
+      setCurrentOfferIndex((prev) => (prev - 1 + displayOffers.length) % displayOffers.length);
+    }
+  };
+
+  const goToOffer = (index) => {
+    setCurrentOfferIndex(index);
+  };
+
+  // Auto-scroll carousel
+  useEffect(() => {
+    if (displayOffers.length <= 1) return;
+    
+    const interval = setInterval(() => {
+      nextOffer();
+    }, 5000); // Change slide every 5 seconds
+
+    return () => clearInterval(interval);
+  }, [displayOffers.length]);
+
+  // Calculate visible offers for carousel
+  const getVisibleOffers = () => {
+    if (displayOffers.length === 0) return [];
+    
+    const itemsToShow = Math.min(3, displayOffers.length);
+    const visibleOffers = [];
+    
+    for (let i = 0; i < itemsToShow; i++) {
+      const index = (currentOfferIndex + i) % displayOffers.length;
+      visibleOffers.push(displayOffers[index]);
+    }
+    
+    return visibleOffers;
   };
 
   return (
@@ -2355,16 +2403,6 @@ function HomePage() {
         </Container>
       </Box>
 
-      <Box sx={{ py: { xs: 5.5, md: 6.75 }, bgcolor: "white" }}>
-        <Container
-          maxWidth={false}
-          disableGutters
-          className={styles.contentContainer}
-        >
-          <StatsSection />
-        </Container>
-      </Box>
-
       <Box
         sx={{
           bgcolor: "#10192F",
@@ -2471,6 +2509,16 @@ function HomePage() {
             />
           </Stack>
           <ReferralStatsSection />
+        </Container>
+      </Box>
+
+      <Box sx={{ py: { xs: 5.5, md: 6.75 }, bgcolor: "white" }}>
+        <Container
+          maxWidth={false}
+          disableGutters
+          className={styles.contentContainer}
+        >
+          <StatsSection />
         </Container>
       </Box>
 
@@ -2617,123 +2665,203 @@ function HomePage() {
                 and Sparkin exclusive deals.
               </Typography>
             </Stack>
-            <Grid container spacing={{ xs: 2.25, md: 3 }} sx={{ mt: 4 }}>
-              {displayOffers.map((offer) => (
-                <Grid
-                  key={offer.title}
-                  size={{ xs: 12, md: 4 }}
-                  sx={{ display: "flex" }}
-                >
-                  <Box
-                    className={styles.animatedSurface}
+            <Box sx={{ mt: 4, position: "relative" }}>
+              {/* Carousel Navigation */}
+              {displayOffers.length > 3 && (
+                <>
+                  <IconButton
+                    onClick={prevOffer}
                     sx={{
-                      width: "100%",
-                      height: "100%",
-                      display: "flex",
-                      flexDirection: "column",
-                      p: { xs: 2.5, md: 2.7 },
-                      minHeight: 288,
-                      borderRadius: "2rem",
+                      position: "absolute",
+                      left: -20,
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      zIndex: 2,
                       bgcolor: "white",
-                      border: "1px solid #E7EDF4",
-                      boxShadow: "0 8px 24px rgba(16,25,47,0.03)",
+                      boxShadow: "0 4px 12px rgba(16,25,47,0.1)",
+                      "&:hover": { bgcolor: "#f5f5f5" },
                     }}
                   >
-                    <Stack
-                      direction="row"
-                      justifyContent="space-between"
-                      alignItems="center"
-                      sx={{ mb: 3.1 }}
+                    <ArrowBackIosRoundedIcon sx={{ fontSize: "1.2rem" }} />
+                  </IconButton>
+                  <IconButton
+                    onClick={nextOffer}
+                    sx={{
+                      position: "absolute",
+                      right: -20,
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      zIndex: 2,
+                      bgcolor: "white",
+                      boxShadow: "0 4px 12px rgba(16,25,47,0.1)",
+                      "&:hover": { bgcolor: "#f5f5f5" },
+                    }}
+                  >
+                    <ArrowForwardIosRoundedIcon sx={{ fontSize: "1.2rem" }} />
+                  </IconButton>
+                </>
+              )}
+
+              {/* Offers Carousel */}
+              <Box
+                ref={offersCarouselRef}
+                sx={{
+                  overflow: "hidden",
+                  borderRadius: "1rem",
+                }}
+              >
+                <Grid container spacing={{ xs: 2.25, md: 3 }}>
+                  {getVisibleOffers().map((offer, index) => (
+                    <Grid
+                      key={`${offer.title}-${currentOfferIndex}-${index}`}
+                      size={{ xs: 12, md: displayOffers.length === 1 ? 12 : displayOffers.length === 2 ? 6 : 4 }}
+                      sx={{ display: "flex" }}
                     >
                       <Box
+                        className={styles.animatedSurface}
                         sx={{
-                          width: 46,
-                          height: 46,
-                          borderRadius: "50%",
-                          bgcolor:
-                            offer.badge === "Limited Time"
-                              ? "#EAFBF3"
-                              : "#EFF5FF",
-                          display: "grid",
-                          placeItems: "center",
-                          color:
-                            offer.badge === "Limited Time"
-                              ? "#13C784"
-                              : "#0E56C8",
-                        }}
-                      >
-                        {offer.badge === "Govt Scheme" ? (
-                          <HomeWorkOutlinedIcon fontSize="small" />
-                        ) : offer.badge === "Limited Time" ? (
-                          <BoltRoundedIcon fontSize="small" />
-                        ) : (
-                          <PaidOutlinedIcon fontSize="small" />
-                        )}
-                      </Box>
-                      <Chip
-                        label={offer.badge}
-                        size="small"
-                        sx={{
-                          bgcolor:
-                            offer.badge === "Limited Time"
-                              ? "#EAFBF3"
-                              : "#EEF7FF",
-                          color:
-                            offer.badge === "Limited Time"
-                              ? "#0D8D61"
-                              : "#0E56C8",
-                          fontWeight: 700,
-                          borderRadius: "999px",
-                          "& .MuiChip-label": {
-                            px: 1.1,
-                            letterSpacing: 0.5,
+                          width: "100%",
+                          height: "100%",
+                          display: "flex",
+                          flexDirection: "column",
+                          p: { xs: 2.5, md: 2.7 },
+                          minHeight: 288,
+                          borderRadius: "2rem",
+                          bgcolor: "white",
+                          border: "1px solid #E7EDF4",
+                          boxShadow: "0 8px 24px rgba(16,25,47,0.03)",
+                          transition: "transform 0.3s ease, box-shadow 0.3s ease",
+                          "&:hover": {
+                            transform: "translateY(-4px)",
+                            boxShadow: "0 12px 32px rgba(16,25,47,0.08)",
                           },
                         }}
-                      />
-                    </Stack>
-                    <Typography
-                      variant="h5"
-                      sx={{
-                        mb: 1.4,
-                        fontSize: "1.08rem",
-                        fontWeight: 700,
-                        lineHeight: 1.35,
-                        maxWidth: 230,
-                        color: "#18253A",
-                      }}
-                    >
-                      {offer.title}
-                    </Typography>
-                    <Typography
-                      color="text.secondary"
-                      sx={{
-                        maxWidth: 250,
-                        lineHeight: 1.75,
-                        fontSize: "0.95rem",
-                        flex: 1,
-                      }}
-                    >
-                      {offer.text}
-                    </Typography>
-                    <Divider sx={{ mt: 3.4, borderColor: "#E8EDF4" }} />
-                    <Button
-                      component={RouterLink}
-                      to={offer.href}
-                      endIcon={<ArrowForwardRoundedIcon />}
-                      sx={{
-                        mt: 2.2,
-                        px: 0,
-                        color: "primary.main",
-                        fontWeight: 800,
-                        letterSpacing: 0.4,
-                      }}
-                    >
-                      {offer.action}
-                    </Button>
-                  </Box>
+                      >
+                        <Stack
+                          direction="row"
+                          justifyContent="space-between"
+                          alignItems="center"
+                          sx={{ mb: 3.1 }}
+                        >
+                          <Box
+                            sx={{
+                              width: 46,
+                              height: 46,
+                              borderRadius: "50%",
+                              bgcolor:
+                                offer.badge === "Limited Time"
+                                  ? "#EAFBF3"
+                                  : "#EFF5FF",
+                              display: "grid",
+                              placeItems: "center",
+                              color:
+                                offer.badge === "Limited Time"
+                                  ? "#13C784"
+                                  : "#0E56C8",
+                            }}
+                          >
+                            {offer.badge === "Govt Scheme" ? (
+                              <HomeWorkOutlinedIcon fontSize="small" />
+                            ) : offer.badge === "Limited Time" ? (
+                              <BoltRoundedIcon fontSize="small" />
+                            ) : (
+                              <PaidOutlinedIcon fontSize="small" />
+                            )}
+                          </Box>
+                          <Chip
+                            label={offer.badge}
+                            size="small"
+                            sx={{
+                              bgcolor:
+                                offer.badge === "Limited Time"
+                                  ? "#EAFBF3"
+                                  : "#EEF7FF",
+                              color:
+                                offer.badge === "Limited Time"
+                                  ? "#0D8D61"
+                                  : "#0E56C8",
+                              fontWeight: 700,
+                              borderRadius: "999px",
+                              "& .MuiChip-label": {
+                                px: 1.1,
+                                letterSpacing: 0.5,
+                              },
+                            }}
+                          />
+                        </Stack>
+                        <Typography
+                          variant="h5"
+                          sx={{
+                            mb: 1.4,
+                            fontSize: "1.08rem",
+                            fontWeight: 700,
+                            lineHeight: 1.35,
+                            maxWidth: 230,
+                            color: "#18253A",
+                          }}
+                        >
+                          {offer.title}
+                        </Typography>
+                        <Typography
+                          color="text.secondary"
+                          sx={{
+                            maxWidth: 250,
+                            lineHeight: 1.75,
+                            fontSize: "0.95rem",
+                            flex: 1,
+                          }}
+                        >
+                          {offer.text}
+                        </Typography>
+                        <Divider sx={{ mt: 3.4, borderColor: "#E8EDF4" }} />
+                        <Button
+                          component={RouterLink}
+                          to={offer.href}
+                          endIcon={<ArrowForwardRoundedIcon />}
+                          sx={{
+                            mt: 2.2,
+                            px: 0,
+                            color: "primary.main",
+                            fontWeight: 800,
+                            letterSpacing: 0.4,
+                          }}
+                        >
+                          {offer.action}
+                        </Button>
+                      </Box>
+                    </Grid>
+                  ))}
                 </Grid>
-              ))}
-            </Grid>
+              </Box>
+
+              {/* Carousel Dots */}
+              {displayOffers.length > 3 && (
+                <Stack
+                  direction="row"
+                  justifyContent="center"
+                  spacing={1}
+                  sx={{ mt: 3 }}
+                >
+                  {Array.from({ length: Math.ceil(displayOffers.length / 3) }).map((_, index) => (
+                    <Box
+                      key={index}
+                      onClick={() => goToOffer(index * 3)}
+                      sx={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: "50%",
+                        bgcolor: Math.floor(currentOfferIndex / 3) === index ? "#0E56C8" : "#E7EDF4",
+                        cursor: "pointer",
+                        transition: "background-color 0.3s ease",
+                        "&:hover": {
+                          bgcolor: Math.floor(currentOfferIndex / 3) === index ? "#0E56C8" : "#C8D4E4",
+                        },
+                      }}
+                    />
+                  ))}
+                </Stack>
+              )}
+            </Box>
           </Box>
         </Container>
       </Box>

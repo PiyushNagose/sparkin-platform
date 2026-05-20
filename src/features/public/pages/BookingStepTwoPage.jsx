@@ -30,10 +30,10 @@ import {
 import { publicPlatformSettingsApi } from "@/features/public/api/platformSettingsApi";
 
 const steps = [
-  { label: "Step 1", state: "complete" },
-  { label: "Step 2", state: "active" },
-  { label: "Step 3", state: "upcoming" },
-  { label: "Step 4", state: "upcoming" },
+  { label: "Basic Info", state: "complete" },
+  { label: "Property Info", state: "active" },
+  { label: "Roof Info", state: "upcoming" },
+  { label: "Document Info", state: "upcoming" },
 ];
 
 const propertyTypes = [
@@ -174,14 +174,14 @@ function BookingStepper() {
           <Typography
             sx={{
               minHeight: 14,
-              color: step.state === "active" ? "#0E56C8" : "transparent",
+              color: step.state === "active" ? "#0E56C8" : step.state === "complete" ? "#239654" : "transparent",
               fontSize: "0.54rem",
               fontWeight: 800,
               letterSpacing: 0.48,
               textTransform: "uppercase",
             }}
           >
-            {step.state === "active" ? "In Progress" : "."}
+            {step.state === "active" ? "In Progress" : step.state === "complete" ? "Done" : "."}
           </Typography>
         </Stack>
       ))}
@@ -494,33 +494,6 @@ export default function BookingStepTwoPage() {
 
                 <Grid size={{ xs: 12, md: 6 }}>
                   <Stack spacing={2.2}>
-                    <Box>
-                      <FieldLabel>Roof Type</FieldLabel>
-                      <SegmentedChoice
-                        items={roofTypes}
-                        value={draft.property.roofType}
-                        onChange={(roofType) => {
-                          updateProperty({ roofType });
-                          setErrors((prev) => {
-                            const next = { ...prev };
-                            delete next["property.roofType"];
-                            return next;
-                          });
-                        }}
-                      />
-                      {errors["property.roofType"] ? (
-                        <Typography
-                          sx={{
-                            mt: 0.8,
-                            color: "#D32F2F",
-                            fontSize: "0.72rem",
-                          }}
-                        >
-                          {errors["property.roofType"]}
-                        </Typography>
-                      ) : null}
-                    </Box>
-
                     <Box>
                       <FieldLabel>Ownership Status</FieldLabel>
                       <SegmentedChoice

@@ -48,10 +48,10 @@ import {
 } from "@/features/public/booking/bookingValidation";
 
 const steps = [
-  { label: "Step 1", state: "complete" },
-  { label: "Step 2", state: "complete" },
-  { label: "Step 3", state: "complete" },
-  { label: "Step 4", state: "active" },
+  { label: "Basic Info", state: "complete" },
+  { label: "Property Info", state: "complete" },
+  { label: "Roof Info", state: "complete" },
+  { label: "Document Info", state: "active" },
 ];
 
 const whyUploadItems = [
@@ -87,6 +87,7 @@ const documents = [
     icon: <DescriptionOutlinedIcon sx={{ fontSize: "1rem" }} />,
     tone: "#2E7D4F",
     bg: "#E8F6EC",
+    required: true,
   },
   {
     title: "Govt Photo ID",
@@ -94,6 +95,7 @@ const documents = [
     icon: <ShieldRoundedIcon sx={{ fontSize: "1rem" }} />,
     tone: "#3566DA",
     bg: "#ECF2FF",
+    required: true,
   },
 ];
 
@@ -207,14 +209,14 @@ function BookingStepper() {
           <Typography
             sx={{
               minHeight: 14,
-              color: step.state === "active" ? "#0E56C8" : "transparent",
+              color: step.state === "active" ? "#0E56C8" : step.state === "complete" ? "#239654" : "transparent",
               fontSize: "0.54rem",
               fontWeight: 800,
               letterSpacing: 0.48,
               textTransform: "uppercase",
             }}
           >
-            {step.state === "active" ? "In Progress" : "."}
+            {step.state === "active" ? "In Progress" : step.state === "complete" ? "Done" : "."}
           </Typography>
         </Stack>
       ))}
@@ -676,6 +678,16 @@ export default function BookingStepFourPage() {
   async function handleSubmit() {
     if (isSubmitting) return; // guard against double-click
     setError("");
+
+    // Validate required documents
+    const missingDocs = [];
+    if (!(draft.attachments?.electricityBill?.length)) missingDocs.push("Electricity Bill");
+    if (!(draft.attachments?.photoId?.length)) missingDocs.push("Govt Photo ID");
+    if (missingDocs.length > 0) {
+      setError(`Please upload the required documents: ${missingDocs.join(" and ")}.`);
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -1085,10 +1097,14 @@ export default function BookingStepFourPage() {
                               minHeight: 120,
                               borderRadius: "1rem",
                               bgcolor: "white",
-                              border: "1px solid #E9EDF4",
+                              border: files.length === 0 && item.required
+                                ? "1.5px solid #FFCDD2"
+                                : "1px solid #E9EDF4",
                               px: 1.5,
                               py: 1.3,
                               cursor: "pointer",
+                              transition: "border-color 0.2s",
+                              "&:hover": { borderColor: item.tone },
                             }}
                           >
                             <Stack spacing={1}>
@@ -1110,9 +1126,17 @@ export default function BookingStepFourPage() {
                                 >
                                   {item.icon}
                                 </Box>
-                                <AddCircleOutlineRoundedIcon
-                                  sx={{ fontSize: "1rem", color: "#C3CAD8" }}
-                                />
+                                {files.length > 0 ? (
+                                  <Box sx={{ width: 20, height: 20, borderRadius: "50%", bgcolor: "#239654", display: "grid", placeItems: "center" }}>
+                                    <Typography sx={{ color: "white", fontSize: "0.6rem", fontWeight: 800 }}>✓</Typography>
+                                  </Box>
+                                ) : item.required ? (
+                                  <Box sx={{ px: 0.8, py: 0.2, borderRadius: "999px", bgcolor: "#FFF0F0", border: "1px solid #FFCDD2" }}>
+                                    <Typography sx={{ color: "#D32F2F", fontSize: "0.52rem", fontWeight: 800, letterSpacing: 0.4, textTransform: "uppercase" }}>Required</Typography>
+                                  </Box>
+                                ) : (
+                                  <AddCircleOutlineRoundedIcon sx={{ fontSize: "1rem", color: "#C3CAD8" }} />
+                                )}
                               </Stack>
 
                               <Typography

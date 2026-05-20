@@ -29,10 +29,15 @@ import {
 } from "@/features/public/booking/bookingValidation";
 
 const steps = [
-  { label: "Step 1", state: "complete" },
-  { label: "Step 2", state: "complete" },
-  { label: "Step 3", state: "active" },
-  { label: "Step 4", state: "upcoming" },
+  { label: "Basic Info", state: "complete" },
+  { label: "Property Info", state: "complete" },
+  { label: "Roof Info", state: "active" },
+  { label: "Document Info", state: "upcoming" },
+];
+
+const roofTypes = [
+  { title: "Flat", value: "flat" },
+  { title: "Sloped", value: "sloped" },
 ];
 
 const roofSizes = [
@@ -169,14 +174,14 @@ function BookingStepper() {
           <Typography
             sx={{
               minHeight: 14,
-              color: step.state === "active" ? "#0E56C8" : "transparent",
+              color: step.state === "active" ? "#0E56C8" : step.state === "complete" ? "#239654" : "transparent",
               fontSize: "0.54rem",
               fontWeight: 800,
               letterSpacing: 0.48,
               textTransform: "uppercase",
             }}
           >
-            {step.state === "active" ? "In Progress" : "."}
+            {step.state === "active" ? "In Progress" : step.state === "complete" ? "Done" : "."}
           </Typography>
         </Stack>
       ))}
@@ -223,6 +228,44 @@ function SelectCard({ title, subtitle, selected = false, onClick }) {
       >
         {subtitle}
       </Typography>
+    </Box>
+  );
+}
+
+function SegmentedChoice({ items, value, onChange }) {
+  return (
+    <Box
+      sx={{
+        p: 0.45,
+        borderRadius: "0.9rem",
+        bgcolor: "#F4F6FA",
+        display: "grid",
+        gridTemplateColumns: `repeat(${items.length}, 1fr)`,
+        gap: 0.55,
+      }}
+    >
+      {items.map((item) => (
+        <Box
+          key={item.title}
+          role="button"
+          tabIndex={0}
+          onClick={() => onChange(item.value)}
+          sx={{
+            minHeight: 38,
+            borderRadius: "0.72rem",
+            bgcolor: item.value === value ? "white" : "transparent",
+            border: item.value === value ? "1px solid #E8EDF5" : "1px solid transparent",
+            color: item.value === value ? "#0E56C8" : "#2D3A4C",
+            fontWeight: 700,
+            fontSize: "0.76rem",
+            display: "grid",
+            placeItems: "center",
+            cursor: "pointer",
+          }}
+        >
+          {item.title}
+        </Box>
+      ))}
     </Box>
   );
 }
@@ -279,6 +322,10 @@ export default function BookingStepThreePage() {
 
   function updateRoof(values) {
     updateDraft("roof", values);
+  }
+
+  function updateProperty(values) {
+    updateDraft("property", values);
   }
 
   function handleContinue() {
@@ -376,6 +423,38 @@ export default function BookingStepThreePage() {
                   }}
                 >
                   <Stack spacing={{ xs: 3.2, md: 3.8 }}>
+                    <Box>
+                      <Typography
+                        sx={{
+                          mb: 1.2,
+                          color: "#59667A",
+                          fontSize: "0.68rem",
+                          fontWeight: 700,
+                          letterSpacing: 0.5,
+                          textTransform: "uppercase",
+                        }}
+                      >
+                        Roof Type
+                      </Typography>
+                      <SegmentedChoice
+                        items={roofTypes}
+                        value={draft.property.roofType}
+                        onChange={(roofType) => {
+                          updateProperty({ roofType });
+                          setErrors((prev) => {
+                            const next = { ...prev };
+                            delete next["property.roofType"];
+                            return next;
+                          });
+                        }}
+                      />
+                      {errors["property.roofType"] ? (
+                        <Typography sx={{ mt: 0.8, color: "#D32F2F", fontSize: "0.72rem" }}>
+                          {errors["property.roofType"]}
+                        </Typography>
+                      ) : null}
+                    </Box>
+
                     <Box>
                       <Typography
                         sx={{

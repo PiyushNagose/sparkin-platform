@@ -189,7 +189,7 @@ export default function VendorDashboardPage() {
     .filter((payment) => payment.status === "pending")
     .reduce((sum, payment) => sum + (Number(payment.amount) || 0), 0);
   const acceptedQuotes = quotes.filter((quote) => quote.status === "accepted");
-  const openLeads = leads.filter((lead) => ["submitted", "reviewing", "open_for_quotes"].includes(lead.status));
+  const openLeads = leads.filter((lead) => ["submitted", "reviewing", "vendors_assigned", "open_for_quotes"].includes(lead.status));
   const activeProjects = projects.filter((project) => !["completed", "cancelled"].includes(project.status));
   const totalCapacity = projects.reduce((sum, project) => sum + (Number(project.system?.sizeKw) || 0), 0);
   const activity = useMemo(() => buildActivity({ leads, quotes, projects, payments }), [leads, quotes, projects, payments]);
