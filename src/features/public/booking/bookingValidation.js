@@ -29,8 +29,6 @@ export function validateStep1(draft) {
 export function validateStep2(draft) {
   const errors = {};
   if (!draft.property.type) errors["property.type"] = "Select a property type";
-  if (!draft.property.roofType)
-    errors["property.roofType"] = "Select a roof type";
   if (!draft.property.ownership)
     errors["property.ownership"] = "Select ownership status";
   return { valid: Object.keys(errors).length === 0, errors };
@@ -38,6 +36,8 @@ export function validateStep2(draft) {
 
 export function validateStep3(draft) {
   const errors = {};
+  if (!draft.property.roofType)
+    errors["property.roofType"] = "Select a roof type";
   if (!draft.roof.sizeRange) errors["roof.sizeRange"] = "Select a roof size";
   if (!draft.roof.shadow) errors["roof.shadow"] = "Select shadow availability";
   if (!draft.roof.condition) errors["roof.condition"] = "Select roof condition";

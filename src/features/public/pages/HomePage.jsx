@@ -2403,16 +2403,6 @@ function HomePage() {
         </Container>
       </Box>
 
-      <Box sx={{ py: { xs: 5.5, md: 6.75 }, bgcolor: "white" }}>
-        <Container
-          maxWidth={false}
-          disableGutters
-          className={styles.contentContainer}
-        >
-          <StatsSection />
-        </Container>
-      </Box>
-
       <Box
         sx={{
           bgcolor: "#10192F",
@@ -2519,6 +2509,16 @@ function HomePage() {
             />
           </Stack>
           <ReferralStatsSection />
+        </Container>
+      </Box>
+
+      <Box sx={{ py: { xs: 5.5, md: 6.75 }, bgcolor: "white" }}>
+        <Container
+          maxWidth={false}
+          disableGutters
+          className={styles.contentContainer}
+        >
+          <StatsSection />
         </Container>
       </Box>
 

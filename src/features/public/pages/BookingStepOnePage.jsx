@@ -25,10 +25,10 @@ import { useBookingDraft } from "@/features/public/booking/BookingDraftProvider"
 import { validateStep1 } from "@/features/public/booking/bookingValidation";
 
 const stepItems = [
-  { label: "Step 1", status: "In Progress", active: true },
-  { label: "Step 2", status: "", active: false },
-  { label: "Step 3", status: "", active: false },
-  { label: "Step 4", status: "", active: false },
+  { label: "Basic Info", status: "In Progress", active: true },
+  { label: "Property Info", status: "", active: false },
+  { label: "Roof Info", status: "", active: false },
+  { label: "Document Info", status: "", active: false },
 ];
 
 const timeSlots = [
