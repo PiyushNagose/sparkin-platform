@@ -1,4 +1,9 @@
+import { createServer } from "http";
 import { createApp } from "./app.js";
+import {
+  createGatewayRefreshMiddleware,
+  createGatewaySocketServer,
+} from "./websocket.js";
 import { env } from "./config/env.js";
 
 const isProd = env.NODE_ENV === "production";
@@ -27,8 +32,12 @@ function log(level, message, meta = {}) {
 }
 
 const app = createApp();
+const server = createServer(app);
+const io = createGatewaySocketServer(server);
 
-const server = app.listen(env.PORT, () => {
+app.use(createGatewayRefreshMiddleware(io));
+
+server.listen(env.PORT, () => {
   log("INFO", "Service started", { port: env.PORT });
   log("INFO", "Routing to downstream services", {
     identity: env.IDENTITY_SERVICE_URL,

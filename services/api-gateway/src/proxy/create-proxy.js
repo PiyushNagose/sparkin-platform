@@ -17,14 +17,12 @@ export function createProxy(targetUrl) {
       return req.originalUrl || req.url || "/";
     },
 
-    // Forward gateway metadata headers downstream
+    // Forward gateway metadata headers downstream.
     proxyReqOptDecorator(proxyReqOpts, srcReq) {
       proxyReqOpts.headers["x-request-id"] = srcReq.requestId || "";
       proxyReqOpts.headers["x-forwarded-for"] =
         srcReq.ip || srcReq.headers["x-forwarded-for"] || "";
       proxyReqOpts.headers["x-gateway"] = "sparkin-api-gateway";
-      // Remove transfer-encoding set by express.json() to avoid chunked encoding issues
-      delete proxyReqOpts.headers["transfer-encoding"];
       return proxyReqOpts;
     },
 

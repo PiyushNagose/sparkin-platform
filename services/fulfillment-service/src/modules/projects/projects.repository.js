@@ -67,6 +67,19 @@ export const projectsRepository = {
     return normalizeProject(project);
   },
 
+  async addSiteVisitReminder(projectId, reminder, updates = {}) {
+    const project = await ProjectModel.findByIdAndUpdate(
+      projectId,
+      {
+        $push: { "siteVisitFollowUp.reminders": reminder },
+        $set: updates,
+      },
+      { new: true },
+    ).lean({ virtuals: true });
+
+    return normalizeProject(project);
+  },
+
   async addDocument(projectId, document) {
     const project = await ProjectModel.findByIdAndUpdate(
       projectId,

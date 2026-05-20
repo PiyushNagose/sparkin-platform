@@ -193,6 +193,13 @@ function getProjectView(project) {
       url: document.url?.startsWith("http") ? document.url : `${fulfillmentOrigin}${document.url}`,
     })),
     timeline: [
+      ...(project.siteVisitFollowUp?.reminders || []).map((reminder) => ({
+        title: `Site Visit Reminder ${reminder.attempt}`,
+        meta: `${formatDateTime(reminder.sentAt)} - Admin Reminder`,
+        tone: reminder.attempt >= 3 ? "#D32F2F" : "#D89A00",
+        bg: reminder.attempt >= 3 ? "#FFF1F1" : "#FFF8E1",
+        note: reminder.message,
+      })),
       ...(project.milestones || [])
         .filter((milestone) => milestone.completedAt)
         .map((milestone) => ({
@@ -311,6 +318,11 @@ export default function VendorProjectDetailPage() {
   const displayCustomerInfoBlocks = projectView?.customerInfoBlocks ?? customerInfoBlocks;
   const displayDocuments = projectView?.documents || [];
   const displayTimeline = projectView?.timeline?.length ? projectView.timeline : timeline;
+  const siteVisitReminders = project?.siteVisitFollowUp?.reminders || [];
+  const reassignmentRequired = Boolean(project?.siteVisitFollowUp?.reassignmentRequired);
+  const siteVisitCompleted = project?.milestones?.some(
+    (milestone) => milestone.key === "site_visit" && milestone.status === "completed",
+  );
   useEffect(() => {
     let active = true;
 
@@ -476,6 +488,17 @@ export default function VendorProjectDetailPage() {
       {success ? (
         <Alert severity="success" sx={{ mb: 2, borderRadius: "0.9rem" }}>
           {success}
+        </Alert>
+      ) : null}
+
+      {siteVisitReminders.length > 0 && !siteVisitCompleted ? (
+        <Alert
+          severity={reassignmentRequired ? "error" : "warning"}
+          sx={{ mb: 2, borderRadius: "0.9rem" }}
+        >
+          {reassignmentRequired
+            ? "Final site visit reminder was missed. This project is marked for admin reassignment."
+            : `Admin has sent ${siteVisitReminders.length}/3 site visit reminder(s). Complete the site visit to keep this assignment active.`}
         </Alert>
       ) : null}
 
@@ -1116,7 +1139,7 @@ export default function VendorProjectDetailPage() {
           </Box>
 
           <LocationMapPreview
-            address={project.installationAddress}
+            address={project?.installationAddress}
             label="Project Site Location"
             buttonLabel="Map View"
             height={186}
