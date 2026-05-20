@@ -150,7 +150,7 @@ export default function AdminVendorsPage() {
   async function loadVendors() {
     setState((current) => ({ ...current, loading: true, error: "" }));
     try {
-      const data = await getAdminDashboardData({ force: true });
+      const data = await getAdminDashboardData();
       setState({ loading: false, error: "", data });
     } catch (error) {
       setState({

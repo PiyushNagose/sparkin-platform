@@ -154,20 +154,12 @@ export const leadsRepository = {
     return normalizeLead(lead);
   },
 
-  async markCommitmentPaid(id, biddingMeta = null) {
+  async markCommitmentPaid(id) {
     const paidAt = new Date();
-    const paymentUpdate = {
+    const update = {
       commitmentFeePaid: true,
       commitmentFeePaidAt: paidAt,
     };
-    const update = biddingMeta
-      ? {
-          ...paymentUpdate,
-          status: "open_for_quotes",
-          verifiedAt: paidAt,
-          ...biddingMeta,
-        }
-      : paymentUpdate;
     const lead = await LeadModel.findByIdAndUpdate(
       id,
       { $set: update },

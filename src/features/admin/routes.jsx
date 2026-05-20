@@ -1,6 +1,4 @@
-import AdminDashboardPage, {
-  makeAdminPlaceholder,
-} from "@/features/admin/pages/AdminDashboardPage";
+import AdminDashboardPage from "@/features/admin/pages/AdminDashboardPage";
 import AdminBiddingPage from "@/features/admin/pages/AdminBiddingPage";
 import AdminBroadcastPage from "@/features/admin/pages/AdminBroadcastPage";
 import AdminHelpDeskPage from "@/features/admin/pages/AdminHelpDeskPage";
@@ -22,6 +20,7 @@ import AdminVendorAssignmentPage from "@/features/admin/pages/AdminVendorAssignm
 import AdminVendorDetailPage from "@/features/admin/pages/AdminVendorDetailPage";
 import AdminVendorsPage from "@/features/admin/pages/AdminVendorsPage";
 import AdminReferralManagementPage from "@/features/admin/pages/AdminReferralManagementPage";
+import AdminNotificationsPage from "@/features/admin/pages/AdminNotificationsPage";
 
 export const adminRoutes = [
   {
@@ -82,7 +81,7 @@ export const adminRoutes = [
   },
   {
     path: "notifications",
-    element: makeAdminPlaceholder("Notifications"),
+    element: <AdminNotificationsPage />,
   },
   {
     path: "help-desk",

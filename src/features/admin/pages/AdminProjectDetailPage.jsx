@@ -29,7 +29,7 @@ import {
   adminUi,
 } from "@/features/admin/components/AdminPortalUI";
 import { projectsApi } from "@/features/public/api/projectsApi";
-import projectMapPlaceholder from "@/shared/assets/images/vendor/project/vendor-project-map-placeholder.png";
+import LocationMapPreview from "@/shared/components/LocationMapPreview";
 
 const fulfillmentOrigin = (
   import.meta.env.VITE_FULFILLMENT_API_BASE_URL ||
@@ -89,13 +89,6 @@ function formatAddress(address) {
     address.landmark,
     `${address.city}, ${address.state} ${address.pincode}`,
   ].filter(Boolean);
-}
-
-function getMapUrl(address) {
-  const query = formatAddress(address).join(" ");
-  return query && query !== "Location pending"
-    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`
-    : "";
 }
 
 function toMilestoneNode(milestone) {
@@ -305,8 +298,6 @@ export default function AdminProjectDetailPage() {
           bg: "#EFF5FF",
         },
       ];
-  const mapUrl = project ? getMapUrl(project.installationAddress) : "";
-
   useEffect(() => {
     let active = true;
     async function load() {
@@ -968,52 +959,13 @@ export default function AdminProjectDetailPage() {
             </Stack>
           </AdminPanel>
 
-          {/* Map */}
-          <AdminPanel sx={{ overflow: "hidden" }}>
-            <Box
-              component="img"
-              src={projectMapPlaceholder}
-              alt="Project site location"
-              sx={{
-                display: "block",
-                width: "100%",
-                height: 186,
-                objectFit: "cover",
-              }}
-            />
-            <Stack
-              direction="row"
-              justifyContent="space-between"
-              alignItems="center"
-              sx={{ px: 1.4, py: 1.1 }}
-            >
-              <Typography sx={{ color: "#6C788B", fontSize: "0.72rem" }}>
-                Location Preview
-              </Typography>
-              <Button
-                component={mapUrl ? "a" : "button"}
-                href={mapUrl || undefined}
-                target={mapUrl ? "_blank" : undefined}
-                rel={mapUrl ? "noreferrer" : undefined}
-                disabled={!mapUrl}
-                size="small"
-                startIcon={<PlaceOutlinedIcon sx={{ fontSize: "0.9rem" }} />}
-                sx={{
-                  minHeight: 30,
-                  px: 1.1,
-                  borderRadius: "999px",
-                  bgcolor: "#FFFFFF",
-                  color: "#223146",
-                  fontSize: "0.66rem",
-                  fontWeight: 800,
-                  textTransform: "none",
-                  boxShadow: "0 8px 16px rgba(16,29,51,0.08)",
-                }}
-              >
-                Map View
-              </Button>
-            </Stack>
-          </AdminPanel>
+          <LocationMapPreview
+            address={project.installationAddress}
+            label="Project Site Location"
+            buttonLabel="Map View"
+            height={186}
+            sx={{ borderRadius: "1rem", boxShadow: "none" }}
+          />
         </Stack>
       </Box>
 
