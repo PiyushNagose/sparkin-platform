@@ -201,7 +201,7 @@ function QuickPreview({ estimate, onGetFullReport, onProceedToBooking }) {
               </Typography>
               <Grid container spacing={{ xs: 1.4, md: 1.6 }} sx={{ mt: 2.55 }}>
                 {[
-                  ["System Size", `${estimate.system.recommendedSizeKw} kW`],
+                  ["System Size", `${Math.max(estimate.system.recommendedSizeKw, 3)} kW`],
                   ["Roof Needed", `${formatNumber(estimate.system.requiredRoofAreaSqFt)} sq. ft.`],
                   ["Roof Usage", `${roofUtilizationPercent}%`],
                   ["Energy Offset", `${estimate.system.energyOffsetPercent}%`],
@@ -247,7 +247,7 @@ function QuickPreview({ estimate, onGetFullReport, onProceedToBooking }) {
           <MetricCard title="Annual Savings" value={formatMoney(estimate.savings.annual)} text="Estimated first-year bill reduction." icon={<CreditCardRoundedIcon sx={{ fontSize: "0.92rem" }} />} />
         </Grid>
         <Grid size={{ xs: 12, md: 4 }}>
-          <MetricCard title="Recommended System" value={`${estimate.system.recommendedSizeKw} kW`} text="Sized from your bill and usable roof area." icon={<BoltRoundedIcon sx={{ fontSize: "0.92rem" }} />} highlight />
+          <MetricCard title="Recommended System" value={`${Math.max(estimate.system.recommendedSizeKw, 3)} kW`} text="Sized from your bill and usable roof area." icon={<BoltRoundedIcon sx={{ fontSize: "0.92rem" }} />} highlight />
         </Grid>
         <Grid size={{ xs: 12, md: 4 }}>
           <MetricCard
@@ -337,7 +337,7 @@ function FullResult({ estimate, onProceedToBooking }) {
               </Typography>
               <Grid container spacing={{ xs: 1.4, md: 1.6 }} sx={{ mt: 2.55 }}>
                 {[
-                  ["System Size", `${estimate.system.recommendedSizeKw} kW`],
+                  ["System Size", `${Math.max(estimate.system.recommendedSizeKw, 3)} kW`],
                   [
                     "Available Roof",
                     getAvailableRoofArea(estimate)
