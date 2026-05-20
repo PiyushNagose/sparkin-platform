@@ -1,3 +1,4 @@
+import toast from "react-hot-toast";
 import { Alert, Box, Button, Chip, Container, Grid, MenuItem, Stack, TextField, Typography } from "@mui/material";
 import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
 import BoltRoundedIcon from "@mui/icons-material/BoltRounded";
@@ -70,7 +71,7 @@ export default function CalculatorPage() {
 
       if (field === "propertyType") {
         next.connectionType = value === "commercial" ? "lt" : "single_phase";
-        next.desiredOffsetPercent = value === "commercial" ? "75" : "90";
+        next.desiredOffsetPercent = value === "commercial" ? "80" : "90";
       }
 
       return next;
@@ -78,6 +79,8 @@ export default function CalculatorPage() {
   }
 
   function validateForm() {
+    if (!form.systemSizeKw.trim() || !Number(form.systemSizeKw)) return "Please enter your preferred system size.";
+    if (Number(form.systemSizeKw) < 3) return "Preferred system size must be at least 3 kW.";
     if (!/^\d{6}$/.test(form.pincode.trim())) return "Please enter a valid 6-digit pincode.";
     if (!form.city.trim()) return "Please enter your city.";
     if (!Number(form.monthlyBill) || Number(form.monthlyBill) < 500) return "Monthly bill should be at least Rs 500.";
@@ -90,6 +93,40 @@ export default function CalculatorPage() {
     const validationMessage = validateForm();
     setError(validationMessage);
     if (validationMessage) return;
+
+    // Enforce 70-90% solar offset range for both residential and commercial
+    const desiredOffset = Number(form.desiredOffsetPercent);
+    if (!Number(form.desiredOffsetPercent) || desiredOffset < 70 || desiredOffset > 90) {
+      toast.custom((t) => (
+        <Box
+          sx={{
+            backgroundColor: "#FFF3E0",
+            border: "2px solid #FF9800",
+            borderRadius: "0.8rem",
+            padding: "1rem 1.2rem",
+            display: "flex",
+            alignItems: "center",
+            gap: "0.8rem",
+            boxShadow: "0 10px 30px rgba(255, 152, 0, 0.2)",
+            maxWidth: "400px",
+          }}
+        >
+          <Box sx={{ color: "#FF6F00", fontSize: "1.3rem", fontWeight: "bold" }}>⚠️</Box>
+          <Box>
+            <Typography sx={{ fontWeight: 800, color: "#E65100", fontSize: "0.95rem", mb: 0.3 }}>
+              Solar Offset Range Required
+            </Typography>
+            <Typography sx={{ color: "#E65100", fontSize: "0.85rem", lineHeight: 1.4 }}>
+              Please enter a value between <strong>70% to 90%</strong> for optimal system performance.
+            </Typography>
+          </Box>
+        </Box>
+      ), {
+        duration: 4000,
+        position: "top-right",
+      });
+      return;
+    }
 
     setIsSubmitting(true);
 
@@ -106,8 +143,13 @@ export default function CalculatorPage() {
         sanctionedLoadKw: toNumberOrUndefined(form.sanctionedLoadKw),
         connectionType: form.connectionType,
         daytimeUsagePercent: isCommercial ? toNumberOrUndefined(form.daytimeUsagePercent) : undefined,
-        desiredOffsetPercent: toNumberOrUndefined(form.desiredOffsetPercent),
+        desiredOffsetPercent: Number(form.desiredOffsetPercent),
       });
+
+      // Clamp recommended system size to minimum 3kW
+      if (estimate?.system?.recommendedSizeKw < 3) {
+        estimate.system.recommendedSizeKw = 3;
+      }
 
       calculatorStorage.setEstimate({
         ...estimate,
@@ -210,8 +252,8 @@ export default function CalculatorPage() {
                 <TextField label="Average Monthly Bill" type="number" value={form.monthlyBill} onChange={(event) => updateForm("monthlyBill", event.target.value)} placeholder="1200" />
                 <TextField label="Monthly Units (optional)" type="number" value={form.monthlyUnits} onChange={(event) => updateForm("monthlyUnits", event.target.value)} placeholder="Auto from bill" />
                 <TextField label="Available Roof Area sq. ft. (optional)" type="number" value={form.roofAreaSqFt} onChange={(event) => updateForm("roofAreaSqFt", event.target.value)} placeholder="600" />
-                <TextField label="Preferred System Size kW (optional)" type="number" value={form.systemSizeKw} onChange={(event) => updateForm("systemSizeKw", event.target.value)} placeholder={isCommercial ? "25" : "5"} />
-                <TextField label="Sanctioned Load kW (optional)" type="number" value={form.sanctionedLoadKw} onChange={(event) => updateForm("sanctionedLoadKw", event.target.value)} placeholder={isCommercial ? "30" : "5"} />
+                <TextField label="Preferred System Size kW" type="number" value={form.systemSizeKw} onChange={(event) => updateForm("systemSizeKw", event.target.value)} placeholder={isCommercial ? "25" : "5"} required />
+                <TextField label="Sanctioned Load kW" type="number" value={form.sanctionedLoadKw} onChange={(event) => updateForm("sanctionedLoadKw", event.target.value)} placeholder={isCommercial ? "30" : "5"} />
                 <TextField select label="Connection Type" value={form.connectionType} onChange={(event) => updateForm("connectionType", event.target.value)}>
                   {(isCommercial ? [["lt", "LT"], ["ht", "HT"]] : [["single_phase", "Single Phase"], ["three_phase", "Three Phase"]]).map(([value, label]) => (
                     <MenuItem key={value} value={value}>{label}</MenuItem>
@@ -220,7 +262,7 @@ export default function CalculatorPage() {
                 {isCommercial ? (
                   <TextField label="Daytime Usage %" type="number" value={form.daytimeUsagePercent} onChange={(event) => updateForm("daytimeUsagePercent", event.target.value)} />
                 ) : null}
-                <TextField label="Target Solar Offset %" type="number" value={form.desiredOffsetPercent} onChange={(event) => updateForm("desiredOffsetPercent", event.target.value)} />
+                <TextField label="Target Solar Offset %" type="number" value={form.desiredOffsetPercent} onChange={(event) => updateForm("desiredOffsetPercent", event.target.value)} placeholder={isCommercial ? "70 to 90%" : "70 to 90%"} helperText={`${form.propertyType.charAt(0).toUpperCase() + form.propertyType.slice(1)} - Range: 70% to 90%`} />
               </Box>
 
               <Button
