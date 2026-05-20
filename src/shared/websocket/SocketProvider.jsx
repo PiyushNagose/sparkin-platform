@@ -50,7 +50,9 @@ export function SocketProvider({ children }) {
     [connected, refreshKey],
   );
 
-  return <SocketContext.Provider value={value}>{children}</SocketContext.Provider>;
+  return (
+    <SocketContext.Provider value={value}>{children}</SocketContext.Provider>
+  );
 }
 
 export function useSocket() {

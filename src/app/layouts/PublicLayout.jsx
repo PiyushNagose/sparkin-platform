@@ -29,9 +29,11 @@ export function PublicLayout() {
 
   // Derive dashboard path based on role
   const dashboardPath =
-    user?.role === "admin" ? "/admin" :
-    user?.role === "vendor" ? "/vendor" :
-    "/customer";
+    user?.role === "admin"
+      ? "/admin"
+      : user?.role === "vendor"
+        ? "/vendor"
+        : "/customer";
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
@@ -204,7 +206,11 @@ export function PublicLayout() {
         PaperProps={{ className: styles.mobileDrawer }}
       >
         <Stack spacing={2.4} sx={{ p: 2.4, height: "100%" }}>
-          <Stack direction="row" alignItems="center" justifyContent="space-between">
+          <Stack
+            direction="row"
+            alignItems="center"
+            justifyContent="space-between"
+          >
             <Box
               component="img"
               src={logoPlaceholder}
@@ -238,7 +244,9 @@ export function PublicLayout() {
                   borderRadius: "0.85rem",
                   color: pathname === item.href ? "#0E56C8" : "#10192F",
                   bgcolor:
-                    pathname === item.href ? "rgba(14,86,200,0.08)" : "transparent",
+                    pathname === item.href
+                      ? "rgba(14,86,200,0.08)"
+                      : "transparent",
                   fontSize: "0.96rem",
                   fontWeight: 800,
                   textDecoration: "none",

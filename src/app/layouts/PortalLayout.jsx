@@ -250,8 +250,8 @@ export function PortalLayout({ portal }) {
   });
 
   const [adminNotifications, setAdminNotifications] = useState([]);
-  const [adminNotificationReadIds, setAdminNotificationReadIds] = useState(
-    () => readAdminNotificationIds(),
+  const [adminNotificationReadIds, setAdminNotificationReadIds] = useState(() =>
+    readAdminNotificationIds(),
   );
 
   const navItems = portalNavigation[portal];
@@ -387,7 +387,8 @@ export function PortalLayout({ portal }) {
   // ── notification config ────────────────────────────────────────────────────
 
   const decoratedAdminNotifications = useMemo(
-    () => decorateAdminNotifications(adminNotifications, adminNotificationReadIds),
+    () =>
+      decorateAdminNotifications(adminNotifications, adminNotificationReadIds),
     [adminNotifications, adminNotificationReadIds],
   );
 
@@ -465,31 +466,25 @@ export function PortalLayout({ portal }) {
         ? "/vendor/help"
         : "/service-support";
 
-  const handleSidebarLogout = useCallback(
-    (onNavClick) => {
-      onNavClick?.();
-      setLogoutDialogOpen(true);
-    },
-    [],
-  );
+  const handleSidebarLogout = useCallback((onNavClick) => {
+    onNavClick?.();
+    setLogoutDialogOpen(true);
+  }, []);
 
-  const handleConfirmLogout = useCallback(
-    async () => {
-      setLogoutDialogOpen(false);
-      await logout();
-      navigate(
-        portal === "admin"
-          ? "/auth/login"
-          : portal === "vendor"
-            ? "/vendor/login"
-            : "/auth/login",
-        {
-          replace: true,
-        },
-      );
-    },
-    [logout, navigate, portal],
-  );
+  const handleConfirmLogout = useCallback(async () => {
+    setLogoutDialogOpen(false);
+    await logout();
+    navigate(
+      portal === "admin"
+        ? "/auth/login"
+        : portal === "vendor"
+          ? "/vendor/login"
+          : "/auth/login",
+      {
+        replace: true,
+      },
+    );
+  }, [logout, navigate, portal]);
 
   const handleCancelLogout = useCallback(() => {
     setLogoutDialogOpen(false);
@@ -917,87 +912,87 @@ export function PortalLayout({ portal }) {
                   [
                     ...(notificationItems.length
                       ? notificationItems.map((item) => (
-                        <MenuItem
-                          key={item.id}
-                          component={NavLink}
-                          to={item.path}
-                          onClick={() => {
-                            setAdminNotificationReadIds(
-                              markAdminNotificationsRead([item.id]),
-                            );
-                            setNotificationAnchor(null);
-                          }}
-                          sx={{
-                            alignItems: "flex-start",
-                            py: 1.1,
-                            whiteSpace: "normal",
-                            bgcolor: item.isRead ? "transparent" : "#F8FBFF",
-                          }}
-                        >
-                          <Box sx={{ minWidth: 0 }}>
-                            <Stack
-                              direction="row"
-                              spacing={0.8}
-                              alignItems="center"
-                              sx={{ mb: 0.3 }}
-                            >
-                              {!item.isRead ? (
-                                <Box
+                          <MenuItem
+                            key={item.id}
+                            component={NavLink}
+                            to={item.path}
+                            onClick={() => {
+                              setAdminNotificationReadIds(
+                                markAdminNotificationsRead([item.id]),
+                              );
+                              setNotificationAnchor(null);
+                            }}
+                            sx={{
+                              alignItems: "flex-start",
+                              py: 1.1,
+                              whiteSpace: "normal",
+                              bgcolor: item.isRead ? "transparent" : "#F8FBFF",
+                            }}
+                          >
+                            <Box sx={{ minWidth: 0 }}>
+                              <Stack
+                                direction="row"
+                                spacing={0.8}
+                                alignItems="center"
+                                sx={{ mb: 0.3 }}
+                              >
+                                {!item.isRead ? (
+                                  <Box
+                                    sx={{
+                                      width: 7,
+                                      height: 7,
+                                      borderRadius: "50%",
+                                      bgcolor: "#0E56C8",
+                                      flexShrink: 0,
+                                    }}
+                                  />
+                                ) : null}
+                                <Typography
                                   sx={{
-                                    width: 7,
-                                    height: 7,
-                                    borderRadius: "50%",
-                                    bgcolor: "#0E56C8",
-                                    flexShrink: 0,
+                                    color: "#223146",
+                                    fontSize: "0.78rem",
+                                    fontWeight: 850,
+                                    lineHeight: 1.3,
                                   }}
-                                />
-                              ) : null}
+                                >
+                                  {item.title}
+                                </Typography>
+                              </Stack>
                               <Typography
                                 sx={{
-                                  color: "#223146",
-                                  fontSize: "0.78rem",
-                                  fontWeight: 850,
-                                  lineHeight: 1.3,
+                                  color: "#7A8799",
+                                  fontSize: "0.68rem",
+                                  lineHeight: 1.45,
                                 }}
                               >
-                                {item.title}
+                                {item.message}
                               </Typography>
-                            </Stack>
-                            <Typography
-                              sx={{
-                                color: "#7A8799",
-                                fontSize: "0.68rem",
-                                lineHeight: 1.45,
-                              }}
-                            >
-                              {item.message}
-                            </Typography>
-                            <Typography
-                              sx={{
-                                mt: 0.35,
-                                color: "#0E56C8",
-                                fontSize: "0.64rem",
-                                fontWeight: 850,
-                              }}
-                            >
-                              {formatAdminNotificationTime(item.createdAt)} -{" "}
-                              {item.type}
-                            </Typography>
-                          </Box>
-                        </MenuItem>
-                      ))
+                              <Typography
+                                sx={{
+                                  mt: 0.35,
+                                  color: "#0E56C8",
+                                  fontSize: "0.64rem",
+                                  fontWeight: 850,
+                                }}
+                              >
+                                {formatAdminNotificationTime(item.createdAt)} -{" "}
+                                {item.type}
+                              </Typography>
+                            </Box>
+                          </MenuItem>
+                        ))
                       : [
-                      <MenuItem
-                        key="empty-admin-notifications"
-                        onClick={() => setNotificationAnchor(null)}
-                      >
-                        <Typography
-                          sx={{ color: "#7A8799", fontSize: "0.76rem" }}
-                        >
-                          No platform notifications right now.
-                        </Typography>
-                      </MenuItem>,
-                    ]),
+                          <MenuItem
+                            key="empty-admin-notifications"
+                            onClick={() => setNotificationAnchor(null)}
+                          >
+                            <Typography
+                              sx={{ color: "#7A8799", fontSize: "0.76rem" }}
+                            >
+                              No platform notifications right now.
+                            </Typography>
+                          </MenuItem>,
+                        ]),
                     <Divider key="admin-notification-divider" />,
                     <Box
                       key="admin-notification-actions"
@@ -1015,7 +1010,9 @@ export function PortalLayout({ portal }) {
                         onClick={() => {
                           setAdminNotificationReadIds(
                             markAdminNotificationsRead(
-                              decoratedAdminNotifications.map((item) => item.id),
+                              decoratedAdminNotifications.map(
+                                (item) => item.id,
+                              ),
                             ),
                           );
                         }}
@@ -1042,7 +1039,7 @@ export function PortalLayout({ portal }) {
                       >
                         View all
                       </Button>
-                    </Box>
+                    </Box>,
                   ]
                 ) : notificationItems.every((item) => {
                     const count = parseInt(item.label.split(" ")[0], 10);
@@ -1198,7 +1195,9 @@ export function PortalLayout({ portal }) {
               borderRadius: { lg: "0 0 1.35rem 1.35rem" },
             }}
           >
-            <Outlet key={`${location.pathname}${location.search}${refreshKey}`} />
+            <Outlet
+              key={`${location.pathname}${location.search}${refreshKey}`}
+            />
           </Box>
         </Box>
       </Box>
@@ -1239,7 +1238,7 @@ export function PortalLayout({ portal }) {
             Confirm Logout
           </Typography>
         </DialogTitle>
-        
+
         <DialogContent sx={{ textAlign: "center", pb: 2 }}>
           <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
             Are you sure you want to logout from your {portal} account?
@@ -1248,7 +1247,7 @@ export function PortalLayout({ portal }) {
             You'll need to sign in again to access your dashboard.
           </Typography>
         </DialogContent>
-        
+
         <DialogActions sx={{ justifyContent: "center", gap: 1, pb: 2 }}>
           <Button
             onClick={handleCancelLogout}
