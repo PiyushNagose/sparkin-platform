@@ -2,6 +2,7 @@ import { businessClient } from "@/shared/lib/http/businessClient";
 import { cachedGet, invalidateRequestCache } from "@/shared/lib/http/requestCache";
 
 const BASE = "/chat";
+let registerAdminPromise = null;
 
 export const chatApi = {
   /** List all rooms for the current user */
@@ -33,9 +34,15 @@ export const chatApi = {
     cachedGet(businessClient, `${BASE}/admin-contact`).then((r) => r.data),
 
   /** Register the current admin's userId so vendors/customers can find them */
-  registerAdmin: () =>
-    businessClient.post(`${BASE}/register-admin`).then((r) => {
+  registerAdmin: () => {
+    registerAdminPromise ??= businessClient.post(`${BASE}/register-admin`).then((r) => {
       invalidateRequestCache(`${BASE}/admin-contact`);
       return r.data;
-    }),
+    }).catch((error) => {
+      registerAdminPromise = null;
+      throw error;
+    });
+
+    return registerAdminPromise;
+  },
 };

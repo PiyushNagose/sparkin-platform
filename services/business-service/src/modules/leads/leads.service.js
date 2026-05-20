@@ -277,9 +277,6 @@ export const leadsService = {
       if (!lead.assignedVendorIds?.length) {
         throw new AppError(409, "Assign vendors before opening bidding");
       }
-      if (!lead.commitmentFeePaid) {
-        throw new AppError(409, "Confirm customer payment before opening bidding");
-      }
       await leadsRepository.updateDetails(
         leadId,
         await buildCommercialRange(lead),
@@ -321,14 +318,12 @@ export const leadsService = {
     }
 
     const bidDetails = await buildCommercialRange(lead);
-    const isPaid = Boolean(lead.commitmentFeePaid);
-    const biddingMeta = isPaid ? await buildBiddingMeta(lead) : {};
+    const biddingMeta = await buildBiddingMeta(lead);
 
     return leadsRepository.assignVendors(leadId, vendorIds, {
       ...bidDetails,
       ...biddingMeta,
-      status: isPaid ? "open_for_quotes" : "vendors_assigned",
-      biddingEndsAt: isPaid ? biddingMeta.biddingEndsAt : null,
+      status: "open_for_quotes",
     });
   },
 
@@ -352,11 +347,6 @@ export const leadsService = {
       throw new AppError(403, "You can only update your own lead");
     }
 
-    const shouldOpenBidding =
-      lead.assignedVendorIds?.length &&
-      !["quote_selected", "closed"].includes(lead.status);
-    const biddingMeta = shouldOpenBidding ? await buildBiddingMeta(lead) : null;
-
-    return leadsRepository.markCommitmentPaid(leadId, biddingMeta);
+    return leadsRepository.markCommitmentPaid(leadId);
   },
 };

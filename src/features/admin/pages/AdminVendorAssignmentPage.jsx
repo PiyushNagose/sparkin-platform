@@ -173,11 +173,9 @@ function LeadSummary({ lead, quotes }) {
                       letterSpacing: "0.06em",
                     }}
                   >
-                    {lead.commitmentFeePaid
-                      ? "PAID"
-                      : lead.status === "vendors_assigned"
-                        ? "PAYMENT PENDING"
-                        : lead.status?.replaceAll("_", " ").toUpperCase()}
+                    {lead.status === "vendors_assigned"
+                      ? "VENDORS ASSIGNED"
+                      : lead.status?.replaceAll("_", " ").toUpperCase()}
                   </Box>
                 </Stack>
                 <Typography
@@ -327,7 +325,7 @@ export default function AdminVendorAssignmentPage() {
 
     async function loadAssignmentData() {
       try {
-        const data = await getAdminDashboardData({ force: true });
+        const data = await getAdminDashboardData();
         if (!active) return;
 
         const requestedLeadId = location.state?.leadId;
@@ -894,11 +892,7 @@ export default function AdminVendorAssignmentPage() {
               fontWeight: 900,
             }}
           >
-            {isAssigning
-              ? "Assigning..."
-              : lead.commitmentFeePaid
-                ? "Assign Vendors & Start Bidding"
-                : "Assign Vendors"}
+            {isAssigning ? "Assigning..." : "Assign Vendors & Start Bidding"}
           </AdminPrimaryButton>
         </Stack>
       </AdminPanel>

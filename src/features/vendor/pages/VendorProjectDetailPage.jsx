@@ -16,7 +16,7 @@ import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
 import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
 import { Link as RouterLink, useParams } from "react-router-dom";
 import { projectsApi } from "@/features/public/api/projectsApi";
-import projectMapPlaceholder from "@/shared/assets/images/vendor/project/vendor-project-map-placeholder.png";
+import LocationMapPreview from "@/shared/components/LocationMapPreview";
 
 const statCards = [
   { label: "System Size", value: "Pending" },
@@ -123,13 +123,6 @@ function formatAddress(address) {
     address.landmark,
     `${address.city}, ${address.state} ${address.pincode}`,
   ].filter(Boolean);
-}
-
-function getMapUrl(address) {
-  const query = formatAddress(address).join(" ");
-  return query && query !== "Location pending"
-    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`
-    : "";
 }
 
 function toMilestoneNode(milestone) {
@@ -318,8 +311,6 @@ export default function VendorProjectDetailPage() {
   const displayCustomerInfoBlocks = projectView?.customerInfoBlocks ?? customerInfoBlocks;
   const displayDocuments = projectView?.documents || [];
   const displayTimeline = projectView?.timeline?.length ? projectView.timeline : timeline;
-  const mapUrl = project ? getMapUrl(project.installationAddress) : "";
-
   useEffect(() => {
     let active = true;
 
@@ -1124,59 +1115,13 @@ export default function VendorProjectDetailPage() {
             </Stack>
           </Box>
 
-          <Box
-            sx={{
-              overflow: "hidden",
-              borderRadius: "1.25rem",
-              bgcolor: "#FFFFFF",
-              border: "1px solid rgba(225,232,241,0.96)",
-              boxShadow: "0 16px 30px rgba(16,29,51,0.04)",
-            }}
-          >
-            <Box
-              component="img"
-              src={projectMapPlaceholder}
-              alt="Project site location preview"
-              sx={{
-                display: "block",
-                width: "100%",
-                height: 186,
-                objectFit: "cover",
-              }}
-            />
-            <Stack
-              direction="row"
-              justifyContent="space-between"
-              alignItems="center"
-              sx={{ px: 1.2, py: 0.95 }}
-            >
-              <Typography sx={{ color: "#6C788B", fontSize: "0.7rem" }}>
-                Location Preview
-              </Typography>
-              <Button
-                component={mapUrl ? "a" : "button"}
-                href={mapUrl || undefined}
-                target={mapUrl ? "_blank" : undefined}
-                rel={mapUrl ? "noreferrer" : undefined}
-                disabled={!mapUrl}
-                size="small"
-                startIcon={<PlaceOutlinedIcon sx={{ fontSize: "0.9rem" }} />}
-                sx={{
-                  minHeight: 28,
-                  px: 1.05,
-                  borderRadius: "999px",
-                  bgcolor: "#FFFFFF",
-                  color: "#223146",
-                  fontSize: "0.64rem",
-                  fontWeight: 800,
-                  textTransform: "none",
-                  boxShadow: "0 8px 16px rgba(16,29,51,0.08)",
-                }}
-              >
-                Map View
-              </Button>
-            </Stack>
-          </Box>
+          <LocationMapPreview
+            address={project.installationAddress}
+            label="Project Site Location"
+            buttonLabel="Map View"
+            height={186}
+            sx={{ borderRadius: "1.25rem" }}
+          />
         </Stack>
       </Box>
 

@@ -13,7 +13,6 @@ import {
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import GavelOutlinedIcon from "@mui/icons-material/GavelOutlined";
 import GroupAddOutlinedIcon from "@mui/icons-material/GroupAddOutlined";
-import HelpOutlineRoundedIcon from "@mui/icons-material/HelpOutlineRounded";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import PaymentsOutlinedIcon from "@mui/icons-material/PaymentsOutlined";
 import RequestQuoteOutlinedIcon from "@mui/icons-material/RequestQuoteOutlined";
@@ -351,7 +350,7 @@ export default function AdminLeadDetailPage() {
     try {
       const [lead, data, settings] = await Promise.all([
         leadsApi.getLead(leadId),
-        getAdminDashboardData({ force: true }),
+        getAdminDashboardData(),
         platformSettingsApi.getSettings(),
       ]);
       setPlatformSettings(settings);
@@ -973,24 +972,6 @@ export default function AdminLeadDetailPage() {
               </AdminPrimaryButton>
               <Button
                 fullWidth
-                startIcon={<HelpOutlineRoundedIcon />}
-                disabled={isUpdating || lead.status === "reviewing"}
-                onClick={() => updateStatus("reviewing")}
-                sx={{
-                  minHeight: 46,
-                  borderRadius: "999px",
-                  bgcolor: "#E1E4E8",
-                  color: "#1F2C40",
-                  fontSize: "0.84rem",
-                  fontWeight: 850,
-                  textTransform: "none",
-                  "&:hover": { bgcolor: "#D6DBE1" },
-                }}
-              >
-                Need More Info
-              </Button>
-              <Button
-                fullWidth
                 startIcon={<CloseRoundedIcon />}
                 disabled={isUpdating || lead.status === "closed"}
                 onClick={() => updateStatus("closed")}
@@ -1113,7 +1094,7 @@ export default function AdminLeadDetailPage() {
                     mt: 0.3,
                   }}
                 >
-                  Payment opens the bidding window for assigned vendors.
+                  Assigned vendors can already view this lead and submit bids.
                 </Typography>
               </Box>
               <Button

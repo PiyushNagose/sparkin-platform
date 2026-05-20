@@ -40,6 +40,9 @@ export function createRouter() {
   router.use("/uploads", standardRateLimit, identityProxy);
 
   // ── Identity Service ─────────────────────────────────────────────────────────
+  // Session verification is a normal authenticated read, not a brute-force auth action.
+  router.get("/api/v1/auth/me", standardRateLimit, requireAuth, identityProxy);
+
   // Public auth routes (login, register, refresh) — rate limited
   router.use("/api/v1/auth", authRateLimit, identityProxy);
 

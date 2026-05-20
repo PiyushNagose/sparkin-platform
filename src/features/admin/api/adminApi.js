@@ -6,6 +6,9 @@ import { projectsApi } from "@/features/public/api/projectsApi";
 import { serviceRequestsApi } from "@/features/public/api/serviceRequestsApi";
 
 let dashboardInFlight = null;
+let dashboardCache = null;
+let dashboardCacheExpiresAt = 0;
+const DASHBOARD_CACHE_TTL_MS = 30_000;
 
 function readArrayResult(result, fallback = []) {
   if (result.status !== "fulfilled") {
@@ -13,6 +16,18 @@ function readArrayResult(result, fallback = []) {
   }
 
   return Array.isArray(result.value) ? result.value : fallback;
+}
+
+function readErrorMessage(result) {
+  if (result.status === "fulfilled") {
+    return "";
+  }
+
+  return (
+    result.reason?.response?.data?.message ||
+    result.reason?.message ||
+    "Service unavailable"
+  );
 }
 
 export const adminVendorsApi = {
@@ -44,33 +59,61 @@ export const platformSettingsApi = {
 
 export function invalidateAdminDashboardData() {
   dashboardInFlight = null;
+  dashboardCache = null;
+  dashboardCacheExpiresAt = 0;
+}
+
+export function getCachedAdminDashboardData() {
+  return dashboardCache;
 }
 
 export async function getAdminDashboardData(options = {}) {
-  const { force = false } = options;
+  const {
+    force = false,
+    ttlMs = DASHBOARD_CACHE_TTL_MS,
+  } = options;
 
-  if (!force && dashboardInFlight) {
+  if (!force && dashboardCache && dashboardCacheExpiresAt > Date.now()) {
+    return dashboardCache;
+  }
+
+  if (dashboardInFlight) {
     return dashboardInFlight;
   }
 
-  const [leads, quotes, payments, projects, serviceRequests, vendors] =
-    await (dashboardInFlight = Promise.allSettled([
+  dashboardInFlight = Promise.allSettled([
       leadsApi.listLeads(options),
       quotesApi.listQuotes({}, options),
       paymentsApi.listPayments(options),
       projectsApi.listProjects(options),
       serviceRequestsApi.listRequests(options),
       adminVendorsApi.listVendors(options),
-    ]).finally(() => {
-      dashboardInFlight = null;
-    }));
+    ])
+    .then(([leads, quotes, payments, projects, serviceRequests, vendors]) => {
+      const data = {
+        leads: readArrayResult(leads),
+        quotes: readArrayResult(quotes),
+        payments: readArrayResult(payments),
+        projects: readArrayResult(projects),
+        serviceRequests: readArrayResult(serviceRequests),
+        vendors: readArrayResult(vendors),
+        sourceErrors: {
+          leads: readErrorMessage(leads),
+          quotes: readErrorMessage(quotes),
+          payments: readErrorMessage(payments),
+          projects: readErrorMessage(projects),
+          serviceRequests: readErrorMessage(serviceRequests),
+          vendors: readErrorMessage(vendors),
+        },
+      };
 
-  return {
-    leads: readArrayResult(leads),
-    quotes: readArrayResult(quotes),
-    payments: readArrayResult(payments),
-    projects: readArrayResult(projects),
-    serviceRequests: readArrayResult(serviceRequests),
-    vendors: readArrayResult(vendors),
-  };
+      dashboardCache = data;
+      dashboardCacheExpiresAt = Date.now() + ttlMs;
+      return data;
+    })
+    .finally(() => {
+      dashboardInFlight = null;
+    });
+
+  return dashboardInFlight;
 }

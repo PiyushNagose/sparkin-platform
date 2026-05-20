@@ -339,7 +339,7 @@ export default function AdminDashboardPage() {
 
     async function loadDashboard() {
       try {
-        const data = await getAdminDashboardData({ force: true });
+        const data = await getAdminDashboardData();
         if (active) setState({ loading: false, error: "", data });
       } catch (error) {
         if (active) {

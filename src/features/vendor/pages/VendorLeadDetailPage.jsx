@@ -15,10 +15,10 @@ import StraightenRoundedIcon from "@mui/icons-material/StraightenRounded";
 import WbSunnyOutlinedIcon from "@mui/icons-material/WbSunnyOutlined";
 import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
 import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
-import OpenInNewRoundedIcon from "@mui/icons-material/OpenInNewRounded";
 import { Link as RouterLink, useParams } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import { leadsApi, quotesApi } from "@/features/public/api/leadsApi";
+import LocationMapPreview from "@/shared/components/LocationMapPreview";
 
 const verificationRows = [
   { label: "Ownership Status", value: "Owned", tone: "#2A9656", bg: "#E8F7EC" },
@@ -67,21 +67,6 @@ function getBudgetEstimate(lead) {
 
   const load = Number(lead?.property?.sanctionedLoadKw) || 0;
   return load ? formatPrice(load * 75000) : "Pending quote";
-}
-
-function getMapUrl(address) {
-  const query = [
-    address?.street,
-    address?.landmark,
-    address?.city,
-    address?.state,
-    address?.pincode,
-  ]
-    .filter(Boolean)
-    .join(", ");
-  return query
-    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`
-    : "";
 }
 
 function getInitials(name) {
@@ -305,8 +290,6 @@ export default function VendorLeadDetailPage() {
     .join(", ");
   const initials = getInitials(customerName) || "CU";
   const resolvedLeadId = lead.id || lead._id || leadId;
-  const mapUrl = getMapUrl(lead.installationAddress);
-
   return (
     <Box sx={{ width: "100%" }}>
       <Box
@@ -584,65 +567,12 @@ export default function VendorLeadDetailPage() {
             </Stack>
           </Box>
 
-          <Box
-            sx={{
-              borderRadius: "1.15rem",
-              bgcolor: "#FFFFFF",
-              border: "1px solid rgba(225,232,241,0.96)",
-              boxShadow: "0 14px 28px rgba(16,29,51,0.04)",
-              overflow: "hidden",
-            }}
-          >
-            <Box
-              sx={{
-                height: 156,
-                background:
-                  "linear-gradient(135deg, #7E8A7A 0%, #BDAE8A 35%, #7B8E61 70%, #9C9571 100%)",
-                position: "relative",
-              }}
-            >
-              <Box
-                sx={{
-                  position: "absolute",
-                  inset: 0,
-                  backgroundImage:
-                    "linear-gradient(rgba(255,255,255,0.12) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.12) 1px, transparent 1px)",
-                  backgroundSize: "22px 22px",
-                  opacity: 0.38,
-                }}
-              />
-            </Box>
-
-            <Stack
-              direction="row"
-              justifyContent="space-between"
-              alignItems="center"
-              sx={{ px: 1.2, py: 0.9 }}
-            >
-              <Typography
-                sx={{ color: "#5E6A7D", fontSize: "0.76rem", fontWeight: 500 }}
-              >
-                Location Preview
-              </Typography>
-              <Button
-                component={mapUrl ? "a" : "button"}
-                href={mapUrl || undefined}
-                target={mapUrl ? "_blank" : undefined}
-                rel={mapUrl ? "noreferrer" : undefined}
-                endIcon={<OpenInNewRoundedIcon />}
-                sx={{
-                  minHeight: 28,
-                  px: 0,
-                  color: "#0E56C8",
-                  fontSize: "0.72rem",
-                  fontWeight: 700,
-                  textTransform: "none",
-                }}
-              >
-                View Map
-              </Button>
-            </Stack>
-          </Box>
+          <LocationMapPreview
+            address={lead.installationAddress}
+            label="Lead Site Location"
+            buttonLabel="View Map"
+            height={156}
+          />
         </Stack>
       </Box>
 

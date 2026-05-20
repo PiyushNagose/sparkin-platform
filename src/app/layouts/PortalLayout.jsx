@@ -3,6 +3,7 @@ import {
   Badge,
   Box,
   Button,
+  Divider,
   Drawer,
   IconButton,
   InputAdornment,
@@ -50,6 +51,15 @@ import { projectsApi } from "@/features/public/api/projectsApi";
 import { paymentsApi } from "@/features/public/api/paymentsApi";
 import { serviceRequestsApi } from "@/features/public/api/serviceRequestsApi";
 import { chatApi } from "@/features/chat/chatApi";
+import { getAdminDashboardData } from "@/features/admin/api/adminApi";
+import {
+  ADMIN_NOTIFICATIONS_CHANGED,
+  buildAdminNotifications,
+  decorateAdminNotifications,
+  formatAdminNotificationTime,
+  markAdminNotificationsRead,
+  readAdminNotificationIds,
+} from "@/features/admin/lib/adminNotifications";
 
 // ─── constants ────────────────────────────────────────────────────────────────
 
@@ -231,11 +241,10 @@ export function PortalLayout({ portal }) {
     activeProjects: 0,
   });
 
-  const [adminSummary, setAdminSummary] = useState({
-    leadsNeedReview: 0,
-    pendingPayments: 0,
-    activeProjects: 0,
-  });
+  const [adminNotifications, setAdminNotifications] = useState([]);
+  const [adminNotificationReadIds, setAdminNotificationReadIds] = useState(
+    () => readAdminNotificationIds(),
+  );
 
   const navItems = portalNavigation[portal];
   const navIconMap =
@@ -333,35 +342,31 @@ export function PortalLayout({ portal }) {
     let active = true;
 
     async function loadAdminSummary() {
-      const [leadsRes, projectsRes, paymentsRes] = await Promise.allSettled([
-        leadsApi.listLeads(),
-        projectsApi.listProjects(),
-        paymentsApi.listPayments(),
-      ]);
+      const data = await getAdminDashboardData();
       if (!active) return;
 
-      const leads = leadsRes.status === "fulfilled" ? leadsRes.value : [];
-      const projects =
-        projectsRes.status === "fulfilled" ? projectsRes.value : [];
-      const payments =
-        paymentsRes.status === "fulfilled" ? paymentsRes.value : [];
-
-      setAdminSummary({
-        leadsNeedReview: leads.filter((lead) =>
-          ["submitted", "reviewing"].includes(lead.status),
-        ).length,
-        pendingPayments: payments.filter(
-          (payment) => payment.status === "pending",
-        ).length,
-        activeProjects: projects.filter(
-          (project) => !["completed", "cancelled"].includes(project.status),
-        ).length,
-      });
+      setAdminNotifications(buildAdminNotifications(data));
     }
 
-    loadAdminSummary();
+    loadAdminSummary().catch(() => {});
     return () => {
       active = false;
+    };
+  }, [portal]);
+
+  useEffect(() => {
+    if (portal !== "admin" || typeof window === "undefined") return undefined;
+
+    const syncReadState = () => {
+      setAdminNotificationReadIds(readAdminNotificationIds());
+    };
+
+    window.addEventListener(ADMIN_NOTIFICATIONS_CHANGED, syncReadState);
+    window.addEventListener("storage", syncReadState);
+
+    return () => {
+      window.removeEventListener(ADMIN_NOTIFICATIONS_CHANGED, syncReadState);
+      window.removeEventListener("storage", syncReadState);
     };
   }, [portal]);
 
@@ -373,11 +378,14 @@ export function PortalLayout({ portal }) {
 
   // ── notification config ────────────────────────────────────────────────────
 
+  const decoratedAdminNotifications = useMemo(
+    () => decorateAdminNotifications(adminNotifications, adminNotificationReadIds),
+    [adminNotifications, adminNotificationReadIds],
+  );
+
   const notificationCount =
     portal === "admin"
-      ? adminSummary.leadsNeedReview +
-        adminSummary.pendingPayments +
-        adminSummary.activeProjects
+      ? decoratedAdminNotifications.filter((item) => !item.isRead).length
       : portal === "vendor"
         ? vendorSummary.openLeads +
           vendorSummary.activeProjects +
@@ -388,23 +396,7 @@ export function PortalLayout({ portal }) {
 
   const notificationItems = useMemo(() => {
     if (portal === "admin") {
-      return [
-        {
-          label: `${adminSummary.leadsNeedReview} lead${adminSummary.leadsNeedReview === 1 ? "" : "s"} need verification`,
-          caption: "Review submitted and manually created leads",
-          path: "/admin/leads",
-        },
-        {
-          label: `${adminSummary.pendingPayments} pending payment${adminSummary.pendingPayments === 1 ? "" : "s"}`,
-          caption: "Track invoice and payment recovery queue",
-          path: "/admin/payments",
-        },
-        {
-          label: `${adminSummary.activeProjects} active project${adminSummary.activeProjects === 1 ? "" : "s"}`,
-          caption: "Monitor customer and vendor project progress",
-          path: "/admin/customers-projects",
-        },
-      ];
+      return decoratedAdminNotifications.slice(0, 6);
     }
 
     if (portal === "vendor") {
@@ -444,7 +436,7 @@ export function PortalLayout({ portal }) {
         path: "/customer/services",
       },
     ];
-  }, [portal, vendorSummary, customerSummary, adminSummary]);
+  }, [portal, vendorSummary, customerSummary, decoratedAdminNotifications]);
 
   // ── handlers ──────────────────────────────────────────────────────────────
 
@@ -460,7 +452,7 @@ export function PortalLayout({ portal }) {
 
   const helpCenterPath =
     portal === "admin"
-      ? "/admin/notifications"
+      ? "/admin/help-desk"
       : portal === "vendor"
         ? "/vendor/help"
         : "/service-support";
@@ -901,10 +893,141 @@ export function PortalLayout({ portal }) {
                   </Typography>
                 </Box>
 
-                {notificationItems.every((item) => {
-                  const count = parseInt(item.label.split(" ")[0], 10);
-                  return count === 0;
-                }) ? (
+                {portal === "admin" ? (
+                  [
+                    ...(notificationItems.length
+                      ? notificationItems.map((item) => (
+                        <MenuItem
+                          key={item.id}
+                          component={NavLink}
+                          to={item.path}
+                          onClick={() => {
+                            setAdminNotificationReadIds(
+                              markAdminNotificationsRead([item.id]),
+                            );
+                            setNotificationAnchor(null);
+                          }}
+                          sx={{
+                            alignItems: "flex-start",
+                            py: 1.1,
+                            whiteSpace: "normal",
+                            bgcolor: item.isRead ? "transparent" : "#F8FBFF",
+                          }}
+                        >
+                          <Box sx={{ minWidth: 0 }}>
+                            <Stack
+                              direction="row"
+                              spacing={0.8}
+                              alignItems="center"
+                              sx={{ mb: 0.3 }}
+                            >
+                              {!item.isRead ? (
+                                <Box
+                                  sx={{
+                                    width: 7,
+                                    height: 7,
+                                    borderRadius: "50%",
+                                    bgcolor: "#0E56C8",
+                                    flexShrink: 0,
+                                  }}
+                                />
+                              ) : null}
+                              <Typography
+                                sx={{
+                                  color: "#223146",
+                                  fontSize: "0.78rem",
+                                  fontWeight: 850,
+                                  lineHeight: 1.3,
+                                }}
+                              >
+                                {item.title}
+                              </Typography>
+                            </Stack>
+                            <Typography
+                              sx={{
+                                color: "#7A8799",
+                                fontSize: "0.68rem",
+                                lineHeight: 1.45,
+                              }}
+                            >
+                              {item.message}
+                            </Typography>
+                            <Typography
+                              sx={{
+                                mt: 0.35,
+                                color: "#0E56C8",
+                                fontSize: "0.64rem",
+                                fontWeight: 850,
+                              }}
+                            >
+                              {formatAdminNotificationTime(item.createdAt)} -{" "}
+                              {item.type}
+                            </Typography>
+                          </Box>
+                        </MenuItem>
+                      ))
+                      : [
+                      <MenuItem
+                        key="empty-admin-notifications"
+                        onClick={() => setNotificationAnchor(null)}
+                      >
+                        <Typography
+                          sx={{ color: "#7A8799", fontSize: "0.76rem" }}
+                        >
+                          No platform notifications right now.
+                        </Typography>
+                      </MenuItem>,
+                    ]),
+                    <Divider key="admin-notification-divider" />,
+                    <Box
+                      key="admin-notification-actions"
+                      sx={{
+                        px: 1.2,
+                        py: 0.9,
+                        display: "flex",
+                        gap: 0.8,
+                        justifyContent: "space-between",
+                      }}
+                    >
+                      <Button
+                        size="small"
+                        disabled={!notificationCount}
+                        onClick={() => {
+                          setAdminNotificationReadIds(
+                            markAdminNotificationsRead(
+                              decoratedAdminNotifications.map((item) => item.id),
+                            ),
+                          );
+                        }}
+                        sx={{
+                          color: "#647387",
+                          fontSize: "0.68rem",
+                          fontWeight: 800,
+                          textTransform: "none",
+                        }}
+                      >
+                        Mark all read
+                      </Button>
+                      <Button
+                        size="small"
+                        component={NavLink}
+                        to="/admin/notifications"
+                        onClick={() => setNotificationAnchor(null)}
+                        sx={{
+                          color: "#0E56C8",
+                          fontSize: "0.68rem",
+                          fontWeight: 900,
+                          textTransform: "none",
+                        }}
+                      >
+                        View all
+                      </Button>
+                    </Box>
+                  ]
+                ) : notificationItems.every((item) => {
+                    const count = parseInt(item.label.split(" ")[0], 10);
+                    return count === 0;
+                  }) ? (
                   <MenuItem onClick={() => setNotificationAnchor(null)}>
                     <Typography sx={{ color: "#7A8799", fontSize: "0.76rem" }}>
                       No new notifications.
@@ -957,7 +1080,7 @@ export function PortalLayout({ portal }) {
                 component={NavLink}
                 to={
                   portal === "admin"
-                    ? "/admin/notifications"
+                    ? "/admin/help-desk"
                     : portal === "vendor"
                       ? "/vendor/help"
                       : "/service-support"
