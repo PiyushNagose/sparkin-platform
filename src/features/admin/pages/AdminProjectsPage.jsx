@@ -708,6 +708,11 @@ export default function AdminProjectsPage() {
                   const progress = getProgress(project);
                   const stageName = getStageName(project);
                   const vendorName = getVendorName(project, vendors);
+                  const siteVisitReminderCount =
+                    project.siteVisitFollowUp?.reminders?.length || 0;
+                  const needsReassignment = Boolean(
+                    project.siteVisitFollowUp?.reassignmentRequired,
+                  );
 
                   return (
                     <TableRow
@@ -818,32 +823,55 @@ export default function AdminProjectsPage() {
 
                       {/* Status */}
                       <TableCell>
-                        <Box
-                          sx={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: 0.5,
-                            px: 1,
-                            py: 0.4,
-                            borderRadius: "999px",
-                            bgcolor: status.bg,
-                            color: status.tone,
-                            fontSize: "0.68rem",
-                            fontWeight: 800,
-                            whiteSpace: "nowrap",
-                          }}
-                        >
+                        <Stack spacing={0.55} alignItems="flex-start">
                           <Box
                             sx={{
-                              width: 5,
-                              height: 5,
-                              borderRadius: "50%",
-                              bgcolor: status.tone,
-                              flexShrink: 0,
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: 0.5,
+                              px: 1,
+                              py: 0.4,
+                              borderRadius: "999px",
+                              bgcolor: status.bg,
+                              color: status.tone,
+                              fontSize: "0.68rem",
+                              fontWeight: 800,
+                              whiteSpace: "nowrap",
                             }}
-                          />
-                          {status.label}
-                        </Box>
+                          >
+                            <Box
+                              sx={{
+                                width: 5,
+                                height: 5,
+                                borderRadius: "50%",
+                                bgcolor: status.tone,
+                                flexShrink: 0,
+                              }}
+                            />
+                            {status.label}
+                          </Box>
+                          {needsReassignment || siteVisitReminderCount > 0 ? (
+                            <Box
+                              sx={{
+                                display: "inline-flex",
+                                px: 0.8,
+                                py: 0.28,
+                                borderRadius: "999px",
+                                bgcolor: needsReassignment ? "#FFF1F1" : "#FFF8E1",
+                                color: needsReassignment ? "#C62828" : "#8A6500",
+                                fontSize: "0.58rem",
+                                fontWeight: 900,
+                                letterSpacing: "0.04em",
+                                textTransform: "uppercase",
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              {needsReassignment
+                                ? "Reassignment Required"
+                                : `${siteVisitReminderCount}/3 Site Visit Reminders`}
+                            </Box>
+                          ) : null}
+                        </Stack>
                       </TableCell>
 
                       {/* Stage progression */}

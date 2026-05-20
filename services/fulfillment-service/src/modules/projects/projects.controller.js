@@ -52,6 +52,15 @@ export const projectsController = {
     res.status(200).json({ project });
   },
 
+  async sendSiteVisitReminder(req, res) {
+    const project = await projectsService.sendSiteVisitReminder(
+      req.auth,
+      req.params.projectId,
+      req.body,
+    );
+    res.status(200).json({ project });
+  },
+
   async submitOnboarding(req, res) {
     const project = await projectsService.submitOnboarding(
       req.auth,

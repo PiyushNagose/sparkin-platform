@@ -169,6 +169,12 @@ function getProjectView(project) {
         : `${fulfillmentOrigin}${doc.url}`,
     })),
     timeline: [
+      ...(project.siteVisitFollowUp?.reminders || []).map((reminder) => ({
+        title: `Site Visit Reminder ${reminder.attempt}`,
+        meta: `${formatDateTime(reminder.sentAt)} - Admin Follow-up`,
+        tone: reminder.attempt >= 3 ? "#D32F2F" : "#D89A00",
+        bg: reminder.attempt >= 3 ? "#FFF1F1" : "#FFF8E1",
+      })),
       ...(project.milestones || [])
         .filter((m) => m.completedAt)
         .map((m) => ({
@@ -272,6 +278,7 @@ export default function AdminProjectDetailPage() {
   const [project, setProject] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
+  const [isSendingReminder, setIsSendingReminder] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
@@ -298,6 +305,52 @@ export default function AdminProjectDetailPage() {
           bg: "#EFF5FF",
         },
       ];
+  const siteVisitReminderCount = project?.siteVisitFollowUp?.reminders?.length || 0;
+  const siteVisitCompleted = project?.milestones?.some(
+    (milestone) => milestone.key === "site_visit" && milestone.status === "completed",
+  );
+  const vendorRejected = Boolean(project?.siteVisitFollowUp?.vendorRejectedAt);
+  const reassignmentRequired = Boolean(project?.siteVisitFollowUp?.reassignmentRequired);
+  const nextReminderLabel =
+    siteVisitReminderCount >= 2
+      ? "Send Final Reminder & Reject Vendor"
+      : siteVisitReminderCount === 1
+        ? "Send Second Reminder"
+        : "Send First Reminder";
+  const canSendSiteVisitReminder =
+    project &&
+    !siteVisitCompleted &&
+    !vendorRejected &&
+    project.status !== "cancelled" &&
+    siteVisitReminderCount < 3;
+
+  async function handleSendSiteVisitReminder() {
+    if (!project) return;
+
+    setError("");
+    setSuccess("");
+    setIsSendingReminder(true);
+    try {
+      const attempt = siteVisitReminderCount + 1;
+      const updated = await projectsApi.sendSiteVisitReminder(projectId, {
+        message:
+          attempt >= 3
+            ? "Final reminder sent. Vendor rejected for missing the site visit deadline."
+            : `Reminder ${attempt} sent for pending site visit.`,
+      });
+      setProject(updated);
+      setSuccess(
+        attempt >= 3
+          ? "Final reminder sent. Vendor rejected and project marked for reassignment."
+          : `Reminder ${attempt} sent to the assigned vendor.`,
+      );
+    } catch (err) {
+      setError(err?.response?.data?.message || "Could not send reminder.");
+    } finally {
+      setIsSendingReminder(false);
+    }
+  }
+
   useEffect(() => {
     let active = true;
     async function load() {
@@ -960,7 +1013,7 @@ export default function AdminProjectDetailPage() {
           </AdminPanel>
 
           <LocationMapPreview
-            address={project.installationAddress}
+            address={project?.installationAddress}
             label="Project Site Location"
             buttonLabel="Map View"
             height={186}
@@ -970,6 +1023,82 @@ export default function AdminProjectDetailPage() {
       </Box>
 
       {/* Action bar — read-only for admin, vendor manages project updates */}
+      <AdminPanel sx={{ mt: 2.5, p: { xs: 1.6, md: 2 } }}>
+        <Stack
+          direction={{ xs: "column", md: "row" }}
+          spacing={1.5}
+          justifyContent="space-between"
+          alignItems={{ xs: "stretch", md: "center" }}
+        >
+          <Box>
+            <Typography
+              sx={{
+                color: adminUi.colors.text,
+                fontSize: "1rem",
+                fontWeight: 900,
+              }}
+            >
+              Site Visit Follow-up
+            </Typography>
+            <Typography sx={{ mt: 0.35, color: "#647286", fontSize: "0.8rem" }}>
+              Due by {formatDate(project?.timeline?.siteAuditDueAt)}.{" "}
+              {siteVisitCompleted
+                ? "Site visit is complete."
+                : `${siteVisitReminderCount}/3 reminders sent to the assigned vendor.`}
+            </Typography>
+            {reassignmentRequired ? (
+              <Alert severity="warning" sx={{ mt: 1.2, borderRadius: "0.9rem" }}>
+                Vendor rejected after final reminder. Reassign this lead from vendor assignment.
+              </Alert>
+            ) : null}
+          </Box>
+
+          <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+            <Button
+              variant="outlined"
+              onClick={handleSendSiteVisitReminder}
+              disabled={!canSendSiteVisitReminder || isSendingReminder}
+              sx={{
+                minHeight: 42,
+                px: 1.6,
+                borderRadius: "0.9rem",
+                borderColor:
+                  siteVisitReminderCount >= 2
+                    ? "#FFB4B4"
+                    : "rgba(225,232,241,0.96)",
+                bgcolor: siteVisitReminderCount >= 2 ? "#FFF4F4" : "#F6F8FB",
+                color: siteVisitReminderCount >= 2 ? "#C62828" : "#223146",
+                fontSize: "0.82rem",
+                fontWeight: 800,
+                textTransform: "none",
+              }}
+            >
+              {isSendingReminder ? "Sending..." : nextReminderLabel}
+            </Button>
+            {reassignmentRequired ? (
+              <Button
+                component={RouterLink}
+                to="/admin/vendor-assignment"
+                state={{ leadId: project?.leadId }}
+                variant="contained"
+                sx={{
+                  minHeight: 42,
+                  px: 1.8,
+                  borderRadius: "0.9rem",
+                  bgcolor: "#0E56C8",
+                  boxShadow: "0 14px 26px rgba(14,86,200,0.18)",
+                  fontSize: "0.82rem",
+                  fontWeight: 800,
+                  textTransform: "none",
+                }}
+              >
+                Reassign Vendor
+              </Button>
+            ) : null}
+          </Stack>
+        </Stack>
+      </AdminPanel>
+
       <AdminPanel sx={{ mt: 2.5, p: { xs: 1.6, md: 2 } }}>
         <Stack
           direction={{ xs: "column", sm: "row" }}

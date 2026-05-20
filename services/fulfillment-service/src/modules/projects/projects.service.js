@@ -100,6 +100,12 @@ function applyMilestoneStatus(project, milestoneKey, status) {
   });
 }
 
+function isSiteVisitComplete(project) {
+  return project.milestones?.some(
+    (milestone) => milestone.key === "site_visit" && milestone.status === "completed",
+  );
+}
+
 function decodeDocument(input) {
   const extension = allowedDocumentTypes.get(input.mimeType);
 
@@ -249,6 +255,57 @@ export const projectsService = {
       milestones,
       status,
     });
+  },
+
+  async sendSiteVisitReminder(user, projectId, input) {
+    if (user.role !== "admin") {
+      throw new AppError(403, "Only admins can send project reminders");
+    }
+
+    const project = await this.getProject(user, projectId);
+
+    if (project.status === "cancelled") {
+      throw new AppError(409, "Cancelled projects cannot receive reminders");
+    }
+
+    if (isSiteVisitComplete(project)) {
+      throw new AppError(409, "Site visit is already completed");
+    }
+
+    const existingReminders = project.siteVisitFollowUp?.reminders || [];
+
+    if (existingReminders.length >= 3) {
+      throw new AppError(409, "Maximum site visit reminders already sent");
+    }
+
+    const attempt = existingReminders.length + 1;
+    const isFinalAttempt = attempt >= 3;
+    const now = new Date();
+    const message =
+      input.message ||
+      (isFinalAttempt
+        ? "Final reminder: site visit is overdue. Vendor will be rejected and this project will be reassigned."
+        : `Reminder ${attempt}: please complete the pending site visit for this project.`);
+
+    return projectsRepository.addSiteVisitReminder(
+      projectId,
+      {
+        attempt,
+        sentAt: now,
+        sentBy: user.userId,
+        message,
+      },
+      isFinalAttempt
+        ? {
+            status: "cancelled",
+            "siteVisitFollowUp.vendorRejectedAt": now,
+            "siteVisitFollowUp.rejectedBy": user.userId,
+            "siteVisitFollowUp.rejectionReason":
+              "Site visit not completed after three admin reminders",
+            "siteVisitFollowUp.reassignmentRequired": true,
+          }
+        : {},
+    );
   },
 
   async submitOnboarding(user, projectId, input) {

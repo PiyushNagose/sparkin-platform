@@ -45,8 +45,9 @@ import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import StorefrontOutlinedIcon from "@mui/icons-material/StorefrontOutlined";
 import { useEffect, useMemo, useState, useCallback } from "react";
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
 import { portalNavigation } from "@/shared/config/navigation";
+import { useSocket } from "@/shared/websocket/SocketProvider";
 import logoPlaceholder from "@/shared/assets/logo-placeholder.png";
 import { AppFooter } from "@/shared/components/AppFooter";
 import { useAuth } from "@/features/auth/AuthProvider";
@@ -225,6 +226,8 @@ function getAvatarSrc(user) {
 
 export function PortalLayout({ portal }) {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { refreshKey } = useSocket();
   const { user, logout } = useAuth();
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -1195,7 +1198,7 @@ export function PortalLayout({ portal }) {
               borderRadius: { lg: "0 0 1.35rem 1.35rem" },
             }}
           >
-            <Outlet />
+            <Outlet key={`${location.pathname}${location.search}${refreshKey}`} />
           </Box>
         </Box>
       </Box>

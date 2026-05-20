@@ -24,6 +24,16 @@ const projectDocumentSchema = new mongoose.Schema(
   { timestamps: false },
 );
 
+const siteVisitReminderSchema = new mongoose.Schema(
+  {
+    attempt: { type: Number, required: true, min: 1, max: 3 },
+    sentAt: { type: Date, default: Date.now },
+    sentBy: { type: String, required: true },
+    message: { type: String, trim: true, default: "" },
+  },
+  { _id: false },
+);
+
 const projectSchema = new mongoose.Schema(
   {
     leadId: { type: String, required: true, index: true },
@@ -72,6 +82,13 @@ const projectSchema = new mongoose.Schema(
     timeline: {
       installationWindow: { type: String, trim: true, required: true },
       siteAuditDueAt: { type: Date, default: null },
+    },
+    siteVisitFollowUp: {
+      reminders: [siteVisitReminderSchema],
+      vendorRejectedAt: { type: Date, default: null },
+      rejectedBy: { type: String, default: null },
+      rejectionReason: { type: String, trim: true, default: null },
+      reassignmentRequired: { type: Boolean, default: false },
     },
     milestones: [
       {

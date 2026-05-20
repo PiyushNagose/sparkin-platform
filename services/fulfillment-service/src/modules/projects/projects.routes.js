@@ -6,6 +6,7 @@ import { projectsController } from "./projects.controller.js";
 import {
   createManualProjectSchema,
   createProjectSchema,
+  sendSiteVisitReminderSchema,
   submitProjectOnboardingSchema,
   updateProjectMilestoneSchema,
   uploadProjectDocumentSchema,
@@ -21,6 +22,11 @@ projectsRouter.patch(
   "/:projectId/milestone",
   validate(updateProjectMilestoneSchema),
   asyncHandler(projectsController.updateMilestone),
+);
+projectsRouter.post(
+  "/:projectId/site-visit-reminders",
+  validate(sendSiteVisitReminderSchema),
+  asyncHandler(projectsController.sendSiteVisitReminder),
 );
 projectsRouter.patch(
   "/:projectId/onboarding",

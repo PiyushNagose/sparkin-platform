@@ -68,6 +68,10 @@ export const updateProjectMilestoneSchema = z.object({
   status: z.enum(["pending", "in_progress", "completed"]),
 });
 
+export const sendSiteVisitReminderSchema = z.object({
+  message: z.string().trim().max(500).optional(),
+});
+
 export const uploadProjectDocumentSchema = z.object({
   title: z.string().trim().min(2).max(120),
   fileName: z.string().trim().min(1).max(180),

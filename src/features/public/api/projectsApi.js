@@ -39,6 +39,15 @@ export const projectsApi = {
     return data.project;
   },
 
+  async sendSiteVisitReminder(projectId, payload = {}) {
+    const { data } = await fulfillmentClient.post(
+      `/projects/${requireId(projectId, "Project id")}/site-visit-reminders`,
+      payload,
+    );
+    invalidateRequestCache("/projects");
+    return data.project;
+  },
+
   async submitOnboarding(projectId, payload) {
     const { data } = await fulfillmentClient.patch(
       `/projects/${requireId(projectId, "Project id")}/onboarding`,

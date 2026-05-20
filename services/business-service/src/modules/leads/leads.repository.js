@@ -98,16 +98,22 @@ export const leadsRepository = {
   async assignVendors(id, vendorIds, biddingMeta = {}) {
     const nextStatus = biddingMeta.status || "vendors_assigned";
     const { status, ...meta } = biddingMeta;
+    const updates = {
+      assignedVendorIds: vendorIds,
+      vendorsAssignedAt: new Date(),
+      verifiedAt: new Date(),
+      status: nextStatus,
+      ...meta,
+    };
+
+    if (nextStatus === "open_for_quotes") {
+      updates.selection = { quoteId: null, vendorId: null, selectedAt: null };
+    }
+
     const lead = await LeadModel.findByIdAndUpdate(
       id,
       {
-        $set: {
-          assignedVendorIds: vendorIds,
-          vendorsAssignedAt: new Date(),
-          verifiedAt: new Date(),
-          status: nextStatus,
-          ...meta,
-        },
+        $set: updates,
       },
       { new: true },
     ).lean({ virtuals: true });

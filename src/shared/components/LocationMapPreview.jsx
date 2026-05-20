@@ -22,15 +22,22 @@ function normalizeAddressParts(address) {
   ].filter(Boolean);
 }
 
+function getAddressQuery(address) {
+  const parts = normalizeAddressParts(address);
+  if (!parts.length) return "";
+  const hasCountry = parts.some((part) => String(part).toLowerCase().includes("india"));
+  return [...parts, hasCountry ? null : "India"].filter(Boolean).join(", ");
+}
+
 export function getGoogleMapsUrl(address) {
-  const query = normalizeAddressParts(address).join(", ");
+  const query = getAddressQuery(address);
   return query
     ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`
     : "";
 }
 
 export function getGoogleMapsEmbedUrl(address) {
-  const query = normalizeAddressParts(address).join(", ");
+  const query = getAddressQuery(address);
   return query
     ? `https://maps.google.com/maps?q=${encodeURIComponent(query)}&maptype=roadmap&z=15&output=embed`
     : "";

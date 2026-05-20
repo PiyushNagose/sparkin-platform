@@ -5,8 +5,9 @@ import { env } from "./config/env.js";
 import { requestLogger } from "./middleware/logger.js";
 import { requestId } from "./middleware/request-id.js";
 import { createRouter } from "./routes/index.js";
+import { createGatewayRefreshMiddleware } from "./websocket.js";
 
-export function createApp() {
+export function createApp({ socketServer } = {}) {
   const app = express();
 
   app.disable("x-powered-by");
@@ -32,6 +33,10 @@ export function createApp() {
   // Request tracking
   app.use(requestId);
   app.use(requestLogger);
+
+  if (socketServer) {
+    app.use(createGatewayRefreshMiddleware(socketServer));
+  }
 
   // All routes
   app.use(createRouter());
