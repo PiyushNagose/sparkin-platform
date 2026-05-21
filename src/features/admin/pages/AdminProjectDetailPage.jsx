@@ -335,7 +335,7 @@ export default function AdminProjectDetailPage() {
       const updated = await projectsApi.sendSiteVisitReminder(projectId, {
         message:
           attempt >= 3
-            ? "Final reminder sent. Vendor rejected for missing the site visit deadline."
+            ? "Final reminder sent. Vendor rejected after manual follow-up."
             : `Reminder ${attempt} sent for pending site visit.`,
       });
       setProject(updated);
@@ -1041,7 +1041,7 @@ export default function AdminProjectDetailPage() {
               Site Visit Follow-up
             </Typography>
             <Typography sx={{ mt: 0.35, color: "#647286", fontSize: "0.8rem" }}>
-              Due by {formatDate(project?.timeline?.siteAuditDueAt)}.{" "}
+              Admin-controlled reminders.{" "}
               {siteVisitCompleted
                 ? "Site visit is complete."
                 : `${siteVisitReminderCount}/3 reminders sent to the assigned vendor.`}

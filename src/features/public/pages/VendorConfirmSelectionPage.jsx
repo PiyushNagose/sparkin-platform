@@ -454,7 +454,7 @@ export default function VendorConfirmSelectionPage() {
               </Button>
               <Button
                 component={RouterLink}
-                to="/quotes/compare"
+                to={quote?.leadId ? `/quotes/compare?leadId=${quote.leadId}` : "/quotes/compare"}
                 sx={{
                   width: { xs: "100%", sm: "auto" },
                   minWidth: 164,

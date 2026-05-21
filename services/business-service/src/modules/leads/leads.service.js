@@ -323,7 +323,7 @@ export const leadsService = {
     return leadsRepository.assignVendors(leadId, vendorIds, {
       ...bidDetails,
       ...biddingMeta,
-      status: "open_for_quotes",
+      status: "vendors_assigned",
     });
   },
 

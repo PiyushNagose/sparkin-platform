@@ -46,13 +46,13 @@ function getPlatformPricePerKw() {
   return 55000;
 }
 
-// Correct flow: New -> Verified -> Assigned -> Payment -> Bidding
+// Correct flow: New -> Verified -> Assigned -> Bidding -> Payment
 const verificationSteps = [
   { key: "submitted", label: "New", icon: RequestQuoteOutlinedIcon },
   { key: "verified", label: "Verified", icon: VerifiedOutlinedIcon },
   { key: "assigned", label: "Assigned", icon: GroupAddOutlinedIcon },
-  { key: "payment", label: "Payment", icon: PaymentsOutlinedIcon },
   { key: "bidding", label: "Bidding", icon: GavelOutlinedIcon },
+  { key: "payment", label: "Payment", icon: PaymentsOutlinedIcon },
 ];
 
 function formatMoney(value) {
@@ -113,13 +113,13 @@ function getDefaultCommercialRange(lead, settings) {
 }
 
 function getActiveStep(lead, quoteCount) {
-  if (
-    quoteCount > 0 ||
-    ["open_for_quotes", "quote_selected"].includes(lead.status)
-  )
+  if (lead.commitmentFeePaid || lead.status === "quote_selected") return "payment";
+  if (quoteCount > 0)
     return "bidding";
-  if (lead.commitmentFeePaid) return "payment";
-  if (lead.assignedVendorIds?.length > 0 || lead.status === "vendors_assigned")
+  if (
+    lead.assignedVendorIds?.length > 0 ||
+    ["vendors_assigned", "open_for_quotes"].includes(lead.status)
+  )
     return "assigned";
   if (
     lead.verifiedAt ||
@@ -506,7 +506,10 @@ export default function AdminLeadDetailPage() {
   const { lead, quotes, projects, activeStep, canAssignVendor, isVerified } =
     detail;
   const hasAssignedVendors =
-    lead.assignedVendorIds?.length > 0 || lead.status === "vendors_assigned";
+    lead.assignedVendorIds?.length > 0 ||
+    ["vendors_assigned", "open_for_quotes", "quote_selected"].includes(lead.status);
+  const canConfirmPayment =
+    hasAssignedVendors && (quotes.length > 0 || lead.status === "quote_selected");
 
   return (
     <AdminPageShell>
@@ -1044,7 +1047,7 @@ export default function AdminLeadDetailPage() {
               mb: 1,
             }}
           >
-            Step 3 — Commitment Payment
+            Step 4 - Commitment Payment
           </Typography>
           {lead.commitmentFeePaid ? (
             <Box
@@ -1084,7 +1087,9 @@ export default function AdminLeadDetailPage() {
                   }}
                 >
                   {hasAssignedVendors
-                    ? "Awaiting customer payment"
+                    ? quotes.length > 0 || lead.status === "quote_selected"
+                      ? "Awaiting customer payment after bidding"
+                      : "Awaiting vendor quotes before payment"
                     : "Assign vendors before collecting payment"}
                 </Typography>
                 <Typography
@@ -1094,13 +1099,13 @@ export default function AdminLeadDetailPage() {
                     mt: 0.3,
                   }}
                 >
-                  Assigned vendors can already view this lead and submit bids.
+                  Confirm this after the customer selects a quote and completes payment.
                 </Typography>
               </Box>
               <Button
                 fullWidth
                 startIcon={<PaymentsOutlinedIcon />}
-                disabled={isUpdating || !hasAssignedVendors}
+                disabled={isUpdating || !canConfirmPayment}
                 onClick={markPaymentReceived}
                 sx={{
                   minHeight: 46,

@@ -312,17 +312,64 @@ export default function QuoteComparisonPage() {
     };
   }, [leadId]);
 
-  const quoteCards = useMemo(() => submittedQuotes.map(toQuoteCard), [submittedQuotes]);
-  const biddingEndsAt = lead?.biddingEndsAt || submittedQuotes[0]?.lead?.biddingEndsAt;
+  const scopedQuotes = useMemo(() => {
+    const activeStatuses = new Set(["submitted", "shortlisted", "accepted"]);
+    const assignedVendorIds = new Set(
+      (lead?.assignedVendorIds || []).map((vendorId) => String(vendorId)),
+    );
+
+    return submittedQuotes.filter((quote) => {
+      if (!activeStatuses.has(quote.status)) return false;
+      if (leadId && String(quote.leadId) !== String(leadId)) return false;
+      if (lead && assignedVendorIds.size > 0) {
+        return assignedVendorIds.has(String(quote.vendorId));
+      }
+      return true;
+    });
+  }, [lead, leadId, submittedQuotes]);
+
+  const quoteCards = useMemo(() => scopedQuotes.map(toQuoteCard), [scopedQuotes]);
+  const biddingEndsAt = lead?.biddingEndsAt || scopedQuotes[0]?.lead?.biddingEndsAt;
   const countdown = useMemo(() => {
     if (!biddingEndsAt) return "48h window";
     const remainingMs = Math.max(0, new Date(biddingEndsAt).getTime() - Date.now());
     const hours = Math.floor(remainingMs / 3600000);
     const minutes = Math.floor((remainingMs % 3600000) / 60000);
     return remainingMs > 0 ? `${hours}h ${minutes}m remaining` : "Bidding closed";
-  }, [biddingEndsAt, submittedQuotes.length]);
+  }, [biddingEndsAt, scopedQuotes.length]);
 
   if (!isLoading && !error && quoteCards.length === 0) {
+    if (leadId) {
+      return (
+        <Box className={styles.pageShell}>
+          <Box
+            sx={{
+              py: publicPageSpacing.pageYCompact,
+              minHeight: "calc(100vh - 72px)",
+              bgcolor: "#F9FBFD",
+            }}
+          >
+            <Container maxWidth={false} disableGutters className={styles.contentContainer}>
+              <Stack spacing={1.4} sx={{ maxWidth: 560 }}>
+                <Typography
+                  variant="h1"
+                  sx={{
+                    color: "#20242B",
+                    ...publicTypography.heroTitle,
+                    fontSize: { xs: "2.2rem", md: "3rem" },
+                  }}
+                >
+                  Quotes are not in yet
+                </Typography>
+                <Typography sx={{ color: "#667084", fontSize: "0.95rem", lineHeight: 1.6 }}>
+                  Assigned vendors will appear here instantly after they submit proposals for this booking.
+                </Typography>
+              </Stack>
+            </Container>
+          </Box>
+        </Box>
+      );
+    }
     return <LiveBiddingPage />;
   }
 

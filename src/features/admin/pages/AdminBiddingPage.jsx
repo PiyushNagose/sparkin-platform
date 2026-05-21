@@ -64,7 +64,7 @@ function getLeadStatus(lead, quotes) {
     return { label: "Selected", color: "#0E56C8", bg: "#EAF1FF" };
   if (["closed", "cancelled"].includes(lead?.status))
     return { label: "Completed", color: "#657386", bg: "#EEF2F6" };
-  if (quotes.length > 0 || lead?.status === "open_for_quotes")
+  if (quotes.length > 0)
     return { label: "Active", color: "#687000", bg: "#D7E600" };
   return { label: "Pending", color: "#6B7280", bg: "#EEF2F6" };
 }
@@ -241,7 +241,7 @@ export default function AdminBiddingPage() {
     return leads
       .filter(
         (lead) =>
-          ["open_for_quotes", "quote_selected", "closed"].includes(
+          ["quote_selected", "closed"].includes(
             lead.status,
           ) || quotesByLead.has(String(lead.id)),
       )

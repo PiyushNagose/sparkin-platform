@@ -876,7 +876,7 @@ export default function AdminVendorAssignmentPage() {
               <Typography
                 sx={{ mt: 0.2, color: "#B7C1D0", fontSize: "0.78rem" }}
               >
-                Eligible for high-speed bidding process
+                Eligible to receive and submit quotes
               </Typography>
             </Box>
           </Stack>
@@ -892,7 +892,7 @@ export default function AdminVendorAssignmentPage() {
               fontWeight: 900,
             }}
           >
-            {isAssigning ? "Assigning..." : "Assign Vendors & Start Bidding"}
+            {isAssigning ? "Assigning..." : "Assign Vendors & Invite Quotes"}
           </AdminPrimaryButton>
         </Stack>
       </AdminPanel>
