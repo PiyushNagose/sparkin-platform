@@ -3,6 +3,24 @@ import { authStorage } from "@/features/auth/authStorage";
 
 let refreshPromise = null;
 
+function getRequestPath(config) {
+  const baseURL = config?.baseURL || window.location.origin;
+  try {
+    return new URL(config?.url || "", baseURL).pathname;
+  } catch {
+    return String(config?.url || "").split("?")[0];
+  }
+}
+
+function canRefreshRequest(config) {
+  const path = getRequestPath(config);
+  if (path.endsWith("/auth/me")) {
+    return true;
+  }
+
+  return !path.includes("/auth/");
+}
+
 export function attachAuthInterceptors(client) {
   client.interceptors.request.use((config) => {
     const token = authStorage.getAccessToken();
@@ -22,7 +40,7 @@ export function attachAuthInterceptors(client) {
         error.response?.status === 401 &&
         originalRequest &&
         !originalRequest._retry &&
-        !String(originalRequest.url).includes("/auth/refresh");
+        canRefreshRequest(originalRequest);
 
       if (!shouldTryRefresh) {
         return Promise.reject(error);
@@ -30,7 +48,7 @@ export function attachAuthInterceptors(client) {
 
       const refreshToken = authStorage.getRefreshToken();
 
-      if (!refreshToken) {
+      if (!refreshToken || authStorage.isRefreshTokenExpired()) {
         authStorage.clearSession();
         return Promise.reject(error);
       }
