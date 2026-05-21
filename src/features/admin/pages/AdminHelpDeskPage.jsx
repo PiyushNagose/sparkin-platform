@@ -27,6 +27,11 @@ import ChatOutlinedIcon from "@mui/icons-material/ChatOutlined";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChatWindow } from "@/features/chat/ChatWindow";
+import {
+  markChatRoomRead,
+  sortChatRooms,
+  upsertChatRoom,
+} from "@/features/chat/chatRooms";
 import { chatApi } from "@/features/chat/chatApi";
 import { useChatSocket } from "@/features/chat/useChatSocket";
 import { useAuth } from "@/features/auth/AuthProvider";
@@ -1031,21 +1036,25 @@ function ChatTab({ currentUserId, token }) {
   const [startingChat, setStartingChat] = useState(false);
 
   const handleNewRoom = useCallback((room) => {
-    setRooms((prev) =>
-      prev.some((r) => r.roomId === room.roomId) ? prev : [room, ...prev],
-    );
+    setRooms((prev) => upsertChatRoom(prev, room));
   }, []);
 
-  const handleRoomUpdated = useCallback(
-    ({ roomId, lastMessage, lastMessageAt }) => {
-      setRooms((prev) =>
-        prev.map((r) =>
-          r.roomId === roomId ? { ...r, lastMessage, lastMessageAt } : r,
-        ),
-      );
-    },
-    [],
-  );
+  const handleRoomUpdated = useCallback((room) => {
+    const nextRoom =
+      room?.roomId === activeRoomId
+        ? {
+            ...room,
+            unreadCount: {
+              ...(room.unreadCount || {}),
+              [currentUserId]: 0,
+            },
+          }
+        : room;
+    setRooms((prev) => upsertChatRoom(prev, nextRoom));
+    if (room?.roomId === activeRoomId) {
+      chatApi.markRead(room.roomId).catch(() => {});
+    }
+  }, [activeRoomId, currentUserId]);
 
   const {
     messages,
@@ -1066,7 +1075,7 @@ function ChatTab({ currentUserId, token }) {
     chatApi.registerAdmin().catch(() => {});
     chatApi
       .listRooms()
-      .then((data) => setRooms(data.rooms || data || []))
+      .then((data) => setRooms(sortChatRooms(data.rooms || data || [])))
       .catch(() => {});
   }, []);
 
@@ -1081,6 +1090,7 @@ function ChatTab({ currentUserId, token }) {
         room.roomId,
         Array.isArray(msgs) ? msgs : msgs.messages || [],
       );
+      setRooms((prev) => markChatRoomRead(prev, room.roomId, currentUserId));
       chatApi.markRead(room.roomId).catch(() => {});
     } finally {
       setLoadingMessages(false);
@@ -1098,7 +1108,7 @@ function ChatTab({ currentUserId, token }) {
         targetName: name,
       });
       const updated = await chatApi.listRooms();
-      setRooms(updated.rooms || updated || []);
+      setRooms(sortChatRooms(updated.rooms || updated || []));
       openRoom(room.roomId ? room : { roomId: room.roomId || room.id });
     } finally {
       setStartingChat(false);

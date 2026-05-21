@@ -14,8 +14,12 @@ import VendorApprovalGate from "@/features/vendor/VendorApprovalGate";
 import VendorPendingApprovalPage from "@/features/vendor/pages/VendorPendingApprovalPage";
 import { vendorRoutes } from "@/features/vendor/routes";
 import VendorOnboardingPage from "@/features/vendor/pages/VendorOnboardingPage";
+import { useSocket } from "@/shared/websocket/SocketProvider";
 
-const RootOutlet = () => <Outlet />;
+const RootOutlet = () => {
+  const { refreshKey } = useSocket();
+  return <Outlet key={refreshKey} />;
+};
 
 export const appRouter = createBrowserRouter([
   {

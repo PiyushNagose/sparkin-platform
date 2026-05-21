@@ -1,9 +1,6 @@
 import { createServer } from "http";
 import { createApp } from "./app.js";
-import {
-  createGatewayRefreshMiddleware,
-  createGatewaySocketServer,
-} from "./websocket.js";
+import { createGatewaySocketServer } from "./websocket.js";
 import { env } from "./config/env.js";
 
 const isProd = env.NODE_ENV === "production";
@@ -31,11 +28,64 @@ function log(level, message, meta = {}) {
   }
 }
 
-const app = createApp();
-const server = createServer(app);
-const io = createGatewaySocketServer(server);
+function joinUrl(baseUrl, path) {
+  return `${baseUrl.replace(/\/+$/, "")}/${path.replace(/^\/+/, "")}`;
+}
 
-app.use(createGatewayRefreshMiddleware(io));
+async function verifyDownstreamServices() {
+  if (env.NODE_ENV !== "production") return;
+
+  const services = [
+    ["identity", env.IDENTITY_SERVICE_URL],
+    ["business", env.BUSINESS_SERVICE_URL],
+    ["fulfillment", env.FULFILLMENT_SERVICE_URL],
+  ];
+
+  const results = await Promise.allSettled(
+    services.map(async ([name, baseUrl]) => {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 5000);
+
+      try {
+        const response = await fetch(joinUrl(baseUrl, "/health"), {
+          signal: controller.signal,
+        });
+
+        if (!response.ok) {
+          throw new Error(`health returned ${response.status}`);
+        }
+      } finally {
+        clearTimeout(timeout);
+      }
+
+      return name;
+    }),
+  );
+
+  const failed = results
+    .map((result, index) => ({ result, service: services[index] }))
+    .filter(({ result }) => result.status === "rejected")
+    .map(({ result, service }) => ({
+      name: service[0],
+      url: joinUrl(service[1], "/health"),
+      error: result.reason?.message || "unknown error",
+    }));
+
+  if (failed.length) {
+    log("ERROR", "Downstream health check failed; refusing to start gateway", {
+      failed,
+    });
+    process.exit(1);
+  }
+}
+
+const server = createServer();
+const io = createGatewaySocketServer(server);
+const app = createApp({ socketServer: io });
+
+server.on("request", app);
+
+await verifyDownstreamServices();
 
 server.listen(env.PORT, () => {
   log("INFO", "Service started", { port: env.PORT });

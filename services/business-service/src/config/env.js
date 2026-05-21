@@ -16,6 +16,10 @@ const envSchema = z.object({
     .string()
     .url()
     .default("http://localhost:4003/api/v1"),
+  ALLOW_LOCALHOST_DOWNSTREAM: z
+    .enum(["true", "false"])
+    .optional()
+    .default("false"),
 });
 
 const parsed = envSchema.safeParse(process.env);
@@ -26,6 +30,21 @@ if (!parsed.success) {
     .join("; ");
 
   throw new Error(`Invalid business-service environment: ${message}`);
+}
+
+function isLocalhostUrl(value) {
+  const hostname = new URL(value).hostname.toLowerCase();
+  return ["localhost", "127.0.0.1", "::1", "0.0.0.0"].includes(hostname);
+}
+
+if (
+  parsed.data.NODE_ENV === "production" &&
+  parsed.data.ALLOW_LOCALHOST_DOWNSTREAM !== "true" &&
+  isLocalhostUrl(parsed.data.FULFILLMENT_SERVICE_URL)
+) {
+  throw new Error(
+    "Invalid business-service environment: FULFILLMENT_SERVICE_URL cannot point to localhost in production. Set it to the deployed fulfillment-service URL, or set ALLOW_LOCALHOST_DOWNSTREAM=true only when fulfillment runs in the same production host.",
+  );
 }
 
 // Warn in production if JWT secret looks like the default dev value
@@ -46,4 +65,5 @@ export const env = {
   mongodbUri: parsed.data.MONGODB_URI,
   jwtAccessSecret: parsed.data.JWT_ACCESS_SECRET,
   fulfillmentServiceUrl: parsed.data.FULFILLMENT_SERVICE_URL,
+  allowLocalhostDownstream: parsed.data.ALLOW_LOCALHOST_DOWNSTREAM === "true",
 };

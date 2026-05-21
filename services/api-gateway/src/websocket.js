@@ -2,6 +2,18 @@ import jwt from "jsonwebtoken";
 import { Server as SocketIOServer } from "socket.io";
 import { env } from "./config/env.js";
 
+const REFRESH_EXCLUDED_PREFIXES = ["/api/v1/chat"];
+
+function shouldEmitRefresh(req) {
+  const method = req.method.toUpperCase();
+  if (!["POST", "PUT", "PATCH", "DELETE"].includes(method)) {
+    return false;
+  }
+
+  const path = (req.originalUrl || req.url || "").split("?")[0];
+  return !REFRESH_EXCLUDED_PREFIXES.some((prefix) => path.startsWith(prefix));
+}
+
 export function createGatewaySocketServer(server) {
   const io = new SocketIOServer(server, {
     cors: {
@@ -49,12 +61,11 @@ export function createGatewaySocketServer(server) {
 
 export function createGatewayRefreshMiddleware(io) {
   return (req, res, next) => {
-    const method = req.method.toUpperCase();
-    const shouldWatch = ["POST", "PUT", "PATCH", "DELETE"].includes(method);
-    if (!shouldWatch) {
+    if (!shouldEmitRefresh(req)) {
       return next();
     }
 
+    const method = req.method.toUpperCase();
     let emitted = false;
     const emitRefresh = () => {
       if (emitted) return;
