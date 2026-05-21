@@ -61,6 +61,22 @@ export const authStorage = {
     return payload.exp * 1000 <= Date.now() + skewSeconds * 1000;
   },
 
+  isRefreshTokenExpired(skewSeconds = 30) {
+    const token = this.getRefreshToken();
+
+    if (!token) {
+      return true;
+    }
+
+    const payload = decodeJwtPayload(token);
+
+    if (!payload?.exp) {
+      return true;
+    }
+
+    return payload.exp * 1000 <= Date.now() + skewSeconds * 1000;
+  },
+
   getUser() {
     const value = getStorage().getItem(USER_KEY);
 
