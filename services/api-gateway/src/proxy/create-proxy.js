@@ -35,6 +35,10 @@ export function createProxy(targetUrl) {
     proxyErrorHandler(err, res) {
       const ts = new Date().toISOString();
       const isProd = process.env.NODE_ENV === "production";
+      const errorMessage =
+        err?.message ||
+        err?.code ||
+        "Downstream service did not respond to the gateway request";
       if (isProd) {
         process.stdout.write(
           JSON.stringify({
@@ -46,18 +50,19 @@ export function createProxy(targetUrl) {
             method: res.req?.method,
             path: res.req?.originalUrl || res.req?.url,
             requestId: res.req?.requestId,
-            error: err.message,
+            error: errorMessage,
+            code: err?.code,
           }) + "\n",
         );
       } else {
         process.stderr.write(
-          `\x1b[31m[ERROR]\x1b[0m ${ts} [api-gateway] Proxy error -> ${targetUrl} ${res.req?.method || ""} ${res.req?.originalUrl || res.req?.url || ""} [${res.req?.requestId || ""}]: ${err.message}\n`,
+          `\x1b[31m[ERROR]\x1b[0m ${ts} [api-gateway] Proxy error -> ${targetUrl} ${res.req?.method || ""} ${res.req?.originalUrl || res.req?.url || ""} [${res.req?.requestId || ""}]: ${errorMessage}\n`,
         );
       }
       if (res.headersSent) return;
-      res.status(502).json({
+      res.status(503).json({
         message:
-          "Downstream service is temporarily unavailable. Please try again.",
+          "Required backend service is unavailable. Please check service deployment and environment URLs.",
       });
     },
 

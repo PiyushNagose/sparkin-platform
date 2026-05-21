@@ -308,7 +308,7 @@ export function PortalLayout({ portal }) {
     return () => {
       active = false;
     };
-  }, [portal]);
+  }, [portal, refreshKey]);
 
   useEffect(() => {
     if (portal !== "customer") return undefined;
@@ -343,7 +343,7 @@ export function PortalLayout({ portal }) {
     return () => {
       active = false;
     };
-  }, [portal]);
+  }, [portal, refreshKey]);
 
   useEffect(() => {
     if (portal !== "admin") return undefined;
@@ -360,7 +360,7 @@ export function PortalLayout({ portal }) {
     return () => {
       active = false;
     };
-  }, [portal]);
+  }, [portal, refreshKey]);
 
   useEffect(() => {
     if (portal !== "admin" || typeof window === "undefined") return undefined;

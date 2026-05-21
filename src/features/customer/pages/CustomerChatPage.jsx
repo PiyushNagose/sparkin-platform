@@ -10,6 +10,11 @@ import FilterListRoundedIcon from "@mui/icons-material/FilterListRounded";
 import ChatOutlinedIcon from "@mui/icons-material/ChatOutlined";
 import { useCallback, useEffect, useState } from "react";
 import { ChatWindow } from "@/features/chat/ChatWindow";
+import {
+  markChatRoomRead,
+  sortChatRooms,
+  upsertChatRoom,
+} from "@/features/chat/chatRooms";
 import { chatApi } from "@/features/chat/chatApi";
 import { useChatSocket } from "@/features/chat/useChatSocket";
 import { useAuth } from "@/features/auth/AuthProvider";
@@ -35,11 +40,27 @@ export default function CustomerChatPage() {
   const token = authStorage.getAccessToken?.() || null;
   const currentUserId = user?.id || user?._id || "";
 
-  const handleRoomUpdated = useCallback(({ roomId, lastMessage, lastMessageAt }) => {
-    setRooms((prev) =>
-      prev.map((r) => r.roomId === roomId ? { ...r, lastMessage, lastMessageAt } : r)
-    );
-  }, []);
+  const [rooms, setRooms] = useState([]);
+  const [activeRoomId, setActiveRoomId] = useState(null);
+  const [loadingMessages, setLoadingMessages] = useState(false);
+  const [startingChat, setStartingChat] = useState(false);
+
+  const handleRoomUpdated = useCallback((room) => {
+    const nextRoom =
+      room?.roomId === activeRoomId
+        ? {
+            ...room,
+            unreadCount: {
+              ...(room.unreadCount || {}),
+              [currentUserId]: 0,
+            },
+          }
+        : room;
+    setRooms((prev) => upsertChatRoom(prev, nextRoom));
+    if (room?.roomId === activeRoomId) {
+      chatApi.markRead(room.roomId).catch(() => {});
+    }
+  }, [activeRoomId, currentUserId]);
 
   const {
     messages, typing, connected,
@@ -47,13 +68,8 @@ export default function CustomerChatPage() {
     startTyping, stopTyping, seedMessages,
   } = useChatSocket(token, { onRoomUpdated: handleRoomUpdated });
 
-  const [rooms, setRooms] = useState([]);
-  const [activeRoomId, setActiveRoomId] = useState(null);
-  const [loadingMessages, setLoadingMessages] = useState(false);
-  const [startingChat, setStartingChat] = useState(false);
-
   useEffect(() => {
-    chatApi.listRooms().then(setRooms).catch(() => {});
+    chatApi.listRooms().then((data) => setRooms(sortChatRooms(data))).catch(() => {});
   }, []);
 
   async function openRoom(room) {
@@ -64,6 +80,7 @@ export default function CustomerChatPage() {
     try {
       const msgs = await chatApi.getMessages(room.roomId);
       seedMessages(room.roomId, msgs);
+      setRooms((prev) => markChatRoomRead(prev, room.roomId, currentUserId));
       chatApi.markRead(room.roomId).catch(() => {});
     } finally {
       setLoadingMessages(false);
@@ -85,7 +102,7 @@ export default function CustomerChatPage() {
         targetName: adminName,
       });
       const updated = await chatApi.listRooms();
-      setRooms(updated);
+      setRooms(sortChatRooms(updated));
       openRoom(room);
     } catch {
       // silently fail

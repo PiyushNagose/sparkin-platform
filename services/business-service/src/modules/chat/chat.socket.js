@@ -2,6 +2,20 @@ import jwt from "jsonwebtoken";
 import { env } from "../../config/env.js";
 import { ChatMessage, ChatRoom } from "./chat.model.js";
 
+function serializeRoom(room) {
+  if (!room) return null;
+  if (typeof room.toObject === "function") {
+    return room.toObject({ flattenMaps: true });
+  }
+  if (room.unreadCount instanceof Map) {
+    return {
+      ...room,
+      unreadCount: Object.fromEntries(room.unreadCount.entries()),
+    };
+  }
+  return room;
+}
+
 /**
  * Attach Socket.io chat logic to an existing http.Server instance.
  * Called from server.js after the Express app is created.
@@ -106,24 +120,22 @@ export function attachChatSocket(io) {
           },
         );
 
-        // Broadcast message to everyone in the room
-        io.to(roomId).emit("new:message", message.toObject());
+        const updatedRoom = serializeRoom(await ChatRoom.findOne({ roomId }));
+        const messagePayload = message.toObject();
+
+        // Broadcast to the active room and to each participant's personal
+        // channel so sidebars update before the recipient opens the room.
+        io.to(roomId).emit("new:message", messagePayload);
+        (room.participantIds || []).forEach((participantId) => {
+          io.to(`user:${participantId}`).emit("new:message", messagePayload);
+          io.to(`user:${participantId}`).emit("room:updated", updatedRoom);
+        });
 
         // If this is a new room, notify all other participants so their sidebar refreshes
         if (isNewRoom) {
-          const updatedRoom = await ChatRoom.findOne({ roomId }).lean();
           otherIds.forEach((otherId) => {
             // Emit to the personal room each user is subscribed to
             io.to(`user:${otherId}`).emit("new:room", updatedRoom);
-          });
-        } else {
-          // Notify other participants about the updated room (for sidebar refresh)
-          otherIds.forEach((otherId) => {
-            io.to(`user:${otherId}`).emit("room:updated", {
-              roomId,
-              lastMessage: message.text || "📎 Attachment",
-              lastMessageAt: message.createdAt,
-            });
           });
         }
 
@@ -135,11 +147,11 @@ export function attachChatSocket(io) {
 
     // ── typing indicators ─────────────────────────────────────────────────
     socket.on("typing:start", ({ roomId }) => {
-      socket.to(roomId).emit("typing:start", { userId, name });
+      socket.to(roomId).emit("typing:start", { roomId, userId, name });
     });
 
     socket.on("typing:stop", ({ roomId }) => {
-      socket.to(roomId).emit("typing:stop", { userId });
+      socket.to(roomId).emit("typing:stop", { roomId, userId });
     });
 
     socket.on("disconnect", () => {

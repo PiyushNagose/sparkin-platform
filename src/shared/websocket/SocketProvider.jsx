@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { io } from "socket.io-client";
 import { authStorage } from "@/features/auth/authStorage";
+import { invalidateRequestCache } from "@/shared/lib/http/requestCache";
 
 const SocketContext = createContext({
   connected: false,
@@ -30,6 +31,7 @@ export function SocketProvider({ children }) {
     socket.on("connect", () => setConnected(true));
     socket.on("disconnect", () => setConnected(false));
     socket.on("refresh:page", () => {
+      invalidateRequestCache();
       setRefreshKey((current) => current + 1);
     });
     socket.on("connect_error", () => {
