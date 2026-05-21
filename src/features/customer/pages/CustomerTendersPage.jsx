@@ -54,6 +54,10 @@ function buildTenderTitle(lead) {
 // Status badge config for every possible lead status
 function getStatusConfig(status) {
   switch (status) {
+    case "verified":
+      return { label: "Verified", tone: "#0E56C8", bg: "#EEF4FF" };
+    case "vendors_assigned":
+      return { label: "Vendors Assigned", tone: "#7A6B00", bg: "#FFF8E6" };
     case "open_for_quotes":
       return { label: "Bidding Live", tone: "#239654", bg: "#E8FAEF" };
     case "quote_selected":
@@ -95,7 +99,7 @@ function toTenderCard(lead, allQuotes) {
   // CTA destination — quote comparison for live tenders, projects for selected
   let to = "/tenders/live";
   if (lead.status === "open_for_quotes" && activeBids.length > 0) {
-    to = "/quotes/compare";
+    to = `/quotes/compare?leadId=${lead.id}`;
   } else if (lead.status === "quote_selected" || lead.status === "closed") {
     to = "/customer/projects";
   }

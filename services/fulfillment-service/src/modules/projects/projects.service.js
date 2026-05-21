@@ -20,12 +20,6 @@ const allowedDocumentTypes = new Map([
 ]);
 const maxDocumentBytes = 5 * 1024 * 1024;
 
-function getSiteAuditDueAt() {
-  const dueAt = new Date();
-  dueAt.setDate(dueAt.getDate() + 2);
-  return dueAt;
-}
-
 function canViewProject(user, project) {
   return (
     user.role === "admin" ||
@@ -159,7 +153,7 @@ export const projectsService = {
       pricing: quote.pricing,
       timeline: {
         installationWindow: quote.timeline.installationWindow,
-        siteAuditDueAt: getSiteAuditDueAt(),
+        siteAuditDueAt: null,
       },
       milestones: initialMilestones,
       createdFromQuoteAt: new Date(),
@@ -196,7 +190,7 @@ export const projectsService = {
       pricing: input.pricing,
       timeline: {
         installationWindow: input.timeline.installationWindow,
-        siteAuditDueAt: getSiteAuditDueAt(),
+        siteAuditDueAt: null,
       },
       milestones: initialMilestones,
       createdFromQuoteAt: new Date(),
@@ -284,7 +278,7 @@ export const projectsService = {
     const message =
       input.message ||
       (isFinalAttempt
-        ? "Final reminder: site visit is overdue. Vendor will be rejected and this project will be reassigned."
+        ? "Final reminder: site visit is still pending. Vendor will be rejected and this project will be reassigned."
         : `Reminder ${attempt}: please complete the pending site visit for this project.`);
 
     return projectsRepository.addSiteVisitReminder(

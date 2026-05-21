@@ -89,10 +89,16 @@ export const quotesService = {
         throw new AppError(409, "Accepted quotes cannot be changed");
       }
 
-      return quotesRepository.updateQuoteByVendorAndLead(user.userId, leadId, {
+      const quote = await quotesRepository.updateQuoteByVendorAndLead(user.userId, leadId, {
         ...input,
         customerId: lead.customerId,
       });
+
+      if (lead.status === "vendors_assigned") {
+        await leadsRepository.markOpenForQuotes(leadId);
+      }
+
+      return quote;
     }
 
     const quote = await quotesRepository.createQuote({

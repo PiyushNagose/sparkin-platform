@@ -662,11 +662,9 @@ export default function VendorProjectDetailPage() {
                             }}
                           >
                             Reminder {reminder.attempt}
-                            {reminder.scheduledDate
-                              ? ` · ${new Date(reminder.scheduledDate).toLocaleDateString("en-IN")}`
-                              : reminder.sentAt
-                                ? ` · ${new Date(reminder.sentAt).toLocaleDateString("en-IN")}`
-                                : ""}
+                            {reminder.sentAt
+                              ? ` · ${new Date(reminder.sentAt).toLocaleDateString("en-IN")}`
+                              : ""}
                           </Typography>
                         </Stack>
                       ))}
