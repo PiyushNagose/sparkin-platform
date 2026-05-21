@@ -14,6 +14,10 @@ import FolderOpenOutlinedIcon from "@mui/icons-material/FolderOpenOutlined";
 import DownloadRoundedIcon from "@mui/icons-material/DownloadRounded";
 import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
 import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
+import NotificationsActiveRoundedIcon from "@mui/icons-material/NotificationsActiveRounded";
+import WarningAmberRoundedIcon from "@mui/icons-material/WarningAmberRounded";
+import ErrorOutlineRoundedIcon from "@mui/icons-material/ErrorOutlineRounded";
+import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
 import { Link as RouterLink, useParams } from "react-router-dom";
 import { projectsApi } from "@/features/public/api/projectsApi";
 import LocationMapPreview from "@/shared/components/LocationMapPreview";
@@ -492,14 +496,216 @@ export default function VendorProjectDetailPage() {
       ) : null}
 
       {siteVisitReminders.length > 0 && !siteVisitCompleted ? (
-        <Alert
-          severity={reassignmentRequired ? "error" : "warning"}
-          sx={{ mb: 2, borderRadius: "0.9rem" }}
+        <Box
+          sx={{
+            mb: 2.5,
+            borderRadius: "1.35rem",
+            overflow: "hidden",
+            boxShadow: reassignmentRequired
+              ? "0 8px 32px rgba(211,47,47,0.18)"
+              : "0 8px 32px rgba(216,154,0,0.16)",
+            border: reassignmentRequired
+              ? "1.5px solid #FFCDD2"
+              : "1.5px solid #FFE082",
+          }}
         >
-          {reassignmentRequired
-            ? "Final site visit reminder was missed. This project is marked for admin reassignment."
-            : `Admin has sent ${siteVisitReminders.length}/3 site visit reminder(s). Complete the site visit to keep this assignment active.`}
-        </Alert>
+          {/* Top gradient strip */}
+          <Box
+            sx={{
+              height: 5,
+              background: reassignmentRequired
+                ? "linear-gradient(90deg, #D32F2F 0%, #FF5252 50%, #D32F2F 100%)"
+                : "linear-gradient(90deg, #F57F17 0%, #FFD600 50%, #F57F17 100%)",
+              backgroundSize: "200% 100%",
+              animation: "shimmer 2.4s linear infinite",
+              "@keyframes shimmer": {
+                "0%": { backgroundPosition: "200% 0" },
+                "100%": { backgroundPosition: "-200% 0" },
+              },
+            }}
+          />
+
+          <Box
+            sx={{
+              p: { xs: 1.8, md: 2.2 },
+              bgcolor: reassignmentRequired ? "#FFF5F5" : "#FFFDE7",
+            }}
+          >
+            <Stack
+              direction={{ xs: "column", sm: "row" }}
+              spacing={2}
+              alignItems={{ xs: "flex-start", sm: "center" }}
+              justifyContent="space-between"
+            >
+              {/* Left: icon + text */}
+              <Stack direction="row" spacing={1.6} alignItems="flex-start">
+                <Box
+                  sx={{
+                    width: 46,
+                    height: 46,
+                    borderRadius: "1rem",
+                    flexShrink: 0,
+                    display: "grid",
+                    placeItems: "center",
+                    bgcolor: reassignmentRequired ? "#FFEBEE" : "#FFF8E1",
+                    border: reassignmentRequired
+                      ? "1.5px solid #FFCDD2"
+                      : "1.5px solid #FFE082",
+                    boxShadow: reassignmentRequired
+                      ? "0 4px 12px rgba(211,47,47,0.14)"
+                      : "0 4px 12px rgba(255,193,7,0.18)",
+                  }}
+                >
+                  {reassignmentRequired ? (
+                    <ErrorOutlineRoundedIcon
+                      sx={{ color: "#D32F2F", fontSize: "1.4rem" }}
+                    />
+                  ) : (
+                    <NotificationsActiveRoundedIcon
+                      sx={{
+                        color: "#F57F17",
+                        fontSize: "1.4rem",
+                        animation: "bell-shake 1.8s ease-in-out infinite",
+                        "@keyframes bell-shake": {
+                          "0%, 100%": { transform: "rotate(0deg)" },
+                          "10%": { transform: "rotate(-14deg)" },
+                          "20%": { transform: "rotate(14deg)" },
+                          "30%": { transform: "rotate(-10deg)" },
+                          "40%": { transform: "rotate(10deg)" },
+                          "50%": { transform: "rotate(0deg)" },
+                        },
+                      }}
+                    />
+                  )}
+                </Box>
+
+                <Box>
+                  <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.4 }}>
+                    <Typography
+                      sx={{
+                        color: reassignmentRequired ? "#B71C1C" : "#E65100",
+                        fontSize: "0.95rem",
+                        fontWeight: 800,
+                        lineHeight: 1.2,
+                      }}
+                    >
+                      {reassignmentRequired
+                        ? "Action Required — Vendor Reassignment"
+                        : `Site Visit Reminder ${siteVisitReminders.length > 1 ? `(${siteVisitReminders.length}/3)` : ""}`}
+                    </Typography>
+                    <Box
+                      sx={{
+                        px: 0.75,
+                        py: 0.2,
+                        borderRadius: "999px",
+                        bgcolor: reassignmentRequired ? "#D32F2F" : "#F57F17",
+                        color: "#FFFFFF",
+                        fontSize: "0.52rem",
+                        fontWeight: 800,
+                        letterSpacing: "0.08em",
+                        textTransform: "uppercase",
+                        lineHeight: 1,
+                      }}
+                    >
+                      {reassignmentRequired ? "Critical" : "Urgent"}
+                    </Box>
+                  </Stack>
+
+                  <Typography
+                    sx={{
+                      color: reassignmentRequired ? "#C62828" : "#BF6000",
+                      fontSize: "0.82rem",
+                      lineHeight: 1.55,
+                      maxWidth: 520,
+                    }}
+                  >
+                    {reassignmentRequired
+                      ? "Final site visit reminder was missed. This project has been flagged for admin reassignment. Please contact Sparkin support immediately."
+                      : `Admin has sent ${siteVisitReminders.length} of 3 site visit reminder${siteVisitReminders.length === 1 ? "" : "s"}. Complete the site visit to keep this assignment active.`}
+                  </Typography>
+
+                  {/* Reminder history pills */}
+                  {siteVisitReminders.length > 0 && (
+                    <Stack
+                      direction="row"
+                      spacing={0.7}
+                      flexWrap="wrap"
+                      sx={{ mt: 1.1 }}
+                    >
+                      {siteVisitReminders.map((reminder) => (
+                        <Stack
+                          key={reminder.attempt}
+                          direction="row"
+                          spacing={0.5}
+                          alignItems="center"
+                          sx={{
+                            px: 0.9,
+                            py: 0.35,
+                            borderRadius: "999px",
+                            bgcolor: reminder.attempt >= 3 ? "#FFEBEE" : "#FFF3E0",
+                            border: reminder.attempt >= 3
+                              ? "1px solid #FFCDD2"
+                              : "1px solid #FFE0B2",
+                          }}
+                        >
+                          <CalendarMonthOutlinedIcon
+                            sx={{
+                              fontSize: "0.7rem",
+                              color: reminder.attempt >= 3 ? "#D32F2F" : "#E65100",
+                            }}
+                          />
+                          <Typography
+                            sx={{
+                              color: reminder.attempt >= 3 ? "#D32F2F" : "#E65100",
+                              fontSize: "0.62rem",
+                              fontWeight: 800,
+                            }}
+                          >
+                            Reminder {reminder.attempt}
+                            {reminder.scheduledDate
+                              ? ` · ${new Date(reminder.scheduledDate).toLocaleDateString("en-IN")}`
+                              : reminder.sentAt
+                                ? ` · ${new Date(reminder.sentAt).toLocaleDateString("en-IN")}`
+                                : ""}
+                          </Typography>
+                        </Stack>
+                      ))}
+                    </Stack>
+                  )}
+                </Box>
+              </Stack>
+
+              {/* Right: CTA */}
+              {!reassignmentRequired && (
+                <Button
+                  component={RouterLink}
+                  to={`/vendor/projects/${projectId}`}
+                  variant="contained"
+                  sx={{
+                    minHeight: 40,
+                    px: 2,
+                    borderRadius: "0.9rem",
+                    bgcolor: "#F57F17",
+                    boxShadow: "0 8px 20px rgba(245,127,23,0.28)",
+                    color: "#FFFFFF",
+                    fontSize: "0.78rem",
+                    fontWeight: 800,
+                    textTransform: "none",
+                    whiteSpace: "nowrap",
+                    flexShrink: 0,
+                    "&:hover": {
+                      bgcolor: "#E65100",
+                      boxShadow: "0 10px 24px rgba(245,127,23,0.36)",
+                      transform: "translateY(-1px)",
+                    },
+                  }}
+                >
+                  Mark Site Visit Done
+                </Button>
+              )}
+            </Stack>
+          </Box>
+        </Box>
       ) : null}
 
       <Box
