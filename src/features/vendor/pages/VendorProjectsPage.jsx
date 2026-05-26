@@ -102,6 +102,10 @@ function getStatusMeta(status) {
     return { label: "Active", tone: "#7C7A00", bg: "#F2F08E" };
   }
 
+  if (status === "cancelled") {
+    return { label: "Cancelled", tone: "#C62828", bg: "#FDECEA" };
+  }
+
   return { label: "Pending", tone: "#6F7D8F", bg: "#EDF1F5" };
 }
 

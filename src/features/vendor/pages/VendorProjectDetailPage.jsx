@@ -1,4 +1,12 @@
-import { Alert, Avatar, Box, Button, CircularProgress, Stack, Typography } from "@mui/material";
+import {
+  Alert,
+  Avatar,
+  Box,
+  Button,
+  CircularProgress,
+  Stack,
+  Typography,
+} from "@mui/material";
 import { useEffect, useMemo, useRef, useState } from "react";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
@@ -158,21 +166,38 @@ function getProjectView(project) {
     subtitle: `${project.installationAddress.city}, ${project.installationAddress.state} - Project ID: ${project.id}`,
     statCards: [
       { label: "System Size", value: `${project.system.sizeKw} kW` },
-      { label: "Total Price", value: formatPrice(project.pricing.totalPrice), highlight: true },
+      {
+        label: "Total Price",
+        value: formatPrice(project.pricing.totalPrice),
+        highlight: true,
+      },
       { label: "Start Date", value: formatDate(project.createdAt) },
-      { label: "Project Status", value: project.status.replaceAll("_", " ") },
+      {
+        label: "Project Status",
+        value:
+          project.status === "cancelled"
+            ? "Cancelled"
+            : project.status.replaceAll("_", " "),
+      },
     ],
     milestones: project.milestones.map(toMilestoneNode),
     technicalSpecs: [
       ["Panel Type", project.system.panelType],
       ["Inverter", project.system.inverterType],
-      ["Install Window", project.timeline.installationWindow.replaceAll("_", "-")],
+      [
+        "Install Window",
+        project.timeline.installationWindow.replaceAll("_", "-"),
+      ],
       ["Total Cost", formatPrice(project.pricing.totalPrice)],
     ],
     customerInfoBlocks: [
       {
         title: "Primary Contact",
-        rows: [project.customer.fullName, project.customer.phoneNumber, project.customer.email || "Email not provided"],
+        rows: [
+          project.customer.fullName,
+          project.customer.phoneNumber,
+          project.customer.email || "Email not provided",
+        ],
       },
       {
         title: "Installation Address",
@@ -180,21 +205,32 @@ function getProjectView(project) {
       },
       {
         title: "Project Ownership",
-        rows: [`Customer ID: ${project.customerId}`, `Quote ID: ${project.quoteId}`],
+        rows: [
+          `Customer ID: ${project.customerId}`,
+          `Quote ID: ${project.quoteId}`,
+        ],
       },
       {
         title: "Current Stage",
-        rows: [project.status.replaceAll("_", " ")],
+        rows: [
+          project.status === "cancelled"
+            ? "Cancelled"
+            : project.status.replaceAll("_", " "),
+        ],
       },
     ],
-    activeMilestone: project.milestones.find((milestone) => milestone.status === "in_progress"),
+    activeMilestone: project.milestones.find(
+      (milestone) => milestone.status === "in_progress",
+    ),
     documents: (project.documents || []).map((document) => ({
       name: document.title || document.fileName,
       meta: `Uploaded ${formatDate(document.uploadedAt)} • ${formatFileSize(document.size)}`,
       tone: document.mimeType === "application/pdf" ? "#FF6B6B" : "#4F89FF",
       bg: document.mimeType === "application/pdf" ? "#FFF1F1" : "#EEF4FF",
       icon: document.mimeType === "application/pdf" ? "pdf" : "image",
-      url: document.url?.startsWith("http") ? document.url : `${fulfillmentOrigin}${document.url}`,
+      url: document.url?.startsWith("http")
+        ? document.url
+        : `${fulfillmentOrigin}${document.url}`,
     })),
     timeline: [
       ...(project.siteVisitFollowUp?.reminders || []).map((reminder) => ({
@@ -319,13 +355,19 @@ export default function VendorProjectDetailPage() {
   const displayStatCards = projectView?.statCards ?? statCards;
   const displayMilestones = projectView?.milestones ?? milestones;
   const displayTechnicalSpecs = projectView?.technicalSpecs ?? technicalSpecs;
-  const displayCustomerInfoBlocks = projectView?.customerInfoBlocks ?? customerInfoBlocks;
+  const displayCustomerInfoBlocks =
+    projectView?.customerInfoBlocks ?? customerInfoBlocks;
   const displayDocuments = projectView?.documents || [];
-  const displayTimeline = projectView?.timeline?.length ? projectView.timeline : timeline;
+  const displayTimeline = projectView?.timeline?.length
+    ? projectView.timeline
+    : timeline;
   const siteVisitReminders = project?.siteVisitFollowUp?.reminders || [];
-  const reassignmentRequired = Boolean(project?.siteVisitFollowUp?.reassignmentRequired);
+  const reassignmentRequired = Boolean(
+    project?.siteVisitFollowUp?.reassignmentRequired,
+  );
   const siteVisitCompleted = project?.milestones?.some(
-    (milestone) => milestone.key === "site_visit" && milestone.status === "completed",
+    (milestone) =>
+      milestone.key === "site_visit" && milestone.status === "completed",
   );
   useEffect(() => {
     let active = true;
@@ -338,7 +380,10 @@ export default function VendorProjectDetailPage() {
         const result = await projectsApi.getProject(projectId);
         if (active) setProject(result);
       } catch (apiError) {
-        if (active) setError(apiError?.response?.data?.message || "Could not load this project.");
+        if (active)
+          setError(
+            apiError?.response?.data?.message || "Could not load this project.",
+          );
       } finally {
         if (active) setIsLoading(false);
       }
@@ -361,14 +406,19 @@ export default function VendorProjectDetailPage() {
     setSuccess("");
 
     try {
-      const updatedProject = await projectsApi.updateProjectMilestone(projectId, {
-        milestoneKey: projectView.activeMilestone.key,
-        status: "completed",
-      });
+      const updatedProject = await projectsApi.updateProjectMilestone(
+        projectId,
+        {
+          milestoneKey: projectView.activeMilestone.key,
+          status: "completed",
+        },
+      );
       setProject(updatedProject);
       setSuccess("Project status updated.");
     } catch (apiError) {
-      setError(apiError?.response?.data?.message || "Could not update project status.");
+      setError(
+        apiError?.response?.data?.message || "Could not update project status.",
+      );
     } finally {
       setIsUpdating(false);
     }
@@ -379,7 +429,9 @@ export default function VendorProjectDetailPage() {
       return;
     }
 
-    const siteVisit = project.milestones.find((milestone) => milestone.key === "site_visit");
+    const siteVisit = project.milestones.find(
+      (milestone) => milestone.key === "site_visit",
+    );
     if (siteVisit?.status === "completed") {
       setError("");
       setSuccess("Project status updated.");
@@ -391,14 +443,19 @@ export default function VendorProjectDetailPage() {
     setSuccess("");
 
     try {
-      const updatedProject = await projectsApi.updateProjectMilestone(projectId, {
-        milestoneKey: "site_visit",
-        status: "in_progress",
-      });
+      const updatedProject = await projectsApi.updateProjectMilestone(
+        projectId,
+        {
+          milestoneKey: "site_visit",
+          status: "in_progress",
+        },
+      );
       setProject(updatedProject);
       setSuccess("Project status updated.");
     } catch (apiError) {
-      setError(apiError?.response?.data?.message || "Could not update project status.");
+      setError(
+        apiError?.response?.data?.message || "Could not update project status.",
+      );
     } finally {
       setIsUpdating(false);
     }
@@ -410,7 +467,11 @@ export default function VendorProjectDetailPage() {
 
     if (!file) return;
 
-    if (!["application/pdf", "image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+    if (
+      !["application/pdf", "image/jpeg", "image/png", "image/webp"].includes(
+        file.type,
+      )
+    ) {
       setError("Please upload a PDF, JPG, PNG, or WEBP document.");
       return;
     }
@@ -436,7 +497,9 @@ export default function VendorProjectDetailPage() {
       setActiveTab("Documents");
       setSuccess("Document uploaded.");
     } catch (apiError) {
-      setError(apiError?.response?.data?.message || "Could not upload document.");
+      setError(
+        apiError?.response?.data?.message || "Could not upload document.",
+      );
     } finally {
       setIsUploading(false);
     }
@@ -580,7 +643,12 @@ export default function VendorProjectDetailPage() {
                 </Box>
 
                 <Box>
-                  <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.4 }}>
+                  <Stack
+                    direction="row"
+                    spacing={1}
+                    alignItems="center"
+                    sx={{ mb: 0.4 }}
+                  >
                     <Typography
                       sx={{
                         color: reassignmentRequired ? "#B71C1C" : "#E65100",
@@ -642,21 +710,25 @@ export default function VendorProjectDetailPage() {
                             px: 0.9,
                             py: 0.35,
                             borderRadius: "999px",
-                            bgcolor: reminder.attempt >= 3 ? "#FFEBEE" : "#FFF3E0",
-                            border: reminder.attempt >= 3
-                              ? "1px solid #FFCDD2"
-                              : "1px solid #FFE0B2",
+                            bgcolor:
+                              reminder.attempt >= 3 ? "#FFEBEE" : "#FFF3E0",
+                            border:
+                              reminder.attempt >= 3
+                                ? "1px solid #FFCDD2"
+                                : "1px solid #FFE0B2",
                           }}
                         >
                           <CalendarMonthOutlinedIcon
                             sx={{
                               fontSize: "0.7rem",
-                              color: reminder.attempt >= 3 ? "#D32F2F" : "#E65100",
+                              color:
+                                reminder.attempt >= 3 ? "#D32F2F" : "#E65100",
                             }}
                           />
                           <Typography
                             sx={{
-                              color: reminder.attempt >= 3 ? "#D32F2F" : "#E65100",
+                              color:
+                                reminder.attempt >= 3 ? "#D32F2F" : "#E65100",
                               fontSize: "0.62rem",
                               fontWeight: 800,
                             }}
@@ -1153,7 +1225,10 @@ export default function VendorProjectDetailPage() {
               }}
             >
               {displayDocuments.length === 0 ? (
-                <Alert severity="info" sx={{ gridColumn: "1 / -1", borderRadius: "0.9rem" }}>
+                <Alert
+                  severity="info"
+                  sx={{ gridColumn: "1 / -1", borderRadius: "0.9rem" }}
+                >
                   No documents have been uploaded for this project yet.
                 </Alert>
               ) : null}
@@ -1377,7 +1452,9 @@ export default function VendorProjectDetailPage() {
               startIcon={<SettingsOutlinedIcon />}
               variant="outlined"
               onClick={handleCompleteActiveStep}
-              disabled={isUpdating || isLoading || !projectView?.activeMilestone}
+              disabled={
+                isUpdating || isLoading || !projectView?.activeMilestone
+              }
               sx={{
                 minHeight: 38,
                 px: 1.3,

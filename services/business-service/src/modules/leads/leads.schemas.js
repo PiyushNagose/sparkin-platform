@@ -11,7 +11,10 @@ const attachmentSchema = z.object({
   category: z.enum(["roof_photo", "electricity_bill", "photo_id"]),
   fileName: z.string().trim().min(1).max(160),
   mimeType: z.string().trim().min(3).max(120),
-  size: z.coerce.number().min(1).max(2 * 1024 * 1024),
+  size: z.coerce
+    .number()
+    .min(1)
+    .max(2 * 1024 * 1024),
   dataUrl: z.string().min(20).max(3_000_000),
   capturedAt: z.string().datetime().nullable().optional(),
   location: z
@@ -97,15 +100,19 @@ export const createLeadSchema = z.object({
 
 export const analyzeRoofSchema = z.object({
   attachment: attachmentSchema,
-  roof: z.object({
-    sizeRange: z.enum(["under_500", "500_1000", "over_1000"]).optional(),
-    shadow: z.enum(["none", "partial", "heavy"]).optional(),
-    condition: z.enum(["excellent", "average", "needs_repair"]).optional(),
-  }).optional(),
-  property: z.object({
-    roofType: z.enum(["flat", "sloped"]).optional(),
-    sanctionedLoadKw: z.coerce.number().min(0).nullable().optional(),
-  }).optional(),
+  roof: z
+    .object({
+      sizeRange: z.enum(["under_500", "500_1000", "over_1000"]).optional(),
+      shadow: z.enum(["none", "partial", "heavy"]).optional(),
+      condition: z.enum(["excellent", "average", "needs_repair"]).optional(),
+    })
+    .optional(),
+  property: z
+    .object({
+      roofType: z.enum(["flat", "sloped"]).optional(),
+      sanctionedLoadKw: z.coerce.number().min(0).nullable().optional(),
+    })
+    .optional(),
   calculatorEstimate: z.unknown().nullable().optional(),
 });
 
@@ -130,4 +137,5 @@ export const markCommitmentPaidSchema = z.object({
 
 export const assignLeadVendorsSchema = z.object({
   vendorIds: z.array(z.string().trim().min(1)).min(1).max(25),
+  selectAll: z.boolean().optional().default(false),
 });

@@ -14,7 +14,11 @@ import CheckCircleOutlinedIcon from "@mui/icons-material/CheckCircleOutlined";
 import { useEffect, useMemo, useState } from "react";
 import { Link as RouterLink } from "react-router-dom";
 import { leadsApi, quotesApi } from "@/features/public/api/leadsApi";
-import { CustomerErrorBlock, CustomerLoadingBlock } from "@/features/customer/components/CustomerPageStates";
+import { projectsApi } from "@/features/public/api/projectsApi";
+import {
+  CustomerErrorBlock,
+  CustomerLoadingBlock,
+} from "@/features/customer/components/CustomerPageStates";
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -78,7 +82,7 @@ function isActiveLead(lead) {
 }
 
 // Build the full card data object from raw API records
-function toTenderCard(lead, allQuotes) {
+function toTenderCard(lead, allQuotes, allProjects) {
   const leadQuotes = allQuotes.filter(
     (q) => String(q.leadId) === String(lead.id),
   );
@@ -96,22 +100,33 @@ function toTenderCard(lead, allQuotes) {
 
   const statusConfig = getStatusConfig(lead.status);
 
-  // CTA destination — quote comparison for live tenders, projects for selected
-  let to = "/tenders/live";
+  // Find the matching project for direct navigation
+  const matchingProject = allProjects.find(
+    (p) => String(p.leadId) === String(lead.id),
+  );
+
+  // CTA destination — quote comparison for live tenders, specific project for selected
+  let to = `/tenders/live?leadId=${lead.id}`;
   if (lead.status === "open_for_quotes" && activeBids.length > 0) {
     to = `/quotes/compare?leadId=${lead.id}`;
+  } else if (lead.status === "open_for_quotes") {
+    to = `/tenders/live?leadId=${lead.id}`;
   } else if (lead.status === "quote_selected" || lead.status === "closed") {
-    to = "/customer/projects";
+    to = matchingProject
+      ? `/project/installation?projectId=${matchingProject.id}`
+      : "/customer/projects";
   }
 
   const ctaLabel =
     lead.status === "open_for_quotes" && activeBids.length > 0
       ? "Compare Bids"
-      : lead.status === "quote_selected"
-        ? "Track Project"
-        : lead.status === "open_for_quotes"
-          ? "View Tender"
-          : "View Details";
+      : lead.status === "open_for_quotes"
+        ? "View Tender"
+        : lead.status === "quote_selected"
+          ? "Track Project"
+          : lead.status === "closed"
+            ? "View Project"
+            : "View Details";
 
   return {
     id: lead.id,
@@ -425,26 +440,63 @@ function TabBar({ activeTab, onTabChange, activeCount, closedCount }) {
 export default function CustomerTendersPage() {
   const [leads, setLeads] = useState([]);
   const [quotes, setQuotes] = useState([]);
+  const [projects, setProjects] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState("active");
 
-  async function loadTenders(active = true) {
+  async function loadTenders(active = true, force = false) {
     setIsLoading(true);
     setError("");
 
+    const opts = force ? { force: true } : {};
+
     try {
-      const [leadResult, quoteResult] = await Promise.all([
-        leadsApi.listLeads(),
-        quotesApi.listQuotes(),
+      const results = await Promise.allSettled([
+        leadsApi.listLeads(opts),
+        quotesApi.listQuotes({}, opts),
+        projectsApi.listProjects(opts),
       ]);
 
       if (!active) return;
-      setLeads(leadResult);
-      setQuotes(quoteResult);
+
+      const [leadResult, quoteResult, projectResult] = results;
+
+      // Handle each result independently
+      if (leadResult.status === "fulfilled") {
+        setLeads(leadResult.value || []);
+      } else {
+        console.error("Failed to load leads:", leadResult.reason);
+        setLeads([]);
+      }
+
+      if (quoteResult.status === "fulfilled") {
+        setQuotes(quoteResult.value || []);
+      } else {
+        console.error("Failed to load quotes:", quoteResult.reason);
+        setQuotes([]);
+      }
+
+      if (projectResult.status === "fulfilled") {
+        setProjects(projectResult.value || []);
+      } else {
+        console.error("Failed to load projects:", projectResult.reason);
+        setProjects([]);
+      }
+
+      // Show error only if all failed
+      if (
+        leadResult.status === "rejected" &&
+        quoteResult.status === "rejected" &&
+        projectResult.status === "rejected"
+      ) {
+        setError("Could not load tenders. Please try again.");
+      }
     } catch (apiError) {
       if (active) {
-        setError(apiError?.response?.data?.message || "Could not load tenders.");
+        setError(
+          apiError?.response?.data?.message || "Could not load tenders.",
+        );
       }
     } finally {
       if (active) setIsLoading(false);
@@ -453,7 +505,7 @@ export default function CustomerTendersPage() {
 
   useEffect(() => {
     let active = true;
-    loadTenders(active);
+    loadTenders(active, true); // force-fresh on mount
     return () => {
       active = false;
     };
@@ -462,8 +514,8 @@ export default function CustomerTendersPage() {
   // ── derived state ──────────────────────────────────────────────────────────
 
   const allCards = useMemo(
-    () => leads.map((lead) => toTenderCard(lead, quotes)),
-    [leads, quotes],
+    () => leads.map((lead) => toTenderCard(lead, quotes, projects)),
+    [leads, quotes, projects],
   );
 
   const activeCards = useMemo(
@@ -640,7 +692,13 @@ export default function CustomerTendersPage() {
       {isLoading && <CustomerLoadingBlock mt={0} />}
 
       {/* Error */}
-      {!isLoading && error && <CustomerErrorBlock message={error} onRetry={() => loadTenders(true)} mt={1.2} />}
+      {!isLoading && error && (
+        <CustomerErrorBlock
+          message={error}
+          onRetry={() => loadTenders(true)}
+          mt={1.2}
+        />
+      )}
 
       {/* Empty state */}
       {!isLoading && !error && visibleCards.length === 0 && (

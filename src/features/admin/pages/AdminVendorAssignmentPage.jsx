@@ -319,6 +319,7 @@ export default function AdminVendorAssignmentPage() {
   const [selectedVendorIds, setSelectedVendorIds] = useState([]);
   const [actionError, setActionError] = useState("");
   const [isAssigning, setIsAssigning] = useState(false);
+  const [selectAllMode, setSelectAllMode] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -438,13 +439,15 @@ export default function AdminVendorAssignmentPage() {
   }
 
   async function handleAssign() {
-    if (!state.data?.lead || !selectedVendorIds.length) return;
+    if (!state.data?.lead || (!selectedVendorIds.length && !selectAllMode))
+      return;
 
     setIsAssigning(true);
     setActionError("");
     try {
       await leadsApi.assignVendors(state.data.lead.id, {
-        vendorIds: selectedVendorIds,
+        vendorIds: selectAllMode ? [] : selectedVendorIds,
+        selectAll: selectAllMode,
       });
       navigate(`/admin/leads/${state.data.lead.id}`);
     } catch (error) {
@@ -629,6 +632,9 @@ export default function AdminVendorAssignmentPage() {
             borderBottom: "1px solid #EEF2F6",
             bgcolor: "#FFFBEA",
             borderRadius: "1.2rem 1.2rem 0 0",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
           }}
         >
           <Typography
@@ -642,6 +648,31 @@ export default function AdminVendorAssignmentPage() {
             </Box>
             . Bids above this amount will not be accepted.
           </Typography>
+          <Button
+            onClick={() => {
+              setSelectAllMode(!selectAllMode);
+              if (!selectAllMode) {
+                setSelectedVendorIds([]);
+              }
+            }}
+            sx={{
+              ml: 2,
+              px: 1.5,
+              py: 0.6,
+              borderRadius: "0.5rem",
+              bgcolor: selectAllMode ? "#0E56C8" : "#E8EAED",
+              color: selectAllMode ? "#FFFFFF" : "#3C4700",
+              fontSize: "0.72rem",
+              fontWeight: 900,
+              textTransform: "none",
+              whiteSpace: "nowrap",
+              "&:hover": {
+                bgcolor: selectAllMode ? "#0A3FA0" : "#D8DADD",
+              },
+            }}
+          >
+            {selectAllMode ? "✓ Select All" : "Select All"}
+          </Button>
         </Box>
         <TableContainer>
           <Table sx={{ minWidth: 900 }}>
@@ -871,17 +902,23 @@ export default function AdminVendorAssignmentPage() {
             </Avatar>
             <Box>
               <Typography sx={{ fontSize: "1.35rem", fontWeight: 900 }}>
-                {selectedVendorIds.length} Vendors Selected
+                {selectAllMode
+                  ? `${vendors.length} Vendors Selected`
+                  : `${selectedVendorIds.length} Vendors Selected`}
               </Typography>
               <Typography
                 sx={{ mt: 0.2, color: "#B7C1D0", fontSize: "0.78rem" }}
               >
-                Eligible to receive and submit quotes
+                {selectAllMode
+                  ? "All verified vendors will receive quotes"
+                  : "Eligible to receive and submit quotes"}
               </Typography>
             </Box>
           </Stack>
           <AdminPrimaryButton
-            disabled={!selectedVendorIds.length || isAssigning}
+            disabled={
+              (!selectedVendorIds.length && !selectAllMode) || isAssigning
+            }
             onClick={handleAssign}
             endIcon={<BoltOutlinedIcon />}
             sx={{

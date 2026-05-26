@@ -1,4 +1,18 @@
-import { Box, Button, Container, Grid, Stack, Typography, Fade, Chip, keyframes, Dialog, DialogContent, useMediaQuery, useTheme } from "@mui/material";
+import {
+  Box,
+  Button,
+  Container,
+  Grid,
+  Stack,
+  Typography,
+  Fade,
+  Chip,
+  keyframes,
+  Dialog,
+  DialogContent,
+  useMediaQuery,
+  useTheme,
+} from "@mui/material";
 import AccountBalanceWalletRoundedIcon from "@mui/icons-material/AccountBalanceWalletRounded";
 import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
 import CampaignRoundedIcon from "@mui/icons-material/CampaignRounded";
@@ -9,7 +23,11 @@ import ShieldOutlinedIcon from "@mui/icons-material/ShieldOutlined";
 import HourglassEmptyIcon from "@mui/icons-material/HourglassEmpty";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import { useEffect, useState } from "react";
-import { Link as RouterLink, useNavigate, useSearchParams } from "react-router-dom";
+import {
+  Link as RouterLink,
+  useNavigate,
+  useSearchParams,
+} from "react-router-dom";
 import { quotesApi } from "@/features/public/api/leadsApi";
 import liveBiddingHeroPlaceholder from "@/shared/assets/images/public/bidding/live-bidding-hero-placeholder.png";
 import liveBiddingAdvantagePlaceholder from "@/shared/assets/images/public/bidding/live-bidding-advantage-placeholder.png";
@@ -165,7 +183,7 @@ function MobileLoadingMessage() {
 
   useEffect(() => {
     const dotsInterval = setInterval(() => {
-      setDots(prev => prev.length >= 3 ? "" : prev + ".");
+      setDots((prev) => (prev.length >= 3 ? "" : prev + "."));
     }, 500);
 
     return () => {
@@ -200,7 +218,8 @@ function MobileLoadingMessage() {
             left: 0,
             right: 0,
             height: "2px",
-            background: "linear-gradient(90deg, transparent, #0E56C8, transparent)",
+            background:
+              "linear-gradient(90deg, transparent, #0E56C8, transparent)",
             backgroundSize: "200px 100%",
             animation: `${shimmerAnimation} 2s infinite`,
           }}
@@ -245,12 +264,18 @@ function MobileLoadingMessage() {
                 maxWidth: 380,
               }}
             >
-              Our elite network is analyzing your requirements and preparing competitive bids. This usually takes 2-5 minutes.
+              Our elite network is analyzing your requirements and preparing
+              competitive bids. This usually takes 2-5 minutes.
             </Typography>
           </Box>
 
           {/* Status indicators */}
-          <Stack direction="row" spacing={1} flexWrap="wrap" justifyContent="center">
+          <Stack
+            direction="row"
+            spacing={1}
+            flexWrap="wrap"
+            justifyContent="center"
+          >
             <Chip
               icon={<TrendingUpIcon sx={{ fontSize: "0.9rem" }} />}
               label="Live Bidding Active"
@@ -287,11 +312,11 @@ function DesktopLoadingPopup({ open, onClose }) {
 
   useEffect(() => {
     const dotsInterval = setInterval(() => {
-      setDots(prev => prev.length >= 3 ? "" : prev + ".");
+      setDots((prev) => (prev.length >= 3 ? "" : prev + "."));
     }, 500);
 
     const pulseInterval = setInterval(() => {
-      setShowPulse(prev => !prev);
+      setShowPulse((prev) => !prev);
     }, 1500);
 
     return () => {
@@ -325,12 +350,13 @@ function DesktopLoadingPopup({ open, onClose }) {
       PaperProps={{
         sx: {
           borderRadius: "2rem",
-          background: "linear-gradient(135deg, #F8FAFF 0%, #EEF4FF 50%, #E3EDFF 100%)",
+          background:
+            "linear-gradient(135deg, #F8FAFF 0%, #EEF4FF 50%, #E3EDFF 100%)",
           border: "2px solid #E3EDFF",
           boxShadow: "0 24px 64px rgba(14, 86, 200, 0.15)",
           overflow: "hidden",
           position: "relative",
-        }
+        },
       }}
     >
       <DialogContent sx={{ p: 5, position: "relative" }}>
@@ -342,7 +368,8 @@ function DesktopLoadingPopup({ open, onClose }) {
             left: 0,
             right: 0,
             height: "3px",
-            background: "linear-gradient(90deg, transparent, #0E56C8, transparent)",
+            background:
+              "linear-gradient(90deg, transparent, #0E56C8, transparent)",
             backgroundSize: "200px 100%",
             animation: `${shimmerAnimation} 2s infinite`,
           }}
@@ -357,7 +384,8 @@ function DesktopLoadingPopup({ open, onClose }) {
             width: 80,
             height: 80,
             borderRadius: "50%",
-            background: "linear-gradient(135deg, rgba(14, 86, 200, 0.05) 0%, rgba(14, 86, 200, 0.02) 100%)",
+            background:
+              "linear-gradient(135deg, rgba(14, 86, 200, 0.05) 0%, rgba(14, 86, 200, 0.02) 100%)",
             animation: `${floatAnimation} 3s ease-in-out infinite`,
           }}
         />
@@ -374,7 +402,9 @@ function DesktopLoadingPopup({ open, onClose }) {
               alignItems: "center",
               justifyContent: "center",
               color: "white",
-              animation: showPulse ? `${pulseAnimation} 1.5s ease-in-out` : "none",
+              animation: showPulse
+                ? `${pulseAnimation} 1.5s ease-in-out`
+                : "none",
               boxShadow: "0 16px 40px rgba(14, 86, 200, 0.4)",
               position: "relative",
               "&::before": {
@@ -385,10 +415,11 @@ function DesktopLoadingPopup({ open, onClose }) {
                 right: -6,
                 bottom: -6,
                 borderRadius: "50%",
-                background: "linear-gradient(135deg, rgba(14, 86, 200, 0.2) 0%, rgba(25, 118, 210, 0.1) 100%)",
+                background:
+                  "linear-gradient(135deg, rgba(14, 86, 200, 0.2) 0%, rgba(25, 118, 210, 0.1) 100%)",
                 animation: `${pulseAnimation} 2s ease-in-out infinite`,
                 zIndex: -1,
-              }
+              },
             }}
           >
             <HourglassEmptyIcon sx={{ fontSize: "2.2rem" }} />
@@ -416,15 +447,16 @@ function DesktopLoadingPopup({ open, onClose }) {
                 fontWeight: 400,
               }}
             >
-              Our elite network is analyzing your requirements and preparing competitive bids. This usually takes 2-5 minutes.
+              Our elite network is analyzing your requirements and preparing
+              competitive bids. This usually takes 2-5 minutes.
             </Typography>
           </Box>
 
           {/* Status indicators */}
-          <Stack 
-            direction="row" 
-            spacing={2} 
-            flexWrap="wrap" 
+          <Stack
+            direction="row"
+            spacing={2}
+            flexWrap="wrap"
             justifyContent="center"
             alignItems="center"
           >
@@ -474,7 +506,8 @@ function DesktopLoadingPopup({ open, onClose }) {
                   height: "100%",
                   width: "65%",
                   borderRadius: "999px",
-                  background: "linear-gradient(90deg, #0E56C8 0%, #1976D2 100%)",
+                  background:
+                    "linear-gradient(90deg, #0E56C8 0%, #1976D2 100%)",
                   animation: `${shimmerAnimation} 2s infinite`,
                   backgroundSize: "200% 100%",
                 }}
@@ -509,7 +542,7 @@ function DesktopLoadingPopup({ open, onClose }) {
               "&:hover": {
                 borderColor: "#0E56C8",
                 color: "#0E56C8",
-              }
+              },
             }}
           >
             Continue in Background
@@ -523,7 +556,7 @@ function DesktopLoadingPopup({ open, onClose }) {
 // Main Animated Loading Message Component
 function AnimatedLoadingMessage() {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [showDesktopPopup, setShowDesktopPopup] = useState(false);
 
   useEffect(() => {
@@ -537,9 +570,9 @@ function AnimatedLoadingMessage() {
   }
 
   return (
-    <DesktopLoadingPopup 
-      open={showDesktopPopup} 
-      onClose={() => setShowDesktopPopup(false)} 
+    <DesktopLoadingPopup
+      open={showDesktopPopup}
+      onClose={() => setShowDesktopPopup(false)}
     />
   );
 }
@@ -556,9 +589,13 @@ export default function LiveBiddingPage() {
 
     async function redirectWhenQuotesArrive() {
       try {
-        const quotes = await quotesApi.listQuotes(leadId ? { leadId } : {}, { force: true });
+        const quotes = await quotesApi.listQuotes(leadId ? { leadId } : {}, {
+          force: true,
+        });
         if (active && quotes.length > 0) {
-          navigate(`/quotes/compare${leadId ? `?leadId=${leadId}` : ""}`, { replace: true });
+          navigate(`/quotes/compare${leadId ? `?leadId=${leadId}` : ""}`, {
+            replace: true,
+          });
           return;
         }
       } catch {
@@ -581,13 +618,17 @@ export default function LiveBiddingPage() {
   async function handleReviewQuotes() {
     setReviewMessage("");
     try {
-      const quotes = await quotesApi.listQuotes(leadId ? { leadId } : {}, { force: true });
+      const quotes = await quotesApi.listQuotes(leadId ? { leadId } : {}, {
+        force: true,
+      });
       if (quotes.length > 0) {
         navigate(`/quotes/compare${leadId ? `?leadId=${leadId}` : ""}`);
         return;
       }
 
-      setReviewMessage("Our elite vendor network is crafting personalized proposals for your solar project. Please stay on this page while we finalize the competitive bids.");
+      setReviewMessage(
+        "Our elite vendor network is crafting personalized proposals for your solar project. Please stay on this page while we finalize the competitive bids.",
+      );
     } catch (error) {
       setReviewMessage(
         error?.response?.data?.message ||
@@ -676,9 +717,7 @@ export default function LiveBiddingPage() {
                     spacing={1.35}
                     sx={{ pt: 0.7, alignItems: { sm: "center" } }}
                   >
-                    {reviewMessage ? (
-                      <AnimatedLoadingMessage />
-                    ) : null}
+                    {reviewMessage ? <AnimatedLoadingMessage /> : null}
 
                     <Button
                       onClick={handleReviewQuotes}
@@ -911,7 +950,11 @@ export default function LiveBiddingPage() {
                       }}
                     >
                       <Stack spacing={0.55}>
-                        <Stack direction="row" spacing={0.7} alignItems="center">
+                        <Stack
+                          direction="row"
+                          spacing={0.7}
+                          alignItems="center"
+                        >
                           <Box
                             sx={{
                               width: 7,
@@ -940,8 +983,8 @@ export default function LiveBiddingPage() {
                             lineHeight: 1.45,
                           }}
                         >
-                          &quot;Sparkin reduced our project overhead by 22% while
-                          increasing system efficiency.&quot;
+                          &quot;Sparkin reduced our project overhead by 22%
+                          while increasing system efficiency.&quot;
                         </Typography>
                       </Stack>
                     </Box>

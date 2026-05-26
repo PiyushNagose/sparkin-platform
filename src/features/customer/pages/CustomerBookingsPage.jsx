@@ -23,7 +23,10 @@ import bookingHouseModern from "@/shared/assets/images/customer/bookings/booking
 import bookingHouseClassic from "@/shared/assets/images/customer/bookings/booking-house-classic-placeholder.png";
 import bookingSolarFacility from "@/shared/assets/images/customer/bookings/booking-solar-facility-placeholder.png";
 import bookingHouseUnderConstruction from "@/shared/assets/images/customer/bookings/booking-house-underconstruction-placeholder.png";
-import { CustomerErrorBlock, CustomerLoadingBlock } from "@/features/customer/components/CustomerPageStates";
+import {
+  CustomerErrorBlock,
+  CustomerLoadingBlock,
+} from "@/features/customer/components/CustomerPageStates";
 
 // ─── constants ───────────────────────────────────────────────────────────────
 
@@ -100,13 +103,17 @@ function formatProjectStatus(status) {
 // Status badge + CTA config driven by lead status
 function getStatusConfig(lead, matchingProject, quoteCount) {
   if (lead.status === "quote_selected" || lead.status === "closed") {
+    // Link directly to the specific project if we have it
+    const projectTo = matchingProject
+      ? `/project/installation?projectId=${matchingProject.id}`
+      : "/customer/projects";
     return {
       badge: "Project Created",
       badgeTone: "#239654",
       badgeBg: "#E8FAEF",
       action: "Track Project",
       actionPrimary: true,
-      to: "/customer/projects",
+      to: projectTo,
     };
   }
 
@@ -124,12 +131,34 @@ function getStatusConfig(lead, matchingProject, quoteCount) {
     };
   }
 
+  if (lead.status === "vendors_assigned") {
+    return {
+      badge: "Vendors Assigned",
+      badgeTone: "#7A6B00",
+      badgeBg: "#FFF8E6",
+      action: "View Tender",
+      actionPrimary: false,
+      to: `/tenders/live?leadId=${lead.id}`,
+    };
+  }
+
+  if (lead.status === "verified") {
+    return {
+      badge: "Verified",
+      badgeTone: "#0E56C8",
+      badgeBg: "#EEF4FF",
+      action: "View Tender",
+      actionPrimary: false,
+      to: `/tenders/live?leadId=${lead.id}`,
+    };
+  }
+
   if (lead.status === "reviewing") {
     return {
       badge: "Under Review",
       badgeTone: "#4F89FF",
       badgeBg: "#EEF4FF",
-      action: "View Bids",
+      action: "View Details",
       actionPrimary: false,
       to: `/tenders/live?leadId=${lead.id}`,
     };
@@ -140,7 +169,7 @@ function getStatusConfig(lead, matchingProject, quoteCount) {
     badge: "Submitted",
     badgeTone: "#8F98A7",
     badgeBg: "#F2F5F8",
-    action: "View Bids",
+    action: "View Details",
     actionPrimary: false,
     to: `/tenders/live?leadId=${lead.id}`,
   };
@@ -520,24 +549,58 @@ export default function CustomerBookingsPage() {
   const [error, setError] = useState("");
   const [page, setPage] = useState(1);
 
-  async function loadBookings(active = true) {
+  async function loadBookings(active = true, force = false) {
     setIsLoading(true);
     setError("");
 
+    const opts = force ? { force: true } : {};
+
     try {
-      const [leadResult, quoteResult, projectResult] = await Promise.all([
-        leadsApi.listLeads(),
-        quotesApi.listQuotes(),
-        projectsApi.listProjects(),
+      const results = await Promise.allSettled([
+        leadsApi.listLeads(opts),
+        quotesApi.listQuotes({}, opts),
+        projectsApi.listProjects(opts),
       ]);
 
       if (!active) return;
-      setLeads(leadResult);
-      setQuotes(quoteResult);
-      setProjects(projectResult);
+
+      const [leadResult, quoteResult, projectResult] = results;
+
+      // Handle each result independently
+      if (leadResult.status === "fulfilled") {
+        setLeads(leadResult.value || []);
+      } else {
+        console.error("Failed to load leads:", leadResult.reason);
+        setLeads([]);
+      }
+
+      if (quoteResult.status === "fulfilled") {
+        setQuotes(quoteResult.value || []);
+      } else {
+        console.error("Failed to load quotes:", quoteResult.reason);
+        setQuotes([]);
+      }
+
+      if (projectResult.status === "fulfilled") {
+        setProjects(projectResult.value || []);
+      } else {
+        console.error("Failed to load projects:", projectResult.reason);
+        setProjects([]);
+      }
+
+      // Show error only if all three failed
+      if (
+        leadResult.status === "rejected" &&
+        quoteResult.status === "rejected" &&
+        projectResult.status === "rejected"
+      ) {
+        setError("Could not load bookings. Please try again.");
+      }
     } catch (apiError) {
       if (active) {
-        setError(apiError?.response?.data?.message || "Could not load bookings.");
+        setError(
+          apiError?.response?.data?.message || "Could not load bookings.",
+        );
       }
     } finally {
       if (active) setIsLoading(false);
@@ -546,7 +609,7 @@ export default function CustomerBookingsPage() {
 
   useEffect(() => {
     let active = true;
-    loadBookings(active);
+    loadBookings(active, true); // force-fresh on mount
     return () => {
       active = false;
     };
@@ -692,7 +755,13 @@ export default function CustomerBookingsPage() {
       <Stack spacing={1.35} sx={{ mt: 1.8 }}>
         {isLoading && <CustomerLoadingBlock mt={0} />}
 
-        {!isLoading && error && <CustomerErrorBlock message={error} onRetry={() => loadBookings(true)} mt={0} />}
+        {!isLoading && error && (
+          <CustomerErrorBlock
+            message={error}
+            onRetry={() => loadBookings(true, true)}
+            mt={0}
+          />
+        )}
 
         {!isLoading && !error && allCards.length === 0 && (
           <Box

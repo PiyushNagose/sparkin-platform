@@ -40,7 +40,7 @@ const projectSchema = new mongoose.Schema(
     quoteId: { type: String, required: true, unique: true, index: true },
     source: {
       type: String,
-      enum: ["accepted_quote", "vendor_manual"],
+      enum: ["accepted_quote", "vendor_manual", "direct_assignment"],
       default: "accepted_quote",
       index: true,
     },
@@ -90,6 +90,13 @@ const projectSchema = new mongoose.Schema(
       rejectionReason: { type: String, trim: true, default: null },
       reassignmentRequired: { type: Boolean, default: false },
     },
+    reassignment: {
+      reason: { type: String, trim: true, default: null },
+      reassignedAt: { type: Date, default: null },
+      reassignedBy: { type: String, default: null },
+      previousVendorId: { type: String, default: null },
+      isDirectAssignment: { type: Boolean, default: false },
+    },
     milestones: [
       {
         key: { type: String, required: true },
@@ -130,4 +137,5 @@ const projectSchema = new mongoose.Schema(
   },
 );
 
-export const ProjectModel = mongoose.models.Project ?? mongoose.model("Project", projectSchema);
+export const ProjectModel =
+  mongoose.models.Project ?? mongoose.model("Project", projectSchema);

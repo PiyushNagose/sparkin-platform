@@ -4,7 +4,16 @@ import {
   Box,
   Button,
   CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Select,
   Stack,
+  TextField,
   Typography,
 } from "@mui/material";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
@@ -20,7 +29,7 @@ import PlaceOutlinedIcon from "@mui/icons-material/PlaceOutlined";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import UploadFileOutlinedIcon from "@mui/icons-material/UploadFileOutlined";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link as RouterLink, useParams } from "react-router-dom";
+import { Link as RouterLink, useNavigate, useParams } from "react-router-dom";
 import {
   AdminErrorState,
   AdminLoadingState,
@@ -28,6 +37,7 @@ import {
   AdminPanel,
   adminUi,
 } from "@/features/admin/components/AdminPortalUI";
+import { adminVendorsApi } from "@/features/admin/api/adminApi";
 import { projectsApi } from "@/features/public/api/projectsApi";
 import LocationMapPreview from "@/shared/components/LocationMapPreview";
 
@@ -123,7 +133,13 @@ function getProjectView(project) {
         highlight: true,
       },
       { label: "Start Date", value: formatDate(project.createdAt) },
-      { label: "Project Status", value: project.status.replaceAll("_", " ") },
+      {
+        label: "Project Status",
+        value:
+          project.status === "cancelled"
+            ? "Cancelled"
+            : project.status.replaceAll("_", " "),
+      },
     ],
     milestones: project.milestones.map(toMilestoneNode),
     technicalSpecs: [
@@ -155,7 +171,14 @@ function getProjectView(project) {
           `Quote ID: ${project.quoteId}`,
         ],
       },
-      { title: "Current Stage", rows: [project.status.replaceAll("_", " ")] },
+      {
+        title: "Current Stage",
+        rows: [
+          project.status === "cancelled"
+            ? "Cancelled"
+            : project.status.replaceAll("_", " "),
+        ],
+      },
     ],
     activeMilestone: project.milestones.find((m) => m.status === "in_progress"),
     documents: (project.documents || []).map((doc) => ({
@@ -273,6 +296,7 @@ function MilestoneNode({ milestone, isFirst, isLast }) {
 
 export default function AdminProjectDetailPage() {
   const { projectId } = useParams();
+  const navigate = useNavigate();
   const documentInputRef = useRef(null);
   const [activeTab, setActiveTab] = useState("Installation Details");
   const [project, setProject] = useState(null);
@@ -281,6 +305,11 @@ export default function AdminProjectDetailPage() {
   const [isSendingReminder, setIsSendingReminder] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [reassignModal, setReassignModal] = useState(false);
+  const [vendors, setVendors] = useState([]);
+  const [selectedVendorId, setSelectedVendorId] = useState("");
+  const [reassignReason, setReassignReason] = useState("");
+  const [isReassigning, setIsReassigning] = useState(false);
 
   const projectView = useMemo(() => getProjectView(project), [project]);
   const displayTitle = projectView?.title ?? "Project Details";
@@ -305,12 +334,16 @@ export default function AdminProjectDetailPage() {
           bg: "#EFF5FF",
         },
       ];
-  const siteVisitReminderCount = project?.siteVisitFollowUp?.reminders?.length || 0;
+  const siteVisitReminderCount =
+    project?.siteVisitFollowUp?.reminders?.length || 0;
   const siteVisitCompleted = project?.milestones?.some(
-    (milestone) => milestone.key === "site_visit" && milestone.status === "completed",
+    (milestone) =>
+      milestone.key === "site_visit" && milestone.status === "completed",
   );
   const vendorRejected = Boolean(project?.siteVisitFollowUp?.vendorRejectedAt);
-  const reassignmentRequired = Boolean(project?.siteVisitFollowUp?.reassignmentRequired);
+  const reassignmentRequired = Boolean(
+    project?.siteVisitFollowUp?.reassignmentRequired,
+  );
   const nextReminderLabel =
     siteVisitReminderCount >= 2
       ? "Send Final Reminder & Reject Vendor"
@@ -348,6 +381,39 @@ export default function AdminProjectDetailPage() {
       setError(err?.response?.data?.message || "Could not send reminder.");
     } finally {
       setIsSendingReminder(false);
+    }
+  }
+
+  async function openReassignModal() {
+    setReassignModal(true);
+    setSelectedVendorId("");
+    setReassignReason("");
+    try {
+      const list = await adminVendorsApi.listVendors({ force: true });
+      setVendors(list.filter((v) => v.verificationStatus === "verified"));
+    } catch {
+      setVendors([]);
+    }
+  }
+
+  async function handleReassignVendor() {
+    if (!selectedVendorId) return;
+    setIsReassigning(true);
+    setError("");
+    try {
+      const newProject = await projectsApi.reassignVendor(projectId, {
+        newVendorId: selectedVendorId,
+        reason:
+          reassignReason.trim() ||
+          "Vendor reassignment after failed site visit",
+      });
+      setReassignModal(false);
+      // Navigate directly to the new project detail page
+      navigate(`/admin/customers-projects/${newProject.id}`);
+    } catch (err) {
+      setError(err?.response?.data?.message || "Could not reassign vendor.");
+    } finally {
+      setIsReassigning(false);
     }
   }
 
@@ -1047,8 +1113,12 @@ export default function AdminProjectDetailPage() {
                 : `${siteVisitReminderCount}/3 reminders sent to the assigned vendor.`}
             </Typography>
             {reassignmentRequired ? (
-              <Alert severity="warning" sx={{ mt: 1.2, borderRadius: "0.9rem" }}>
-                Vendor rejected after final reminder. Reassign this lead from vendor assignment.
+              <Alert
+                severity="warning"
+                sx={{ mt: 1.2, borderRadius: "0.9rem" }}
+              >
+                Vendor rejected after final reminder. Reassign this lead from
+                vendor assignment.
               </Alert>
             ) : null}
           </Box>
@@ -1077,9 +1147,7 @@ export default function AdminProjectDetailPage() {
             </Button>
             {reassignmentRequired ? (
               <Button
-                component={RouterLink}
-                to="/admin/vendor-assignment"
-                state={{ leadId: project?.leadId }}
+                onClick={openReassignModal}
                 variant="contained"
                 sx={{
                   minHeight: 42,
@@ -1144,6 +1212,93 @@ export default function AdminProjectDetailPage() {
           </Button>
         </Stack>
       </AdminPanel>
+
+      {/* Reassign Vendor Modal */}
+      <Dialog
+        open={reassignModal}
+        onClose={() => !isReassigning && setReassignModal(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: "1.2rem", p: 0.5 } }}
+      >
+        <DialogTitle
+          sx={{
+            fontWeight: 900,
+            fontSize: "1.1rem",
+            color: adminUi.colors.text,
+          }}
+        >
+          Reassign Project Vendor
+        </DialogTitle>
+        <DialogContent>
+          <Typography sx={{ mb: 2, color: "#647286", fontSize: "0.84rem" }}>
+            Select a verified vendor to take over this project. The same
+            quotation and pricing will be used — no new bidding required.
+          </Typography>
+          <FormControl fullWidth size="small" sx={{ mb: 2 }}>
+            <InputLabel>Select Vendor</InputLabel>
+            <Select
+              label="Select Vendor"
+              value={selectedVendorId}
+              onChange={(e) => setSelectedVendorId(e.target.value)}
+            >
+              {vendors.length === 0 ? (
+                <MenuItem disabled value="">
+                  No verified vendors available
+                </MenuItem>
+              ) : (
+                vendors.map((v) => (
+                  <MenuItem key={v.vendorId} value={v.vendorId}>
+                    {v.company?.name || v.account?.fullName || v.account?.email}
+                    {v.company?.city ? ` — ${v.company.city}` : ""}
+                    {v.vendorId === project?.vendorId
+                      ? " (Previous Vendor)"
+                      : ""}
+                  </MenuItem>
+                ))
+              )}
+            </Select>
+          </FormControl>
+          <TextField
+            fullWidth
+            size="small"
+            label="Reason (optional)"
+            placeholder="e.g. Vendor failed to complete site visit after 3 reminders"
+            value={reassignReason}
+            onChange={(e) => setReassignReason(e.target.value)}
+            multiline
+            rows={2}
+          />
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
+          <Button
+            onClick={() => setReassignModal(false)}
+            disabled={isReassigning}
+            sx={{
+              borderRadius: "0.8rem",
+              textTransform: "none",
+              color: "#647286",
+              fontWeight: 700,
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleReassignVendor}
+            disabled={!selectedVendorId || isReassigning}
+            variant="contained"
+            sx={{
+              borderRadius: "0.8rem",
+              textTransform: "none",
+              fontWeight: 800,
+              bgcolor: "#0E56C8",
+              px: 2.5,
+            }}
+          >
+            {isReassigning ? "Assigning..." : "Confirm & Create Project"}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </AdminPageShell>
   );
 }

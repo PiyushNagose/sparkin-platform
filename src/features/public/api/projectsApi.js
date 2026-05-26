@@ -1,5 +1,8 @@
 import { fulfillmentClient } from "@/shared/lib/http/fulfillmentClient";
-import { cachedGet, invalidateRequestCache } from "@/shared/lib/http/requestCache";
+import {
+  cachedGet,
+  invalidateRequestCache,
+} from "@/shared/lib/http/requestCache";
 
 function requireId(id, label) {
   if (!id || id === "undefined") {
@@ -63,6 +66,17 @@ export const projectsApi = {
       payload,
     );
     invalidateRequestCache("/projects");
+    return data.project;
+  },
+
+  async reassignVendor(projectId, payload) {
+    const { data } = await fulfillmentClient.post(
+      `/projects/${requireId(projectId, "Project id")}/reassign-vendor`,
+      payload,
+    );
+    invalidateRequestCache(
+      (key) => key.includes("/projects") || key.includes("/leads"),
+    );
     return data.project;
   },
 };
