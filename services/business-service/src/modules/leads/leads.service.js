@@ -2,6 +2,7 @@ import { AppError } from "../../common/errors/app-error.js";
 import { leadsRepository } from "./leads.repository.js";
 import { platformSettingsService } from "../platform-settings/platform-settings.service.js";
 import { vendorsRepository } from "../vendors/vendors.repository.js";
+import { quotesRepository } from "../quotes/quotes.repository.js";
 import mongoose from "mongoose";
 
 function roundToNearest(value, step = 1000) {
@@ -28,26 +29,49 @@ function roofSizePotential(sizeRange) {
   return 6;
 }
 
-function scoreRoof({ attachment, roof = {}, property = {}, calculatorEstimate = null }) {
+function scoreRoof({
+  attachment,
+  roof = {},
+  property = {},
+  calculatorEstimate = null,
+}) {
   const isImage = String(attachment?.mimeType || "").startsWith("image/");
-  const hasCaptureContext = Boolean(attachment?.capturedAt || attachment?.location?.latitude);
+  const hasCaptureContext = Boolean(
+    attachment?.capturedAt || attachment?.location?.latitude,
+  );
   const imageQualityScore = isImage ? (attachment.size > 80_000 ? 20 : 14) : 6;
-  const shadowScore = roof.shadow === "none" ? 28 : roof.shadow === "partial" ? 18 : 7;
+  const shadowScore =
+    roof.shadow === "none" ? 28 : roof.shadow === "partial" ? 18 : 7;
   const conditionScore =
     roof.condition === "excellent" ? 24 : roof.condition === "average" ? 17 : 8;
   const contextScore = hasCaptureContext ? 14 : 9;
   const roofTypeScore = property.roofType === "flat" ? 12 : 10;
   const accuracyPercent = Math.min(
     98,
-    Math.max(58, imageQualityScore + shadowScore + conditionScore + contextScore + roofTypeScore),
+    Math.max(
+      58,
+      imageQualityScore +
+        shadowScore +
+        conditionScore +
+        contextScore +
+        roofTypeScore,
+    ),
   );
   const basePotential =
     Number(calculatorEstimate?.system?.recommendedSizeKw) ||
     Number(property.sanctionedLoadKw) ||
     roofSizePotential(roof.sizeRange);
-  const shadowFactor = roof.shadow === "heavy" ? 0.62 : roof.shadow === "partial" ? 0.82 : 1;
-  const conditionFactor = roof.condition === "needs_repair" ? 0.72 : roof.condition === "average" ? 0.9 : 1;
-  const potentialKw = Number((basePotential * shadowFactor * conditionFactor).toFixed(1));
+  const shadowFactor =
+    roof.shadow === "heavy" ? 0.62 : roof.shadow === "partial" ? 0.82 : 1;
+  const conditionFactor =
+    roof.condition === "needs_repair"
+      ? 0.72
+      : roof.condition === "average"
+        ? 0.9
+        : 1;
+  const potentialKw = Number(
+    (basePotential * shadowFactor * conditionFactor).toFixed(1),
+  );
   const status =
     accuracyPercent >= 90 && potentialKw >= 3
       ? "ideal"
@@ -64,7 +88,9 @@ function scoreRoof({ attachment, roof = {}, property = {}, calculatorEstimate = 
   }[status];
 
   const findings = [
-    isImage ? "Roof reference image detected" : "PDF/reference document uploaded",
+    isImage
+      ? "Roof reference image detected"
+      : "PDF/reference document uploaded",
     roof.shadow === "heavy"
       ? "Heavy shadow may reduce generation"
       : roof.shadow === "partial"
@@ -134,7 +160,10 @@ async function buildCommercialRange(lead, input = {}) {
   );
 
   if (minAmount >= maxAmount) {
-    throw new AppError(400, "Minimum bid amount must be less than maximum bid amount");
+    throw new AppError(
+      400,
+      "Minimum bid amount must be less than maximum bid amount",
+    );
   }
 
   return {
@@ -198,7 +227,10 @@ export const leadsService = {
 
   async analyzeRoof(user, input) {
     if (!["customer", "vendor", "admin"].includes(user.role)) {
-      throw new AppError(403, "You do not have permission to analyze roof images");
+      throw new AppError(
+        403,
+        "You do not have permission to analyze roof images",
+      );
     }
 
     return scoreRoof(input);
@@ -298,14 +330,35 @@ export const leadsService = {
     }
     if (
       !lead.verifiedAt &&
-      !["verified", "vendors_assigned", "open_for_quotes", "quote_selected"].includes(
-        lead.status,
-      )
+      ![
+        "verified",
+        "vendors_assigned",
+        "open_for_quotes",
+        "quote_selected",
+      ].includes(lead.status)
     ) {
       throw new AppError(409, "Verify this lead before assigning vendors");
     }
 
-    const vendorIds = [...new Set(input.vendorIds)];
+    let vendorIds = input.vendorIds || [];
+
+    // If selectAll is true, fetch all verified vendors
+    if (input.selectAll) {
+      const allVendors = await vendorsRepository.findAll();
+      vendorIds = allVendors
+        .filter((vendor) => vendor.verificationStatus === "verified")
+        .map((vendor) => vendor.vendorId);
+
+      if (!vendorIds.length) {
+        throw new AppError(400, "No verified vendors available to assign");
+      }
+    } else {
+      vendorIds = [...new Set(vendorIds)];
+      if (!vendorIds.length) {
+        throw new AppError(400, "At least one vendor must be specified");
+      }
+    }
+
     const vendorProfiles = await Promise.all(
       vendorIds.map((vendorId) => vendorsRepository.findByVendorId(vendorId)),
     );
@@ -314,7 +367,10 @@ export const leadsService = {
     );
 
     if (unapprovedVendor) {
-      throw new AppError(400, "Only approved partners can be assigned to leads");
+      throw new AppError(
+        400,
+        "Only approved partners can be assigned to leads",
+      );
     }
 
     const bidDetails = await buildCommercialRange(lead);

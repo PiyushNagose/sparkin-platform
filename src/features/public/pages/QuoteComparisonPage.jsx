@@ -41,7 +41,9 @@ function formatWindow(value) {
 }
 
 function toQuoteCard(quote, index) {
-  const vendorName = quote.vendorEmail ? quote.vendorEmail.split("@")[0] : `Vendor ${index + 1}`;
+  const vendorName = quote.vendorEmail
+    ? quote.vendorEmail.split("@")[0]
+    : `Vendor ${index + 1}`;
 
   return {
     id: quote.id,
@@ -120,9 +122,15 @@ function QuoteCard({
                 {vendor}
               </Typography>
               <Stack direction="row" spacing={0.35} alignItems="center">
-                <StarRoundedIcon sx={{ fontSize: "0.76rem", color: "#F2B12A" }} />
+                <StarRoundedIcon
+                  sx={{ fontSize: "0.76rem", color: "#F2B12A" }}
+                />
                 <Typography
-                  sx={{ color: "#495669", fontSize: "0.58rem", fontWeight: 700 }}
+                  sx={{
+                    color: "#495669",
+                    fontSize: "0.58rem",
+                    fontWeight: 700,
+                  }}
                 >
                   {rating}
                 </Typography>
@@ -187,7 +195,12 @@ function QuoteCard({
                 System Size
               </Typography>
               <Typography
-                sx={{ color: "#223043", fontSize: "0.64rem", fontWeight: 700, mt: 0.42 }}
+                sx={{
+                  color: "#223043",
+                  fontSize: "0.64rem",
+                  fontWeight: 700,
+                  mt: 0.42,
+                }}
               >
                 {system}
               </Typography>
@@ -207,7 +220,12 @@ function QuoteCard({
                 Warranty
               </Typography>
               <Typography
-                sx={{ color: "#223043", fontSize: "0.64rem", fontWeight: 700, mt: 0.42 }}
+                sx={{
+                  color: "#223043",
+                  fontSize: "0.64rem",
+                  fontWeight: 700,
+                  mt: 0.42,
+                }}
               >
                 {warranty}
               </Typography>
@@ -227,7 +245,12 @@ function QuoteCard({
                 Delivery
               </Typography>
               <Typography
-                sx={{ color: "#223043", fontSize: "0.64rem", fontWeight: 700, mt: 0.42 }}
+                sx={{
+                  color: "#223043",
+                  fontSize: "0.64rem",
+                  fontWeight: 700,
+                  mt: 0.42,
+                }}
               >
                 {delivery}
               </Typography>
@@ -292,14 +315,19 @@ export default function QuoteComparisonPage() {
       try {
         const [result, leadResult] = await Promise.all([
           quotesApi.listQuotes(leadId ? { leadId } : {}, { force: true }),
-          leadId ? leadsApi.getLead(leadId, { force: true }) : Promise.resolve(null),
+          leadId
+            ? leadsApi.getLead(leadId, { force: true })
+            : Promise.resolve(null),
         ]);
         if (active) {
           setSubmittedQuotes(result);
           setLead(leadResult);
         }
       } catch (apiError) {
-        if (active) setError(apiError?.response?.data?.message || "Could not load quotes.");
+        if (active)
+          setError(
+            apiError?.response?.data?.message || "Could not load quotes.",
+          );
       } finally {
         if (active) setIsLoading(false);
       }
@@ -328,15 +356,39 @@ export default function QuoteComparisonPage() {
     });
   }, [lead, leadId, submittedQuotes]);
 
-  const quoteCards = useMemo(() => scopedQuotes.map(toQuoteCard), [scopedQuotes]);
-  const biddingEndsAt = lead?.biddingEndsAt || scopedQuotes[0]?.lead?.biddingEndsAt;
+  const quoteCards = useMemo(
+    () => scopedQuotes.map(toQuoteCard),
+    [scopedQuotes],
+  );
+  const biddingEndsAt =
+    lead?.biddingEndsAt || scopedQuotes[0]?.lead?.biddingEndsAt;
+  const [seconds, setSeconds] = useState(0);
+
+  useEffect(() => {
+    if (!biddingEndsAt) return;
+
+    const updateCountdown = () => {
+      const remainingMs = Math.max(
+        0,
+        new Date(biddingEndsAt).getTime() - Date.now(),
+      );
+      const hours = Math.floor(remainingMs / 3600000);
+      const minutes = Math.floor((remainingMs % 3600000) / 60000);
+      const secs = Math.floor((remainingMs % 60000) / 1000);
+      setSeconds({ hours, minutes, secs, remaining: remainingMs });
+    };
+
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 1000);
+
+    return () => clearInterval(interval);
+  }, [biddingEndsAt]);
+
   const countdown = useMemo(() => {
     if (!biddingEndsAt) return "48h window";
-    const remainingMs = Math.max(0, new Date(biddingEndsAt).getTime() - Date.now());
-    const hours = Math.floor(remainingMs / 3600000);
-    const minutes = Math.floor((remainingMs % 3600000) / 60000);
-    return remainingMs > 0 ? `${hours}h ${minutes}m remaining` : "Bidding closed";
-  }, [biddingEndsAt, scopedQuotes.length]);
+    if (!seconds.remaining) return "Bidding closed";
+    return `${seconds.hours}h ${seconds.minutes}m ${seconds.secs}s remaining`;
+  }, [biddingEndsAt, seconds]);
 
   if (!isLoading && !error && quoteCards.length === 0) {
     if (leadId) {
@@ -349,7 +401,11 @@ export default function QuoteComparisonPage() {
               bgcolor: "#F9FBFD",
             }}
           >
-            <Container maxWidth={false} disableGutters className={styles.contentContainer}>
+            <Container
+              maxWidth={false}
+              disableGutters
+              className={styles.contentContainer}
+            >
               <Stack spacing={1.4} sx={{ maxWidth: 560 }}>
                 <Typography
                   variant="h1"
@@ -361,8 +417,15 @@ export default function QuoteComparisonPage() {
                 >
                   Quotes are not in yet
                 </Typography>
-                <Typography sx={{ color: "#667084", fontSize: "0.95rem", lineHeight: 1.6 }}>
-                  Assigned vendors will appear here instantly after they submit proposals for this booking.
+                <Typography
+                  sx={{
+                    color: "#667084",
+                    fontSize: "0.95rem",
+                    lineHeight: 1.6,
+                  }}
+                >
+                  Assigned vendors will appear here instantly after they submit
+                  proposals for this booking.
                 </Typography>
               </Stack>
             </Container>
@@ -418,7 +481,8 @@ export default function QuoteComparisonPage() {
                     maxWidth: 360,
                   }}
                 >
-                Verified vendors submit proposals here as soon as they quote your booking request.
+                  Verified vendors submit proposals here as soon as they quote
+                  your booking request.
                 </Typography>
               </Box>
 
@@ -436,7 +500,8 @@ export default function QuoteComparisonPage() {
                   textTransform: "uppercase",
                 }}
               >
-                verified {quoteCards.length} proposal{quoteCards.length === 1 ? "" : "s"} received
+                verified {quoteCards.length} proposal
+                {quoteCards.length === 1 ? "" : "s"} received
               </Box>
             </Stack>
 
@@ -481,7 +546,11 @@ export default function QuoteComparisonPage() {
                     </Typography>
                   </Stack>
                   <Typography
-                    sx={{ color: "rgba(255,255,255,0.52)", fontSize: "0.56rem", mt: 0.25 }}
+                    sx={{
+                      color: "rgba(255,255,255,0.52)",
+                      fontSize: "0.56rem",
+                      mt: 0.25,
+                    }}
                   >
                     Real-time updates
                   </Typography>
@@ -508,7 +577,8 @@ export default function QuoteComparisonPage() {
 
             {error ? (
               <Alert severity="error" sx={{ borderRadius: "0.9rem" }}>
-                {error} Please make sure you are logged in as the customer who created the booking.
+                {error} Please make sure you are logged in as the customer who
+                created the booking.
               </Alert>
             ) : null}
 
@@ -550,7 +620,8 @@ export default function QuoteComparisonPage() {
                         lineHeight: 1.65,
                       }}
                     >
-                      Our experts can help you compare these quotes line-by-line to find hidden costs and technical advantages.
+                      Our experts can help you compare these quotes line-by-line
+                      to find hidden costs and technical advantages.
                     </Typography>
                     <Button
                       variant="contained"
@@ -605,7 +676,11 @@ export default function QuoteComparisonPage() {
                           boxShadow: "0 12px 26px rgba(17,31,54,0.16)",
                         }}
                       >
-                        <Stack direction="row" spacing={1.1} alignItems="center">
+                        <Stack
+                          direction="row"
+                          spacing={1.1}
+                          alignItems="center"
+                        >
                           <Box
                             sx={{
                               px: 0.7,

@@ -6,6 +6,7 @@ import { projectsController } from "./projects.controller.js";
 import {
   createManualProjectSchema,
   createProjectSchema,
+  reassignProjectVendorSchema,
   sendSiteVisitReminderSchema,
   submitProjectOnboardingSchema,
   updateProjectMilestoneSchema,
@@ -16,7 +17,11 @@ export const projectsRouter = Router();
 
 projectsRouter.use(requireAuth);
 projectsRouter.get("/", asyncHandler(projectsController.list));
-projectsRouter.post("/manual", validate(createManualProjectSchema), asyncHandler(projectsController.createManual));
+projectsRouter.post(
+  "/manual",
+  validate(createManualProjectSchema),
+  asyncHandler(projectsController.createManual),
+);
 projectsRouter.get("/:projectId", asyncHandler(projectsController.getById));
 projectsRouter.patch(
   "/:projectId/milestone",
@@ -38,4 +43,13 @@ projectsRouter.post(
   validate(uploadProjectDocumentSchema),
   asyncHandler(projectsController.uploadDocument),
 );
-projectsRouter.post("/from-accepted-quote", validate(createProjectSchema), asyncHandler(projectsController.createFromAcceptedQuote));
+projectsRouter.post(
+  "/:projectId/reassign-vendor",
+  validate(reassignProjectVendorSchema),
+  asyncHandler(projectsController.reassignVendor),
+);
+projectsRouter.post(
+  "/from-accepted-quote",
+  validate(createProjectSchema),
+  asyncHandler(projectsController.createFromAcceptedQuote),
+);

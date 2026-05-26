@@ -21,11 +21,18 @@ import ReplayRoundedIcon from "@mui/icons-material/ReplayRounded";
 import VerifiedOutlinedIcon from "@mui/icons-material/VerifiedOutlined";
 import WbSunnyOutlinedIcon from "@mui/icons-material/WbSunnyOutlined";
 import { useEffect, useState } from "react";
-import { Link as RouterLink, useLocation, useNavigate, useParams } from "react-router-dom";
+import {
+  Link as RouterLink,
+  useLocation,
+  useNavigate,
+  useParams,
+} from "react-router-dom";
 import styles from "@/features/public/pages/CalculatorPage.module.css";
 import { publicPageSpacing } from "@/features/public/pages/publicPageStyles";
 import { leadsApi, quotesApi } from "@/features/public/api/leadsApi";
 import { paymentsApi } from "@/features/public/api/paymentsApi";
+import { projectsApi } from "@/features/public/api/projectsApi";
+import { pollUntil } from "@/shared/lib/http/pollUntil";
 import roofTipImage from "@/shared/assets/images/public/booking/roof-tip-placeholder.png";
 
 const rupeeFormatter = new Intl.NumberFormat("en-IN", {
@@ -137,10 +144,19 @@ function TrustBadge({ icon, title, subtitle }) {
         {icon}
       </Box>
       <Box sx={{ minWidth: 0 }}>
-        <Typography sx={{ color: "#151B22", fontSize: "0.72rem", fontWeight: 850, lineHeight: 1.25 }}>
+        <Typography
+          sx={{
+            color: "#151B22",
+            fontSize: "0.72rem",
+            fontWeight: 850,
+            lineHeight: 1.25,
+          }}
+        >
           {title}
         </Typography>
-        <Typography sx={{ color: "#667386", fontSize: "0.62rem", lineHeight: 1.35 }}>
+        <Typography
+          sx={{ color: "#667386", fontSize: "0.62rem", lineHeight: 1.35 }}
+        >
           {subtitle}
         </Typography>
       </Box>
@@ -163,7 +179,14 @@ function FieldBlock({ label, value }) {
       >
         {label}
       </Typography>
-      <Typography sx={{ color: "#151B22", fontSize: "0.86rem", fontWeight: 750, lineHeight: 1.45 }}>
+      <Typography
+        sx={{
+          color: "#151B22",
+          fontSize: "0.86rem",
+          fontWeight: 750,
+          lineHeight: 1.45,
+        }}
+      >
         {value || "-"}
       </Typography>
     </Box>
@@ -215,7 +238,9 @@ export default function BookingPaymentPage() {
       } catch (err) {
         if (active) {
           setLoadError(
-            err?.response?.data?.message || err.message || "Could not load booking details.",
+            err?.response?.data?.message ||
+              err.message ||
+              "Could not load booking details.",
           );
           setLoading(false);
         }
@@ -237,9 +262,13 @@ export default function BookingPaymentPage() {
     quote?.pricing?.totalPrice || lead?.estimatedCost || systemSizeKw * 65000;
   const commitmentFee = Math.round(estimatedTotal * 0.1);
   const firstMilestoneAmount = Math.round(estimatedTotal * 0.4);
-  const finalMilestoneAmount = estimatedTotal - commitmentFee - firstMilestoneAmount;
+  const finalMilestoneAmount =
+    estimatedTotal - commitmentFee - firstMilestoneAmount;
   const remainingAmount = estimatedTotal - commitmentFee;
-  const location = [lead?.installationAddress?.city, lead?.installationAddress?.state]
+  const location = [
+    lead?.installationAddress?.city,
+    lead?.installationAddress?.state,
+  ]
     .filter(Boolean)
     .join(", ");
   const address = [
@@ -251,7 +280,9 @@ export default function BookingPaymentPage() {
     .filter(Boolean)
     .join(", ");
   const systemLabel = `${systemSizeKw}kW ${lead?.property?.type === "commercial" ? "Commercial" : "Residential"} Solar`;
-  const selectedMethodMeta = paymentMethods.find((method) => method.id === selectedMethod);
+  const selectedMethodMeta = paymentMethods.find(
+    (method) => method.id === selectedMethod,
+  );
   const isCod = !selectedMethodMeta?.online;
 
   const buttonLabel = isCod
@@ -269,7 +300,9 @@ export default function BookingPaymentPage() {
         await paymentsApi.confirmCodPayment(bookingAdvancePaymentId);
       }
       if (result?.project?.id) {
-        navigate(`/project/installation?projectId=${result.project.id}`, { replace: true });
+        navigate(`/project/installation?projectId=${result.project.id}`, {
+          replace: true,
+        });
       } else {
         navigate("/project/installation", { replace: true });
       }
@@ -285,7 +318,9 @@ export default function BookingPaymentPage() {
   async function openRazorpay(bookingAdvancePaymentId, orderData) {
     const loaded = await loadRazorpayScript();
     if (!loaded) {
-      throw new Error("Could not load payment gateway. Please check your connection and try again.");
+      throw new Error(
+        "Could not load payment gateway. Please check your connection and try again.",
+      );
     }
 
     return new Promise((resolve, reject) => {
@@ -329,8 +364,36 @@ export default function BookingPaymentPage() {
 
     try {
       let result = null;
+      let projectId = null;
+
       if (quoteId) {
         result = await quotesApi.acceptQuote(quoteId);
+
+        // Poll for project creation with exponential backoff
+        // Project should be created within 5-10 seconds after quote acceptance
+        try {
+          const project = await pollUntil(
+            async () => {
+              const projects = await projectsApi.listProjects({ force: true });
+              return projects.find(
+                (p) => String(p.quoteId) === String(quoteId),
+              );
+            },
+            {
+              maxAttempts: 20,
+              delayMs: 300,
+              backoffMultiplier: 1.1,
+              timeoutMs: 10000,
+            },
+          );
+          projectId = project?.id;
+        } catch (pollErr) {
+          console.warn(
+            "Project polling timeout, but quote was accepted:",
+            pollErr.message,
+          );
+          // Continue anyway - project might be created shortly
+        }
       }
 
       if (isCod) {
@@ -352,17 +415,28 @@ export default function BookingPaymentPage() {
         throw new Error("Could not find payment record. Please try again.");
       }
 
-      const orderData = await paymentsApi.createRazorpayOrder(bookingAdvancePaymentId);
+      const orderData = await paymentsApi.createRazorpayOrder(
+        bookingAdvancePaymentId,
+      );
       await openRazorpay(bookingAdvancePaymentId, orderData);
 
-      if (result?.project?.id) {
-        navigate(`/project/installation?projectId=${result.project.id}`, { replace: true });
+      // After successful payment, navigate to project
+      if (projectId) {
+        navigate(`/project/installation?projectId=${projectId}`, {
+          replace: true,
+        });
+      } else if (result?.project?.id) {
+        navigate(`/project/installation?projectId=${result.project.id}`, {
+          replace: true,
+        });
       } else {
         navigate("/project/installation", { replace: true });
       }
     } catch (err) {
       setPayError(
-        err?.response?.data?.message || err.message || "Payment could not be processed. Please try again.",
+        err?.response?.data?.message ||
+          err.message ||
+          "Payment could not be processed. Please try again.",
       );
     } finally {
       setIsPaying(false);
@@ -373,7 +447,12 @@ export default function BookingPaymentPage() {
     return (
       <Box
         className={styles.pageShell}
-        sx={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh" }}
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          minHeight: "100vh",
+        }}
       >
         <CircularProgress size={36} sx={{ color: "#0E56C8" }} />
       </Box>
@@ -394,8 +473,14 @@ export default function BookingPaymentPage() {
             justifyContent: "center",
           }}
         >
-          <Stack alignItems="center" spacing={2} sx={{ textAlign: "center", px: 2 }}>
-            <Typography sx={{ color: "#202938", fontSize: "1.1rem", fontWeight: 700 }}>
+          <Stack
+            alignItems="center"
+            spacing={2}
+            sx={{ textAlign: "center", px: 2 }}
+          >
+            <Typography
+              sx={{ color: "#202938", fontSize: "1.1rem", fontWeight: 700 }}
+            >
               {loadError || "Booking not found"}
             </Typography>
             <Button
@@ -451,14 +536,25 @@ export default function BookingPaymentPage() {
             >
               Confirm Your Solar Request
             </Typography>
-            <Typography sx={{ mt: 1, color: "#526070", fontSize: { xs: "0.92rem", md: "1rem" }, lineHeight: 1.55 }}>
+            <Typography
+              sx={{
+                mt: 1,
+                color: "#526070",
+                fontSize: { xs: "0.92rem", md: "1rem" },
+                lineHeight: 1.55,
+              }}
+            >
               {quote
                 ? "Pay the confirmation amount to lock your selected vendor and open your project tracker."
                 : "Pay 10% commitment fee to start receiving verified vendor quotes and personalized engineering plans."}
             </Typography>
           </Box>
 
-          <Grid container spacing={{ xs: 2.5, md: 4, lg: 5 }} alignItems="flex-start">
+          <Grid
+            container
+            spacing={{ xs: 2.5, md: 4, lg: 5 }}
+            alignItems="flex-start"
+          >
             <Grid item xs={12} md={7.2}>
               <Stack spacing={2.4}>
                 <Box
@@ -503,13 +599,28 @@ export default function BookingPaymentPage() {
                     >
                       ACTIVE REQUEST
                     </Box>
-                    <Typography sx={{ color: "#151B22", fontSize: { xs: "1.15rem", md: "1.25rem" }, fontWeight: 900, lineHeight: 1.2 }}>
+                    <Typography
+                      sx={{
+                        color: "#151B22",
+                        fontSize: { xs: "1.15rem", md: "1.25rem" },
+                        fontWeight: 900,
+                        lineHeight: 1.2,
+                      }}
+                    >
                       {systemLabel}
                     </Typography>
                     {location ? (
                       <Stack direction="row" spacing={0.5} alignItems="center">
-                        <LocationOnOutlinedIcon sx={{ fontSize: "0.82rem", color: "#526070" }} />
-                        <Typography sx={{ color: "#526070", fontSize: "0.76rem", fontWeight: 650 }}>
+                        <LocationOnOutlinedIcon
+                          sx={{ fontSize: "0.82rem", color: "#526070" }}
+                        />
+                        <Typography
+                          sx={{
+                            color: "#526070",
+                            fontSize: "0.76rem",
+                            fontWeight: 650,
+                          }}
+                        >
                           {location}
                         </Typography>
                       </Stack>
@@ -526,7 +637,12 @@ export default function BookingPaymentPage() {
                     boxShadow: "0 16px 44px rgba(31,44,64,0.045)",
                   }}
                 >
-                  <Stack direction="row" spacing={0.7} alignItems="center" sx={{ mb: 1.8 }}>
+                  <Stack
+                    direction="row"
+                    spacing={0.7}
+                    alignItems="center"
+                    sx={{ mb: 1.8 }}
+                  >
                     <Box
                       sx={{
                         width: 22,
@@ -540,20 +656,35 @@ export default function BookingPaymentPage() {
                     >
                       <PersonOutlineRoundedIcon sx={{ fontSize: "0.9rem" }} />
                     </Box>
-                    <Typography sx={{ color: "#151B22", fontSize: "0.9rem", fontWeight: 850 }}>
+                    <Typography
+                      sx={{
+                        color: "#151B22",
+                        fontSize: "0.9rem",
+                        fontWeight: 850,
+                      }}
+                    >
                       Customer Details
                     </Typography>
                   </Stack>
 
                   <Grid container spacing={2}>
                     <Grid item xs={12} sm={6}>
-                      <FieldBlock label="Full Name" value={lead.contact?.fullName} />
+                      <FieldBlock
+                        label="Full Name"
+                        value={lead.contact?.fullName}
+                      />
                     </Grid>
                     <Grid item xs={12} sm={6}>
-                      <FieldBlock label="Phone Number" value={lead.contact?.phoneNumber} />
+                      <FieldBlock
+                        label="Phone Number"
+                        value={lead.contact?.phoneNumber}
+                      />
                     </Grid>
                     <Grid item xs={12}>
-                      <FieldBlock label="Installation Address" value={address} />
+                      <FieldBlock
+                        label="Installation Address"
+                        value={address}
+                      />
                     </Grid>
                   </Grid>
                 </Box>
@@ -579,33 +710,86 @@ export default function BookingPaymentPage() {
                     },
                   }}
                 >
-                  <Typography sx={{ color: "#151B22", fontSize: "1rem", fontWeight: 850, mb: 2 }}>
+                  <Typography
+                    sx={{
+                      color: "#151B22",
+                      fontSize: "1rem",
+                      fontWeight: 850,
+                      mb: 2,
+                    }}
+                  >
                     Payment Summary
                   </Typography>
 
                   <Stack spacing={1.4} sx={{ position: "relative", zIndex: 1 }}>
-                    <Stack direction="row" justifyContent="space-between" alignItems="center">
-                      <Typography sx={{ color: "#526070", fontSize: "0.88rem" }}>
+                    <Stack
+                      direction="row"
+                      justifyContent="space-between"
+                      alignItems="center"
+                    >
+                      <Typography
+                        sx={{ color: "#526070", fontSize: "0.88rem" }}
+                      >
                         Estimated Total
                       </Typography>
-                      <Typography sx={{ color: "#151B22", fontSize: "0.88rem", fontWeight: 750 }}>
+                      <Typography
+                        sx={{
+                          color: "#151B22",
+                          fontSize: "0.88rem",
+                          fontWeight: 750,
+                        }}
+                      >
                         {formatMoney(estimatedTotal)}
                       </Typography>
                     </Stack>
 
-                    <Box sx={{ p: 1.6, borderRadius: "0.85rem", bgcolor: "#F1F5FA", borderLeft: "4px solid #0E56C8" }}>
-                      <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={2}>
+                    <Box
+                      sx={{
+                        p: 1.6,
+                        borderRadius: "0.85rem",
+                        bgcolor: "#F1F5FA",
+                        borderLeft: "4px solid #0E56C8",
+                      }}
+                    >
+                      <Stack
+                        direction="row"
+                        justifyContent="space-between"
+                        alignItems="center"
+                        spacing={2}
+                      >
                         <Box>
-                          <Typography sx={{ color: "#0E56C8", fontSize: "0.72rem", fontWeight: 850, textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                            {isCod ? "Commitment Fee (10%) - Pay on Visit" : "Commitment Fee (10%)"}
+                          <Typography
+                            sx={{
+                              color: "#0E56C8",
+                              fontSize: "0.72rem",
+                              fontWeight: 850,
+                              textTransform: "uppercase",
+                              letterSpacing: "0.06em",
+                            }}
+                          >
+                            {isCod
+                              ? "Commitment Fee (10%) - Pay on Visit"
+                              : "Commitment Fee (10%)"}
                           </Typography>
-                          <Typography sx={{ color: "#526070", fontSize: "0.66rem", mt: 0.2 }}>
+                          <Typography
+                            sx={{
+                              color: "#526070",
+                              fontSize: "0.66rem",
+                              mt: 0.2,
+                            }}
+                          >
                             {isCod
                               ? "You will pay this amount when the vendor visits your site"
                               : "Fully refundable if you don't find a match"}
                           </Typography>
                         </Box>
-                        <Typography sx={{ color: "#0E56C8", fontSize: "1.42rem", fontWeight: 950 }}>
+                        <Typography
+                          sx={{
+                            color: "#0E56C8",
+                            fontSize: "1.42rem",
+                            fontWeight: 950,
+                          }}
+                        >
                           {formatMoney(commitmentFee)}
                         </Typography>
                       </Stack>
@@ -613,27 +797,63 @@ export default function BookingPaymentPage() {
 
                     <Divider sx={{ borderColor: "#EEF2F7" }} />
 
-                    <Stack direction="row" justifyContent="space-between" alignItems="center">
-                      <Typography sx={{ color: "#151B22", fontSize: "0.92rem", fontWeight: 850 }}>
-                        {isCod ? "Amount Payable on Visit" : "Amount Payable Now"}
+                    <Stack
+                      direction="row"
+                      justifyContent="space-between"
+                      alignItems="center"
+                    >
+                      <Typography
+                        sx={{
+                          color: "#151B22",
+                          fontSize: "0.92rem",
+                          fontWeight: 850,
+                        }}
+                      >
+                        {isCod
+                          ? "Amount Payable on Visit"
+                          : "Amount Payable Now"}
                       </Typography>
-                      <Typography sx={{ color: "#151B22", fontSize: "1.24rem", fontWeight: 950 }}>
+                      <Typography
+                        sx={{
+                          color: "#151B22",
+                          fontSize: "1.24rem",
+                          fontWeight: 950,
+                        }}
+                      >
                         {formatMoney(commitmentFee)}
                       </Typography>
                     </Stack>
 
                     <Divider sx={{ borderColor: "#EEF2F7" }} />
 
-                    <Stack direction="row" justifyContent="space-between" alignItems="center">
+                    <Stack
+                      direction="row"
+                      justifyContent="space-between"
+                      alignItems="center"
+                    >
                       <Box>
-                        <Typography sx={{ color: "#526070", fontSize: "0.82rem", fontWeight: 650 }}>
+                        <Typography
+                          sx={{
+                            color: "#526070",
+                            fontSize: "0.82rem",
+                            fontWeight: 650,
+                          }}
+                        >
                           Remaining Balance
                         </Typography>
-                        <Typography sx={{ color: "#8A96A8", fontSize: "0.66rem" }}>
+                        <Typography
+                          sx={{ color: "#8A96A8", fontSize: "0.66rem" }}
+                        >
                           Due after installation milestones
                         </Typography>
                       </Box>
-                      <Typography sx={{ color: "#526070", fontSize: "0.96rem", fontWeight: 750 }}>
+                      <Typography
+                        sx={{
+                          color: "#526070",
+                          fontSize: "0.96rem",
+                          fontWeight: 750,
+                        }}
+                      >
                         {formatMoney(remainingAmount)}
                       </Typography>
                     </Stack>
@@ -646,8 +866,16 @@ export default function BookingPaymentPage() {
                       }}
                     >
                       {[
-                        ["Project Start Payment", "40% after vendor confirmation", firstMilestoneAmount],
-                        ["Final Installation Payment", "50% across installation milestones", finalMilestoneAmount],
+                        [
+                          "Project Start Payment",
+                          "40% after vendor confirmation",
+                          firstMilestoneAmount,
+                        ],
+                        [
+                          "Final Installation Payment",
+                          "50% across installation milestones",
+                          finalMilestoneAmount,
+                        ],
                       ].map(([label, note, amount]) => (
                         <Box
                           key={label}
@@ -658,13 +886,33 @@ export default function BookingPaymentPage() {
                             border: "1px solid #E7EEF5",
                           }}
                         >
-                          <Typography sx={{ color: "#151B22", fontSize: "0.76rem", fontWeight: 850 }}>
+                          <Typography
+                            sx={{
+                              color: "#151B22",
+                              fontSize: "0.76rem",
+                              fontWeight: 850,
+                            }}
+                          >
                             {label}
                           </Typography>
-                          <Typography sx={{ mt: 0.18, color: "#7A8798", fontSize: "0.62rem", lineHeight: 1.35 }}>
+                          <Typography
+                            sx={{
+                              mt: 0.18,
+                              color: "#7A8798",
+                              fontSize: "0.62rem",
+                              lineHeight: 1.35,
+                            }}
+                          >
                             {note}
                           </Typography>
-                          <Typography sx={{ mt: 0.65, color: "#0E56C8", fontSize: "0.95rem", fontWeight: 950 }}>
+                          <Typography
+                            sx={{
+                              mt: 0.65,
+                              color: "#0E56C8",
+                              fontSize: "0.95rem",
+                              fontWeight: 950,
+                            }}
+                          >
                             {formatMoney(amount)}
                           </Typography>
                         </Box>
@@ -704,7 +952,14 @@ export default function BookingPaymentPage() {
                   top: { md: 24 },
                 }}
               >
-                <Typography sx={{ color: "#151B22", fontSize: "1rem", fontWeight: 850, mb: 2 }}>
+                <Typography
+                  sx={{
+                    color: "#151B22",
+                    fontSize: "1rem",
+                    fontWeight: 850,
+                    mb: 2,
+                  }}
+                >
                   Select Payment Method
                 </Typography>
 
@@ -717,19 +972,26 @@ export default function BookingPaymentPage() {
                         role="button"
                         tabIndex={0}
                         onClick={() => setSelectedMethod(method.id)}
-                        onKeyDown={(event) => event.key === "Enter" && setSelectedMethod(method.id)}
+                        onKeyDown={(event) =>
+                          event.key === "Enter" && setSelectedMethod(method.id)
+                        }
                         sx={{
                           p: 1.45,
                           minHeight: 72,
                           borderRadius: "0.8rem",
-                          border: isSelected ? "2px solid #0E56C8" : "1px solid #E4EAF2",
+                          border: isSelected
+                            ? "2px solid #0E56C8"
+                            : "1px solid #E4EAF2",
                           bgcolor: isSelected ? "#F9FBFF" : "#F5F7FA",
                           cursor: "pointer",
                           display: "flex",
                           alignItems: "center",
                           gap: 1.5,
                           transition: "all 0.15s ease",
-                          "&:hover": { borderColor: "#0E56C8", bgcolor: "#F9FBFF" },
+                          "&:hover": {
+                            borderColor: "#0E56C8",
+                            bgcolor: "#F9FBFF",
+                          },
                         }}
                       >
                         <Box
@@ -747,10 +1009,23 @@ export default function BookingPaymentPage() {
                           {method.icon}
                         </Box>
                         <Box sx={{ flex: 1, minWidth: 0 }}>
-                          <Typography sx={{ color: "#151B22", fontSize: "0.84rem", fontWeight: 850, lineHeight: 1.2 }}>
+                          <Typography
+                            sx={{
+                              color: "#151B22",
+                              fontSize: "0.84rem",
+                              fontWeight: 850,
+                              lineHeight: 1.2,
+                            }}
+                          >
                             {method.label}
                           </Typography>
-                          <Typography sx={{ color: "#667386", fontSize: "0.66rem", mt: 0.15 }}>
+                          <Typography
+                            sx={{
+                              color: "#667386",
+                              fontSize: "0.66rem",
+                              mt: 0.15,
+                            }}
+                          >
                             {method.subtitle}
                           </Typography>
                         </Box>
@@ -759,7 +1034,9 @@ export default function BookingPaymentPage() {
                             width: 18,
                             height: 18,
                             borderRadius: "50%",
-                            border: isSelected ? "5px solid #0E56C8" : "2px solid #C8D4E4",
+                            border: isSelected
+                              ? "5px solid #0E56C8"
+                              : "2px solid #C8D4E4",
                             bgcolor: "white",
                             flexShrink: 0,
                           }}
@@ -770,7 +1047,10 @@ export default function BookingPaymentPage() {
                 </Stack>
 
                 {payError ? (
-                  <Alert severity="error" sx={{ mb: 2, borderRadius: "0.75rem", fontSize: "0.8rem" }}>
+                  <Alert
+                    severity="error"
+                    sx={{ mb: 2, borderRadius: "0.75rem", fontSize: "0.8rem" }}
+                  >
                     {payError}
                   </Alert>
                 ) : null}
@@ -786,9 +1066,13 @@ export default function BookingPaymentPage() {
                     fontWeight: 850,
                     fontSize: "0.9rem",
                     textTransform: "none",
-                    background: "linear-gradient(180deg, #0E56C8 0%, #0D49B0 100%)",
+                    background:
+                      "linear-gradient(180deg, #0E56C8 0%, #0D49B0 100%)",
                     boxShadow: "0 14px 28px rgba(14,86,200,0.28)",
-                    "&:hover": { background: "linear-gradient(180deg, #0B49AD 0%, #0A3E9A 100%)" },
+                    "&:hover": {
+                      background:
+                        "linear-gradient(180deg, #0B49AD 0%, #0A3E9A 100%)",
+                    },
                   }}
                 >
                   {isPaying ? (
@@ -801,9 +1085,20 @@ export default function BookingPaymentPage() {
                   )}
                 </Button>
 
-                <Typography sx={{ mt: 1.5, color: "#8A96A8", fontSize: "0.62rem", textAlign: "center", lineHeight: 1.5 }}>
+                <Typography
+                  sx={{
+                    mt: 1.5,
+                    color: "#8A96A8",
+                    fontSize: "0.62rem",
+                    textAlign: "center",
+                    lineHeight: 1.5,
+                  }}
+                >
                   By proceeding, you agree to Sparkin&apos;s{" "}
-                  <Box component="span" sx={{ color: "#0E56C8", fontWeight: 650 }}>
+                  <Box
+                    component="span"
+                    sx={{ color: "#0E56C8", fontWeight: 650 }}
+                  >
                     Terms of Service
                   </Box>
                 </Typography>
@@ -851,10 +1146,23 @@ export default function BookingPaymentPage() {
                     >
                       {item.icon}
                     </Box>
-                    <Typography sx={{ color: "#151B22", fontSize: "0.96rem", fontWeight: 850, mb: 0.8 }}>
+                    <Typography
+                      sx={{
+                        color: "#151B22",
+                        fontSize: "0.96rem",
+                        fontWeight: 850,
+                        mb: 0.8,
+                      }}
+                    >
                       {item.title}
                     </Typography>
-                    <Typography sx={{ color: "#526070", fontSize: "0.82rem", lineHeight: 1.65 }}>
+                    <Typography
+                      sx={{
+                        color: "#526070",
+                        fontSize: "0.82rem",
+                        lineHeight: 1.65,
+                      }}
+                    >
                       {item.description}
                     </Typography>
                   </Box>

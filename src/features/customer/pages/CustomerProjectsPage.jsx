@@ -20,7 +20,11 @@ import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
 import { useEffect, useMemo, useState } from "react";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
 import { projectsApi } from "@/features/public/api/projectsApi";
-import { CustomerEmptyCard, CustomerErrorBlock, CustomerLoadingBlock } from "@/features/customer/components/CustomerPageStates";
+import {
+  CustomerEmptyCard,
+  CustomerErrorBlock,
+  CustomerLoadingBlock,
+} from "@/features/customer/components/CustomerPageStates";
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -96,16 +100,28 @@ function toProjectCard(project) {
   const isActive =
     project.status !== "completed" && project.status !== "cancelled";
 
+  const city = project.installationAddress?.city || "Location";
+  const state = project.installationAddress?.state || "";
+  const title = state ? `${city}, ${state}` : city;
+
+  const sizeKw = project.system?.sizeKw || "—";
+  const panelType = project.system?.panelType || "Solar";
+  const subtitle = `${sizeKw}kW ${panelType} Solar System`;
+
+  const milestones = Array.isArray(project.milestones)
+    ? project.milestones
+    : [];
+
   return {
     id: project.id,
     status: project.status,
     ...statusConfig,
     isActive,
-    title: `${project.installationAddress.city}, ${project.installationAddress.state}`,
-    subtitle: `${project.system.sizeKw}kW ${project.system.panelType} Solar System`,
+    title,
+    subtitle,
     vendorInitials: getVendorInitials(project.vendorEmail),
     vendorName: getVendorName(project.vendorEmail),
-    steps: project.milestones.map(toMilestoneStep),
+    steps: milestones.map(toMilestoneStep),
     trackTo: `/project/installation?projectId=${project.id}`,
     serviceTo: `/service-support/request?projectId=${project.id}`,
   };
@@ -483,17 +499,21 @@ export default function CustomerProjectsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
-  async function loadProjects(active = true) {
+  async function loadProjects(active = true, force = false) {
     setIsLoading(true);
     setError("");
 
     try {
-      const result = await projectsApi.listProjects();
+      const result = await projectsApi.listProjects(
+        force ? { force: true } : {},
+      );
       if (!active) return;
-      setProjectRecords(result);
+      setProjectRecords(result || []);
     } catch (apiError) {
       if (active) {
-        setError(apiError?.response?.data?.message || "Could not load projects.");
+        setError(
+          apiError?.response?.data?.message || "Could not load projects.",
+        );
       }
     } finally {
       if (active) setIsLoading(false);
@@ -502,7 +522,7 @@ export default function CustomerProjectsPage() {
 
   useEffect(() => {
     let active = true;
-    loadProjects(active);
+    loadProjects(active, true); // force-fresh on mount so newly created projects appear
     return () => {
       active = false;
     };
@@ -591,7 +611,13 @@ export default function CustomerProjectsPage() {
       {isLoading && <CustomerLoadingBlock />}
 
       {/* Error */}
-      {!isLoading && error && <CustomerErrorBlock message={error} onRetry={() => loadProjects(true)} mt={1.85} />}
+      {!isLoading && error && (
+        <CustomerErrorBlock
+          message={error}
+          onRetry={() => loadProjects(true, true)}
+          mt={1.85}
+        />
+      )}
 
       {/* Empty state */}
       {!isLoading && !error && projectCards.length === 0 && (

@@ -135,6 +135,8 @@ function getStatusMeta(status) {
     ].includes(status)
   )
     return { label: "Active", tone: "#7C7A00", bg: "#F2F08E" };
+  if (status === "cancelled")
+    return { label: "Cancelled", tone: "#C62828", bg: "#FDECEA" };
   return { label: "Pending", tone: "#6F7D8F", bg: "#EDF1F5" };
 }
 
@@ -857,8 +859,12 @@ export default function AdminProjectsPage() {
                                 px: 0.8,
                                 py: 0.28,
                                 borderRadius: "999px",
-                                bgcolor: needsReassignment ? "#FFF1F1" : "#FFF8E1",
-                                color: needsReassignment ? "#C62828" : "#8A6500",
+                                bgcolor: needsReassignment
+                                  ? "#FFF1F1"
+                                  : "#FFF8E1",
+                                color: needsReassignment
+                                  ? "#C62828"
+                                  : "#8A6500",
                                 fontSize: "0.58rem",
                                 fontWeight: 900,
                                 letterSpacing: "0.04em",

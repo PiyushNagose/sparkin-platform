@@ -64,7 +64,13 @@ export const createManualProjectSchema = z.object({
 });
 
 export const updateProjectMilestoneSchema = z.object({
-  milestoneKey: z.enum(["site_visit", "design_approval", "installation", "inspection", "activation"]),
+  milestoneKey: z.enum([
+    "site_visit",
+    "design_approval",
+    "installation",
+    "inspection",
+    "activation",
+  ]),
   status: z.enum(["pending", "in_progress", "completed"]),
 });
 
@@ -75,7 +81,12 @@ export const sendSiteVisitReminderSchema = z.object({
 export const uploadProjectDocumentSchema = z.object({
   title: z.string().trim().min(2).max(120),
   fileName: z.string().trim().min(1).max(180),
-  mimeType: z.enum(["application/pdf", "image/jpeg", "image/png", "image/webp"]),
+  mimeType: z.enum([
+    "application/pdf",
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+  ]),
   data: z.string().min(100),
 });
 
@@ -83,5 +94,13 @@ export const submitProjectOnboardingSchema = z.object({
   contactName: z.string().trim().min(2).max(120),
   contactPhone: z.string().trim().min(6).max(20),
   siteAccessNotes: z.string().trim().max(500).optional().nullable(),
-  preferredVisitWindow: z.enum(["morning", "afternoon", "evening"]).nullable().optional(),
+  preferredVisitWindow: z
+    .enum(["morning", "afternoon", "evening"])
+    .nullable()
+    .optional(),
+});
+
+export const reassignProjectVendorSchema = z.object({
+  newVendorId: z.string().trim().min(1),
+  reason: z.string().trim().min(5).max(500).optional(),
 });

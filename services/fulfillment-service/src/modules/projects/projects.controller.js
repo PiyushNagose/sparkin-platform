@@ -78,4 +78,13 @@ export const projectsController = {
     );
     res.status(201).json({ project });
   },
+
+  async reassignVendor(req, res) {
+    const project = await projectsService.reassignVendor(
+      req.auth,
+      req.params.projectId,
+      req.body,
+    );
+    res.status(201).json({ project });
+  },
 };
