@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { io } from "socket.io-client";
+import { useAuth } from "@/features/auth/AuthProvider";
 import { authStorage } from "@/features/auth/authStorage";
 import { invalidateRequestCache } from "@/shared/lib/http/requestCache";
 
@@ -47,9 +48,15 @@ const SocketContext = createContext({
 export function SocketProvider({ children }) {
   const [connected, setConnected] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const { isAuthenticated, isBootstrapping } = useAuth();
   const token = authStorage.getAccessToken();
 
   useEffect(() => {
+    if (isBootstrapping || !isAuthenticated || !token) {
+      setConnected(false);
+      return undefined;
+    }
+
     const socketUrl =
       import.meta.env.VITE_SOCKET_URL ||
       import.meta.env.VITE_API_BASE_URL ||
@@ -81,7 +88,7 @@ export function SocketProvider({ children }) {
       socket.off("connect_error");
       socket.disconnect();
     };
-  }, [token]);
+  }, [isAuthenticated, isBootstrapping, token]);
 
   const value = useMemo(
     () => ({ connected, refreshKey }),

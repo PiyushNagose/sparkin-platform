@@ -1,5 +1,25 @@
 const DEFAULT_TTL_MS = 10000;
 const cache = new Map();
+const TRANSIENT_STATUS_CODES = new Set([502, 503, 504]);
+
+function delay(ms) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
+function shouldRetryRequest(error, retryCount) {
+  if (retryCount >= 1) {
+    return false;
+  }
+
+  const status = error?.response?.status;
+  if (TRANSIENT_STATUS_CODES.has(status)) {
+    return true;
+  }
+
+  return !error?.response;
+}
 
 function normalizeValue(value) {
   if (value instanceof URLSearchParams) {
@@ -33,6 +53,7 @@ function createCacheKey(client, url, params) {
 export async function cachedGet(client, url, options = {}) {
   const {
     allowStaleOnError = true,
+    retryCount = 0,
     ttlMs = DEFAULT_TTL_MS,
     force = false,
     params,
@@ -52,8 +73,9 @@ export async function cachedGet(client, url, options = {}) {
     }
   }
 
-  const promise = client
-    .get(url, { ...axiosOptions, params })
+  const request = () => client.get(url, { ...axiosOptions, params });
+
+  const promise = request()
     .then((response) => {
       cache.set(key, {
         response,
@@ -61,7 +83,19 @@ export async function cachedGet(client, url, options = {}) {
       });
       return response;
     })
-    .catch((error) => {
+    .catch(async (error) => {
+      if (shouldRetryRequest(error, retryCount)) {
+        await delay(250);
+        return cachedGet(client, url, {
+          ...axiosOptions,
+          allowStaleOnError,
+          force: true,
+          params,
+          retryCount: retryCount + 1,
+          ttlMs,
+        });
+      }
+
       if (allowStaleOnError && entry?.response) {
         return entry.response;
       }

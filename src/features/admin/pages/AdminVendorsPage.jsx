@@ -117,13 +117,13 @@ function NetworkCard({ activeCount, capacityMw, growth }) {
         Vendor onboarding has changed by {growth}% this quarter, based on verified network movement.
       </Typography>
       <Grid container spacing={2.2} sx={{ mt: 2.6 }}>
-        <Grid item xs={6}>
+        <Grid size={{ xs: 6 }}>
           <Typography sx={{ color: "#AFC8FF", fontSize: "0.62rem", fontWeight: 950, letterSpacing: "0.12em" }}>
             TOTAL ACTIVE VENDORS
           </Typography>
           <Typography sx={{ mt: 0.4, fontSize: "1.75rem", fontWeight: 950 }}>{activeCount}</Typography>
         </Grid>
-        <Grid item xs={6}>
+        <Grid size={{ xs: 6 }}>
           <Typography sx={{ color: "#AFC8FF", fontSize: "0.62rem", fontWeight: 950, letterSpacing: "0.12em" }}>
             NETWORK CAPACITY
           </Typography>
@@ -249,7 +249,7 @@ export default function AdminVendorsPage() {
 
       <AdminPanel sx={{ p: { xs: 1.5, md: 1.8 }, mb: 3, bgcolor: "#F6F8FB" }}>
         <Grid container spacing={1.3} alignItems="center">
-          <Grid item xs={12} md={2}>
+          <Grid size={{ xs: 12, md: 2 }}>
             <FormControl fullWidth size="small">
               <InputLabel>Status</InputLabel>
               <Select label="Status" value={filters.status} onChange={(event) => setFilters((current) => ({ ...current, status: event.target.value }))}>
@@ -259,7 +259,7 @@ export default function AdminVendorsPage() {
               </Select>
             </FormControl>
           </Grid>
-          <Grid item xs={12} md={2.2}>
+          <Grid size={{ xs: 12, md: 2.2 }}>
             <FormControl fullWidth size="small">
               <InputLabel>Region/Location</InputLabel>
               <Select label="Region/Location" value={filters.region} onChange={(event) => setFilters((current) => ({ ...current, region: event.target.value }))}>
@@ -270,7 +270,7 @@ export default function AdminVendorsPage() {
               </Select>
             </FormControl>
           </Grid>
-          <Grid item xs={12} md={1.8}>
+          <Grid size={{ xs: 12, md: 1.8 }}>
             <FormControl fullWidth size="small">
               <InputLabel>Rating</InputLabel>
               <Select label="Rating" value={filters.rating} onChange={(event) => setFilters((current) => ({ ...current, rating: event.target.value }))}>
@@ -280,7 +280,7 @@ export default function AdminVendorsPage() {
               </Select>
             </FormControl>
           </Grid>
-          <Grid item xs={12} md={2}>
+          <Grid size={{ xs: 12, md: 2 }}>
             <FormControl fullWidth size="small">
               <InputLabel>Experience</InputLabel>
               <Select label="Experience" value={filters.experience} onChange={(event) => setFilters((current) => ({ ...current, experience: event.target.value }))}>
@@ -291,7 +291,7 @@ export default function AdminVendorsPage() {
               </Select>
             </FormControl>
           </Grid>
-          <Grid item xs={12} md={4}>
+          <Grid size={{ xs: 12, md: 4 }}>
             <TextField
               fullWidth
               size="small"

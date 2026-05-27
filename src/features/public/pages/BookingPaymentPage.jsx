@@ -555,7 +555,7 @@ export default function BookingPaymentPage() {
             spacing={{ xs: 2.5, md: 4, lg: 5 }}
             alignItems="flex-start"
           >
-            <Grid item xs={12} md={7.2}>
+            <Grid size={{ xs: 12, md: 7.2 }}>
               <Stack spacing={2.4}>
                 <Box
                   sx={{
@@ -668,19 +668,19 @@ export default function BookingPaymentPage() {
                   </Stack>
 
                   <Grid container spacing={2}>
-                    <Grid item xs={12} sm={6}>
+                    <Grid size={{ xs: 12, sm: 6 }}>
                       <FieldBlock
                         label="Full Name"
                         value={lead.contact?.fullName}
                       />
                     </Grid>
-                    <Grid item xs={12} sm={6}>
+                    <Grid size={{ xs: 12, sm: 6 }}>
                       <FieldBlock
                         label="Phone Number"
                         value={lead.contact?.phoneNumber}
                       />
                     </Grid>
-                    <Grid item xs={12}>
+                    <Grid size={{ xs: 12 }}>
                       <FieldBlock
                         label="Installation Address"
                         value={address}
@@ -922,14 +922,14 @@ export default function BookingPaymentPage() {
                 </Box>
 
                 <Grid container spacing={1.5}>
-                  <Grid item xs={12} sm={6}>
+                  <Grid size={{ xs: 12, sm: 6 }}>
                     <TrustBadge
                       icon={<LockOutlinedIcon sx={{ fontSize: "1rem" }} />}
                       title="Secure 256-bit encryption"
                       subtitle="Your transaction is fully encrypted"
                     />
                   </Grid>
-                  <Grid item xs={12} sm={6}>
+                  <Grid size={{ xs: 12, sm: 6 }}>
                     <TrustBadge
                       icon={<ReplayRoundedIcon sx={{ fontSize: "1rem" }} />}
                       title="100% Refundable"
@@ -940,7 +940,7 @@ export default function BookingPaymentPage() {
               </Stack>
             </Grid>
 
-            <Grid item xs={12} md={4.8}>
+            <Grid size={{ xs: 12, md: 4.8 }}>
               <Box
                 sx={{
                   borderRadius: "1.08rem",
@@ -1121,7 +1121,7 @@ export default function BookingPaymentPage() {
             </Typography>
             <Grid container spacing={2.5}>
               {whyItems.map((item) => (
-                <Grid key={item.title} item xs={12} md={4}>
+                <Grid key={item.title} size={{ xs: 12, md: 4 }}>
                   <Box
                     sx={{
                       p: 2.5,

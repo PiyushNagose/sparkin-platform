@@ -869,6 +869,7 @@ function UserPickerDialog({ open, onClose, onSelect }) {
         }}
       >
         <Typography
+          component="div"
           sx={{
             color: adminUi.colors.text,
             fontSize: "1.1rem",

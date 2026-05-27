@@ -129,7 +129,7 @@ function LeadSummary({ lead, quotes }) {
   return (
     <AdminPanel sx={{ mb: 2.8, overflow: "hidden" }}>
       <Grid container>
-        <Grid item xs={12} md={4}>
+        <Grid size={{ xs: 12, md: 4 }}>
           <Box
             sx={{
               minHeight: 190,
@@ -138,7 +138,7 @@ function LeadSummary({ lead, quotes }) {
             }}
           />
         </Grid>
-        <Grid item xs={12} md={8}>
+        <Grid size={{ xs: 12, md: 8 }}>
           <Box sx={{ p: { xs: 2.2, md: 2.8 } }}>
             <Stack
               direction={{ xs: "column", md: "row" }}
@@ -239,21 +239,21 @@ function LeadSummary({ lead, quotes }) {
             </Stack>
 
             <Grid container spacing={1.6} sx={{ mt: 2.4 }}>
-              <Grid item xs={12} md={4}>
+              <Grid size={{ xs: 12, md: 4 }}>
                 <InfoTile
                   icon={LocationOnOutlinedIcon}
                   title="Location"
                   value={formatLocation(lead)}
                 />
               </Grid>
-              <Grid item xs={12} md={4}>
+              <Grid size={{ xs: 12, md: 4 }}>
                 <InfoTile
                   icon={CalendarMonthOutlinedIcon}
                   title="Requested Timeline"
                   value={lead.inspection?.preferredDate || "Within 15 Days"}
                 />
               </Grid>
-              <Grid item xs={12} md={4}>
+              <Grid size={{ xs: 12, md: 4 }}>
                 <InfoTile
                   icon={SecurityOutlinedIcon}
                   title="Project Status"
@@ -492,7 +492,7 @@ export default function AdminVendorAssignmentPage() {
 
       <AdminPanel sx={{ p: { xs: 1.5, md: 1.8 }, mb: 2.2, bgcolor: "#F6F8FB" }}>
         <Grid container spacing={1.3} alignItems="center">
-          <Grid item xs={12} md={2.4}>
+          <Grid size={{ xs: 12, md: 2.4 }}>
             <FormControl fullWidth size="small">
               <InputLabel>Region</InputLabel>
               <Select
@@ -514,7 +514,7 @@ export default function AdminVendorAssignmentPage() {
               </Select>
             </FormControl>
           </Grid>
-          <Grid item xs={12} md={2.4}>
+          <Grid size={{ xs: 12, md: 2.4 }}>
             <FormControl fullWidth size="small">
               <InputLabel>Vendor Status</InputLabel>
               <Select
@@ -533,7 +533,7 @@ export default function AdminVendorAssignmentPage() {
               </Select>
             </FormControl>
           </Grid>
-          <Grid item xs={12} md={2}>
+          <Grid size={{ xs: 12, md: 2 }}>
             <FormControl fullWidth size="small">
               <InputLabel>Experience</InputLabel>
               <Select
@@ -553,7 +553,7 @@ export default function AdminVendorAssignmentPage() {
               </Select>
             </FormControl>
           </Grid>
-          <Grid item xs={12} md={2}>
+          <Grid size={{ xs: 12, md: 2 }}>
             <FormControl fullWidth size="small">
               <InputLabel>Min. Rating</InputLabel>
               <Select
@@ -572,7 +572,7 @@ export default function AdminVendorAssignmentPage() {
               </Select>
             </FormControl>
           </Grid>
-          <Grid item xs={12} md={2.4}>
+          <Grid size={{ xs: 12, md: 2.4 }}>
             <TextField
               fullWidth
               size="small"
@@ -595,7 +595,7 @@ export default function AdminVendorAssignmentPage() {
               }}
             />
           </Grid>
-          <Grid item xs={12} md={0.8}>
+          <Grid size={{ xs: 12, md: 0.8 }}>
             <Button
               fullWidth
               onClick={() =>

@@ -1599,7 +1599,7 @@ export function PortalLayout({ portal }) {
           >
             <LogoutRoundedIcon sx={{ fontSize: "2rem" }} />
           </Box>
-          <Typography variant="h6" sx={{ fontWeight: 700, color: "#1a1a1a" }}>
+          <Typography component="div" variant="h6" sx={{ fontWeight: 700, color: "#1a1a1a" }}>
             Confirm Logout
           </Typography>
         </DialogTitle>
