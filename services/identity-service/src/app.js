@@ -13,6 +13,7 @@ export function createApp() {
   const app = express();
 
   app.disable("x-powered-by");
+  app.set("trust proxy", env.nodeEnv === "production" ? 1 : false);
   app.use(
     helmet({
       crossOriginResourcePolicy: { policy: "cross-origin" },

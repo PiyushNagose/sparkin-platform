@@ -25,7 +25,7 @@ export function RequireAuth({ allowedRoles, children }) {
     const loginPath = location.pathname.startsWith("/vendor")
       ? "/vendor/login"
       : location.pathname.startsWith("/admin")
-        ? "/auth/login"
+        ? "/admin/login"
         : "/auth/login";
 
     return <Navigate to={loginPath} replace state={{ from: location }} />;

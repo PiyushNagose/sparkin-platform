@@ -51,6 +51,15 @@ export const projectsApi = {
     return data.project;
   },
 
+  async rejectVendorForSiteVisit(projectId, payload = {}) {
+    const { data } = await fulfillmentClient.post(
+      `/projects/${requireId(projectId, "Project id")}/reject-vendor`,
+      payload,
+    );
+    invalidateRequestCache("/projects");
+    return data.project;
+  },
+
   async submitOnboarding(projectId, payload) {
     const { data } = await fulfillmentClient.patch(
       `/projects/${requireId(projectId, "Project id")}/onboarding`,

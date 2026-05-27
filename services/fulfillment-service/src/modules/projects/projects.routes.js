@@ -7,6 +7,7 @@ import {
   createManualProjectSchema,
   createProjectSchema,
   reassignProjectVendorSchema,
+  rejectProjectVendorSchema,
   sendSiteVisitReminderSchema,
   submitProjectOnboardingSchema,
   updateProjectMilestoneSchema,
@@ -32,6 +33,11 @@ projectsRouter.post(
   "/:projectId/site-visit-reminders",
   validate(sendSiteVisitReminderSchema),
   asyncHandler(projectsController.sendSiteVisitReminder),
+);
+projectsRouter.post(
+  "/:projectId/reject-vendor",
+  validate(rejectProjectVendorSchema),
+  asyncHandler(projectsController.rejectVendorForSiteVisit),
 );
 projectsRouter.patch(
   "/:projectId/onboarding",

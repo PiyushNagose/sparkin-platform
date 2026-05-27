@@ -18,13 +18,10 @@ import logoPlaceholder from "@/shared/assets/logo-placeholder.png";
 import styles from "@/app/layouts/PublicLayout.module.css";
 import { AppFooter } from "@/shared/components/AppFooter";
 import { useAuth } from "@/features/auth/AuthProvider";
-import { useSocket } from "@/shared/websocket/SocketProvider";
 
 export function PublicLayout() {
-  const location = useLocation();
-  const { pathname, search } = location;
+  const { pathname } = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { refreshKey } = useSocket();
   const { user } = useAuth();
 
   // Derive dashboard path based on role
@@ -310,7 +307,7 @@ export function PublicLayout() {
         </Stack>
       </Drawer>
 
-      <Outlet key={`${pathname}${search}${refreshKey}`} />
+      <Outlet />
       <AppFooter />
     </Box>
   );

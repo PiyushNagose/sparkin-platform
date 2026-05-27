@@ -365,6 +365,8 @@ export default function VendorProjectDetailPage() {
   const reassignmentRequired = Boolean(
     project?.siteVisitFollowUp?.reassignmentRequired,
   );
+  const finalReminderSent =
+    !reassignmentRequired && siteVisitReminders.length >= 3;
   const siteVisitCompleted = project?.milestones?.some(
     (milestone) =>
       milestone.key === "site_visit" && milestone.status === "completed",
@@ -651,14 +653,19 @@ export default function VendorProjectDetailPage() {
                   >
                     <Typography
                       sx={{
-                        color: reassignmentRequired ? "#B71C1C" : "#E65100",
+                        color:
+                          reassignmentRequired || finalReminderSent
+                            ? "#B71C1C"
+                            : "#E65100",
                         fontSize: "0.95rem",
                         fontWeight: 800,
                         lineHeight: 1.2,
                       }}
                     >
                       {reassignmentRequired
-                        ? "Action Required — Vendor Reassignment"
+                        ? "Action Required - Vendor Reassignment"
+                        : finalReminderSent
+                          ? "Final Site Visit Reminder"
                         : `Site Visit Reminder ${siteVisitReminders.length > 1 ? `(${siteVisitReminders.length}/3)` : ""}`}
                     </Typography>
                     <Box
@@ -666,7 +673,10 @@ export default function VendorProjectDetailPage() {
                         px: 0.75,
                         py: 0.2,
                         borderRadius: "999px",
-                        bgcolor: reassignmentRequired ? "#D32F2F" : "#F57F17",
+                        bgcolor:
+                          reassignmentRequired || finalReminderSent
+                            ? "#D32F2F"
+                            : "#F57F17",
                         color: "#FFFFFF",
                         fontSize: "0.52rem",
                         fontWeight: 800,
@@ -675,13 +685,20 @@ export default function VendorProjectDetailPage() {
                         lineHeight: 1,
                       }}
                     >
-                      {reassignmentRequired ? "Critical" : "Urgent"}
+                      {reassignmentRequired
+                        ? "Critical"
+                        : finalReminderSent
+                          ? "Final Notice"
+                          : "Urgent"}
                     </Box>
                   </Stack>
 
                   <Typography
                     sx={{
-                      color: reassignmentRequired ? "#C62828" : "#BF6000",
+                      color:
+                        reassignmentRequired || finalReminderSent
+                          ? "#C62828"
+                          : "#BF6000",
                       fontSize: "0.82rem",
                       lineHeight: 1.55,
                       maxWidth: 520,
@@ -689,6 +706,8 @@ export default function VendorProjectDetailPage() {
                   >
                     {reassignmentRequired
                       ? "Final site visit reminder was missed. This project has been flagged for admin reassignment. Please contact Sparkin support immediately."
+                      : finalReminderSent
+                        ? "Admin has sent the third and final site visit reminder. Complete the visit immediately to avoid vendor rejection and reassignment."
                       : `Admin has sent ${siteVisitReminders.length} of 3 site visit reminder${siteVisitReminders.length === 1 ? "" : "s"}. Complete the site visit to keep this assignment active.`}
                   </Typography>
 

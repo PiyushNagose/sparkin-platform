@@ -1,30 +1,41 @@
+import { lazy } from "react";
 import { createBrowserRouter, Outlet } from "react-router-dom";
+import { RouteErrorPage } from "@/app/errors/RouteErrorPage";
 import { AuthLayout } from "@/app/layouts/AuthLayout";
 import { PortalLayout } from "@/app/layouts/PortalLayout";
 import { PublicLayout } from "@/app/layouts/PublicLayout";
 import { RequireAuth } from "@/features/auth/RequireAuth";
 import { adminRoutes } from "@/features/admin/routes";
 import { authRoutes } from "@/features/auth/routes";
-import VendorLoginPage from "@/features/auth/pages/VendorLoginPage";
-import VendorSignupPage from "@/features/auth/pages/VendorSignupPage";
-import AdminLoginPage from "@/features/auth/pages/AdminLoginPage";
 import { customerRoutes } from "@/features/customer/routes";
 import { publicRoutes } from "@/features/public/routes";
 import VendorApprovalGate from "@/features/vendor/VendorApprovalGate";
-import VendorPendingApprovalPage from "@/features/vendor/pages/VendorPendingApprovalPage";
 import { vendorRoutes } from "@/features/vendor/routes";
-import VendorOnboardingPage from "@/features/vendor/pages/VendorOnboardingPage";
-import { useSocket } from "@/shared/websocket/SocketProvider";
+import { LazyRoute } from "@/shared/ui/placeholder/LazyRoute";
 
-const RootOutlet = () => {
-  const { refreshKey } = useSocket();
-  return <Outlet key={refreshKey} />;
-};
+const VendorLoginPage = lazy(
+  () => import("@/features/auth/pages/VendorLoginPage"),
+);
+const VendorSignupPage = lazy(
+  () => import("@/features/auth/pages/VendorSignupPage"),
+);
+const AdminLoginPage = lazy(
+  () => import("@/features/auth/pages/AdminLoginPage"),
+);
+const VendorPendingApprovalPage = lazy(
+  () => import("@/features/vendor/pages/VendorPendingApprovalPage"),
+);
+const VendorOnboardingPage = lazy(
+  () => import("@/features/vendor/pages/VendorOnboardingPage"),
+);
+
+const RootOutlet = () => <Outlet />;
 
 export const appRouter = createBrowserRouter([
   {
     path: "/",
     element: <RootOutlet />,
+    errorElement: <RouteErrorPage />,
     children: [
       {
         element: <PublicLayout />,
@@ -38,17 +49,17 @@ export const appRouter = createBrowserRouter([
       {
         path: "/vendor/login",
         element: <AuthLayout />,
-        children: [{ index: true, element: <VendorLoginPage /> }],
+        children: [{ index: true, element: <LazyRoute component={VendorLoginPage} /> }],
       },
       {
         path: "/vendor/signup",
         element: <AuthLayout />,
-        children: [{ index: true, element: <VendorSignupPage /> }],
+        children: [{ index: true, element: <LazyRoute component={VendorSignupPage} /> }],
       },
       {
         path: "/admin/login",
         element: <AuthLayout />,
-        children: [{ index: true, element: <AdminLoginPage /> }],
+        children: [{ index: true, element: <LazyRoute component={AdminLoginPage} /> }],
       },
       {
         path: "/admin",
@@ -76,11 +87,11 @@ export const appRouter = createBrowserRouter([
         children: [
           {
             path: "onboarding",
-            element: <VendorOnboardingPage />,
+            element: <LazyRoute component={VendorOnboardingPage} />,
           },
           {
             path: "pending-approval",
-            element: <VendorPendingApprovalPage />,
+            element: <LazyRoute component={VendorPendingApprovalPage} />,
           },
           {
             element: <VendorApprovalGate />,

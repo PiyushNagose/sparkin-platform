@@ -331,7 +331,7 @@ export const projectsService = {
     const message =
       input.message ||
       (isFinalAttempt
-        ? "Final reminder: site visit is still pending. Vendor will be rejected and this project will be reassigned."
+        ? "Final reminder: site visit is still pending. Complete it immediately to avoid vendor rejection and reassignment."
         : `Reminder ${attempt}: please complete the pending site visit for this project.`);
 
     return projectsRepository.addSiteVisitReminder(
@@ -342,17 +342,44 @@ export const projectsService = {
         sentBy: user.userId,
         message,
       },
-      isFinalAttempt
-        ? {
-            status: "cancelled",
-            "siteVisitFollowUp.vendorRejectedAt": now,
-            "siteVisitFollowUp.rejectedBy": user.userId,
-            "siteVisitFollowUp.rejectionReason":
-              "Site visit not completed after three admin reminders",
-            "siteVisitFollowUp.reassignmentRequired": true,
-          }
-        : {},
+      {},
     );
+  },
+
+  async rejectVendorForSiteVisit(user, projectId, input) {
+    if (user.role !== "admin") {
+      throw new AppError(403, "Only admins can reject project vendors");
+    }
+
+    const project = await this.getProject(user, projectId);
+
+    if (project.status === "cancelled") {
+      throw new AppError(409, "Cancelled projects cannot be updated");
+    }
+
+    if (isSiteVisitComplete(project)) {
+      throw new AppError(409, "Site visit is already completed");
+    }
+
+    if (project.siteVisitFollowUp?.vendorRejectedAt) {
+      throw new AppError(409, "Vendor has already been rejected for this project");
+    }
+
+    const reminderCount = project.siteVisitFollowUp?.reminders?.length || 0;
+    if (reminderCount < 3) {
+      throw new AppError(409, "Send all three site visit reminders before rejecting the vendor");
+    }
+
+    const now = new Date();
+    return projectsRepository.updateProject(projectId, {
+      status: "cancelled",
+      "siteVisitFollowUp.vendorRejectedAt": now,
+      "siteVisitFollowUp.rejectedBy": user.userId,
+      "siteVisitFollowUp.rejectionReason":
+        input.reason?.trim() ||
+        "Site visit not completed after three admin reminders",
+      "siteVisitFollowUp.reassignmentRequired": true,
+    });
   },
 
   async submitOnboarding(user, projectId, input) {

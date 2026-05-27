@@ -1,9 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { io } from "socket.io-client";
 
+function stripApiPath(url) {
+  return url.replace(/\/api\/v1\/?$/, "");
+}
+
 // Socket traffic connects directly to business-service for realtime chat.
 const SOCKET_URL =
-  import.meta.env.VITE_BUSINESS_SOCKET_URL || "http://34-180-1-251.nip.io/";
+  import.meta.env.VITE_BUSINESS_SOCKET_URL ||
+  stripApiPath(
+    import.meta.env.VITE_BUSINESS_API_BASE_URL ||
+      "http://localhost:4002/api/v1",
+  );
 
 /**
  * Hook that manages a Socket.io connection to the business-service chat.
@@ -36,8 +44,9 @@ export function useChatSocket(token, { onNewRoom, onRoomUpdated } = {}) {
       auth: { token },
       path: "/socket.io",
       transports: ["websocket", "polling"],
-      reconnectionAttempts: 5,
-      reconnectionDelay: 2000,
+      reconnectionAttempts: 10,
+      reconnectionDelay: 1500,
+      timeout: 20000,
     });
 
     socketRef.current = socket;
