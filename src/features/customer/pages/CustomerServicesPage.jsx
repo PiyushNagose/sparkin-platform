@@ -350,18 +350,28 @@ export default function CustomerServicesPage() {
     setError("");
 
     try {
-      const [requestResult, projectResult] = await Promise.all([
+      const [requestResult, projectResult] = await Promise.allSettled([
         serviceRequestsApi.listRequests(),
         projectsApi.listProjects(),
       ]);
 
       if (!active) return;
-      setRequests(requestResult);
-      setProjects(projectResult);
-    } catch (apiError) {
-      if (active) {
-        setError(apiError?.response?.data?.message || "Could not load service requests.");
+
+      setRequests(
+        requestResult.status === "fulfilled" ? requestResult.value || [] : [],
+      );
+      setProjects(
+        projectResult.status === "fulfilled" ? projectResult.value || [] : [],
+      );
+
+      if (
+        requestResult.status === "rejected" &&
+        projectResult.status === "rejected"
+      ) {
+        setError("Could not load service requests.");
       }
+    } catch {
+      if (active) setError("Could not load service requests.");
     } finally {
       if (active) setIsLoading(false);
     }

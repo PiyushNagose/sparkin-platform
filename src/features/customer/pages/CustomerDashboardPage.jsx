@@ -318,7 +318,7 @@ export default function CustomerDashboardPage() {
 
     try {
       const [leadResult, quoteResult, projectResult, serviceResult] =
-        await Promise.all([
+        await Promise.allSettled([
           leadsApi.listLeads(),
           quotesApi.listQuotes(),
           projectsApi.listProjects(),
@@ -326,14 +326,26 @@ export default function CustomerDashboardPage() {
         ]);
 
       if (!active) return;
-      setLeads(leadResult);
-      setQuotes(quoteResult);
-      setProjects(projectResult);
-      setServiceRequests(serviceResult);
-    } catch (apiError) {
-      if (active) {
-        setError(apiError?.response?.data?.message || "Could not load dashboard.");
+
+      setLeads(leadResult.status === "fulfilled" ? leadResult.value || [] : []);
+      setQuotes(quoteResult.status === "fulfilled" ? quoteResult.value || [] : []);
+      setProjects(
+        projectResult.status === "fulfilled" ? projectResult.value || [] : [],
+      );
+      setServiceRequests(
+        serviceResult.status === "fulfilled" ? serviceResult.value || [] : [],
+      );
+
+      if (
+        leadResult.status === "rejected" &&
+        quoteResult.status === "rejected" &&
+        projectResult.status === "rejected" &&
+        serviceResult.status === "rejected"
+      ) {
+        setError("Could not load dashboard.");
       }
+    } catch {
+      if (active) setError("Could not load dashboard.");
     } finally {
       if (active) setIsLoading(false);
     }

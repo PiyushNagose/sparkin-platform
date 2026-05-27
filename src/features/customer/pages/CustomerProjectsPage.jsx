@@ -522,7 +522,7 @@ export default function CustomerProjectsPage() {
 
   useEffect(() => {
     let active = true;
-    loadProjects(active, true); // force-fresh on mount so newly created projects appear
+    loadProjects(active);
     return () => {
       active = false;
     };
