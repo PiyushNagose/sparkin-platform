@@ -46,7 +46,18 @@ export function VendorPageHeader({ title, subtitle, actions, sx }) {
           {title}
         </Typography>
         {subtitle ? (
-          <Typography sx={{ mt: 0.45, maxWidth: 520, color: vendorUi.colors.muted, fontSize: "0.92rem", lineHeight: 1.6 }}>
+          <Typography
+            sx={{
+              mt: 0.45,
+              maxWidth: 520,
+              color: vendorUi.colors.muted,
+              fontSize: "0.92rem",
+              lineHeight: 1.6,
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+            }}
+          >
             {subtitle}
           </Typography>
         ) : null}

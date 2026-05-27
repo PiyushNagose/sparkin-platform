@@ -673,7 +673,7 @@ export default function VendorProjectsPage() {
                 width: 30,
                 height: 30,
                 p: 0,
-                borderRadius: "0.6rem",
+                borderRadius: "50%",
                 color: "#7A8799",
                 border: "1px solid rgba(225,232,241,0.96)",
               }}
@@ -690,7 +690,7 @@ export default function VendorProjectsPage() {
                 width: 30,
                 height: 30,
                 p: 0,
-                borderRadius: "0.6rem",
+                borderRadius: "50%",
                 color: "#7A8799",
                 border: "1px solid rgba(225,232,241,0.96)",
               }}
@@ -810,10 +810,16 @@ export default function VendorProjectsPage() {
                 minWidth: 30,
                 width: 30,
                 height: 30,
-                borderRadius: "0.6rem",
-                color: "#647387",
+                minHeight: 'auto',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxSizing: 'border-box',
+                lineHeight: 1,
+                borderRadius: '50%',
+                color: '#647387',
                 p: 0,
-                border: "1px solid rgba(225,232,241,0.96)",
+                border: '1px solid rgba(225,232,241,0.96)',
               }}
             >
               <KeyboardArrowLeftRoundedIcon sx={{ fontSize: "1rem" }} />
@@ -836,19 +842,22 @@ export default function VendorProjectsPage() {
                   <Button
                     onClick={() => setPage(pageNumber)}
                     sx={{
-                      minWidth: 30,
-                      width: 30,
-                      height: 30,
-                      borderRadius: "0.6rem",
-                      p: 0,
-                      color: pageNumber === page ? "#FFFFFF" : "#223146",
-                      bgcolor: pageNumber === page ? "#0E56C8" : "#FFFFFF",
-                      border:
-                        pageNumber === page
-                          ? "none"
-                          : "1px solid rgba(225,232,241,0.96)",
-                      fontSize: "0.7rem",
-                      fontWeight: 700,
+                        minWidth: 30,
+                        width: 30,
+                        height: 30,
+                        minHeight: 'auto',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        boxSizing: 'border-box',
+                        lineHeight: 1,
+                        borderRadius: '50%',
+                        p: 0,
+                        color: pageNumber === page ? '#FFFFFF' : '#223146',
+                        bgcolor: pageNumber === page ? '#0E56C8' : '#FFFFFF',
+                        border: pageNumber === page ? 'none' : '1px solid rgba(225,232,241,0.96)',
+                        fontSize: '0.7rem',
+                        fontWeight: 700,
                     }}
                   >
                     {pageNumber}
@@ -865,10 +874,16 @@ export default function VendorProjectsPage() {
                 minWidth: 30,
                 width: 30,
                 height: 30,
-                borderRadius: "0.6rem",
-                color: "#647387",
+                minHeight: 'auto',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxSizing: 'border-box',
+                lineHeight: 1,
+                borderRadius: '50%',
+                color: '#647387',
                 p: 0,
-                border: "1px solid rgba(225,232,241,0.96)",
+                border: '1px solid rgba(225,232,241,0.96)',
               }}
             >
               <KeyboardArrowRightRoundedIcon sx={{ fontSize: "1rem" }} />
