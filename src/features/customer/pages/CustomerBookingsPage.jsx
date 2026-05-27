@@ -197,11 +197,12 @@ function BookingCard({ item }) {
             alt={item.title}
             sx={{
               width: { xs: "100%", sm: 96 },
-              height: { xs: 148, sm: 64 },
+              height: { xs: 148, sm: 96 },
               borderRadius: "0.85rem",
               objectFit: "cover",
               objectPosition: "center center",
               flexShrink: 0,
+              display: "block",
             }}
           />
 
@@ -311,7 +312,9 @@ function BookingCard({ item }) {
                 to={item.detailsTo}
                 variant="outlined"
                 sx={{
-                  minHeight: 34,
+                  minHeight: 36,
+                  height: 36,
+                  width: { md: 148 },
                   px: 1.35,
                   borderRadius: "0.85rem",
                   borderColor: "rgba(225,232,241,0.96)",
@@ -320,6 +323,7 @@ function BookingCard({ item }) {
                   fontSize: "0.72rem",
                   fontWeight: 700,
                   textTransform: "none",
+                  whiteSpace: "nowrap",
                 }}
               >
                 View Details
@@ -335,7 +339,9 @@ function BookingCard({ item }) {
                 ) : null
               }
               sx={{
-                minHeight: 34,
+                minHeight: 36,
+                height: 36,
+                width: { md: 148 },
                 px: 1.35,
                 borderRadius: "0.85rem",
                 bgcolor: item.actionPrimary ? "#0E56C8" : "#F5F7FB",
@@ -347,6 +353,7 @@ function BookingCard({ item }) {
                 fontSize: "0.72rem",
                 fontWeight: 700,
                 textTransform: "none",
+                whiteSpace: "nowrap",
               }}
             >
               {item.action}
@@ -362,66 +369,91 @@ function Pagination({ page, totalPages, onPrev, onNext, onPage }) {
   if (totalPages <= 1) return null;
 
   return (
-    <Stack
-      direction="row"
-      spacing={0.45}
-      justifyContent="center"
-      alignItems="center"
-      sx={{ mt: 1.85 }}
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: "6px",
+        marginTop: "24px",
+      }}
     >
-      <Button
+      {/* Prev arrow */}
+      <button
         onClick={onPrev}
         disabled={page === 1}
-        sx={{
-          minWidth: 30,
-          width: 30,
-          height: 30,
+        style={{
+          width: 32,
+          height: 32,
+          minWidth: 32,
           borderRadius: "50%",
-          color: "#647387",
-          p: 0,
-          "&:disabled": { opacity: 0.35 },
+          border: "1px solid rgba(225,232,241,0.96)",
+          background: "#FFFFFF",
+          cursor: page === 1 ? "not-allowed" : "pointer",
+          opacity: page === 1 ? 0.35 : 1,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: 0,
+          flexShrink: 0,
         }}
       >
-        <KeyboardArrowLeftRoundedIcon sx={{ fontSize: "1rem" }} />
-      </Button>
+        <KeyboardArrowLeftRoundedIcon style={{ fontSize: "1rem", color: "#647387" }} />
+      </button>
 
-      {Array.from({ length: totalPages }, (_, index) => index + 1).map((n) => (
-        <Button
+      {/* Page numbers */}
+      {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
+        <button
           key={n}
           onClick={() => onPage(n)}
-          sx={{
-            minWidth: 30,
-            width: 30,
-            height: 30,
+          style={{
+            width: 32,
+            height: 32,
+            minWidth: 32,
             borderRadius: "50%",
-            p: 0,
-            color: n === page ? "#FFFFFF" : "#223146",
-            bgcolor: n === page ? "#0E56C8" : "#FFFFFF",
             border: n === page ? "none" : "1px solid rgba(225,232,241,0.96)",
-            fontSize: "0.7rem",
+            background: n === page ? "#0E56C8" : "#FFFFFF",
+            color: n === page ? "#FFFFFF" : "#223146",
+            cursor: "pointer",
+            fontSize: "0.72rem",
             fontWeight: 700,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 0,
+            flexShrink: 0,
+            lineHeight: 1,
+            fontFamily: "inherit",
           }}
         >
           {n}
-        </Button>
+        </button>
       ))}
 
-      <Button
+      {/* Next arrow */}
+      <button
         onClick={onNext}
         disabled={page === totalPages}
-        sx={{
-          minWidth: 30,
-          width: 30,
-          height: 30,
+        style={{
+          width: 32,
+          height: 32,
+          minWidth: 32,
           borderRadius: "50%",
-          color: "#647387",
-          p: 0,
-          "&:disabled": { opacity: 0.35 },
+          border: "1px solid rgba(225,232,241,0.96)",
+          background: "#FFFFFF",
+          cursor: page === totalPages ? "not-allowed" : "pointer",
+          opacity: page === totalPages ? 0.35 : 1,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: 0,
+          flexShrink: 0,
         }}
       >
-        <KeyboardArrowRightRoundedIcon sx={{ fontSize: "1rem" }} />
-      </Button>
-    </Stack>
+        <KeyboardArrowRightRoundedIcon style={{ fontSize: "1rem", color: "#647387" }} />
+      </button>
+    </div>
   );
 }
 
