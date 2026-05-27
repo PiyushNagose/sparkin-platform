@@ -1,49 +1,29 @@
-import {
-  Alert,
-  Box,
-  Button,
-  CircularProgress,
-  Stack,
-  Typography,
-} from "@mui/material";
+import { Box, Button, Stack, Typography } from "@mui/material";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
-import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
-import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
-import GavelRoundedIcon from "@mui/icons-material/GavelRounded";
 import CheckCircleOutlinedIcon from "@mui/icons-material/CheckCircleOutlined";
+import GavelRoundedIcon from "@mui/icons-material/GavelRounded";
+import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
 import { useEffect, useMemo, useState } from "react";
 import { Link as RouterLink } from "react-router-dom";
-import { leadsApi, quotesApi } from "@/features/public/api/leadsApi";
-import { projectsApi } from "@/features/public/api/projectsApi";
 import {
   CustomerErrorBlock,
   CustomerLoadingBlock,
 } from "@/features/customer/components/CustomerPageStates";
+import {
+  buildTenderDetailsPath,
+  formatDate,
+  formatPrice,
+  getLeadQuotes,
+  getLeadStatusMeta,
+  isLeadBiddingExpired,
+  getRelevantProject,
+} from "@/features/customer/lib/customerLeadFlow";
+import { leadsApi, quotesApi } from "@/features/public/api/leadsApi";
+import { projectsApi } from "@/features/public/api/projectsApi";
 
-// ─── helpers ─────────────────────────────────────────────────────────────────
-
-function formatPrice(value) {
-  return new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: "INR",
-    maximumFractionDigits: 0,
-  }).format(Number(value) || 0);
-}
-
-function formatDate(value) {
-  if (!value) return "—";
-  return new Intl.DateTimeFormat("en-IN", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  }).format(new Date(value));
-}
-
-// Build a human-readable title from lead data — never shows "null kW"
 function buildTenderTitle(lead) {
   const kw = lead.property?.sanctionedLoadKw;
   const type = lead.property?.type;
-
   const typeLabel =
     {
       independent_house: "Residential",
@@ -51,134 +31,12 @@ function buildTenderTitle(lead) {
       commercial: "Commercial",
     }[type] || "Solar";
 
-  if (kw) return `${kw}kW ${typeLabel} Solar System`;
-  return `${typeLabel} Solar System`;
+  return kw ? `${kw}kW ${typeLabel} Solar System` : `${typeLabel} Solar System`;
 }
 
-// Status badge config for every possible lead status
-function getStatusConfig(status) {
-  switch (status) {
-    case "verified":
-      return { label: "Verified", tone: "#0E56C8", bg: "#EEF4FF" };
-    case "vendors_assigned":
-      return { label: "Vendors Assigned", tone: "#7A6B00", bg: "#FFF8E6" };
-    case "open_for_quotes":
-      return { label: "Bidding Live", tone: "#239654", bg: "#E8FAEF" };
-    case "quote_selected":
-      return { label: "Vendor Selected", tone: "#0E56C8", bg: "#EEF4FF" };
-    case "closed":
-      return { label: "Closed", tone: "#596579", bg: "#EEF2F6" };
-    case "reviewing":
-      return { label: "Under Review", tone: "#8B8600", bg: "#F4F1C9" };
-    default:
-      // submitted
-      return { label: "Submitted", tone: "#8F98A7", bg: "#F2F5F8" };
-  }
-}
-
-// Whether a lead counts as "active" for the tab filter
 function isActiveLead(lead) {
+  if (isLeadBiddingExpired(lead)) return false;
   return lead.status !== "closed" && lead.status !== "quote_selected";
-}
-
-// Build the full card data object from raw API records
-function toTenderCard(lead, allQuotes, allProjects) {
-  const leadQuotes = allQuotes.filter(
-    (q) => String(q.leadId) === String(lead.id),
-  );
-
-  // Only count non-withdrawn, non-rejected quotes as real bids
-  const activeBids = leadQuotes.filter(
-    (q) => q.status !== "withdrawn" && q.status !== "rejected",
-  );
-
-  const acceptedQuote = leadQuotes.find((q) => q.status === "accepted");
-
-  const bestPrice = activeBids.length
-    ? Math.min(...activeBids.map((q) => Number(q.pricing?.totalPrice) || 0))
-    : null;
-
-  const statusConfig = getStatusConfig(lead.status);
-
-  // Find the matching project for direct navigation
-  const matchingProject = allProjects.find(
-    (p) => String(p.leadId) === String(lead.id),
-  );
-
-  // CTA destination — quote comparison for live tenders, specific project for selected
-  let to = `/tenders/live?leadId=${lead.id}`;
-  if (lead.status === "open_for_quotes" && activeBids.length > 0) {
-    to = `/quotes/compare?leadId=${lead.id}`;
-  } else if (lead.status === "open_for_quotes") {
-    to = `/tenders/live?leadId=${lead.id}`;
-  } else if (lead.status === "quote_selected" || lead.status === "closed") {
-    to = matchingProject
-      ? `/project/installation?projectId=${matchingProject.id}`
-      : "/customer/projects";
-  }
-
-  const ctaLabel =
-    lead.status === "open_for_quotes" && activeBids.length > 0
-      ? "Compare Bids"
-      : lead.status === "open_for_quotes"
-        ? "View Tender"
-        : lead.status === "quote_selected"
-          ? "Track Project"
-          : lead.status === "closed"
-            ? "View Project"
-            : "View Details";
-
-  return {
-    id: lead.id,
-    title: buildTenderTitle(lead),
-    city: lead.installationAddress?.city || "",
-    state: lead.installationAddress?.state || "",
-    submittedAt: formatDate(lead.createdAt || lead.submittedAt),
-    bidCount: activeBids.length,
-    bestPrice,
-    acceptedVendor: acceptedQuote
-      ? acceptedQuote.vendorEmail?.split("@")[0] || "Assigned Vendor"
-      : null,
-    acceptedPrice: acceptedQuote
-      ? formatPrice(acceptedQuote.pricing?.totalPrice)
-      : null,
-    status: lead.status,
-    ...statusConfig,
-    to,
-    ctaLabel,
-    isPrimary:
-      lead.status === "open_for_quotes" || lead.status === "quote_selected",
-  };
-}
-
-// ─── sub-components ──────────────────────────────────────────────────────────
-
-// The sun orb icon used on each tender card
-function SunOrb() {
-  return (
-    <Box
-      sx={{
-        width: 42,
-        height: 42,
-        borderRadius: "50%",
-        background:
-          "radial-gradient(circle at 50% 50%, #FFD44C 0%, #FFAE18 28%, #FF6A00 52%, #682000 78%, #271002 100%)",
-        boxShadow:
-          "inset 0 0 0 2px rgba(255,255,255,0.16), 0 10px 18px rgba(255,124,0,0.22)",
-        position: "relative",
-        flexShrink: 0,
-      }}
-    >
-      <Box
-        sx={{
-          position: "absolute",
-          inset: 9,
-          borderRadius: "50%",
-          border: "1px solid rgba(255,245,214,0.65)",
-        }}
-      />
-    </Box>
-  );
 }
 
 function MetricBox({ label, value, valueTone = "#223146" }) {
@@ -216,6 +74,63 @@ function MetricBox({ label, value, valueTone = "#223146" }) {
   );
 }
 
+function SunOrb() {
+  return (
+    <Box
+      sx={{
+        width: 42,
+        height: 42,
+        borderRadius: "50%",
+        background:
+          "radial-gradient(circle at 50% 50%, #FFD44C 0%, #FFAE18 28%, #FF6A00 52%, #682000 78%, #271002 100%)",
+        boxShadow:
+          "inset 0 0 0 2px rgba(255,255,255,0.16), 0 10px 18px rgba(255,124,0,0.22)",
+        position: "relative",
+        flexShrink: 0,
+      }}
+    >
+      <Box
+        sx={{
+          position: "absolute",
+          inset: 9,
+          borderRadius: "50%",
+          border: "1px solid rgba(255,245,214,0.65)",
+        }}
+      />
+    </Box>
+  );
+}
+
+function toTenderCard(lead, allQuotes, allProjects) {
+  const leadQuotes = getLeadQuotes(allQuotes, lead.id, { activeOnly: true });
+  const matchingProject = getRelevantProject(allProjects, lead.id);
+  const acceptedQuote = leadQuotes.find((quote) => quote.status === "accepted");
+  const bestPrice = leadQuotes.length
+    ? Math.min(...leadQuotes.map((quote) => Number(quote.pricing?.totalPrice) || 0))
+    : null;
+  const statusMeta = getLeadStatusMeta(lead);
+
+  return {
+    id: lead.id,
+    title: buildTenderTitle(lead),
+    city: lead.installationAddress?.city || "",
+    state: lead.installationAddress?.state || "",
+    submittedAt: formatDate(lead.createdAt || lead.submittedAt),
+    bidCount: leadQuotes.length,
+    bestPrice,
+    acceptedVendor: acceptedQuote
+      ? acceptedQuote.vendorEmail?.split("@")[0] || "Assigned Vendor"
+      : null,
+    acceptedPrice: acceptedQuote ? formatPrice(acceptedQuote.pricing?.totalPrice) : null,
+    status: lead.status,
+    label: statusMeta.label,
+    tone: statusMeta.tone,
+    bg: statusMeta.bg,
+    detailsTo: buildTenderDetailsPath(lead.id),
+    projectStatus: matchingProject?.status || null,
+  };
+}
+
 function TenderCard({ item }) {
   const isSelected = item.status === "quote_selected";
   const isClosed = item.status === "closed";
@@ -233,19 +148,13 @@ function TenderCard({ item }) {
         opacity: isClosed ? 0.72 : 1,
       }}
     >
-      {/* Header row */}
       <Stack
         direction={{ xs: "column", sm: "row" }}
         justifyContent="space-between"
         alignItems={{ xs: "flex-start", sm: "center" }}
         spacing={1.15}
       >
-        <Stack
-          direction="row"
-          spacing={1.05}
-          alignItems="flex-start"
-          sx={{ minWidth: 0 }}
-        >
+        <Stack direction="row" spacing={1.05} alignItems="flex-start" sx={{ minWidth: 0 }}>
           <SunOrb />
           <Box sx={{ minWidth: 0 }}>
             <Typography
@@ -292,9 +201,7 @@ function TenderCard({ item }) {
         </Box>
       </Stack>
 
-      {/* Metrics */}
       {isSelected && item.acceptedVendor ? (
-        // Vendor selected — show accepted vendor info instead of bid metrics
         <Box
           sx={{
             mt: 1.25,
@@ -304,25 +211,14 @@ function TenderCard({ item }) {
             border: "1px solid rgba(14,86,200,0.1)",
           }}
         >
-          <Stack direction="row" spacing={0.7} alignItems="center">
-            <CheckCircleOutlinedIcon
-              sx={{ color: "#0E56C8", fontSize: "1rem" }}
-            />
-            <Box>
-              <Typography
-                sx={{ color: "#0E56C8", fontSize: "0.72rem", fontWeight: 800 }}
-              >
-                Vendor Selected: {item.acceptedVendor}
-              </Typography>
-              {item.acceptedPrice && (
-                <Typography
-                  sx={{ mt: 0.15, color: "#4F5F73", fontSize: "0.68rem" }}
-                >
-                  Accepted quote: {item.acceptedPrice}
-                </Typography>
-              )}
-            </Box>
-          </Stack>
+          <Typography sx={{ color: "#0E56C8", fontSize: "0.72rem", fontWeight: 800 }}>
+            Vendor Selected: {item.acceptedVendor}
+          </Typography>
+          {item.acceptedPrice ? (
+            <Typography sx={{ mt: 0.15, color: "#4F5F73", fontSize: "0.68rem" }}>
+              Accepted quote: {item.acceptedPrice}
+            </Typography>
+          ) : null}
         </Box>
       ) : (
         <Box
@@ -349,37 +245,29 @@ function TenderCard({ item }) {
         </Box>
       )}
 
-      {/* CTA */}
-      <Button
-        component={RouterLink}
-        to={item.to}
-        fullWidth
-        variant={item.isPrimary ? "contained" : "text"}
-        endIcon={<ArrowForwardRoundedIcon sx={{ fontSize: "0.95rem" }} />}
-        sx={{
-          mt: 1.3,
-          minHeight: 38,
-          borderRadius: "0.95rem",
-          bgcolor: item.isPrimary ? "#0E56C8" : "#E3E8EF",
-          color: item.isPrimary ? "#FFFFFF" : "#223146",
-          boxShadow: item.isPrimary
-            ? "0 12px 24px rgba(14,86,200,0.14)"
-            : "none",
-          fontSize: "0.78rem",
-          fontWeight: 700,
-          textTransform: "none",
-          "&:hover": {
-            bgcolor: item.isPrimary ? "#0B49AD" : "#D5DCE6",
-          },
-        }}
-      >
-        {item.ctaLabel}
-      </Button>
+      <Stack direction={{ xs: "column", sm: "row" }} spacing={0.9} sx={{ mt: 1.3 }}>
+        <Button
+          component={RouterLink}
+          to={item.detailsTo}
+          fullWidth
+          variant="outlined"
+          sx={{
+            minHeight: 38,
+            borderRadius: "0.95rem",
+            borderColor: "#D5DCE6",
+            color: "#223146",
+            fontSize: "0.78rem",
+            fontWeight: 700,
+            textTransform: "none",
+          }}
+        >
+          View Details
+        </Button>
+      </Stack>
     </Box>
   );
 }
 
-// Tab bar — clickable, drives the filter
 function TabBar({ activeTab, onTabChange, activeCount, closedCount }) {
   const tabs = [
     { key: "active", label: "Active", count: activeCount },
@@ -415,7 +303,7 @@ function TabBar({ activeTab, onTabChange, activeCount, closedCount }) {
                 ({tab.count})
               </Box>
             </Typography>
-            {isSelected && (
+            {isSelected ? (
               <Box
                 sx={{
                   position: "absolute",
@@ -427,15 +315,13 @@ function TabBar({ activeTab, onTabChange, activeCount, closedCount }) {
                   bgcolor: "#0E56C8",
                 }}
               />
-            )}
+            ) : null}
           </Box>
         );
       })}
     </Stack>
   );
 }
-
-// ─── page ─────────────────────────────────────────────────────────────────────
 
 export default function CustomerTendersPage() {
   const [leads, setLeads] = useState([]);
@@ -462,29 +348,12 @@ export default function CustomerTendersPage() {
 
       const [leadResult, quoteResult, projectResult] = results;
 
-      // Handle each result independently
-      if (leadResult.status === "fulfilled") {
-        setLeads(leadResult.value || []);
-      } else {
-        console.error("Failed to load leads:", leadResult.reason);
-        setLeads([]);
-      }
+      setLeads(leadResult.status === "fulfilled" ? leadResult.value || [] : []);
+      setQuotes(quoteResult.status === "fulfilled" ? quoteResult.value || [] : []);
+      setProjects(
+        projectResult.status === "fulfilled" ? projectResult.value || [] : [],
+      );
 
-      if (quoteResult.status === "fulfilled") {
-        setQuotes(quoteResult.value || []);
-      } else {
-        console.error("Failed to load quotes:", quoteResult.reason);
-        setQuotes([]);
-      }
-
-      if (projectResult.status === "fulfilled") {
-        setProjects(projectResult.value || []);
-      } else {
-        console.error("Failed to load projects:", projectResult.reason);
-        setProjects([]);
-      }
-
-      // Show error only if all failed
       if (
         leadResult.status === "rejected" &&
         quoteResult.status === "rejected" &&
@@ -494,9 +363,7 @@ export default function CustomerTendersPage() {
       }
     } catch (apiError) {
       if (active) {
-        setError(
-          apiError?.response?.data?.message || "Could not load tenders.",
-        );
+        setError(apiError?.response?.data?.message || "Could not load tenders.");
       }
     } finally {
       if (active) setIsLoading(false);
@@ -505,13 +372,17 @@ export default function CustomerTendersPage() {
 
   useEffect(() => {
     let active = true;
-    loadTenders(active, true); // force-fresh on mount
+    loadTenders(active, true);
+
+    const intervalId = window.setInterval(() => {
+      loadTenders(active, true);
+    }, 30000);
+
     return () => {
       active = false;
+      window.clearInterval(intervalId);
     };
   }, []);
-
-  // ── derived state ──────────────────────────────────────────────────────────
 
   const allCards = useMemo(
     () => leads.map((lead) => toTenderCard(lead, quotes, projects)),
@@ -520,8 +391,8 @@ export default function CustomerTendersPage() {
 
   const activeCards = useMemo(
     () =>
-      allCards.filter((c) =>
-        isActiveLead(leads.find((l) => l.id === c.id) || {}),
+      allCards.filter((card) =>
+        isActiveLead(leads.find((lead) => lead.id === card.id) || {}),
       ),
     [allCards, leads],
   );
@@ -529,26 +400,19 @@ export default function CustomerTendersPage() {
   const closedCards = useMemo(
     () =>
       allCards.filter(
-        (c) => !isActiveLead(leads.find((l) => l.id === c.id) || {}),
+        (card) => !isActiveLead(leads.find((lead) => lead.id === card.id) || {}),
       ),
     [allCards, leads],
   );
 
   const visibleCards = activeTab === "active" ? activeCards : closedCards;
-
   const totalBids = quotes.filter(
-    (q) => q.status !== "withdrawn" && q.status !== "rejected",
+    (quote) => !["withdrawn", "rejected"].includes(quote.status),
   ).length;
-
-  const liveTenders = leads.filter(
-    (l) => l.status === "open_for_quotes",
-  ).length;
-
-  // ── render ─────────────────────────────────────────────────────────────────
+  const liveTenders = leads.filter((lead) => lead.status === "open_for_quotes").length;
 
   return (
     <Box sx={{ width: "100%" }}>
-      {/* Header */}
       <Stack
         direction={{ xs: "column", lg: "row" }}
         justifyContent="space-between"
@@ -575,7 +439,8 @@ export default function CustomerTendersPage() {
               lineHeight: 1.6,
             }}
           >
-            Track your live bidding processes and compare vendor proposals.
+            Track your live bidding processes, review tender details, and jump to
+            vendor comparison the moment bids arrive.
           </Typography>
         </Box>
 
@@ -600,8 +465,7 @@ export default function CustomerTendersPage() {
         </Button>
       </Stack>
 
-      {/* Summary strip — visible while loading too, shows zeros */}
-      {!error && (
+      {!error ? (
         <Box
           sx={{
             mt: 1.75,
@@ -632,7 +496,7 @@ export default function CustomerTendersPage() {
             {
               label: "Vendor Selected",
               value: String(
-                leads.filter((l) => l.status === "quote_selected").length,
+                leads.filter((lead) => lead.status === "quote_selected").length,
               ).padStart(2, "0"),
               tone: "#596579",
               bg: "#EEF2F6",
@@ -673,14 +537,13 @@ export default function CustomerTendersPage() {
                   lineHeight: 1.05,
                 }}
               >
-                {isLoading ? "—" : stat.value}
+                {isLoading ? "-" : stat.value}
               </Typography>
             </Box>
           ))}
         </Box>
-      )}
+      ) : null}
 
-      {/* Tab bar */}
       <TabBar
         activeTab={activeTab}
         onTabChange={setActiveTab}
@@ -688,20 +551,13 @@ export default function CustomerTendersPage() {
         closedCount={closedCards.length}
       />
 
-      {/* Loading */}
-      {isLoading && <CustomerLoadingBlock mt={0} />}
+      {isLoading ? <CustomerLoadingBlock mt={0} /> : null}
 
-      {/* Error */}
-      {!isLoading && error && (
-        <CustomerErrorBlock
-          message={error}
-          onRetry={() => loadTenders(true)}
-          mt={1.2}
-        />
-      )}
+      {!isLoading && error ? (
+        <CustomerErrorBlock message={error} onRetry={() => loadTenders(true, true)} mt={1.2} />
+      ) : null}
 
-      {/* Empty state */}
-      {!isLoading && !error && visibleCards.length === 0 && (
+      {!isLoading && !error && visibleCards.length === 0 ? (
         <Box
           sx={{
             mt: 1.2,
@@ -715,12 +571,8 @@ export default function CustomerTendersPage() {
         >
           {activeTab === "active" ? (
             <>
-              <GavelRoundedIcon
-                sx={{ color: "#C8D0DC", fontSize: "2rem", mb: 1 }}
-              />
-              <Typography
-                sx={{ color: "#223146", fontSize: "1rem", fontWeight: 800 }}
-              >
+              <GavelRoundedIcon sx={{ color: "#C8D0DC", fontSize: "2rem", mb: 1 }} />
+              <Typography sx={{ color: "#223146", fontSize: "1rem", fontWeight: 800 }}>
                 No active tenders
               </Typography>
               <Typography
@@ -733,8 +585,8 @@ export default function CustomerTendersPage() {
                   mx: "auto",
                 }}
               >
-                Create a booking to broadcast your solar requirement to our
-                verified vendor network.
+                Create a booking to broadcast your solar requirement to our verified
+                vendor network.
               </Typography>
               <Button
                 variant="contained"
@@ -758,12 +610,8 @@ export default function CustomerTendersPage() {
             </>
           ) : (
             <>
-              <CheckCircleOutlinedIcon
-                sx={{ color: "#C8D0DC", fontSize: "2rem", mb: 1 }}
-              />
-              <Typography
-                sx={{ color: "#223146", fontSize: "1rem", fontWeight: 800 }}
-              >
+              <CheckCircleOutlinedIcon sx={{ color: "#C8D0DC", fontSize: "2rem", mb: 1 }} />
+              <Typography sx={{ color: "#223146", fontSize: "1rem", fontWeight: 800 }}>
                 No closed tenders yet
               </Typography>
               <Typography
@@ -776,16 +624,14 @@ export default function CustomerTendersPage() {
                   mx: "auto",
                 }}
               >
-                Tenders move here once a vendor is selected or the request is
-                closed.
+                Tenders move here once a vendor is selected or the request is closed.
               </Typography>
             </>
           )}
         </Box>
-      )}
+      ) : null}
 
-      {/* Tender grid */}
-      {!isLoading && !error && visibleCards.length > 0 && (
+      {!isLoading && !error && visibleCards.length > 0 ? (
         <Box
           sx={{
             mt: 1.2,
@@ -798,7 +644,7 @@ export default function CustomerTendersPage() {
             <TenderCard key={item.id} item={item} />
           ))}
         </Box>
-      )}
+      ) : null}
     </Box>
   );
 }

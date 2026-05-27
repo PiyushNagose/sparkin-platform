@@ -1,34 +1,37 @@
-import {
-  Alert,
-  Box,
-  Button,
-  CircularProgress,
-  Stack,
-  Typography,
-} from "@mui/material";
+import { Box, Button, Stack, Typography } from "@mui/material";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
+import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
 import BoltOutlinedIcon from "@mui/icons-material/BoltOutlined";
 import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
-import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
-import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
-import SavingsOutlinedIcon from "@mui/icons-material/SavingsOutlined";
-import TrackChangesRoundedIcon from "@mui/icons-material/TrackChangesRounded";
 import KeyboardArrowLeftRoundedIcon from "@mui/icons-material/KeyboardArrowLeftRounded";
 import KeyboardArrowRightRoundedIcon from "@mui/icons-material/KeyboardArrowRightRounded";
+import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
+import SavingsOutlinedIcon from "@mui/icons-material/SavingsOutlined";
+import TrackChangesRoundedIcon from "@mui/icons-material/TrackChangesRounded";
 import { useEffect, useMemo, useState } from "react";
 import { Link as RouterLink } from "react-router-dom";
-import { leadsApi, quotesApi } from "@/features/public/api/leadsApi";
-import { projectsApi } from "@/features/public/api/projectsApi";
-import bookingHouseModern from "@/shared/assets/images/customer/bookings/booking-house-modern-placeholder.png";
-import bookingHouseClassic from "@/shared/assets/images/customer/bookings/booking-house-classic-placeholder.png";
-import bookingSolarFacility from "@/shared/assets/images/customer/bookings/booking-solar-facility-placeholder.png";
-import bookingHouseUnderConstruction from "@/shared/assets/images/customer/bookings/booking-house-underconstruction-placeholder.png";
 import {
   CustomerErrorBlock,
   CustomerLoadingBlock,
 } from "@/features/customer/components/CustomerPageStates";
-
-// ─── constants ───────────────────────────────────────────────────────────────
+import {
+  buildBookingDetailsPath,
+  formatDate,
+  formatPrice,
+  formatProjectStatus,
+  formatPropertyType,
+  formatRoofSize,
+  getLeadQuotes,
+  getLeadStatusMeta,
+  getPrimaryLeadAction,
+  getRelevantProject,
+} from "@/features/customer/lib/customerLeadFlow";
+import { leadsApi, quotesApi } from "@/features/public/api/leadsApi";
+import { projectsApi } from "@/features/public/api/projectsApi";
+import bookingHouseClassic from "@/shared/assets/images/customer/bookings/booking-house-classic-placeholder.png";
+import bookingHouseModern from "@/shared/assets/images/customer/bookings/booking-house-modern-placeholder.png";
+import bookingHouseUnderConstruction from "@/shared/assets/images/customer/bookings/booking-house-underconstruction-placeholder.png";
+import bookingSolarFacility from "@/shared/assets/images/customer/bookings/booking-solar-facility-placeholder.png";
 
 const IMAGE_POOL = [
   bookingHouseModern,
@@ -39,182 +42,12 @@ const IMAGE_POOL = [
 
 const PAGE_SIZE = 6;
 
-// ─── helpers ─────────────────────────────────────────────────────────────────
-
-function formatDate(value) {
-  if (!value) return "—";
-  return new Intl.DateTimeFormat("en-IN", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  }).format(new Date(value));
-}
-
-function formatPrice(value) {
-  return new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: "INR",
-    maximumFractionDigits: 0,
-  }).format(Number(value) || 0);
-}
-
 function formatCompact(value) {
   const n = Number(value) || 0;
-  if (n >= 100000) return `₹${(n / 100000).toFixed(1)}L`;
-  if (n >= 1000) return `₹${(n / 1000).toFixed(0)}K`;
+  if (n >= 100000) return `Rs${(n / 100000).toFixed(1)}L`;
+  if (n >= 1000) return `Rs${(n / 1000).toFixed(0)}K`;
   return formatPrice(n);
 }
-
-// Human-readable property type from the enum stored in DB
-function formatPropertyType(type) {
-  const map = {
-    independent_house: "Independent House",
-    apartment: "Apartment",
-    commercial: "Commercial",
-  };
-  return map[type] || "Solar Request";
-}
-
-// Human-readable roof size range
-function formatRoofSize(sizeRange) {
-  const map = {
-    under_500: "Under 500 sq ft",
-    "500_1000": "500–1000 sq ft",
-    over_1000: "Over 1000 sq ft",
-  };
-  return map[sizeRange] || "Shared after survey";
-}
-
-// Human-readable project status
-function formatProjectStatus(status) {
-  const map = {
-    site_audit_pending: "Site Audit Pending",
-    design_approval_pending: "Design Approval",
-    installation_scheduled: "Installation Scheduled",
-    installation_in_progress: "Installation In Progress",
-    inspection_pending: "Inspection Pending",
-    activated: "Activated",
-    completed: "Completed",
-    cancelled: "Cancelled",
-  };
-  return map[status] || status?.replaceAll("_", " ") || "In Progress";
-}
-
-// Status badge + CTA config driven by lead status
-function getStatusConfig(lead, matchingProject, quoteCount) {
-  if (lead.status === "quote_selected" || lead.status === "closed") {
-    // Link directly to the specific project if we have it
-    const projectTo = matchingProject
-      ? `/project/installation?projectId=${matchingProject.id}`
-      : "/customer/projects";
-    return {
-      badge: "Project Created",
-      badgeTone: "#239654",
-      badgeBg: "#E8FAEF",
-      action: "Track Project",
-      actionPrimary: true,
-      to: projectTo,
-    };
-  }
-
-  if (lead.status === "open_for_quotes") {
-    return {
-      badge: "Bidding Live",
-      badgeTone: "#6C7300",
-      badgeBg: "#E7F318",
-      action: "View Bids",
-      actionPrimary: true,
-      to:
-        quoteCount > 0
-          ? `/quotes/compare?leadId=${lead.id}`
-          : `/tenders/live?leadId=${lead.id}`,
-    };
-  }
-
-  if (lead.status === "vendors_assigned") {
-    return {
-      badge: "Vendors Assigned",
-      badgeTone: "#7A6B00",
-      badgeBg: "#FFF8E6",
-      action: "View Tender",
-      actionPrimary: false,
-      to: `/tenders/live?leadId=${lead.id}`,
-    };
-  }
-
-  if (lead.status === "verified") {
-    return {
-      badge: "Verified",
-      badgeTone: "#0E56C8",
-      badgeBg: "#EEF4FF",
-      action: "View Tender",
-      actionPrimary: false,
-      to: `/tenders/live?leadId=${lead.id}`,
-    };
-  }
-
-  if (lead.status === "reviewing") {
-    return {
-      badge: "Under Review",
-      badgeTone: "#4F89FF",
-      badgeBg: "#EEF4FF",
-      action: "View Details",
-      actionPrimary: false,
-      to: `/tenders/live?leadId=${lead.id}`,
-    };
-  }
-
-  // submitted — just created
-  return {
-    badge: "Submitted",
-    badgeTone: "#8F98A7",
-    badgeBg: "#F2F5F8",
-    action: "View Details",
-    actionPrimary: false,
-    to: `/tenders/live?leadId=${lead.id}`,
-  };
-}
-
-// Build the card data object from raw API records
-function toBookingCard(lead, allQuotes, allProjects, index) {
-  const leadQuotes = allQuotes.filter(
-    (q) => String(q.leadId) === String(lead.id),
-  );
-  const matchingProject = allProjects.find(
-    (p) => String(p.leadId) === String(lead.id),
-  );
-  const statusConfig = getStatusConfig(
-    lead,
-    matchingProject,
-    leadQuotes.length,
-  );
-  const bestQuote = leadQuotes.length
-    ? Math.min(...leadQuotes.map((q) => Number(q.pricing?.totalPrice) || 0))
-    : null;
-
-  return {
-    id: lead.id,
-    image: IMAGE_POOL[index % IMAGE_POOL.length],
-    title: `${lead.installationAddress?.city || "Location"} — ${formatPropertyType(lead.property?.type)}`,
-    location: `${lead.installationAddress?.city || ""}, ${lead.installationAddress?.state || ""}`,
-    submittedAt: formatDate(lead.createdAt || lead.submittedAt),
-    // left column
-    roofSize: formatRoofSize(lead.roof?.sizeRange),
-    propertyType: formatPropertyType(lead.property?.type),
-    sanctionedLoad: lead.property?.sanctionedLoadKw
-      ? `${lead.property.sanctionedLoadKw} kW`
-      : "Not specified",
-    // right column
-    quoteCount: leadQuotes.length,
-    bestQuote,
-    projectStatus: matchingProject
-      ? formatProjectStatus(matchingProject.status)
-      : null,
-    ...statusConfig,
-  };
-}
-
-// ─── sub-components ──────────────────────────────────────────────────────────
 
 function KpiCard({ icon, label, value, subtitle, tone, bg }) {
   return (
@@ -228,11 +61,7 @@ function KpiCard({ icon, label, value, subtitle, tone, bg }) {
         boxShadow: "0 14px 28px rgba(16,29,51,0.04)",
       }}
     >
-      <Stack
-        direction="row"
-        justifyContent="space-between"
-        alignItems="flex-start"
-      >
+      <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
         <Box
           sx={{
             width: 30,
@@ -305,6 +134,39 @@ function DataField({ label, value }) {
   );
 }
 
+function toBookingCard(lead, allQuotes, allProjects, index) {
+  const leadQuotes = getLeadQuotes(allQuotes, lead.id, { activeOnly: true });
+  const matchingProject = getRelevantProject(allProjects, lead.id);
+  const statusMeta = getLeadStatusMeta(lead);
+  const primaryAction = getPrimaryLeadAction(lead, allQuotes, allProjects);
+  const bestQuote = leadQuotes.length
+    ? Math.min(...leadQuotes.map((quote) => Number(quote.pricing?.totalPrice) || 0))
+    : null;
+
+  return {
+    id: lead.id,
+    image: IMAGE_POOL[index % IMAGE_POOL.length],
+    title: `${lead.installationAddress?.city || "Location"} - ${formatPropertyType(lead.property?.type)}`,
+    location: [lead.installationAddress?.city, lead.installationAddress?.state]
+      .filter(Boolean)
+      .join(", "),
+    submittedAt: formatDate(lead.createdAt || lead.submittedAt),
+    roofSize: formatRoofSize(lead.roof?.sizeRange),
+    propertyType: formatPropertyType(lead.property?.type),
+    quoteCount: leadQuotes.length,
+    bestQuote,
+    projectStatus: matchingProject ? formatProjectStatus(matchingProject.status) : null,
+    badge: statusMeta.label,
+    badgeTone: statusMeta.tone,
+    badgeBg: statusMeta.bg,
+    detailsTo: buildBookingDetailsPath(lead.id),
+    action: primaryAction.label,
+    actionPrimary: primaryAction.primary,
+    to: primaryAction.to,
+    hideDetailsAction: buildBookingDetailsPath(lead.id) === primaryAction.to,
+  };
+}
+
 function BookingCard({ item }) {
   return (
     <Box
@@ -324,7 +186,6 @@ function BookingCard({ item }) {
         justifyContent="space-between"
         alignItems={{ xs: "stretch", md: "center" }}
       >
-        {/* Left — image + details */}
         <Stack
           direction={{ xs: "column", sm: "row" }}
           spacing={1.1}
@@ -392,7 +253,6 @@ function BookingCard({ item }) {
               />
             </Box>
 
-            {/* Best quote pill — only when quotes exist and no project yet */}
             {item.bestQuote && !item.projectStatus ? (
               <Box
                 sx={{
@@ -415,7 +275,6 @@ function BookingCard({ item }) {
           </Box>
         </Stack>
 
-        {/* Right — badge + CTA */}
         <Stack
           spacing={1}
           alignItems={{ xs: "flex-start", md: "flex-end" }}
@@ -439,33 +298,59 @@ function BookingCard({ item }) {
             {item.badge}
           </Box>
 
-          <Button
-            component={RouterLink}
-            to={item.to}
-            variant={item.actionPrimary ? "contained" : "outlined"}
-            endIcon={
-              item.actionPrimary ? (
-                <ArrowForwardRoundedIcon sx={{ fontSize: "0.9rem" }} />
-              ) : null
-            }
-            sx={{
-              minHeight: 34,
-              px: 1.35,
-              alignSelf: { xs: "stretch", sm: "flex-start", md: "auto" },
-              borderRadius: "0.85rem",
-              bgcolor: item.actionPrimary ? "#0E56C8" : "#F5F7FB",
-              borderColor: "rgba(225,232,241,0.96)",
-              color: item.actionPrimary ? "#FFFFFF" : "#223146",
-              boxShadow: item.actionPrimary
-                ? "0 12px 24px rgba(14,86,200,0.14)"
-                : "none",
-              fontSize: "0.72rem",
-              fontWeight: 700,
-              textTransform: "none",
-            }}
+          <Stack
+            direction={{ xs: "column", sm: "row", md: "column" }}
+            spacing={0.8}
+            alignItems={{ xs: "stretch", md: "flex-end" }}
+            sx={{ width: { xs: "100%", md: "auto" } }}
           >
-            {item.action}
-          </Button>
+            {!item.hideDetailsAction ? (
+              <Button
+                component={RouterLink}
+                to={item.detailsTo}
+                variant="outlined"
+                sx={{
+                  minHeight: 34,
+                  px: 1.35,
+                  borderRadius: "0.85rem",
+                  borderColor: "rgba(225,232,241,0.96)",
+                  color: "#223146",
+                  bgcolor: "#FFFFFF",
+                  fontSize: "0.72rem",
+                  fontWeight: 700,
+                  textTransform: "none",
+                }}
+              >
+                View Details
+              </Button>
+            ) : null}
+            <Button
+              component={RouterLink}
+              to={item.to}
+              variant={item.actionPrimary ? "contained" : "outlined"}
+              endIcon={
+                item.actionPrimary ? (
+                  <ArrowForwardRoundedIcon sx={{ fontSize: "0.9rem" }} />
+                ) : null
+              }
+              sx={{
+                minHeight: 34,
+                px: 1.35,
+                borderRadius: "0.85rem",
+                bgcolor: item.actionPrimary ? "#0E56C8" : "#F5F7FB",
+                borderColor: "rgba(225,232,241,0.96)",
+                color: item.actionPrimary ? "#FFFFFF" : "#223146",
+                boxShadow: item.actionPrimary
+                  ? "0 12px 24px rgba(14,86,200,0.14)"
+                  : "none",
+                fontSize: "0.72rem",
+                fontWeight: 700,
+                textTransform: "none",
+              }}
+            >
+              {item.action}
+            </Button>
+          </Stack>
         </Stack>
       </Stack>
     </Box>
@@ -499,7 +384,7 @@ function Pagination({ page, totalPages, onPrev, onNext, onPage }) {
         <KeyboardArrowLeftRoundedIcon sx={{ fontSize: "1rem" }} />
       </Button>
 
-      {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
+      {Array.from({ length: totalPages }, (_, index) => index + 1).map((n) => (
         <Button
           key={n}
           onClick={() => onPage(n)}
@@ -539,8 +424,6 @@ function Pagination({ page, totalPages, onPrev, onNext, onPage }) {
   );
 }
 
-// ─── page ─────────────────────────────────────────────────────────────────────
-
 export default function CustomerBookingsPage() {
   const [leads, setLeads] = useState([]);
   const [quotes, setQuotes] = useState([]);
@@ -566,29 +449,12 @@ export default function CustomerBookingsPage() {
 
       const [leadResult, quoteResult, projectResult] = results;
 
-      // Handle each result independently
-      if (leadResult.status === "fulfilled") {
-        setLeads(leadResult.value || []);
-      } else {
-        console.error("Failed to load leads:", leadResult.reason);
-        setLeads([]);
-      }
+      setLeads(leadResult.status === "fulfilled" ? leadResult.value || [] : []);
+      setQuotes(quoteResult.status === "fulfilled" ? quoteResult.value || [] : []);
+      setProjects(
+        projectResult.status === "fulfilled" ? projectResult.value || [] : [],
+      );
 
-      if (quoteResult.status === "fulfilled") {
-        setQuotes(quoteResult.value || []);
-      } else {
-        console.error("Failed to load quotes:", quoteResult.reason);
-        setQuotes([]);
-      }
-
-      if (projectResult.status === "fulfilled") {
-        setProjects(projectResult.value || []);
-      } else {
-        console.error("Failed to load projects:", projectResult.reason);
-        setProjects([]);
-      }
-
-      // Show error only if all three failed
       if (
         leadResult.status === "rejected" &&
         quoteResult.status === "rejected" &&
@@ -598,9 +464,7 @@ export default function CustomerBookingsPage() {
       }
     } catch (apiError) {
       if (active) {
-        setError(
-          apiError?.response?.data?.message || "Could not load bookings.",
-        );
+        setError(apiError?.response?.data?.message || "Could not load bookings.");
       }
     } finally {
       if (active) setIsLoading(false);
@@ -609,16 +473,14 @@ export default function CustomerBookingsPage() {
 
   useEffect(() => {
     let active = true;
-    loadBookings(active, true); // force-fresh on mount
+    loadBookings(active, true);
     return () => {
       active = false;
     };
   }, []);
 
-  // ── derived state ──────────────────────────────────────────────────────────
-
   const allCards = useMemo(
-    () => leads.map((lead, i) => toBookingCard(lead, quotes, projects, i)),
+    () => leads.map((lead, index) => toBookingCard(lead, quotes, projects, index)),
     [leads, quotes, projects],
   );
 
@@ -629,30 +491,14 @@ export default function CustomerBookingsPage() {
     safePage * PAGE_SIZE,
   );
 
-  // KPI values — all derived from real data
-  const liveCount = leads.filter((l) => l.status === "open_for_quotes").length;
-  const projectCount = projects.length;
-  const totalKw = projects.reduce(
-    (sum, p) => sum + (Number(p.system?.sizeKw) || 0),
-    0,
-  );
+  const liveCount = leads.filter((lead) => lead.status === "open_for_quotes").length;
+  const totalKw = projects
+    .filter((project) => project.status !== "cancelled")
+    .reduce((sum, project) => sum + (Number(project.system?.sizeKw) || 0), 0);
   const lifetimeSavings = Math.round(totalKw * 1500 * 12 * 25);
-
-  // ── handlers ──────────────────────────────────────────────────────────────
-
-  function handlePrev() {
-    setPage((p) => Math.max(1, p - 1));
-  }
-
-  function handleNext() {
-    setPage((p) => Math.min(totalPages, p + 1));
-  }
-
-  // ── render ─────────────────────────────────────────────────────────────────
 
   return (
     <Box sx={{ width: "100%" }}>
-      {/* Header */}
       <Stack
         direction={{ xs: "column", lg: "row" }}
         justifyContent="space-between"
@@ -679,8 +525,8 @@ export default function CustomerBookingsPage() {
               lineHeight: 1.6,
             }}
           >
-            All your solar requests in one place — track status, bids, and
-            project progress.
+            All your solar requests in one place - review submitted details, watch
+            bidding go live, and jump into project tracking when the system is ready.
           </Typography>
         </Box>
 
@@ -705,15 +551,11 @@ export default function CustomerBookingsPage() {
         </Button>
       </Stack>
 
-      {/* KPI strip — always visible, shows zeros while loading */}
       <Box
         sx={{
           mt: 1.75,
           display: "grid",
-          gridTemplateColumns: {
-            xs: "1fr 1fr",
-            xl: "repeat(4, 1fr)",
-          },
+          gridTemplateColumns: { xs: "1fr 1fr", xl: "repeat(4, 1fr)" },
           gap: 1.3,
         }}
       >
@@ -736,7 +578,7 @@ export default function CustomerBookingsPage() {
         <KpiCard
           icon={<SavingsOutlinedIcon sx={{ fontSize: "0.95rem" }} />}
           label="Savings"
-          value={lifetimeSavings > 0 ? formatCompact(lifetimeSavings) : "—"}
+          value={lifetimeSavings > 0 ? formatCompact(lifetimeSavings) : "-"}
           subtitle="Est. 25-year value"
           tone="#239654"
           bg="#E8FAEF"
@@ -744,26 +586,25 @@ export default function CustomerBookingsPage() {
         <KpiCard
           icon={<BoltOutlinedIcon sx={{ fontSize: "0.95rem" }} />}
           label="Capacity"
-          value={totalKw > 0 ? `${totalKw}kW` : "—"}
+          value={totalKw > 0 ? `${totalKw}kW` : "-"}
           subtitle="Selected system size"
           tone="#8F98A7"
           bg="#F2F5F8"
         />
       </Box>
 
-      {/* Booking list */}
       <Stack spacing={1.35} sx={{ mt: 1.8 }}>
         {isLoading && <CustomerLoadingBlock mt={0} />}
 
-        {!isLoading && error && (
+        {!isLoading && error ? (
           <CustomerErrorBlock
             message={error}
             onRetry={() => loadBookings(true, true)}
             mt={0}
           />
-        )}
+        ) : null}
 
-        {!isLoading && !error && allCards.length === 0 && (
+        {!isLoading && !error && allCards.length === 0 ? (
           <Box
             sx={{
               py: 5,
@@ -812,23 +653,22 @@ export default function CustomerBookingsPage() {
               Create Booking
             </Button>
           </Box>
-        )}
+        ) : null}
 
-        {!isLoading &&
-          !error &&
-          visibleCards.map((item) => <BookingCard key={item.id} item={item} />)}
+        {!isLoading && !error
+          ? visibleCards.map((item) => <BookingCard key={item.id} item={item} />)
+          : null}
       </Stack>
 
-      {/* Pagination */}
-      {!isLoading && !error && (
+      {!isLoading && !error ? (
         <Pagination
           page={safePage}
           totalPages={totalPages}
-          onPrev={handlePrev}
-          onNext={handleNext}
+          onPrev={() => setPage((current) => Math.max(1, current - 1))}
+          onNext={() => setPage((current) => Math.min(totalPages, current + 1))}
           onPage={setPage}
         />
-      )}
+      ) : null}
     </Box>
   );
 }

@@ -62,6 +62,7 @@ export const quotesService = {
       lead.biddingEndsAt &&
       new Date(lead.biddingEndsAt).getTime() < Date.now()
     ) {
+      await leadsRepository.updateStatus(leadId, "closed");
       throw new AppError(409, "The bidding window for this lead has ended");
     }
 
@@ -225,6 +226,18 @@ export const quotesService = {
       throw new AppError(
         403,
         "You can only select vendors for your own bookings",
+      );
+    }
+
+    if (
+      lead.biddingEndsAt &&
+      !["quote_selected", "closed"].includes(lead.status) &&
+      new Date(lead.biddingEndsAt).getTime() <= Date.now()
+    ) {
+      await leadsRepository.updateStatus(quote.leadId, "closed");
+      throw new AppError(
+        409,
+        "The 48-hour bidding window for this booking has ended. Please create a new booking to restart bidding.",
       );
     }
 

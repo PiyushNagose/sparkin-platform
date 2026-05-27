@@ -176,6 +176,22 @@ async function buildCommercialRange(lead, input = {}) {
   };
 }
 
+function isBiddingExpired(lead) {
+  if (!lead?.biddingEndsAt) return false;
+  if (!["vendors_assigned", "open_for_quotes"].includes(lead.status)) return false;
+
+  return new Date(lead.biddingEndsAt).getTime() <= Date.now();
+}
+
+async function closeExpiredLeadIfNeeded(lead) {
+  if (!lead || !isBiddingExpired(lead)) return lead;
+  return leadsRepository.updateStatus(lead.id, "closed");
+}
+
+async function closeExpiredLeads(leads = []) {
+  return Promise.all(leads.map((lead) => closeExpiredLeadIfNeeded(lead)));
+}
+
 export const leadsService = {
   async createLead(user, input) {
     if (!["customer", "vendor", "admin"].includes(user.role)) {
@@ -238,7 +254,7 @@ export const leadsService = {
 
   async listLeads(user) {
     if (user.role === "admin") {
-      return leadsRepository.findAll();
+      return closeExpiredLeads(await leadsRepository.findAll());
     }
 
     if (user.role === "vendor") {
@@ -248,10 +264,14 @@ export const leadsService = {
         throw new AppError(403, "Vendor account is waiting for admin approval");
       }
 
-      return leadsRepository.findVendorVisibleLeads(user.userId);
+      return closeExpiredLeads(
+        await leadsRepository.findVendorVisibleLeads(user.userId),
+      );
     }
 
-    return leadsRepository.findLeadsForCustomer(user.userId);
+    return closeExpiredLeads(
+      await leadsRepository.findLeadsForCustomer(user.userId),
+    );
   },
 
   async getLead(user, leadId) {
@@ -259,7 +279,8 @@ export const leadsService = {
       throw new AppError(400, "Invalid lead id");
     }
 
-    const lead = await leadsRepository.findLeadById(leadId);
+    const rawLead = await leadsRepository.findLeadById(leadId);
+    const lead = await closeExpiredLeadIfNeeded(rawLead);
 
     if (!lead) {
       throw new AppError(404, "Lead not found");

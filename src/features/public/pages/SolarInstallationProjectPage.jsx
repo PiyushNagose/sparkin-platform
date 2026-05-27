@@ -15,7 +15,11 @@ import PaymentsOutlinedIcon from "@mui/icons-material/PaymentsOutlined";
 import SolarPowerRoundedIcon from "@mui/icons-material/SolarPowerRounded";
 import TaskAltRoundedIcon from "@mui/icons-material/TaskAltRounded";
 import { useEffect, useMemo, useState } from "react";
-import { Link as RouterLink, useSearchParams } from "react-router-dom";
+import {
+  Link as RouterLink,
+  useNavigate,
+  useSearchParams,
+} from "react-router-dom";
 import { paymentsApi } from "@/features/public/api/paymentsApi";
 import { projectsApi } from "@/features/public/api/projectsApi";
 import styles from "@/features/public/pages/CalculatorPage.module.css";
@@ -180,6 +184,7 @@ function CardShell({ children, sx = {} }) {
 
 export default function SolarInstallationProjectPage() {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [project, setProject] = useState(null);
   const [payments, setPayments] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -200,9 +205,31 @@ export default function SolarInstallationProjectPage() {
 
         if (projectId) {
           result = await projectsApi.getProject(projectId);
+
+          if (result?.status === "cancelled") {
+            const allProjects = await projectsApi.listProjects();
+            const replacementProject = allProjects.find(
+              (projectItem) =>
+                projectItem.leadId === result.leadId &&
+                projectItem.status !== "cancelled",
+            );
+
+            if (replacementProject) {
+              navigate(
+                `/project/installation?projectId=${replacementProject.id}`,
+                { replace: true },
+              );
+              return;
+            }
+          }
         } else {
           const projects = await projectsApi.listProjects();
-          result = projects && projects.length > 0 ? projects[0] : null;
+          const activeProject = projects.find(
+            (projectItem) => projectItem.status !== "cancelled",
+          );
+          result =
+            activeProject ||
+            (projects && projects.length > 0 ? projects[0] : null);
         }
 
         if (active) setProject(result);
@@ -221,7 +248,7 @@ export default function SolarInstallationProjectPage() {
     return () => {
       active = false;
     };
-  }, [searchParams]);
+  }, [searchParams, navigate]);
 
   useEffect(() => {
     let active = true;
