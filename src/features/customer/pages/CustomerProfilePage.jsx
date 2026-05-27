@@ -432,33 +432,61 @@ export default function CustomerProfilePage() {
                 src={getAvatarSrc(user)}
                 alt="Profile photo"
                 sx={{
-                  width: 84,
-                  height: 84,
-                  borderRadius: "1.1rem",
+                  width: 88,
+                  height: 88,
+                  borderRadius: "50%",
                   objectFit: "cover",
                   display: "block",
+                  border: "3px solid #FFFFFF",
+                  boxShadow: "0 4px 16px rgba(16,29,51,0.12)",
                 }}
               />
-              <Button
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isUploadingAvatar}
-                sx={{
-                  minWidth: 0,
-                  width: 26,
-                  height: 26,
-                  p: 0,
-                  position: "absolute",
-                  right: -6,
-                  bottom: -6,
-                  borderRadius: "0.7rem",
-                  bgcolor: "#0E56C8",
-                  color: "#FFFFFF",
-                  boxShadow: "0 8px 16px rgba(14,86,200,0.2)",
-                  "&:hover": { bgcolor: "#0B49AD" },
-                }}
-              >
-                <CameraAltOutlinedIcon sx={{ fontSize: "0.82rem" }} />
-              </Button>
+           <Box
+  onClick={() => {
+    if (!isUploadingAvatar) {
+      fileInputRef.current?.click();
+    }
+  }}
+  sx={{
+    position: "absolute",
+
+    right: "-2px",
+    bottom: "-2px",
+
+    width: "42px",
+    height: "42px",
+
+    borderRadius: "50%",
+
+    backgroundColor: "#0E56C8",
+
+    border: "3px solid #FFFFFF",
+
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+
+    cursor: isUploadingAvatar ? "not-allowed" : "pointer",
+
+    boxShadow: "0 6px 18px rgba(14,86,200,0.35)",
+
+    zIndex: 10,
+
+    transition: "all 0.2s ease",
+
+    "&:hover": {
+      backgroundColor: "#0B49AD",
+      transform: "scale(1.05)",
+    },
+  }}
+>
+  <CameraAltOutlinedIcon
+    sx={{
+      color: "#FFFFFF",
+      fontSize: "18px",
+    }}
+  />
+</Box>
             </Box>
 
             {/* Identity */}

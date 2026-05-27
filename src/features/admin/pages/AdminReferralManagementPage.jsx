@@ -853,14 +853,34 @@ function ReferralsListTab({ referrals, onUpdateRewardStatus }) {
             onChange={(_, v) => setPage(v)}
             size="small"
             sx={{
+              "& .MuiPagination-ul": {
+                flexWrap: "nowrap",
+                gap: "4px",
+              },
               "& .MuiPaginationItem-root": {
                 borderRadius: "0.6rem",
                 fontSize: "0.78rem",
                 fontWeight: 700,
+                minWidth: 32,
+                height: 32,
+                border: "1px solid #E2E8F0",
+                color: "#223146",
+                margin: 0,
               },
-              "& .Mui-selected": {
+              "& .MuiPaginationItem-root.Mui-selected": {
                 bgcolor: "#0E56C8 !important",
-                color: "white",
+                color: "#FFFFFF !important",
+                border: "none",
+                fontWeight: 800,
+              },
+              "& .MuiPaginationItem-root:hover:not(.Mui-selected)": {
+                bgcolor: "#EEF4FF",
+              },
+              "& .MuiPaginationItem-ellipsis": {
+                border: "none",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
               },
             }}
           />

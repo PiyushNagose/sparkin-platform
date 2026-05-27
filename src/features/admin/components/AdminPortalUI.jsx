@@ -22,7 +22,7 @@ export function AdminPageShell({ children, sx }) {
   return <Box sx={{ width: "100%", ...sx }}>{children}</Box>;
 }
 
-export function AdminPageHeader({ title, subtitle, actions }) {
+export function AdminPageHeader({ title, subtitle, subtitleSx, actions }) {
   return (
     <Stack
       direction={{ xs: "column", lg: "row" }}
@@ -43,7 +43,7 @@ export function AdminPageHeader({ title, subtitle, actions }) {
           {title}
         </Typography>
         {subtitle ? (
-          <Typography sx={{ mt: 0.7, maxWidth: 620, color: adminUi.colors.muted, fontSize: "0.94rem", lineHeight: 1.55 }}>
+          <Typography sx={{ mt: 0.7, maxWidth: 620, color: adminUi.colors.muted, fontSize: "0.94rem", lineHeight: 1.55, ...subtitleSx }}>
             {subtitle}
           </Typography>
         ) : null}

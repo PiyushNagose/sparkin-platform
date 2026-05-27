@@ -365,6 +365,7 @@ export default function AdminBiddingPage() {
       <AdminPageHeader
         title="Bidding Monitoring"
         subtitle="Track real-time vendor bidding activity and ensure market fairness across all active projects."
+        subtitleSx={{ whiteSpace: "nowrap", maxWidth: "none" }}
       />
 
       {state.error ? <AdminErrorState>{state.error}</AdminErrorState> : null}
