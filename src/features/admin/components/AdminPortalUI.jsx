@@ -43,9 +43,26 @@ export function AdminPageHeader({ title, subtitle, subtitleSx, actions }) {
           {title}
         </Typography>
         {subtitle ? (
-          <Typography sx={{ mt: 0.7, maxWidth: 620, color: adminUi.colors.muted, fontSize: "0.94rem", lineHeight: 1.55, ...subtitleSx }}>
-            {subtitle}
-          </Typography>
+       <Typography
+  sx={{
+    mt: 0.8,
+
+    color: "#647387",
+    fontSize: "0.92rem",
+    fontWeight: 500,
+
+    whiteSpace: "nowrap",
+
+    overflow: "hidden",
+
+    textOverflow: "ellipsis",
+
+    width: "100%",
+    maxWidth: "100%",
+  }}
+>
+  {subtitle}
+</Typography>
         ) : null}
       </Box>
 
