@@ -160,7 +160,7 @@ export function buildAdminNotifications(data = {}) {
           title: "Assigned vendors have not bid yet",
           message: `${assignedCount} vendor${assignedCount === 1 ? "" : "s"} assigned for ${customerName}, with no submitted quote yet.`,
           actionLabel: "Monitor bidding",
-          path: "/admin/bidding",
+          path: `/admin/bidding?leadId=${leadId}`,
           createdAt: getBestDate(lead),
         });
       }
