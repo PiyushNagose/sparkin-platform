@@ -276,8 +276,14 @@ export default function CalculatorPage() {
                   borderRadius: "0.85rem",
                   fontSize: "1rem",
                   fontWeight: 700,
+                  color: "#FFFFFF",
                   background: "linear-gradient(180deg, #1A66E8 0%, #0E56C8 100%)",
                   boxShadow: "0 10px 24px rgba(14,86,200,0.18)",
+                  "&.Mui-disabled": {
+                    color: "#FFFFFF",
+                    background: "linear-gradient(180deg, #1A66E8 0%, #0E56C8 100%)",
+                    opacity: 0.75,
+                  },
                   "&:hover": {
                     background: "linear-gradient(180deg, #2C76F0 0%, #145FCF 100%)",
                     boxShadow: "0 16px 30px rgba(14,86,200,0.22)",
