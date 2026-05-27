@@ -23,7 +23,7 @@ import Groups2OutlinedIcon from "@mui/icons-material/Groups2Outlined";
 import TrendingUpRoundedIcon from "@mui/icons-material/TrendingUpRounded";
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import { useEffect, useMemo, useState } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useSearchParams } from "react-router-dom";
 import {
   AdminEmptyState,
   AdminErrorState,
@@ -79,6 +79,21 @@ function getCustomerLocation(lead) {
 
 function getLatestQuoteAmount(quotes) {
   return quotes[0]?.pricing?.totalPrice || 0;
+}
+
+function formatTimeLeft(value, now) {
+  const endsAt = value ? new Date(value).getTime() : 0;
+  if (!endsAt) return "Window pending";
+
+  const remainingMs = endsAt - now;
+  if (remainingMs <= 0) return "Closed";
+
+  const totalSeconds = Math.floor(remainingMs / 1000);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  return `${hours}h ${String(minutes).padStart(2, "0")}m ${String(seconds).padStart(2, "0")}s`;
 }
 
 function StatCard({
@@ -186,18 +201,21 @@ function StatusPill({ status }) {
 }
 
 export default function AdminBiddingPage() {
+  const [searchParams] = useSearchParams();
   const [state, setState] = useState({ loading: true, error: "", data: null });
   const [filters, setFilters] = useState({
     status: "all",
     dateRange: "7",
     bidRange: "all",
   });
+  const [now, setNow] = useState(() => Date.now());
   const [acceptingId, setAcceptingId] = useState("");
   const [toast, setToast] = useState({
     open: false,
     message: "",
     severity: "success",
   });
+  const leadFilterId = searchParams.get("leadId");
 
   useEffect(() => {
     let active = true;
@@ -224,6 +242,14 @@ export default function AdminBiddingPage() {
     return () => {
       active = false;
     };
+  }, []);
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      setNow(Date.now());
+    }, 1000);
+
+    return () => window.clearInterval(intervalId);
   }, []);
 
   const rows = useMemo(() => {
@@ -257,6 +283,7 @@ export default function AdminBiddingPage() {
           quotes: leadQuotes,
           status,
           bidAmount: getLatestQuoteAmount(leadQuotes),
+          biddingEndsAt: lead.biddingEndsAt,
           latestActivityAt:
             leadQuotes[0]?.submittedAt || lead.updatedAt || lead.createdAt,
         };
@@ -281,10 +308,12 @@ export default function AdminBiddingPage() {
         (filters.bidRange === "low" && bidCount <= 3) ||
         (filters.bidRange === "medium" && bidCount > 3 && bidCount <= 8) ||
         (filters.bidRange === "high" && bidCount > 8);
+      const matchesLead =
+        !leadFilterId || String(row.lead.id) === String(leadFilterId);
 
-      return matchesStatus && matchesDate && matchesBidRange;
+      return matchesStatus && matchesDate && matchesBidRange && matchesLead;
     });
-  }, [rows, filters]);
+  }, [rows, filters, leadFilterId]);
 
   const metrics = useMemo(() => {
     const quotes = state.data?.quotes || [];
@@ -479,6 +508,7 @@ export default function AdminBiddingPage() {
                   "Customer",
                   "Total Bids",
                   "Bid Amount",
+                  "Time Left",
                   "Status",
                   "Actions",
                 ].map((heading) => (
@@ -504,7 +534,14 @@ export default function AdminBiddingPage() {
                   <TableRow
                     key={row.lead.id}
                     hover
-                    sx={{ "& td": { borderColor: "#EEF2F6", py: 2 } }}
+                    sx={{
+                      bgcolor:
+                        leadFilterId &&
+                        String(row.lead.id) === String(leadFilterId)
+                          ? "#F8FBFF"
+                          : "transparent",
+                      "& td": { borderColor: "#EEF2F6", py: 2 },
+                    }}
                   >
                     <TableCell>
                       <Typography
@@ -556,6 +593,20 @@ export default function AdminBiddingPage() {
                       {row.bidAmount ? formatMoney(row.bidAmount) : "Pending"}
                     </TableCell>
                     <TableCell>
+                      <Typography
+                        sx={{
+                          color:
+                            formatTimeLeft(row.biddingEndsAt, now) === "Closed"
+                              ? "#D94444"
+                              : "#223146",
+                          fontSize: "0.82rem",
+                          fontWeight: 850,
+                        }}
+                      >
+                        {formatTimeLeft(row.biddingEndsAt, now)}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
                       <StatusPill status={row.status} />
                     </TableCell>
                     <TableCell>
@@ -605,7 +656,7 @@ export default function AdminBiddingPage() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={6}>
+                  <TableCell colSpan={7}>
                     <AdminEmptyState
                       title="No bidding activity found"
                       subtitle="Open verified leads for quotes or adjust filters."

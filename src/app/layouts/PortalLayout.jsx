@@ -65,6 +65,22 @@ import {
   markAdminNotificationsRead,
   readAdminNotificationIds,
 } from "@/features/admin/lib/adminNotifications";
+import {
+  VENDOR_NOTIFICATIONS_CHANGED,
+  buildVendorNotifications,
+  decorateVendorNotifications,
+  formatVendorNotificationTime,
+  markVendorNotificationsRead,
+  readVendorNotificationIds,
+} from "@/features/vendor/lib/vendorNotifications";
+import {
+  CUSTOMER_NOTIFICATIONS_CHANGED,
+  buildCustomerNotifications,
+  decorateCustomerNotifications,
+  formatCustomerNotificationTime,
+  markCustomerNotificationsRead,
+  readCustomerNotificationIds,
+} from "@/features/customer/lib/customerNotifications";
 
 // ─── constants ────────────────────────────────────────────────────────────────
 
@@ -254,6 +270,15 @@ export function PortalLayout({ portal }) {
     readAdminNotificationIds(),
   );
 
+  const [vendorNotifications, setVendorNotifications] = useState([]);
+  const [vendorNotificationReadIds, setVendorNotificationReadIds] = useState(
+    () => readVendorNotificationIds(),
+  );
+
+  const [customerNotifications, setCustomerNotifications] = useState([]);
+  const [customerNotificationReadIds, setCustomerNotificationReadIds] =
+    useState(() => readCustomerNotificationIds());
+
   const navItems = portalNavigation[portal];
   const navIconMap =
     portal === "admin"
@@ -302,6 +327,15 @@ export function PortalLayout({ portal }) {
         ).length,
         pendingPayments: payments.filter((p) => p.status === "pending").length,
       });
+
+      // Build individual notifications
+      setVendorNotifications(
+        buildVendorNotifications({
+          leads,
+          projects,
+          payments,
+        }),
+      );
     }
 
     loadVendorSummary();
@@ -315,11 +349,13 @@ export function PortalLayout({ portal }) {
     let active = true;
 
     async function loadCustomerSummary() {
-      const [quotesRes, serviceRes, projectsRes] = await Promise.allSettled([
-        quotesApi.listQuotes(),
-        serviceRequestsApi.listRequests(),
-        projectsApi.listProjects(),
-      ]);
+      const [quotesRes, serviceRes, projectsRes, paymentsRes] =
+        await Promise.allSettled([
+          quotesApi.listQuotes(),
+          serviceRequestsApi.listRequests(),
+          projectsApi.listProjects(),
+          paymentsApi.listPayments(),
+        ]);
       if (!active) return;
 
       const quotes = quotesRes.status === "fulfilled" ? quotesRes.value : [];
@@ -327,6 +363,8 @@ export function PortalLayout({ portal }) {
         serviceRes.status === "fulfilled" ? serviceRes.value : [];
       const projects =
         projectsRes.status === "fulfilled" ? projectsRes.value : [];
+      const payments =
+        paymentsRes.status === "fulfilled" ? paymentsRes.value : [];
 
       setCustomerSummary({
         pendingQuotes: quotes.filter((q) => q.status === "submitted").length,
@@ -337,6 +375,15 @@ export function PortalLayout({ portal }) {
           (p) => p.status !== "completed" && p.status !== "cancelled",
         ).length,
       });
+
+      // Build individual notifications
+      setCustomerNotifications(
+        buildCustomerNotifications({
+          quotes,
+          projects,
+          payments,
+        }),
+      );
     }
 
     loadCustomerSummary();
@@ -378,6 +425,39 @@ export function PortalLayout({ portal }) {
     };
   }, [portal]);
 
+  useEffect(() => {
+    if (portal !== "vendor" || typeof window === "undefined") return undefined;
+
+    const syncReadState = () => {
+      setVendorNotificationReadIds(readVendorNotificationIds());
+    };
+
+    window.addEventListener(VENDOR_NOTIFICATIONS_CHANGED, syncReadState);
+    window.addEventListener("storage", syncReadState);
+
+    return () => {
+      window.removeEventListener(VENDOR_NOTIFICATIONS_CHANGED, syncReadState);
+      window.removeEventListener("storage", syncReadState);
+    };
+  }, [portal]);
+
+  useEffect(() => {
+    if (portal !== "customer" || typeof window === "undefined")
+      return undefined;
+
+    const syncReadState = () => {
+      setCustomerNotificationReadIds(readCustomerNotificationIds());
+    };
+
+    window.addEventListener(CUSTOMER_NOTIFICATIONS_CHANGED, syncReadState);
+    window.addEventListener("storage", syncReadState);
+
+    return () => {
+      window.removeEventListener(CUSTOMER_NOTIFICATIONS_CHANGED, syncReadState);
+      window.removeEventListener("storage", syncReadState);
+    };
+  }, [portal]);
+
   // Register admin contact for chat — so vendors/customers can find the admin
   useEffect(() => {
     if (portal !== "admin") return;
@@ -392,60 +472,42 @@ export function PortalLayout({ portal }) {
     [adminNotifications, adminNotificationReadIds],
   );
 
-  const notificationCount =
-    portal === "admin"
-      ? decoratedAdminNotifications.filter((item) => !item.isRead).length
-      : portal === "vendor"
-        ? vendorSummary.openLeads +
-          vendorSummary.activeProjects +
-          vendorSummary.pendingPayments
-        : customerSummary.pendingQuotes +
-          customerSummary.activeServiceRequests +
-          customerSummary.activeProjects;
+  const decoratedVendorNotifications = useMemo(
+    () =>
+      decorateVendorNotifications(
+        vendorNotifications,
+        vendorNotificationReadIds,
+      ),
+    [vendorNotifications, vendorNotificationReadIds],
+  );
+
+  const decoratedCustomerNotifications = useMemo(
+    () =>
+      decorateCustomerNotifications(
+        customerNotifications,
+        customerNotificationReadIds,
+      ),
+    [customerNotifications, customerNotificationReadIds],
+  );
 
   const notificationItems = useMemo(() => {
     if (portal === "admin") {
-      return decoratedAdminNotifications.slice(0, 6);
+      return decoratedAdminNotifications.filter((item) => !item.isRead);
     }
 
     if (portal === "vendor") {
-      return [
-        {
-          label: `${vendorSummary.openLeads} open lead${vendorSummary.openLeads === 1 ? "" : "s"} need review`,
-          caption: "Review new customer opportunities",
-          path: "/vendor/leads",
-        },
-        {
-          label: `${vendorSummary.activeProjects} active project${vendorSummary.activeProjects === 1 ? "" : "s"}`,
-          caption: "Track installation milestones",
-          path: "/vendor/projects",
-        },
-        {
-          label: `${vendorSummary.pendingPayments} pending payment${vendorSummary.pendingPayments === 1 ? "" : "s"}`,
-          caption: "Check payment schedules and invoices",
-          path: "/vendor/payments",
-        },
-      ];
+      return decoratedVendorNotifications.filter((item) => !item.isRead);
     }
 
-    return [
-      {
-        label: `${customerSummary.pendingQuotes} new quote${customerSummary.pendingQuotes === 1 ? "" : "s"} received`,
-        caption: "Compare vendor proposals on your tenders",
-        path: "/customer/tenders",
-      },
-      {
-        label: `${customerSummary.activeProjects} active project${customerSummary.activeProjects === 1 ? "" : "s"}`,
-        caption: "Track your solar installation progress",
-        path: "/customer/projects",
-      },
-      {
-        label: `${customerSummary.activeServiceRequests} open service request${customerSummary.activeServiceRequests === 1 ? "" : "s"}`,
-        caption: "Check status of your support tickets",
-        path: "/customer/services",
-      },
-    ];
-  }, [portal, vendorSummary, customerSummary, decoratedAdminNotifications]);
+    return decoratedCustomerNotifications.filter((item) => !item.isRead);
+  }, [
+    portal,
+    decoratedAdminNotifications,
+    decoratedVendorNotifications,
+    decoratedCustomerNotifications,
+  ]);
+
+  const notificationCount = notificationItems.length;
 
   // ── handlers ──────────────────────────────────────────────────────────────
 
@@ -880,14 +942,17 @@ export function PortalLayout({ portal }) {
                 PaperProps={{
                   sx: {
                     mt: 1,
-                    width: 300,
+                    width: 320,
+                    maxHeight: 500,
                     borderRadius: "1rem",
                     border: "1px solid rgba(225,232,241,0.96)",
                     boxShadow: "0 18px 38px rgba(16,29,51,0.14)",
+                    display: "flex",
+                    flexDirection: "column",
                   },
                 }}
               >
-                <Box sx={{ px: 1.5, py: 1.1 }}>
+                <Box sx={{ px: 1.5, py: 1.1, flexShrink: 0 }}>
                   <Typography
                     sx={{
                       color: "#18253A",
@@ -910,33 +975,53 @@ export function PortalLayout({ portal }) {
 
                 {portal === "admin" ? (
                   [
-                    ...(notificationItems.length
-                      ? notificationItems.map((item) => (
-                          <MenuItem
-                            key={item.id}
-                            component={NavLink}
-                            to={item.path}
-                            onClick={() => {
-                              setAdminNotificationReadIds(
-                                markAdminNotificationsRead([item.id]),
-                              );
-                              setNotificationAnchor(null);
-                            }}
-                            sx={{
-                              alignItems: "flex-start",
-                              py: 1.1,
-                              whiteSpace: "normal",
-                              bgcolor: item.isRead ? "transparent" : "#F8FBFF",
-                            }}
-                          >
-                            <Box sx={{ minWidth: 0 }}>
-                              <Stack
-                                direction="row"
-                                spacing={0.8}
-                                alignItems="center"
-                                sx={{ mb: 0.3 }}
-                              >
-                                {!item.isRead ? (
+                    <Box
+                      key="admin-notifications-scroll"
+                      sx={{
+                        flex: 1,
+                        overflowY: "auto",
+                        minHeight: 0,
+                        "&::-webkit-scrollbar": {
+                          width: "6px",
+                        },
+                        "&::-webkit-scrollbar-track": {
+                          bgcolor: "transparent",
+                        },
+                        "&::-webkit-scrollbar-thumb": {
+                          bgcolor: "#D0D8E0",
+                          borderRadius: "3px",
+                          "&:hover": {
+                            bgcolor: "#B8C1CC",
+                          },
+                        },
+                      }}
+                    >
+                      {notificationItems.length > 0 ? (
+                        notificationItems.map((item) => (
+                            <MenuItem
+                              key={item.id}
+                              component={NavLink}
+                              to={item.path}
+                              onClick={() => {
+                                setAdminNotificationReadIds(
+                                  markAdminNotificationsRead([item.id]),
+                                );
+                                setNotificationAnchor(null);
+                              }}
+                              sx={{
+                                alignItems: "flex-start",
+                                py: 1.1,
+                                whiteSpace: "normal",
+                                bgcolor: "#F8FBFF",
+                              }}
+                            >
+                              <Box sx={{ minWidth: 0 }}>
+                                <Stack
+                                  direction="row"
+                                  spacing={0.8}
+                                  alignItems="center"
+                                  sx={{ mb: 0.3 }}
+                                >
                                   <Box
                                     sx={{
                                       width: 7,
@@ -946,53 +1031,53 @@ export function PortalLayout({ portal }) {
                                       flexShrink: 0,
                                     }}
                                   />
-                                ) : null}
+                                  <Typography
+                                    sx={{
+                                      color: "#223146",
+                                      fontSize: "0.78rem",
+                                      fontWeight: 850,
+                                      lineHeight: 1.3,
+                                    }}
+                                  >
+                                    {item.title}
+                                  </Typography>
+                                </Stack>
                                 <Typography
                                   sx={{
-                                    color: "#223146",
-                                    fontSize: "0.78rem",
-                                    fontWeight: 850,
-                                    lineHeight: 1.3,
+                                    color: "#7A8799",
+                                    fontSize: "0.68rem",
+                                    lineHeight: 1.45,
                                   }}
                                 >
-                                  {item.title}
+                                  {item.message}
                                 </Typography>
-                              </Stack>
-                              <Typography
-                                sx={{
-                                  color: "#7A8799",
-                                  fontSize: "0.68rem",
-                                  lineHeight: 1.45,
-                                }}
-                              >
-                                {item.message}
-                              </Typography>
-                              <Typography
-                                sx={{
-                                  mt: 0.35,
-                                  color: "#0E56C8",
-                                  fontSize: "0.64rem",
-                                  fontWeight: 850,
-                                }}
-                              >
-                                {formatAdminNotificationTime(item.createdAt)} -{" "}
-                                {item.type}
-                              </Typography>
-                            </Box>
-                          </MenuItem>
-                        ))
-                      : [
-                          <MenuItem
-                            key="empty-admin-notifications"
-                            onClick={() => setNotificationAnchor(null)}
+                                <Typography
+                                  sx={{
+                                    mt: 0.35,
+                                    color: "#0E56C8",
+                                    fontSize: "0.64rem",
+                                    fontWeight: 850,
+                                  }}
+                                >
+                                  {formatAdminNotificationTime(item.createdAt)}{" "}
+                                  - {item.type}
+                                </Typography>
+                              </Box>
+                            </MenuItem>
+                          ))
+                      ) : (
+                        <MenuItem
+                          key="empty-admin-notifications"
+                          onClick={() => setNotificationAnchor(null)}
+                        >
+                          <Typography
+                            sx={{ color: "#7A8799", fontSize: "0.76rem" }}
                           >
-                            <Typography
-                              sx={{ color: "#7A8799", fontSize: "0.76rem" }}
-                            >
-                              No platform notifications right now.
-                            </Typography>
-                          </MenuItem>,
-                        ]),
+                            No unread notifications.
+                          </Typography>
+                        </MenuItem>
+                      )}
+                    </Box>,
                     <Divider key="admin-notification-divider" />,
                     <Box
                       key="admin-notification-actions"
@@ -1002,6 +1087,7 @@ export function PortalLayout({ portal }) {
                         display: "flex",
                         gap: 0.8,
                         justifyContent: "space-between",
+                        flexShrink: 0,
                       }}
                     >
                       <Button
@@ -1038,6 +1124,288 @@ export function PortalLayout({ portal }) {
                         }}
                       >
                         View all
+                      </Button>
+                    </Box>,
+                  ]
+                ) : portal === "vendor" ? (
+                  [
+                    <Box
+                      key="vendor-notifications-scroll"
+                      sx={{
+                        flex: 1,
+                        overflowY: "auto",
+                        minHeight: 0,
+                        "&::-webkit-scrollbar": {
+                          width: "6px",
+                        },
+                        "&::-webkit-scrollbar-track": {
+                          bgcolor: "transparent",
+                        },
+                        "&::-webkit-scrollbar-thumb": {
+                          bgcolor: "#D0D8E0",
+                          borderRadius: "3px",
+                          "&:hover": {
+                            bgcolor: "#B8C1CC",
+                          },
+                        },
+                      }}
+                    >
+                      {notificationItems.length > 0 ? (
+                        notificationItems.map((item) => (
+                            <MenuItem
+                              key={item.id}
+                              component={NavLink}
+                              to={item.path}
+                              onClick={() => {
+                                setVendorNotificationReadIds(
+                                  markVendorNotificationsRead([item.id]),
+                                );
+                                setNotificationAnchor(null);
+                              }}
+                              sx={{
+                                alignItems: "flex-start",
+                                py: 1.1,
+                                whiteSpace: "normal",
+                                bgcolor: "#F8FBFF",
+                              }}
+                            >
+                              <Box sx={{ minWidth: 0 }}>
+                                <Stack
+                                  direction="row"
+                                  spacing={0.8}
+                                  alignItems="center"
+                                  sx={{ mb: 0.3 }}
+                                >
+                                  <Box
+                                    sx={{
+                                      width: 7,
+                                      height: 7,
+                                      borderRadius: "50%",
+                                      bgcolor: "#0E56C8",
+                                      flexShrink: 0,
+                                    }}
+                                  />
+                                  <Typography
+                                    sx={{
+                                      color: "#223146",
+                                      fontSize: "0.78rem",
+                                      fontWeight: 850,
+                                      lineHeight: 1.3,
+                                    }}
+                                  >
+                                    {item.title}
+                                  </Typography>
+                                </Stack>
+                                <Typography
+                                  sx={{
+                                    color: "#7A8799",
+                                    fontSize: "0.68rem",
+                                    lineHeight: 1.45,
+                                  }}
+                                >
+                                  {item.message}
+                                </Typography>
+                                <Typography
+                                  sx={{
+                                    mt: 0.35,
+                                    color: "#0E56C8",
+                                    fontSize: "0.64rem",
+                                    fontWeight: 850,
+                                  }}
+                                >
+                                  {formatVendorNotificationTime(item.createdAt)}{" "}
+                                  - {item.type}
+                                </Typography>
+                              </Box>
+                            </MenuItem>
+                          ))
+                      ) : (
+                        <MenuItem
+                          key="empty-vendor-notifications"
+                          onClick={() => setNotificationAnchor(null)}
+                        >
+                          <Typography
+                            sx={{ color: "#7A8799", fontSize: "0.76rem" }}
+                          >
+                            No unread notifications.
+                          </Typography>
+                        </MenuItem>
+                      )}
+                    </Box>,
+                    <Divider key="vendor-notification-divider" />,
+                    <Box
+                      key="vendor-notification-actions"
+                      sx={{
+                        px: 1.2,
+                        py: 0.9,
+                        display: "flex",
+                        gap: 0.8,
+                        justifyContent: "space-between",
+                        flexShrink: 0,
+                      }}
+                    >
+                      <Button
+                        size="small"
+                        disabled={!notificationCount}
+                        onClick={() => {
+                          setVendorNotificationReadIds(
+                            markVendorNotificationsRead(
+                              decoratedVendorNotifications.map(
+                                (item) => item.id,
+                              ),
+                            ),
+                          );
+                        }}
+                        sx={{
+                          color: "#647387",
+                          fontSize: "0.68rem",
+                          fontWeight: 800,
+                          textTransform: "none",
+                        }}
+                      >
+                        Mark all read
+                      </Button>
+                    </Box>,
+                  ]
+                ) : portal === "customer" ? (
+                  [
+                    <Box
+                      key="customer-notifications-scroll"
+                      sx={{
+                        flex: 1,
+                        overflowY: "auto",
+                        minHeight: 0,
+                        "&::-webkit-scrollbar": {
+                          width: "6px",
+                        },
+                        "&::-webkit-scrollbar-track": {
+                          bgcolor: "transparent",
+                        },
+                        "&::-webkit-scrollbar-thumb": {
+                          bgcolor: "#D0D8E0",
+                          borderRadius: "3px",
+                          "&:hover": {
+                            bgcolor: "#B8C1CC",
+                          },
+                        },
+                      }}
+                    >
+                      {notificationItems.length > 0 ? (
+                        notificationItems.map((item) => (
+                            <MenuItem
+                              key={item.id}
+                              component={NavLink}
+                              to={item.path}
+                              onClick={() => {
+                                setCustomerNotificationReadIds(
+                                  markCustomerNotificationsRead([item.id]),
+                                );
+                                setNotificationAnchor(null);
+                              }}
+                              sx={{
+                                alignItems: "flex-start",
+                                py: 1.1,
+                                whiteSpace: "normal",
+                                bgcolor: "#F8FBFF",
+                              }}
+                            >
+                              <Box sx={{ minWidth: 0 }}>
+                                <Stack
+                                  direction="row"
+                                  spacing={0.8}
+                                  alignItems="center"
+                                  sx={{ mb: 0.3 }}
+                                >
+                                  <Box
+                                    sx={{
+                                      width: 7,
+                                      height: 7,
+                                      borderRadius: "50%",
+                                      bgcolor: "#0E56C8",
+                                      flexShrink: 0,
+                                    }}
+                                  />
+                                  <Typography
+                                    sx={{
+                                      color: "#223146",
+                                      fontSize: "0.78rem",
+                                      fontWeight: 850,
+                                      lineHeight: 1.3,
+                                    }}
+                                  >
+                                    {item.title}
+                                  </Typography>
+                                </Stack>
+                                <Typography
+                                  sx={{
+                                    color: "#7A8799",
+                                    fontSize: "0.68rem",
+                                    lineHeight: 1.45,
+                                  }}
+                                >
+                                  {item.message}
+                                </Typography>
+                                <Typography
+                                  sx={{
+                                    mt: 0.35,
+                                    color: "#0E56C8",
+                                    fontSize: "0.64rem",
+                                    fontWeight: 850,
+                                  }}
+                                >
+                                  {formatCustomerNotificationTime(
+                                    item.createdAt,
+                                  )}{" "}
+                                  - {item.type}
+                                </Typography>
+                              </Box>
+                            </MenuItem>
+                          ))
+                      ) : (
+                        <MenuItem
+                          key="empty-customer-notifications"
+                          onClick={() => setNotificationAnchor(null)}
+                        >
+                          <Typography
+                            sx={{ color: "#7A8799", fontSize: "0.76rem" }}
+                          >
+                            No unread notifications.
+                          </Typography>
+                        </MenuItem>
+                      )}
+                    </Box>,
+                    <Divider key="customer-notification-divider" />,
+                    <Box
+                      key="customer-notification-actions"
+                      sx={{
+                        px: 1.2,
+                        py: 0.9,
+                        display: "flex",
+                        gap: 0.8,
+                        justifyContent: "space-between",
+                        flexShrink: 0,
+                      }}
+                    >
+                      <Button
+                        size="small"
+                        disabled={!notificationCount}
+                        onClick={() => {
+                          setCustomerNotificationReadIds(
+                            markCustomerNotificationsRead(
+                              decoratedCustomerNotifications.map(
+                                (item) => item.id,
+                              ),
+                            ),
+                          );
+                        }}
+                        sx={{
+                          color: "#647387",
+                          fontSize: "0.68rem",
+                          fontWeight: 800,
+                          textTransform: "none",
+                        }}
+                      >
+                        Mark all read
                       </Button>
                     </Box>,
                   ]
