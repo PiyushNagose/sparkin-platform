@@ -1,77 +1,76 @@
-import VendorDashboardPage from "@/features/vendor/pages/VendorDashboardPage";
-import VendorLeadsPage from "@/features/vendor/pages/VendorLeadsPage";
-import VendorLeadDetailPage from "@/features/vendor/pages/VendorLeadDetailPage";
-import VendorQuoteProposalPage from "@/features/vendor/pages/VendorQuoteProposalPage";
-import VendorQuotesPage from "@/features/vendor/pages/VendorQuotesPage";
-import VendorProjectsPage from "@/features/vendor/pages/VendorProjectsPage";
-import VendorProjectDetailPage from "@/features/vendor/pages/VendorProjectDetailPage";
-import VendorPaymentsPage from "@/features/vendor/pages/VendorPaymentsPage";
-import VendorTransactionsPage from "@/features/vendor/pages/VendorTransactionsPage";
-import VendorInvoiceDetailPage from "@/features/vendor/pages/VendorInvoiceDetailPage";
-import VendorProfilePage from "@/features/vendor/pages/VendorProfilePage";
-import VendorSettingsPage from "@/features/vendor/pages/VendorSettingsPage";
-import VendorChatPage from "@/features/vendor/pages/VendorChatPage";
-import VendorHelpCenterPage from "@/features/vendor/pages/VendorHelpCenterPage";
+import { lazy } from "react";
+import { LazyRoute } from "@/shared/ui/placeholder/LazyRoute";
+
+const VendorDashboardPage = lazy(
+  () => import("@/features/vendor/pages/VendorDashboardPage"),
+);
+const VendorLeadsPage = lazy(
+  () => import("@/features/vendor/pages/VendorLeadsPage"),
+);
+const VendorLeadDetailPage = lazy(
+  () => import("@/features/vendor/pages/VendorLeadDetailPage"),
+);
+const VendorQuoteProposalPage = lazy(
+  () => import("@/features/vendor/pages/VendorQuoteProposalPage"),
+);
+const VendorQuotesPage = lazy(
+  () => import("@/features/vendor/pages/VendorQuotesPage"),
+);
+const VendorProjectsPage = lazy(
+  () => import("@/features/vendor/pages/VendorProjectsPage"),
+);
+const VendorProjectDetailPage = lazy(
+  () => import("@/features/vendor/pages/VendorProjectDetailPage"),
+);
+const VendorPaymentsPage = lazy(
+  () => import("@/features/vendor/pages/VendorPaymentsPage"),
+);
+const VendorTransactionsPage = lazy(
+  () => import("@/features/vendor/pages/VendorTransactionsPage"),
+);
+const VendorInvoiceDetailPage = lazy(
+  () => import("@/features/vendor/pages/VendorInvoiceDetailPage"),
+);
+const VendorProfilePage = lazy(
+  () => import("@/features/vendor/pages/VendorProfilePage"),
+);
+const VendorSettingsPage = lazy(
+  () => import("@/features/vendor/pages/VendorSettingsPage"),
+);
+const VendorChatPage = lazy(() => import("@/features/vendor/pages/VendorChatPage"));
+const VendorHelpCenterPage = lazy(
+  () => import("@/features/vendor/pages/VendorHelpCenterPage"),
+);
 
 export const vendorRoutes = [
-  {
-    index: true,
-    element: <VendorDashboardPage />,
-  },
-  {
-    path: "leads",
-    element: <VendorLeadsPage />,
-  },
+  { index: true, element: <LazyRoute component={VendorDashboardPage} /> },
+  { path: "leads", element: <LazyRoute component={VendorLeadsPage} /> },
   {
     path: "leads/:leadId",
-    element: <VendorLeadDetailPage />,
+    element: <LazyRoute component={VendorLeadDetailPage} />,
   },
-  {
-    path: "quotes",
-    element: <VendorQuotesPage />,
-  },
-  {
-    path: "quotes/new",
-    element: <VendorLeadsPage />,
-  },
+  { path: "quotes", element: <LazyRoute component={VendorQuotesPage} /> },
+  { path: "quotes/new", element: <LazyRoute component={VendorLeadsPage} /> },
   {
     path: "leads/:leadId/quote",
-    element: <VendorQuoteProposalPage />,
+    element: <LazyRoute component={VendorQuoteProposalPage} />,
   },
-  {
-    path: "projects",
-    element: <VendorProjectsPage />,
-  },
+  { path: "projects", element: <LazyRoute component={VendorProjectsPage} /> },
   {
     path: "projects/:projectId",
-    element: <VendorProjectDetailPage />,
+    element: <LazyRoute component={VendorProjectDetailPage} />,
   },
-  {
-    path: "payments",
-    element: <VendorPaymentsPage />,
-  },
+  { path: "payments", element: <LazyRoute component={VendorPaymentsPage} /> },
   {
     path: "payments/transactions",
-    element: <VendorTransactionsPage />,
+    element: <LazyRoute component={VendorTransactionsPage} />,
   },
   {
     path: "payments/transactions/:invoiceId",
-    element: <VendorInvoiceDetailPage />,
+    element: <LazyRoute component={VendorInvoiceDetailPage} />,
   },
-  {
-    path: "profile",
-    element: <VendorProfilePage />,
-  },
-  {
-    path: "settings",
-    element: <VendorSettingsPage />,
-  },
-  {
-    path: "chat",
-    element: <VendorChatPage />,
-  },
-  {
-    path: "help",
-    element: <VendorHelpCenterPage />,
-  },
+  { path: "profile", element: <LazyRoute component={VendorProfilePage} /> },
+  { path: "settings", element: <LazyRoute component={VendorSettingsPage} /> },
+  { path: "chat", element: <LazyRoute component={VendorChatPage} /> },
+  { path: "help", element: <LazyRoute component={VendorHelpCenterPage} /> },
 ];

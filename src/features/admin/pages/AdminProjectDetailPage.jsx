@@ -303,6 +303,7 @@ export default function AdminProjectDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
   const [isSendingReminder, setIsSendingReminder] = useState(false);
+  const [isRejectingVendor, setIsRejectingVendor] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [reassignModal, setReassignModal] = useState(false);
@@ -344,9 +345,15 @@ export default function AdminProjectDetailPage() {
   const reassignmentRequired = Boolean(
     project?.siteVisitFollowUp?.reassignmentRequired,
   );
+  const readyForVendorRejection =
+    project &&
+    !siteVisitCompleted &&
+    !vendorRejected &&
+    !reassignmentRequired &&
+    siteVisitReminderCount >= 3;
   const nextReminderLabel =
     siteVisitReminderCount >= 2
-      ? "Send Final Reminder & Reject Vendor"
+      ? "Send Final Reminder"
       : siteVisitReminderCount === 1
         ? "Send Second Reminder"
         : "Send First Reminder";
@@ -368,19 +375,47 @@ export default function AdminProjectDetailPage() {
       const updated = await projectsApi.sendSiteVisitReminder(projectId, {
         message:
           attempt >= 3
-            ? "Final reminder sent. Vendor rejected after manual follow-up."
+            ? "Final reminder sent. Complete the site visit immediately to avoid vendor rejection and reassignment."
             : `Reminder ${attempt} sent for pending site visit.`,
       });
       setProject(updated);
       setSuccess(
         attempt >= 3
-          ? "Final reminder sent. Vendor rejected and project marked for reassignment."
+          ? "Final reminder sent. Admin can now reject this vendor if the site visit is still not completed."
           : `Reminder ${attempt} sent to the assigned vendor.`,
       );
     } catch (err) {
       setError(err?.response?.data?.message || "Could not send reminder.");
     } finally {
       setIsSendingReminder(false);
+    }
+  }
+
+  async function handleRejectVendor() {
+    if (!project) return;
+    if (
+      !window.confirm(
+        "Reject this vendor for not completing the site visit after all 3 reminders?",
+      )
+    ) {
+      return;
+    }
+
+    setError("");
+    setSuccess("");
+    setIsRejectingVendor(true);
+    try {
+      const updated = await projectsApi.rejectVendorForSiteVisit(projectId, {
+        reason: "Site visit not completed after three admin reminders",
+      });
+      setProject(updated);
+      setSuccess(
+        "Vendor rejected after the final reminder. This project is now ready for reassignment.",
+      );
+    } catch (err) {
+      setError(err?.response?.data?.message || "Could not reject vendor.");
+    } finally {
+      setIsRejectingVendor(false);
     }
   }
 
@@ -1110,7 +1145,9 @@ export default function AdminProjectDetailPage() {
               Admin-controlled reminders.{" "}
               {siteVisitCompleted
                 ? "Site visit is complete."
-                : `${siteVisitReminderCount}/3 reminders sent to the assigned vendor.`}
+                : readyForVendorRejection
+                  ? "All 3 reminders have been sent. You can now reject the vendor if the site visit is still pending."
+                  : `${siteVisitReminderCount}/3 reminders sent to the assigned vendor.`}
             </Typography>
             {reassignmentRequired ? (
               <Alert
@@ -1119,6 +1156,15 @@ export default function AdminProjectDetailPage() {
               >
                 Vendor rejected after final reminder. Reassign this lead from
                 vendor assignment.
+              </Alert>
+            ) : null}
+            {readyForVendorRejection ? (
+              <Alert
+                severity="error"
+                sx={{ mt: 1.2, borderRadius: "0.9rem" }}
+              >
+                Final reminder has already been sent. Reject the vendor now if
+                the site visit is still incomplete.
               </Alert>
             ) : null}
           </Box>
@@ -1145,6 +1191,26 @@ export default function AdminProjectDetailPage() {
             >
               {isSendingReminder ? "Sending..." : nextReminderLabel}
             </Button>
+            {readyForVendorRejection ? (
+              <Button
+                onClick={handleRejectVendor}
+                disabled={isRejectingVendor}
+                variant="outlined"
+                sx={{
+                  minHeight: 42,
+                  px: 1.8,
+                  borderRadius: "0.9rem",
+                  borderColor: "#D32F2F",
+                  bgcolor: "#FFF4F4",
+                  color: "#C62828",
+                  fontSize: "0.82rem",
+                  fontWeight: 800,
+                  textTransform: "none",
+                }}
+              >
+                {isRejectingVendor ? "Rejecting..." : "Reject Vendor"}
+              </Button>
+            ) : null}
             {reassignmentRequired ? (
               <Button
                 onClick={openReassignModal}

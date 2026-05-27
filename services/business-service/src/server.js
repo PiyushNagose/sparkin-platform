@@ -6,6 +6,26 @@ import { env } from "./config/env.js";
 import { attachChatSocket } from "./modules/chat/chat.socket.js";
 import { logger } from "./common/utils/logger.js";
 
+let shuttingDown = false;
+
+function registerFatalHandlers(shutdown) {
+  process.on("unhandledRejection", (reason) => {
+    logger.error("Unhandled promise rejection", {
+      service: env.serviceName,
+      error: reason instanceof Error ? reason.message : String(reason),
+    });
+    shutdown("unhandledRejection");
+  });
+
+  process.on("uncaughtException", (error) => {
+    logger.error("Uncaught exception", {
+      service: env.serviceName,
+      error: error.message,
+    });
+    shutdown("uncaughtException");
+  });
+}
+
 async function startServer() {
   await connectDatabase();
 
@@ -28,6 +48,9 @@ async function startServer() {
 
   // Attach Express to the http server
   httpServer.on("request", app);
+  httpServer.keepAliveTimeout = 65_000;
+  httpServer.headersTimeout = 66_000;
+  httpServer.requestTimeout = 60_000;
 
   httpServer.listen(env.port, () => {
     logger.info("Service started", {
@@ -54,8 +77,20 @@ async function startServer() {
   });
 
   const shutdown = async (signal) => {
+    if (shuttingDown) return;
+    shuttingDown = true;
     logger.info("Shutting down", { service: env.serviceName, signal });
+    const forceCloseTimer = setTimeout(async () => {
+      logger.error("Forced shutdown after timeout", {
+        service: env.serviceName,
+        signal,
+      });
+      await disconnectDatabase();
+      process.exit(1);
+    }, 10_000);
+
     httpServer.close(async () => {
+      clearTimeout(forceCloseTimer);
       await disconnectDatabase();
       process.exit(0);
     });
@@ -63,6 +98,7 @@ async function startServer() {
 
   process.on("SIGINT", shutdown);
   process.on("SIGTERM", shutdown);
+  registerFatalHandlers(shutdown);
 }
 
 startServer().catch((error) => {

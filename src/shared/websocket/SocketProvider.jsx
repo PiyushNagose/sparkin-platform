@@ -3,6 +3,42 @@ import { io } from "socket.io-client";
 import { authStorage } from "@/features/auth/authStorage";
 import { invalidateRequestCache } from "@/shared/lib/http/requestCache";
 
+const RESOURCE_MATCHERS = [
+  { pattern: "/auth", match: "/auth" },
+  { pattern: "/users", match: "/auth/me" },
+  { pattern: "/vendors", match: "/vendors" },
+  { pattern: "/leads", match: "/leads" },
+  { pattern: "/quotes", match: "/quotes" },
+  { pattern: "/projects", match: "/projects" },
+  { pattern: "/payments", match: "/payments" },
+  { pattern: "/service-requests", match: "/service-requests" },
+  { pattern: "/referrals", match: "/referrals" },
+  { pattern: "/tickets", match: "/tickets" },
+  { pattern: "/broadcasts", match: "/broadcasts" },
+  { pattern: "/platform-settings", match: "/platform-settings" },
+];
+
+function invalidateFromRefreshEvent(payload) {
+  const path = payload?.path?.split("?")[0] || "";
+
+  if (!path) {
+    invalidateRequestCache();
+    return;
+  }
+
+  const matches = RESOURCE_MATCHERS.filter(({ pattern }) =>
+    path.includes(pattern),
+  );
+
+  if (!matches.length) {
+    return;
+  }
+
+  invalidateRequestCache((key) =>
+    matches.some(({ match }) => key.includes(match)),
+  );
+}
+
 const SocketContext = createContext({
   connected: false,
   refreshKey: 0,
@@ -30,8 +66,8 @@ export function SocketProvider({ children }) {
 
     socket.on("connect", () => setConnected(true));
     socket.on("disconnect", () => setConnected(false));
-    socket.on("refresh:page", () => {
-      invalidateRequestCache();
+    socket.on("refresh:page", (payload) => {
+      invalidateFromRefreshEvent(payload);
       setRefreshKey((current) => current + 1);
     });
     socket.on("connect_error", () => {

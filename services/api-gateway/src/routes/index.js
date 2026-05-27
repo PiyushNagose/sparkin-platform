@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { env } from "../config/env.js";
-import { requireAuth, optionalAuth } from "../middleware/auth.js";
+import { requireAuth } from "../middleware/auth.js";
 import { authRateLimit, standardRateLimit } from "../middleware/rate-limit.js";
 import { createProxy } from "../proxy/create-proxy.js";
 
@@ -43,8 +43,11 @@ export function createRouter() {
   // Session verification is a normal authenticated read, not a brute-force auth action.
   router.get("/api/v1/auth/me", standardRateLimit, requireAuth, identityProxy);
 
-  // Public auth routes (login, register, refresh) — rate limited
-  router.use("/api/v1/auth", authRateLimit, identityProxy);
+  // Keep login/register protected from brute force without throttling refresh/logout traffic.
+  router.post("/api/v1/auth/login", authRateLimit, identityProxy);
+  router.post("/api/v1/auth/register", authRateLimit, identityProxy);
+  router.post("/api/v1/auth/refresh", standardRateLimit, identityProxy);
+  router.post("/api/v1/auth/logout", standardRateLimit, identityProxy);
 
   // Protected user profile routes
   router.use("/api/v1/users", standardRateLimit, requireAuth, identityProxy);

@@ -200,6 +200,11 @@ export function AuthScreenShell({
 
   async function handleSubmit(event) {
     event.preventDefault();
+
+    if (isSubmitting) {
+      return;
+    }
+
     setError("");
     setNotice("");
 

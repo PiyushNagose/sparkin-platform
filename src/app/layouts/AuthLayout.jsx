@@ -1,11 +1,7 @@
 import { Box } from "@mui/material";
-import { Outlet, useLocation } from "react-router-dom";
-import { useSocket } from "@/shared/websocket/SocketProvider";
+import { Outlet } from "react-router-dom";
 
 export function AuthLayout() {
-  const { refreshKey } = useSocket();
-  const location = useLocation();
-
   return (
     <Box
       sx={{
@@ -14,7 +10,7 @@ export function AuthLayout() {
         bgcolor: "#FBFCFE",
       }}
     >
-      <Outlet key={`${location.pathname}${location.search}${refreshKey}`} />
+      <Outlet />
     </Box>
   );
 }

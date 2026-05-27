@@ -1,9 +1,14 @@
-import LoginPage from "@/features/auth/pages/LoginPage";
-import SignupPage from "@/features/auth/pages/SignupPage";
-import AdminLoginPage from "@/features/auth/pages/AdminLoginPage";
+import { lazy } from "react";
+import { LazyRoute } from "@/shared/ui/placeholder/LazyRoute";
+
+const LoginPage = lazy(() => import("@/features/auth/pages/LoginPage"));
+const SignupPage = lazy(() => import("@/features/auth/pages/SignupPage"));
+const AdminLoginPage = lazy(
+  () => import("@/features/auth/pages/AdminLoginPage"),
+);
 
 export const authRoutes = [
-  { path: "login", element: <LoginPage /> },
-  { path: "admin-login", element: <AdminLoginPage /> },
-  { path: "signup", element: <SignupPage /> },
+  { path: "login", element: <LazyRoute component={LoginPage} /> },
+  { path: "admin-login", element: <LazyRoute component={AdminLoginPage} /> },
+  { path: "signup", element: <LazyRoute component={SignupPage} /> },
 ];

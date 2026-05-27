@@ -61,6 +61,15 @@ export const projectsController = {
     res.status(200).json({ project });
   },
 
+  async rejectVendorForSiteVisit(req, res) {
+    const project = await projectsService.rejectVendorForSiteVisit(
+      req.auth,
+      req.params.projectId,
+      req.body,
+    );
+    res.status(200).json({ project });
+  },
+
   async submitOnboarding(req, res) {
     const project = await projectsService.submitOnboarding(
       req.auth,

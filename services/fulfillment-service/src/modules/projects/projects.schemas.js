@@ -78,6 +78,10 @@ export const sendSiteVisitReminderSchema = z.object({
   message: z.string().trim().max(500).optional(),
 });
 
+export const rejectProjectVendorSchema = z.object({
+  reason: z.string().trim().min(5).max(500).optional(),
+});
+
 export const uploadProjectDocumentSchema = z.object({
   title: z.string().trim().min(2).max(120),
   fileName: z.string().trim().min(1).max(180),

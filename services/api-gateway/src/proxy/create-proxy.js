@@ -1,4 +1,27 @@
-﻿import proxy from "express-http-proxy";
+import http from "node:http";
+import https from "node:https";
+import proxy from "express-http-proxy";
+
+const agentCache = new Map();
+
+function getKeepAliveAgent(targetUrl) {
+  const cachedAgent = agentCache.get(targetUrl);
+  if (cachedAgent) {
+    return cachedAgent;
+  }
+
+  const protocol = new URL(targetUrl).protocol;
+  const Agent = protocol === "https:" ? https.Agent : http.Agent;
+  const agent = new Agent({
+    keepAlive: true,
+    maxSockets: 100,
+    maxFreeSockets: 20,
+    timeout: 60_000,
+  });
+
+  agentCache.set(targetUrl, agent);
+  return agent;
+}
 
 /**
  * Creates a proxy middleware that forwards requests to a downstream service.
@@ -23,6 +46,8 @@ export function createProxy(targetUrl) {
       proxyReqOpts.headers["x-forwarded-for"] =
         srcReq.ip || srcReq.headers["x-forwarded-for"] || "";
       proxyReqOpts.headers["x-gateway"] = "sparkin-api-gateway";
+      proxyReqOpts.headers.connection = "keep-alive";
+      proxyReqOpts.agent = getKeepAliveAgent(targetUrl);
       return proxyReqOpts;
     },
 
@@ -66,7 +91,7 @@ export function createProxy(targetUrl) {
       });
     },
 
-    // 30s timeout — enough for file uploads and long DB queries
+    // 30s timeout - enough for file uploads and long DB queries
     timeout: 30000,
 
     preserveHostHdr: false,

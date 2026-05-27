@@ -1,61 +1,109 @@
-import { ScreenPlaceholder } from "@/shared/ui/placeholder/ScreenPlaceholder";
+import { lazy } from "react";
 import { Navigate } from "react-router-dom";
-import CalculatorPage from "@/features/public/pages/CalculatorPage";
-import CalculatorProcessingPage from "@/features/public/pages/CalculatorProcessingPage";
-import CalculatorResultsPage from "@/features/public/pages/CalculatorResultsPage";
-import CalculatorUnavailablePage from "@/features/public/pages/CalculatorUnavailablePage";
-import BookingStepOnePage from "@/features/public/pages/BookingStepOnePage";
-import BookingStepTwoPage from "@/features/public/pages/BookingStepTwoPage";
-import BookingStepThreePage from "@/features/public/pages/BookingStepThreePage";
-import BookingStepFourPage from "@/features/public/pages/BookingStepFourPage";
-import BookingPaymentPage from "@/features/public/pages/BookingPaymentPage";
-import BookingSubmittedPage from "@/features/public/pages/BookingSubmittedPage";
-import LiveBiddingPage from "@/features/public/pages/LiveBiddingPage";
-import QuoteComparisonPage from "@/features/public/pages/QuoteComparisonPage";
-import VendorTataPowerPage from "@/features/public/pages/VendorTataPowerPage";
-import VendorPublicProfilePage from "@/features/public/pages/VendorPublicProfilePage";
-import VendorConfirmSelectionPage from "@/features/public/pages/VendorConfirmSelectionPage";
-import SolarInstallationProjectPage from "@/features/public/pages/SolarInstallationProjectPage";
-import ServiceSupportPage from "@/features/public/pages/ServiceSupportPage";
-import CreateServiceRequestPage from "@/features/public/pages/CreateServiceRequestPage";
-import ServiceRequestSubmittedPage from "@/features/public/pages/ServiceRequestSubmittedPage";
-import TrackServiceRequestPage from "@/features/public/pages/TrackServiceRequestPage";
-import ContactPage from "@/features/public/pages/ContactPage";
-import FaqPage from "@/features/public/pages/FaqPage";
-import TermsPage from "@/features/public/pages/TermsPage";
-import PrivacyPage from "@/features/public/pages/PrivacyPage";
-import AboutPage from "@/features/public/pages/AboutPage";
-import ArticlesPage from "@/features/public/pages/ArticlesPage";
-import BlogPage from "@/features/public/pages/BlogPage";
-import ReferEarnPage from "@/features/public/pages/ReferEarnPage";
-import ReferralLandingPage from "@/features/public/pages/ReferralLandingPage";
-import ResourcesPage from "@/features/public/pages/ResourcesPage";
-import TrustedPartnersPage from "@/features/public/pages/TrustedPartnersPage";
-import VendorDiscoveryPage from "@/features/public/pages/VendorDiscoveryPage";
-import SolarLoanPage from "@/features/public/pages/SolarLoanPage";
-import HomePage from "@/features/public/pages/HomePage";
-import WhyChooseUsPage from "@/features/public/pages/WhyChooseUsPage";
+import { ScreenPlaceholder } from "@/shared/ui/placeholder/ScreenPlaceholder";
+import { LazyRoute } from "@/shared/ui/placeholder/LazyRoute";
 import { RequireAuth } from "@/features/auth/RequireAuth";
 
-function protectedCustomerPage(element) {
+const CalculatorPage = lazy(() => import("@/features/public/pages/CalculatorPage"));
+const CalculatorProcessingPage = lazy(
+  () => import("@/features/public/pages/CalculatorProcessingPage"),
+);
+const CalculatorResultsPage = lazy(
+  () => import("@/features/public/pages/CalculatorResultsPage"),
+);
+const CalculatorUnavailablePage = lazy(
+  () => import("@/features/public/pages/CalculatorUnavailablePage"),
+);
+const BookingStepOnePage = lazy(
+  () => import("@/features/public/pages/BookingStepOnePage"),
+);
+const BookingStepTwoPage = lazy(
+  () => import("@/features/public/pages/BookingStepTwoPage"),
+);
+const BookingStepThreePage = lazy(
+  () => import("@/features/public/pages/BookingStepThreePage"),
+);
+const BookingStepFourPage = lazy(
+  () => import("@/features/public/pages/BookingStepFourPage"),
+);
+const BookingPaymentPage = lazy(
+  () => import("@/features/public/pages/BookingPaymentPage"),
+);
+const BookingSubmittedPage = lazy(
+  () => import("@/features/public/pages/BookingSubmittedPage"),
+);
+const LiveBiddingPage = lazy(
+  () => import("@/features/public/pages/LiveBiddingPage"),
+);
+const QuoteComparisonPage = lazy(
+  () => import("@/features/public/pages/QuoteComparisonPage"),
+);
+const VendorTataPowerPage = lazy(
+  () => import("@/features/public/pages/VendorTataPowerPage"),
+);
+const VendorPublicProfilePage = lazy(
+  () => import("@/features/public/pages/VendorPublicProfilePage"),
+);
+const VendorConfirmSelectionPage = lazy(
+  () => import("@/features/public/pages/VendorConfirmSelectionPage"),
+);
+const SolarInstallationProjectPage = lazy(
+  () => import("@/features/public/pages/SolarInstallationProjectPage"),
+);
+const ServiceSupportPage = lazy(
+  () => import("@/features/public/pages/ServiceSupportPage"),
+);
+const CreateServiceRequestPage = lazy(
+  () => import("@/features/public/pages/CreateServiceRequestPage"),
+);
+const ServiceRequestSubmittedPage = lazy(
+  () => import("@/features/public/pages/ServiceRequestSubmittedPage"),
+);
+const TrackServiceRequestPage = lazy(
+  () => import("@/features/public/pages/TrackServiceRequestPage"),
+);
+const ContactPage = lazy(() => import("@/features/public/pages/ContactPage"));
+const FaqPage = lazy(() => import("@/features/public/pages/FaqPage"));
+const TermsPage = lazy(() => import("@/features/public/pages/TermsPage"));
+const PrivacyPage = lazy(() => import("@/features/public/pages/PrivacyPage"));
+const AboutPage = lazy(() => import("@/features/public/pages/AboutPage"));
+const ArticlesPage = lazy(() => import("@/features/public/pages/ArticlesPage"));
+const BlogPage = lazy(() => import("@/features/public/pages/BlogPage"));
+const ReferEarnPage = lazy(
+  () => import("@/features/public/pages/ReferEarnPage"),
+);
+const ReferralLandingPage = lazy(
+  () => import("@/features/public/pages/ReferralLandingPage"),
+);
+const ResourcesPage = lazy(
+  () => import("@/features/public/pages/ResourcesPage"),
+);
+const TrustedPartnersPage = lazy(
+  () => import("@/features/public/pages/TrustedPartnersPage"),
+);
+const VendorDiscoveryPage = lazy(
+  () => import("@/features/public/pages/VendorDiscoveryPage"),
+);
+const SolarLoanPage = lazy(
+  () => import("@/features/public/pages/SolarLoanPage"),
+);
+const HomePage = lazy(() => import("@/features/public/pages/HomePage"));
+const WhyChooseUsPage = lazy(
+  () => import("@/features/public/pages/WhyChooseUsPage"),
+);
+
+function protectedCustomerPage(Component) {
   return (
-    <RequireAuth allowedRoles={["customer", "admin"]}>{element}</RequireAuth>
+    <RequireAuth allowedRoles={["customer", "admin"]}>
+      <LazyRoute component={Component} />
+    </RequireAuth>
   );
 }
 
 export const publicRoutes = [
-  {
-    index: true,
-    element: <HomePage />,
-  },
-  {
-    path: "about",
-    element: <AboutPage />,
-  },
-  {
-    path: "about-us",
-    element: <AboutPage />,
-  },
+  { index: true, element: <LazyRoute component={HomePage} /> },
+  { path: "about", element: <LazyRoute component={AboutPage} /> },
+  { path: "about-us", element: <LazyRoute component={AboutPage} /> },
   {
     path: "how-it-works",
     element: (
@@ -72,141 +120,93 @@ export const publicRoutes = [
       />
     ),
   },
-  {
-    path: "why-choose-us",
-    element: <WhyChooseUsPage />,
-  },
-  {
-    path: "calculator",
-    element: <CalculatorPage />,
-  },
+  { path: "why-choose-us", element: <LazyRoute component={WhyChooseUsPage} /> },
+  { path: "calculator", element: <LazyRoute component={CalculatorPage} /> },
   {
     path: "calculator/processing",
-    element: <CalculatorProcessingPage />,
+    element: <LazyRoute component={CalculatorProcessingPage} />,
   },
   {
     path: "calculator/results",
-    element: <CalculatorResultsPage />,
+    element: <LazyRoute component={CalculatorResultsPage} />,
   },
   {
     path: "calculator/unavailable",
-    element: <CalculatorUnavailablePage />,
+    element: <LazyRoute component={CalculatorUnavailablePage} />,
   },
-  {
-    path: "partners",
-    element: <TrustedPartnersPage />,
-  },
-  {
-    path: "vendors",
-    element: <VendorDiscoveryPage />,
-  },
+  { path: "partners", element: <LazyRoute component={TrustedPartnersPage} /> },
+  { path: "vendors", element: <LazyRoute component={VendorDiscoveryPage} /> },
   {
     path: "vendors/partners",
-    element: <TrustedPartnersPage />,
+    element: <LazyRoute component={TrustedPartnersPage} />,
   },
-  {
-    path: "resources",
-    element: <ResourcesPage />,
-  },
-  {
-    path: "loan-financing",
-    element: <SolarLoanPage />,
-  },
-  {
-    path: "contact",
-    element: <ContactPage />,
-  },
-  {
-    path: "contact-us",
-    element: <ContactPage />,
-  },
-  {
-    path: "faq",
-    element: <FaqPage />,
-  },
-  {
-    path: "faqs",
-    element: <FaqPage />,
-  },
-  {
-    path: "terms",
-    element: <TermsPage />,
-  },
-  {
-    path: "privacy",
-    element: <PrivacyPage />,
-  },
-  {
-    path: "refer-earn",
-    element: <ReferEarnPage />,
-  },
+  { path: "resources", element: <LazyRoute component={ResourcesPage} /> },
+  { path: "loan-financing", element: <LazyRoute component={SolarLoanPage} /> },
+  { path: "contact", element: <LazyRoute component={ContactPage} /> },
+  { path: "contact-us", element: <LazyRoute component={ContactPage} /> },
+  { path: "faq", element: <LazyRoute component={FaqPage} /> },
+  { path: "faqs", element: <LazyRoute component={FaqPage} /> },
+  { path: "terms", element: <LazyRoute component={TermsPage} /> },
+  { path: "privacy", element: <LazyRoute component={PrivacyPage} /> },
+  { path: "refer-earn", element: <LazyRoute component={ReferEarnPage} /> },
   {
     path: "ref/:referralCode",
-    element: <ReferralLandingPage />,
+    element: <LazyRoute component={ReferralLandingPage} />,
   },
-  {
-    path: "articles",
-    element: <ArticlesPage />,
-  },
-  {
-    path: "blog",
-    element: <BlogPage />,
-  },
-  {
-    path: "booking",
-    element: protectedCustomerPage(<BookingStepOnePage />),
-  },
+  { path: "articles", element: <LazyRoute component={ArticlesPage} /> },
+  { path: "blog", element: <LazyRoute component={BlogPage} /> },
+  { path: "booking", element: protectedCustomerPage(BookingStepOnePage) },
   {
     path: "booking/property",
-    element: protectedCustomerPage(<BookingStepTwoPage />),
+    element: protectedCustomerPage(BookingStepTwoPage),
   },
   {
     path: "booking/roof",
-    element: protectedCustomerPage(<BookingStepThreePage />),
+    element: protectedCustomerPage(BookingStepThreePage),
   },
   {
     path: "booking/upload",
-    element: protectedCustomerPage(<BookingStepFourPage />),
+    element: protectedCustomerPage(BookingStepFourPage),
   },
   {
     path: "booking/payment",
-    element: protectedCustomerPage(<BookingPaymentPage />),
+    element: protectedCustomerPage(BookingPaymentPage),
   },
   {
     path: "booking/submitted",
-    element: protectedCustomerPage(<BookingSubmittedPage />),
+    element: protectedCustomerPage(BookingSubmittedPage),
   },
   {
     path: "tenders/live",
-    element: protectedCustomerPage(<LiveBiddingPage />),
+    element: protectedCustomerPage(LiveBiddingPage),
   },
   {
     path: "quotes/compare",
-    element: protectedCustomerPage(<QuoteComparisonPage />),
+    element: protectedCustomerPage(QuoteComparisonPage),
   },
   {
     path: "quotes/:quoteId/details",
-    element: protectedCustomerPage(<VendorTataPowerPage />),
+    element: protectedCustomerPage(VendorTataPowerPage),
   },
   {
     path: "quotes/:quoteId/confirm",
-    element: protectedCustomerPage(<VendorConfirmSelectionPage />),
+    element: protectedCustomerPage(VendorConfirmSelectionPage),
   },
   {
     path: "quotes/:quoteId/payment",
-    element: protectedCustomerPage(<BookingPaymentPage />),
+    element: protectedCustomerPage(BookingPaymentPage),
   },
   {
     path: "vendors/tata-power-solar",
-    element: <VendorTataPowerPage />,
+    element: <LazyRoute component={VendorTataPowerPage} />,
   },
   {
     path: "vendors/tata-power-solar/confirm",
-    element: protectedCustomerPage(<VendorConfirmSelectionPage />),
+    element: protectedCustomerPage(VendorConfirmSelectionPage),
   },
   {
     path: "vendors/:vendorId",
-    element: <VendorPublicProfilePage />,
+    element: <LazyRoute component={VendorPublicProfilePage} />,
   },
   {
     path: "vendors/onboarding",
@@ -214,22 +214,22 @@ export const publicRoutes = [
   },
   {
     path: "project/installation",
-    element: protectedCustomerPage(<SolarInstallationProjectPage />),
+    element: protectedCustomerPage(SolarInstallationProjectPage),
   },
   {
     path: "service-support",
-    element: <ServiceSupportPage />,
+    element: <LazyRoute component={ServiceSupportPage} />,
   },
   {
     path: "service-support/request",
-    element: protectedCustomerPage(<CreateServiceRequestPage />),
+    element: protectedCustomerPage(CreateServiceRequestPage),
   },
   {
     path: "service-support/request/submitted",
-    element: protectedCustomerPage(<ServiceRequestSubmittedPage />),
+    element: protectedCustomerPage(ServiceRequestSubmittedPage),
   },
   {
     path: "service-support/track",
-    element: protectedCustomerPage(<TrackServiceRequestPage />),
+    element: protectedCustomerPage(TrackServiceRequestPage),
   },
 ];

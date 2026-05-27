@@ -32,6 +32,24 @@ function joinUrl(baseUrl, path) {
   return `${baseUrl.replace(/\/+$/, "")}/${path.replace(/^\/+/, "")}`;
 }
 
+let shuttingDown = false;
+
+function registerFatalHandlers(shutdown) {
+  process.on("unhandledRejection", (reason) => {
+    log("ERROR", "Unhandled promise rejection", {
+      error: reason instanceof Error ? reason.message : String(reason),
+    });
+    shutdown("unhandledRejection");
+  });
+
+  process.on("uncaughtException", (error) => {
+    log("ERROR", "Uncaught exception", {
+      error: error.message,
+    });
+    shutdown("uncaughtException");
+  });
+}
+
 async function verifyDownstreamServices() {
   if (env.NODE_ENV !== "production") return;
 
@@ -84,6 +102,9 @@ const io = createGatewaySocketServer(server);
 const app = createApp({ socketServer: io });
 
 server.on("request", app);
+server.keepAliveTimeout = 65_000;
+server.headersTimeout = 66_000;
+server.requestTimeout = 60_000;
 
 await verifyDownstreamServices();
 
@@ -106,9 +127,20 @@ server.on("error", (error) => {
 });
 
 const shutdown = (signal) => {
+  if (shuttingDown) return;
+  shuttingDown = true;
   log("INFO", "Shutting down", { signal });
-  server.close(() => process.exit(0));
+  const forceCloseTimer = setTimeout(() => {
+    log("ERROR", "Forced shutdown after timeout", { signal });
+    process.exit(1);
+  }, 10_000);
+
+  server.close(() => {
+    clearTimeout(forceCloseTimer);
+    process.exit(0);
+  });
 };
 
 process.on("SIGINT", shutdown);
 process.on("SIGTERM", shutdown);
+registerFatalHandlers(shutdown);
