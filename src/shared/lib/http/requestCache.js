@@ -32,6 +32,7 @@ function createCacheKey(client, url, params) {
 
 export async function cachedGet(client, url, options = {}) {
   const {
+    allowStaleOnError = true,
     ttlMs = DEFAULT_TTL_MS,
     force = false,
     params,
@@ -61,6 +62,10 @@ export async function cachedGet(client, url, options = {}) {
       return response;
     })
     .catch((error) => {
+      if (allowStaleOnError && entry?.response) {
+        return entry.response;
+      }
+
       cache.delete(key);
       throw error;
     });

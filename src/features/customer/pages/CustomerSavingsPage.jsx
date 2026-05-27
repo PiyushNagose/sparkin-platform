@@ -282,18 +282,28 @@ export default function CustomerSavingsPage() {
     setError("");
 
     try {
-      const [projectResult, paymentResult] = await Promise.all([
+      const [projectResult, paymentResult] = await Promise.allSettled([
         projectsApi.listProjects(),
         paymentsApi.listPayments(),
       ]);
 
       if (!active) return;
-      setProjects(projectResult);
-      setPayments(paymentResult);
-    } catch (apiError) {
-      if (active) {
-        setError(apiError?.response?.data?.message || "Could not load savings data.");
+
+      setProjects(
+        projectResult.status === "fulfilled" ? projectResult.value || [] : [],
+      );
+      setPayments(
+        paymentResult.status === "fulfilled" ? paymentResult.value || [] : [],
+      );
+
+      if (
+        projectResult.status === "rejected" &&
+        paymentResult.status === "rejected"
+      ) {
+        setError("Could not load savings data.");
       }
+    } catch {
+      if (active) setError("Could not load savings data.");
     } finally {
       if (active) setIsLoading(false);
     }

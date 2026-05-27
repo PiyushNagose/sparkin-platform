@@ -473,7 +473,7 @@ export default function CustomerBookingsPage() {
 
   useEffect(() => {
     let active = true;
-    loadBookings(active, true);
+    loadBookings(active);
     return () => {
       active = false;
     };

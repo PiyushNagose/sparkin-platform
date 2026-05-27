@@ -156,20 +156,35 @@ export default function VendorDashboardPage() {
       setError("");
 
       try {
-        const [leadRows, quoteRows, projectRows, paymentRows] = await Promise.all([
-          leadsApi.listLeads(),
-          quotesApi.listQuotes(),
-          projectsApi.listProjects(),
-          paymentsApi.listPayments(),
-        ]);
+        const [leadRows, quoteRows, projectRows, paymentRows] =
+          await Promise.allSettled([
+            leadsApi.listLeads(),
+            quotesApi.listQuotes(),
+            projectsApi.listProjects(),
+            paymentsApi.listPayments(),
+          ]);
 
         if (!active) return;
-        setLeads(leadRows);
-        setQuotes(quoteRows);
-        setProjects(projectRows);
-        setPayments(paymentRows);
-      } catch (apiError) {
-        if (active) setError(apiError?.response?.data?.message || "Could not load vendor dashboard.");
+
+        setLeads(leadRows.status === "fulfilled" ? leadRows.value || [] : []);
+        setQuotes(quoteRows.status === "fulfilled" ? quoteRows.value || [] : []);
+        setProjects(
+          projectRows.status === "fulfilled" ? projectRows.value || [] : [],
+        );
+        setPayments(
+          paymentRows.status === "fulfilled" ? paymentRows.value || [] : [],
+        );
+
+        if (
+          leadRows.status === "rejected" &&
+          quoteRows.status === "rejected" &&
+          projectRows.status === "rejected" &&
+          paymentRows.status === "rejected"
+        ) {
+          setError("Could not load vendor dashboard.");
+        }
+      } catch {
+        if (active) setError("Could not load vendor dashboard.");
       } finally {
         if (active) setIsLoading(false);
       }
