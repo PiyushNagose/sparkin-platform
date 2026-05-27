@@ -200,6 +200,7 @@ function BookingCard({ item }) {
               height: { xs: 148, sm: 64 },
               borderRadius: "0.85rem",
               objectFit: "cover",
+              objectPosition: "center center",
               flexShrink: 0,
             }}
           />

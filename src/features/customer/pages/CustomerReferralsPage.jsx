@@ -89,39 +89,47 @@ function StatCard({ icon, iconBg, iconTone, value, label }) {
   return (
     <Box
       sx={{
-        p: 1.45,
-        borderRadius: "1.25rem",
-        bgcolor: "#F8FAFD",
-        border: "1px solid rgba(225,232,241,0.9)",
+        p: { xs: 1.4, md: 1.8 },
+        borderRadius: "1.35rem",
+        bgcolor: "#FFFFFF",
+        border: "1px solid rgba(225,232,241,0.96)",
+        boxShadow: "0 6px 18px rgba(16,29,51,0.05)",
         textAlign: "center",
+        transition: "transform 0.18s, box-shadow 0.18s",
+        "&:hover": {
+          transform: "translateY(-2px)",
+          boxShadow: "0 12px 28px rgba(16,29,51,0.09)",
+        },
       }}
     >
       <Box
         sx={{
-          width: 32,
-          height: 32,
+          width: 40,
+          height: 40,
           mx: "auto",
-          borderRadius: "0.85rem",
+          borderRadius: "50%",
           bgcolor: iconBg,
           color: iconTone,
           display: "grid",
           placeItems: "center",
+          boxShadow: `0 4px 12px ${iconBg}`,
         }}
       >
         {icon}
       </Box>
       <Typography
         sx={{
-          mt: 1.05,
-          color: "#223146",
-          fontSize: "1.65rem",
-          fontWeight: 800,
-          lineHeight: 1.05,
+          mt: 1.2,
+          color: "#18253A",
+          fontSize: { xs: "1.8rem", md: "2rem" },
+          fontWeight: 900,
+          lineHeight: 1,
+          letterSpacing: "-0.02em",
         }}
       >
         {value}
       </Typography>
-      <Typography sx={{ mt: 0.45, color: "#647387", fontSize: "0.74rem" }}>
+      <Typography sx={{ mt: 0.5, color: "#647387", fontSize: "0.74rem", fontWeight: 600 }}>
         {label}
       </Typography>
     </Box>
@@ -134,54 +142,88 @@ function QuickShareRow({
   iconTone,
   label,
   description,
+  actionLabel,
   onClick,
 }) {
   return (
     <Box
       onClick={onClick}
       sx={{
-        p: 1.15,
-        borderRadius: "1rem",
+        p: 2,
+        borderRadius: "1.35rem",
         bgcolor: "#FFFFFF",
         border: "1px solid rgba(225,232,241,0.96)",
-        boxShadow: "0 10px 20px rgba(16,29,51,0.04)",
+        boxShadow: "0 6px 20px rgba(16,29,51,0.05)",
         cursor: "pointer",
-        transition: "box-shadow 0.15s",
-        "&:hover": { boxShadow: "0 14px 28px rgba(16,29,51,0.08)" },
+        display: "flex",
+        flexDirection: "column",
+        gap: 1.6,
+        minHeight: 148,
+        transition: "transform 0.18s, box-shadow 0.18s, border-color 0.18s",
+        "&:hover": {
+          transform: "translateY(-3px)",
+          boxShadow: "0 16px 36px rgba(16,29,51,0.1)",
+          borderColor: iconTone,
+        },
       }}
     >
+      {/* Icon */}
+      <Box
+        sx={{
+          width: 48,
+          height: 48,
+          borderRadius: "1rem",
+          bgcolor: iconBg,
+          color: iconTone,
+          display: "grid",
+          placeItems: "center",
+          flexShrink: 0,
+        }}
+      >
+        {/* clone icon at larger size */}
+        {icon}
+      </Box>
+
+      {/* Text */}
+      <Box sx={{ flex: 1 }}>
+        <Typography
+          sx={{ color: "#18253A", fontSize: "0.92rem", fontWeight: 800, lineHeight: 1.2 }}
+        >
+          {label}
+        </Typography>
+        <Typography
+          sx={{ mt: 0.45, color: "#8A96A8", fontSize: "0.72rem", lineHeight: 1.5 }}
+          noWrap
+        >
+          {description}
+        </Typography>
+      </Box>
+
+      {/* Action row */}
       <Stack direction="row" justifyContent="space-between" alignItems="center">
-        <Stack direction="row" spacing={0.85} alignItems="center">
-          <Box
-            sx={{
-              width: 28,
-              height: 28,
-              borderRadius: "0.75rem",
-              bgcolor: iconBg,
-              color: iconTone,
-              display: "grid",
-              placeItems: "center",
-            }}
-          >
-            {icon}
-          </Box>
-          <Box>
-            <Typography
-              sx={{ color: "#223146", fontSize: "0.82rem", fontWeight: 700 }}
-            >
-              {label}
-            </Typography>
-            <Typography
-              sx={{ mt: 0.12, color: "#98A3B2", fontSize: "0.62rem" }}
-              noWrap
-            >
-              {description}
-            </Typography>
-          </Box>
-        </Stack>
-        <ChevronRightRoundedIcon
-          sx={{ color: "#B4BECC", fontSize: "1.15rem", flexShrink: 0 }}
-        />
+        <Typography
+          sx={{
+            color: iconTone,
+            fontSize: "0.72rem",
+            fontWeight: 800,
+            letterSpacing: "0.02em",
+          }}
+        >
+          {actionLabel || "Tap to share →"}
+        </Typography>
+        <Box
+          sx={{
+            width: 28,
+            height: 28,
+            borderRadius: "50%",
+            bgcolor: iconBg,
+            color: iconTone,
+            display: "grid",
+            placeItems: "center",
+          }}
+        >
+          <ChevronRightRoundedIcon sx={{ fontSize: "1rem" }} />
+        </Box>
       </Stack>
     </Box>
   );
@@ -194,6 +236,7 @@ export default function CustomerReferralsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [codeCopied, setCodeCopied] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -237,6 +280,17 @@ export default function CustomerReferralsPage() {
       setNotice("Referral link copied to clipboard.");
     } catch {
       setNotice("Could not copy — please copy the link manually.");
+    }
+  }
+
+  async function copyReferralCode() {
+    if (!summary?.referralCode) return;
+    try {
+      await navigator.clipboard.writeText(summary.referralCode);
+      setCodeCopied(true);
+      setTimeout(() => setCodeCopied(false), 2000);
+    } catch {
+      // ignore
     }
   }
 
@@ -284,8 +338,9 @@ export default function CustomerReferralsPage() {
   const quickShareItems = [
     {
       label: "WhatsApp",
-      description: "Share directly via WhatsApp",
-      icon: <WhatsAppIcon sx={{ fontSize: "0.95rem" }} />,
+      description: "Send directly to contacts",
+      actionLabel: "Open WhatsApp →",
+      icon: <WhatsAppIcon sx={{ fontSize: "1.4rem" }} />,
       iconBg: "#DDF7E8",
       iconTone: "#177D45",
       onClick: openWhatsApp,
@@ -294,15 +349,17 @@ export default function CustomerReferralsPage() {
       label: "Copy Link",
       description:
         buildReferralUrl(summary?.referralLink || "").replace(/^https?:\/\//, "") || "Link unavailable",
-      icon: <LinkRoundedIcon sx={{ fontSize: "0.95rem" }} />,
+      actionLabel: "Copy to clipboard →",
+      icon: <LinkRoundedIcon sx={{ fontSize: "1.4rem" }} />,
       iconBg: "#EEF4FF",
       iconTone: "#0E56C8",
       onClick: copyReferralLink,
     },
     {
       label: "QR Code",
-      description: "Copy QR-ready link",
-      icon: <QrCode2RoundedIcon sx={{ fontSize: "0.95rem" }} />,
+      description: "Download for print or share",
+      actionLabel: "Copy QR link →",
+      icon: <QrCode2RoundedIcon sx={{ fontSize: "1.4rem" }} />,
       iconBg: "#F2F5F8",
       iconTone: "#647387",
       onClick: () => copyReferralLinkForChannel("qr"),
@@ -313,10 +370,10 @@ export default function CustomerReferralsPage() {
     <Box sx={{ width: "100%" }}>
       {/* Header */}
       <Stack
-        direction={{ xs: "column", lg: "row" }}
+        direction={{ xs: "column", sm: "row" }}
         justifyContent="space-between"
-        alignItems={{ xs: "flex-start", lg: "center" }}
-        spacing={2}
+        alignItems={{ xs: "flex-start", sm: "center" }}
+        spacing={1.5}
       >
         <Box>
           <Typography
@@ -328,7 +385,7 @@ export default function CustomerReferralsPage() {
               letterSpacing: "-0.04em",
             }}
           >
-            Refer & Earn
+            Refer &amp; Earn
           </Typography>
           <Typography
             sx={{
@@ -345,19 +402,21 @@ export default function CustomerReferralsPage() {
         <Box
           sx={{
             display: "inline-flex",
-            px: 1.15,
-            py: 0.6,
+            px: 1.35,
+            py: 0.7,
             borderRadius: "0.9rem",
             bgcolor: "#E7F318",
-            color: "#6C7300",
-            fontSize: "0.72rem",
-            fontWeight: 800,
+            color: "#4A5800",
+            fontSize: "0.76rem",
+            fontWeight: 900,
             lineHeight: 1,
             alignItems: "center",
-            gap: 0.45,
+            gap: 0.5,
+            flexShrink: 0,
+            boxShadow: "0 4px 12px rgba(231,243,24,0.35)",
           }}
         >
-          <AutoAwesomeRoundedIcon sx={{ fontSize: "0.9rem" }} />
+          <AutoAwesomeRoundedIcon sx={{ fontSize: "0.95rem" }} />
           Earn {rewardAmountLabel} per referral
         </Box>
       </Stack>
@@ -392,105 +451,132 @@ export default function CustomerReferralsPage() {
           {/* Code + wallet */}
           <Box
             sx={{
-              mt: 1.85,
+              mt: 2,
               display: "grid",
               gridTemplateColumns: { xs: "1fr", xl: "1.65fr 0.95fr" },
-              gap: 1.55,
+              gap: 1.8,
             }}
           >
             {/* Referral code card */}
             <Box
               sx={{
-                p: 1.6,
-                borderRadius: "1.35rem",
-                bgcolor: "#F8FAFD",
-                border: "1px solid rgba(225,232,241,0.92)",
+                p: 2.2,
+                borderRadius: "1.5rem",
+                bgcolor: "#FFFFFF",
+                border: "1px solid rgba(225,232,241,0.96)",
+                boxShadow: "0 8px 24px rgba(16,29,51,0.06)",
               }}
             >
-              <Typography
+              <Box
                 sx={{
+                  display: "inline-flex",
+                  px: 0.9,
+                  py: 0.35,
+                  borderRadius: "0.5rem",
+                  bgcolor: "#EEF4FF",
                   color: "#0E56C8",
                   fontSize: "0.58rem",
-                  fontWeight: 800,
+                  fontWeight: 900,
                   letterSpacing: "0.1em",
                   textTransform: "uppercase",
+                  mb: 1.2,
                 }}
               >
-                Your Personal Code
-              </Typography>
+                Personal Code
+              </Box>
               <Typography
                 sx={{
-                  mt: 0.85,
-                  color: "#223146",
+                  color: "#18253A",
                   fontSize: "1.55rem",
                   fontWeight: 800,
+                  lineHeight: 1.1,
                 }}
               >
                 Spark your network
               </Typography>
               <Typography
                 sx={{
-                  mt: 0.45,
-                  maxWidth: 390,
+                  mt: 0.6,
+                  maxWidth: 400,
                   color: "#647387",
                   fontSize: "0.84rem",
                   lineHeight: 1.7,
                 }}
               >
                 Share this code with friends. They get a {friendDiscountLabel} discount, and
-                you earn ₹500 instantly when they sign up.
+                you earn {rewardAmountLabel} instantly when they sign up.
               </Typography>
 
               <Stack
                 direction={{ xs: "column", sm: "row" }}
-                spacing={1}
-                sx={{ mt: 2 }}
+                spacing={1.2}
+                sx={{ mt: 2.2 }}
               >
+                {/* Code box */}
                 <Box
+                  onClick={copyReferralCode}
                   sx={{
                     minWidth: 0,
                     flex: 1,
-                    px: 1.25,
-                    py: 1.1,
-                    borderRadius: "1rem",
-                    bgcolor: "#FFFFFF",
-                    border: "1px solid rgba(225,232,241,0.96)",
+                    px: 1.6,
+                    py: 1.2,
+                    borderRadius: "1.1rem",
+                    bgcolor: "#F4F7FB",
+                    border: "2px dashed rgba(14,86,200,0.25)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "space-between",
                     gap: 1,
                     cursor: "pointer",
+                    transition: "border-color 0.15s, background 0.15s",
+                    "&:hover": {
+                      borderColor: "#0E56C8",
+                      bgcolor: "#EEF4FF",
+                    },
                   }}
-                  onClick={copyReferralLink}
                 >
                   <Typography
                     sx={{
                       color: "#0E56C8",
-                      fontSize: { xs: "1.4rem", md: "1.75rem" },
-                      fontWeight: 800,
-                      letterSpacing: "0.08em",
+                      fontSize: { xs: "1.5rem", md: "1.8rem" },
+                      fontWeight: 900,
+                      letterSpacing: "0.1em",
                       lineHeight: 1,
                     }}
                   >
                     {summary?.referralCode || "—"}
                   </Typography>
-                  <ContentCopyRoundedIcon
-                    sx={{ color: "#7F8A9B", fontSize: "1rem", flexShrink: 0 }}
-                  />
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 0.4,
+                      color: codeCopied ? "#177D45" : "#7F8A9B",
+                      fontSize: "0.68rem",
+                      fontWeight: 700,
+                      flexShrink: 0,
+                      transition: "color 0.2s",
+                    }}
+                  >
+                    <ContentCopyRoundedIcon sx={{ fontSize: "1rem" }} />
+                    {codeCopied ? "Copied!" : "Copy"}
+                  </Box>
                 </Box>
 
                 <Button
                   variant="contained"
                   onClick={shareReferral}
                   sx={{
-                    minHeight: 42,
-                    px: 1.75,
-                    borderRadius: "0.95rem",
+                    minHeight: 52,
+                    px: 2.2,
+                    borderRadius: "1.1rem",
                     bgcolor: "#0E56C8",
-                    boxShadow: "0 12px 24px rgba(14,86,200,0.16)",
-                    fontSize: "0.75rem",
-                    fontWeight: 700,
+                    boxShadow: "0 12px 28px rgba(14,86,200,0.28)",
+                    fontSize: "0.82rem",
+                    fontWeight: 800,
                     textTransform: "none",
+                    whiteSpace: "nowrap",
+                    "&:hover": { bgcolor: "#0B49AD", boxShadow: "0 16px 32px rgba(14,86,200,0.32)" },
                   }}
                 >
                   Share Now
@@ -501,77 +587,116 @@ export default function CustomerReferralsPage() {
             {/* Earnings wallet */}
             <Box
               sx={{
-                p: 1.55,
-                borderRadius: "1.35rem",
-                bgcolor: "#0E56C8",
+                borderRadius: "1.5rem",
+                background: "linear-gradient(145deg, #0E56C8 0%, #1A3A8F 100%)",
                 color: "#FFFFFF",
-                boxShadow: "0 16px 30px rgba(14,86,200,0.18)",
+                boxShadow: "0 16px 40px rgba(14,86,200,0.28)",
+                position: "relative",
+                display: "flex",
+                flexDirection: "column",
+                minHeight: 220,
               }}
             >
+              {/* decorative circles — purely visual, no overflow clip needed */}
               <Box
                 sx={{
-                  width: 30,
-                  height: 30,
-                  borderRadius: "0.8rem",
-                  bgcolor: "#E7F318",
-                  color: "#6C7300",
-                  display: "grid",
-                  placeItems: "center",
+                  position: "absolute",
+                  top: -24,
+                  right: -24,
+                  width: 120,
+                  height: 120,
+                  borderRadius: "50%",
+                  background: "rgba(255,255,255,0.07)",
+                  pointerEvents: "none",
                 }}
-              >
-                <AccountBalanceWalletOutlinedIcon sx={{ fontSize: "1rem" }} />
-              </Box>
-
-              <Typography
-                sx={{
-                  mt: 1.15,
-                  color: "rgba(255,255,255,0.76)",
-                  fontSize: "0.76rem",
-                }}
-              >
-                Total Earnings
-              </Typography>
-              <Typography
-                sx={{
-                  mt: 0.45,
-                  fontSize: "2.2rem",
-                  fontWeight: 800,
-                  lineHeight: 1.02,
-                }}
-              >
-                {formatPrice(summary?.totalEarnings)}
-              </Typography>
-
+              />
               <Box
                 sx={{
-                  mt: 1.2,
-                  mb: 1.15,
-                  height: 1,
-                  bgcolor: "rgba(255,255,255,0.16)",
+                  position: "absolute",
+                  top: 30,
+                  right: 40,
+                  width: 60,
+                  height: 60,
+                  borderRadius: "50%",
+                  background: "rgba(255,255,255,0.05)",
+                  pointerEvents: "none",
                 }}
               />
 
-              <Stack
-                direction="row"
-                justifyContent="space-between"
-                alignItems="center"
-                spacing={1}
+              {/* Top section */}
+              <Box sx={{ p: 2.2, pb: 0, position: "relative", zIndex: 1 }}>
+                {/* Icon + label row */}
+                <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.6 }}>
+                  <Box
+                    sx={{
+                      width: 38,
+                      height: 38,
+                      borderRadius: "0.9rem",
+                      bgcolor: "#E7F318",
+                      color: "#4A5800",
+                      display: "grid",
+                      placeItems: "center",
+                      flexShrink: 0,
+                    }}
+                  >
+                    <AccountBalanceWalletOutlinedIcon sx={{ fontSize: "1.15rem" }} />
+                  </Box>
+                  <Typography
+                    sx={{
+                      color: "rgba(255,255,255,0.75)",
+                      fontSize: "0.72rem",
+                      fontWeight: 700,
+                      letterSpacing: "0.08em",
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    Total Earnings
+                  </Typography>
+                </Stack>
+
+                <Typography
+                  sx={{
+                    fontSize: "2.6rem",
+                    fontWeight: 900,
+                    lineHeight: 1,
+                    letterSpacing: "-0.02em",
+                  }}
+                >
+                  {formatPrice(summary?.totalEarnings)}
+                </Typography>
+              </Box>
+
+              {/* Bottom available + withdraw — sits on a slightly darker strip */}
+              <Box
+                sx={{
+                  mt: "auto",
+                  mx: 1.5,
+                  mb: 1.5,
+                  p: 1.4,
+                  borderRadius: "1rem",
+                  bgcolor: "rgba(0,0,0,0.22)",
+                  position: "relative",
+                  zIndex: 1,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 1,
+                }}
               >
                 <Box>
                   <Typography
                     sx={{
-                      color: "rgba(255,255,255,0.6)",
-                      fontSize: "0.56rem",
+                      color: "rgba(255,255,255,0.55)",
+                      fontSize: "0.58rem",
                       fontWeight: 800,
                       letterSpacing: "0.1em",
                       textTransform: "uppercase",
+                      mb: 0.3,
                     }}
                   >
-                    Available
+                    Available to Withdraw
                   </Typography>
-                  <Typography
-                    sx={{ mt: 0.3, fontSize: "1.2rem", fontWeight: 800 }}
-                  >
+                  <Typography sx={{ fontSize: "1.35rem", fontWeight: 900, lineHeight: 1 }}>
                     {formatPrice(summary?.availableEarnings)}
                   </Typography>
                 </Box>
@@ -580,69 +705,68 @@ export default function CustomerReferralsPage() {
                   to="/customer/referrals/earnings"
                   variant="contained"
                   sx={{
-                    minHeight: 34,
-                    px: 1.25,
-                    borderRadius: "0.8rem",
+                    minHeight: 38,
+                    px: 1.6,
+                    borderRadius: "0.85rem",
                     bgcolor: "#FFFFFF",
                     color: "#0E56C8",
-                    boxShadow: "none",
-                    fontSize: "0.72rem",
-                    fontWeight: 700,
+                    boxShadow: "0 4px 14px rgba(0,0,0,0.18)",
+                    fontSize: "0.76rem",
+                    fontWeight: 800,
                     textTransform: "none",
-                    "&:hover": { bgcolor: "#F0F5FF" },
+                    flexShrink: 0,
+                    "&:hover": { bgcolor: "#EEF4FF" },
                   }}
                 >
-                  View Earnings
+                  Withdraw
                 </Button>
-              </Stack>
+              </Box>
             </Box>
           </Box>
 
           {/* Stats */}
           <Box
             sx={{
-              mt: 1.55,
+              mt: 1.8,
               display: "grid",
               gridTemplateColumns: {
-                xs: "1fr",
-                md: "repeat(3, minmax(0, 1fr))",
+                xs: "repeat(3, 1fr)",
               },
-              gap: 1.35,
+              gap: 1.4,
             }}
           >
             <StatCard
-              icon={<MarkEmailReadOutlinedIcon sx={{ fontSize: "1rem" }} />}
+              icon={<MarkEmailReadOutlinedIcon sx={{ fontSize: "1.1rem" }} />}
               iconBg="#E8F0FF"
               iconTone="#4F89FF"
               value={String(summary?.invitesSent ?? 0)}
               label="Invites sent"
             />
             <StatCard
-              icon={<VerifiedRoundedIcon sx={{ fontSize: "1rem" }} />}
+              icon={<VerifiedRoundedIcon sx={{ fontSize: "1.1rem" }} />}
               iconBg="#E8FAEF"
               iconTone="#177D45"
               value={String(summary?.successfulReferrals ?? 0)}
               label="Successful referrals"
             />
             <StatCard
-              icon={<PendingActionsRoundedIcon sx={{ fontSize: "1rem" }} />}
-              iconBg="#F4F1C9"
-              iconTone="#8B8600"
+              icon={<PendingActionsRoundedIcon sx={{ fontSize: "1.1rem" }} />}
+              iconBg="#FFF4D6"
+              iconTone="#A05C00"
               value={String(summary?.pendingReferrals ?? 0)}
               label="Pending referrals"
             />
           </Box>
 
           {/* Quick share */}
-          <Box sx={{ mt: 1.8 }}>
+          <Box sx={{ mt: 2.2 }}>
             <Typography
-              sx={{ color: "#223146", fontSize: "1.1rem", fontWeight: 800 }}
+              sx={{ color: "#18253A", fontSize: "1.05rem", fontWeight: 800, mb: 1.3 }}
             >
               Quick Share
             </Typography>
             <Box
               sx={{
-                mt: 1.2,
                 display: "grid",
                 gridTemplateColumns: {
                   xs: "1fr",
@@ -658,14 +782,15 @@ export default function CustomerReferralsPage() {
           </Box>
 
           {/* Recent activity */}
-          <Box sx={{ mt: 2.05 }}>
+          <Box sx={{ mt: 2.4 }}>
             <Stack
               direction="row"
               justifyContent="space-between"
               alignItems="center"
+              sx={{ mb: 1.3 }}
             >
               <Typography
-                sx={{ color: "#223146", fontSize: "1.1rem", fontWeight: 800 }}
+                sx={{ color: "#18253A", fontSize: "1.05rem", fontWeight: 800 }}
               >
                 Recent Activity
               </Typography>
@@ -674,12 +799,12 @@ export default function CustomerReferralsPage() {
                 to="/customer/referrals/earnings"
                 sx={{
                   color: "#0E56C8",
-                  fontSize: "0.75rem",
+                  fontSize: "0.76rem",
                   fontWeight: 700,
                   textTransform: "none",
                   minWidth: 0,
                   px: 0,
-                  "&:hover": { bgcolor: "transparent" },
+                  "&:hover": { bgcolor: "transparent", textDecoration: "underline" },
                 }}
               >
                 View All
@@ -688,31 +813,33 @@ export default function CustomerReferralsPage() {
 
             <Box
               sx={{
-                mt: 1.15,
-                borderRadius: "1.25rem",
+                borderRadius: "1.35rem",
                 bgcolor: "#FFFFFF",
                 border: "1px solid rgba(225,232,241,0.96)",
-                boxShadow: "0 14px 28px rgba(16,29,51,0.04)",
+                boxShadow: "0 8px 24px rgba(16,29,51,0.05)",
                 overflow: "hidden",
               }}
             >
               {activityItems.length === 0 ? (
-                <Box sx={{ px: 1.35, py: 2 }}>
-                  <RedeemRoundedIcon
-                    sx={{ color: "#C8D0DC", fontSize: "1.5rem", mb: 0.5 }}
-                  />
-                  <Typography
+                <Box sx={{ px: 2, py: 3, textAlign: "center" }}>
+                  <Box
                     sx={{
-                      color: "#223146",
-                      fontSize: "0.88rem",
-                      fontWeight: 700,
+                      width: 52,
+                      height: 52,
+                      borderRadius: "50%",
+                      bgcolor: "#F2F5F8",
+                      display: "grid",
+                      placeItems: "center",
+                      mx: "auto",
+                      mb: 1.2,
                     }}
                   >
+                    <RedeemRoundedIcon sx={{ color: "#B4BECC", fontSize: "1.5rem" }} />
+                  </Box>
+                  <Typography sx={{ color: "#223146", fontSize: "0.9rem", fontWeight: 700 }}>
                     No referral activity yet
                   </Typography>
-                  <Typography
-                    sx={{ mt: 0.3, color: "#647387", fontSize: "0.76rem" }}
-                  >
+                  <Typography sx={{ mt: 0.4, color: "#647387", fontSize: "0.76rem" }}>
                     Share your code to invite your first friend.
                   </Typography>
                 </Box>
@@ -725,42 +852,32 @@ export default function CustomerReferralsPage() {
                     alignItems="center"
                     spacing={1.2}
                     sx={{
-                      px: 1.35,
-                      py: 1.2,
-                      borderTop:
-                        index === 0
-                          ? "none"
-                          : "1px solid rgba(232,237,244,0.9)",
+                      px: 1.6,
+                      py: 1.35,
+                      borderTop: index === 0 ? "none" : "1px solid rgba(232,237,244,0.9)",
+                      transition: "background 0.12s",
+                      "&:hover": { bgcolor: "#F8FAFD" },
                     }}
                   >
-                    <Stack direction="row" spacing={0.95} alignItems="center">
+                    <Stack direction="row" spacing={1.1} alignItems="center">
                       <Avatar
                         sx={{
-                          width: 34,
-                          height: 34,
+                          width: 38,
+                          height: 38,
                           bgcolor: item.avatarColor,
-                          fontSize: "0.82rem",
+                          fontSize: "0.84rem",
+                          fontWeight: 700,
                         }}
                       >
                         {item.initial}
                       </Avatar>
                       <Box>
                         <Typography
-                          sx={{
-                            color: "#223146",
-                            fontSize: "0.88rem",
-                            fontWeight: 700,
-                          }}
+                          sx={{ color: "#223146", fontSize: "0.88rem", fontWeight: 700 }}
                         >
                           {item.name}
                         </Typography>
-                        <Typography
-                          sx={{
-                            mt: 0.15,
-                            color: "#7F8A9B",
-                            fontSize: "0.68rem",
-                          }}
-                        >
+                        <Typography sx={{ mt: 0.1, color: "#7F8A9B", fontSize: "0.7rem" }}>
                           {item.detail}
                         </Typography>
                       </Box>
@@ -768,18 +885,19 @@ export default function CustomerReferralsPage() {
 
                     <Box sx={{ textAlign: "right", flexShrink: 0 }}>
                       <Typography
-                        sx={{
-                          color: item.tone,
-                          fontSize: "0.92rem",
-                          fontWeight: 800,
-                        }}
+                        sx={{ color: item.tone, fontSize: "0.94rem", fontWeight: 800 }}
                       >
                         {item.amount}
                       </Typography>
-                      <Typography
+                      <Box
                         sx={{
-                          mt: 0.12,
-                          color: "#98A3B2",
+                          mt: 0.3,
+                          display: "inline-flex",
+                          px: 0.7,
+                          py: 0.2,
+                          borderRadius: "999px",
+                          bgcolor: item.tone === "#239654" ? "#E8FAEF" : item.tone === "#0E56C8" ? "#EEF4FF" : "#F2F5F8",
+                          color: item.tone,
                           fontSize: "0.56rem",
                           fontWeight: 800,
                           letterSpacing: "0.08em",
@@ -787,7 +905,7 @@ export default function CustomerReferralsPage() {
                         }}
                       >
                         {item.rewardLabel}
-                      </Typography>
+                      </Box>
                     </Box>
                   </Stack>
                 ))
