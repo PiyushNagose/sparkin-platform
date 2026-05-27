@@ -551,9 +551,16 @@ export default function CreateServiceRequestPage() {
                           fontSize: "0.78rem",
                           fontWeight: 700,
                           textTransform: "none",
+                          color: "#FFFFFF",
                           background:
                             "linear-gradient(180deg, #0E56C8 0%, #0D49B0 100%)",
                           boxShadow: "0 14px 24px rgba(14,86,200,0.18)",
+                          "&.Mui-disabled": {
+                            color: "#FFFFFF",
+                            background:
+                              "linear-gradient(180deg, #0E56C8 0%, #0D49B0 100%)",
+                            opacity: 0.75,
+                          },
                         }}
                       >
                         {isSubmitting ? "Submitting..." : "Submit Request"}

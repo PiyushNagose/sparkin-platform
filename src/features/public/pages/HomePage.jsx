@@ -1753,8 +1753,14 @@ function HomePage() {
                     minHeight: 52,
                     fontSize: "0.98rem",
                     borderRadius: "0.5rem",
+                    color: "#FFFFFF",
                     background: primaryBlueGradient,
                     boxShadow: "0 10px 22px rgba(14,86,200,0.18)",
+                    "&.Mui-disabled": {
+                      color: "#FFFFFF",
+                      background: primaryBlueGradient,
+                      opacity: 0.75,
+                    },
                   }}
                 >
                   {estimateLoading
