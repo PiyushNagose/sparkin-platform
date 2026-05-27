@@ -681,6 +681,7 @@ export default function BookingStepFourPage() {
 
     // Validate required documents
     const missingDocs = [];
+    if (!(draft.attachments?.roofPhotos?.length)) missingDocs.push("Roof Image");
     if (!(draft.attachments?.electricityBill?.length)) missingDocs.push("Electricity Bill");
     if (!(draft.attachments?.photoId?.length)) missingDocs.push("Govt Photo ID");
     if (missingDocs.length > 0) {
@@ -838,8 +839,8 @@ export default function BookingStepFourPage() {
                       icon={
                         <CloudUploadOutlinedIcon sx={{ fontSize: "1rem" }} />
                       }
-                      title="Upload roof photos (optional)"
-                      description="Provide a visual reference to help experts design your perfect system"
+                      title="Upload roof photos (required)"
+                      description="Provide at least one roof image so vendors can prepare accurate proposals"
                       buttonLabel="Browse Files"
                       helper="JPG, PNG, PDF up to 2 MB"
                       files={draft.attachments?.roofPhotos || []}

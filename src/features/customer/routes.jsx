@@ -9,6 +9,7 @@ import CustomerProfilePage from "@/features/customer/pages/CustomerProfilePage";
 import CustomerReferralsPage from "@/features/customer/pages/CustomerReferralsPage";
 import CustomerShareEarnPage from "@/features/customer/pages/CustomerShareEarnPage";
 import CustomerReferralEarningsPage from "@/features/customer/pages/CustomerReferralEarningsPage";
+import CustomerTenderDetailPage from "@/features/customer/pages/CustomerTenderDetailPage";
 
 export const customerRoutes = [
   {
@@ -20,8 +21,16 @@ export const customerRoutes = [
     element: <CustomerBookingsPage />,
   },
   {
+    path: "bookings/:leadId",
+    element: <CustomerTenderDetailPage />,
+  },
+  {
     path: "tenders",
     element: <CustomerTendersPage />,
+  },
+  {
+    path: "tenders/:leadId",
+    element: <CustomerTenderDetailPage />,
   },
   {
     path: "projects",

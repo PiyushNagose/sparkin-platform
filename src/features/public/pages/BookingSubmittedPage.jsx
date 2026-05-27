@@ -4,7 +4,7 @@ import ImageSearchRoundedIcon from "@mui/icons-material/ImageSearchRounded";
 import LocalOfferOutlinedIcon from "@mui/icons-material/LocalOfferOutlined";
 import CompareArrowsRoundedIcon from "@mui/icons-material/CompareArrowsRounded";
 import RadioButtonUncheckedRoundedIcon from "@mui/icons-material/RadioButtonUncheckedRounded";
-import { Link as RouterLink, useLocation, useNavigate } from "react-router-dom";
+import { Link as RouterLink, useLocation } from "react-router-dom";
 import styles from "@/features/public/pages/CalculatorPage.module.css";
 import {
   publicPageSpacing,
@@ -76,8 +76,6 @@ function NextStepItem({ icon, title, description }) {
 export default function BookingSubmittedPage() {
   const { state } = useLocation();
   const leadId = state?.leadId;
-  const navigate = useNavigate();
-
   if (!leadId) {
     return (
       <Box className={styles.pageShell}>
@@ -260,38 +258,58 @@ export default function BookingSubmittedPage() {
                   </Box>
                 ) : null}
 
-                <Button
-                  component={RouterLink}
-                  to={`/tenders/live?leadId=${leadId}`}
-                  variant="contained"
-                  sx={{
-                    width: "100%",
-                    minHeight: 46,
-                    borderRadius: "0.85rem",
-                    fontWeight: 700,
-                    fontSize: "0.86rem",
-                    textTransform: "none",
-                    background:
-                      "linear-gradient(180deg, #0E56C8 0%, #0D49B0 100%)",
-                    boxShadow: "0 12px 24px rgba(14,86,200,0.22)",
-                  }}
-                >
-                  Track My Request
-                </Button>
+                <Stack sx={{ width: "100%" }} spacing={1}>
+                  <Button
+                    component={RouterLink}
+                    to={`/customer/bookings/${leadId}`}
+                    variant="contained"
+                    sx={{
+                      width: "100%",
+                      minHeight: 46,
+                      borderRadius: "0.85rem",
+                      fontWeight: 700,
+                      fontSize: "0.86rem",
+                      textTransform: "none",
+                      background:
+                        "linear-gradient(180deg, #0E56C8 0%, #0D49B0 100%)",
+                      boxShadow: "0 12px 24px rgba(14,86,200,0.22)",
+                    }}
+                  >
+                    View Booking Details
+                  </Button>
 
-                <Button
-                  component={RouterLink}
-                  to="/customer"
-                  sx={{
-                    color: "#0E56C8",
-                    fontSize: "0.82rem",
-                    fontWeight: 700,
-                    textTransform: "none",
-                    "&:hover": { bgcolor: "transparent" },
-                  }}
-                >
-                  Go to Dashboard
-                </Button>
+                  <Button
+                    component={RouterLink}
+                    to={`/tenders/live?leadId=${leadId}`}
+                    variant="outlined"
+                    sx={{
+                      width: "100%",
+                      minHeight: 44,
+                      borderRadius: "0.85rem",
+                      borderColor: "#C5D8FF",
+                      color: "#0E56C8",
+                      fontWeight: 700,
+                      fontSize: "0.82rem",
+                      textTransform: "none",
+                    }}
+                  >
+                    Sit Back While Vendors Prepare Bids
+                  </Button>
+
+                  <Button
+                    component={RouterLink}
+                    to="/customer"
+                    sx={{
+                      color: "#0E56C8",
+                      fontSize: "0.82rem",
+                      fontWeight: 700,
+                      textTransform: "none",
+                      "&:hover": { bgcolor: "transparent" },
+                    }}
+                  >
+                    Go to Dashboard
+                  </Button>
+                </Stack>
 
                 <Stack direction="row" spacing={0.55} alignItems="center">
                   <RadioButtonUncheckedRoundedIcon
