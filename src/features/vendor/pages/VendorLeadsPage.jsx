@@ -867,8 +867,14 @@ export default function VendorLeadsPage() {
                 minWidth: 32,
                 width: 32,
                 height: 32,
-                borderRadius: "50%",
-                color: "#647387",
+                minHeight: 'auto',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxSizing: 'border-box',
+                lineHeight: 1,
+                borderRadius: '50%',
+                color: '#647387',
                 p: 0,
               }}
             >
@@ -895,15 +901,18 @@ export default function VendorLeadsPage() {
                       minWidth: 32,
                       width: 32,
                       height: 32,
-                      borderRadius: "50%",
+                      minHeight: 'auto',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxSizing: 'border-box',
+                      lineHeight: 1,
+                      borderRadius: '50%',
                       p: 0,
-                      color: pageNumber === page ? "#FFFFFF" : "#223146",
-                      bgcolor: pageNumber === page ? "#0E56C8" : "transparent",
-                      border:
-                        pageNumber === page
-                          ? "none"
-                          : "1px solid rgba(225,232,241,0.96)",
-                      fontSize: "0.72rem",
+                      color: pageNumber === page ? '#FFFFFF' : '#223146',
+                      bgcolor: pageNumber === page ? '#0E56C8' : 'transparent',
+                      border: pageNumber === page ? 'none' : '1px solid rgba(225,232,241,0.96)',
+                      fontSize: '0.72rem',
                       fontWeight: 700,
                     }}
                   >
@@ -921,8 +930,14 @@ export default function VendorLeadsPage() {
                 minWidth: 32,
                 width: 32,
                 height: 32,
-                borderRadius: "50%",
-                color: "#647387",
+                minHeight: 'auto',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxSizing: 'border-box',
+                lineHeight: 1,
+                borderRadius: '50%',
+                color: '#647387',
                 p: 0,
               }}
             >

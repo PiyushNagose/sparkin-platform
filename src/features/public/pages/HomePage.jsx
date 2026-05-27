@@ -205,6 +205,20 @@ const testimonials = [
     city: "New Delhi, DL",
     avatar: rohanAvatarPlaceholder,
   },
+  {
+    quote:
+      '"Sparkin guided me through the subsidy paperwork and helped me compare installers quickly. Now my home is nearly energy independent and my rooftop feels like a smart asset."',
+    name: "Neha Singh",
+    city: "Hyderabad, TS",
+    avatar: animeshAvatarPlaceholder,
+  },
+  {
+    quote:
+      '"The installation timeline was transparent and the savings estimate was accurate. I love seeing my production dashboard each day — it makes solar ownership exciting."',
+    name: "Arjun Reddy",
+    city: "Chennai, TN",
+    avatar: priyaAvatarPlaceholder,
+  },
 ];
 
 const faqs = [
@@ -696,6 +710,7 @@ function HomePage() {
   const [userLeads, setUserLeads] = useState([]);
   const [currentOfferIndex, setCurrentOfferIndex] = useState(0);
   const offersCarouselRef = useRef(null);
+  const testimonialsRef = useRef(null);
 
   useEffect(() => {
     const timerId = window.setInterval(() => {
@@ -954,6 +969,14 @@ function HomePage() {
     setCurrentOfferIndex(index);
   };
 
+  const scrollTestimonials = (direction) => {
+    if (!testimonialsRef.current) return;
+    const container = testimonialsRef.current;
+    const card = container.querySelector("[data-testimonial-card]");
+    const scrollAmount = (card?.clientWidth ?? 360) + 24;
+    container.scrollBy({ left: direction * scrollAmount, behavior: "smooth" });
+  };
+
   // Auto-scroll carousel
   useEffect(() => {
     if (displayOffers.length <= 1) return;
@@ -964,6 +987,16 @@ function HomePage() {
 
     return () => clearInterval(interval);
   }, [displayOffers.length]);
+
+  useEffect(() => {
+    if (testimonials.length <= 1) return;
+
+    const interval = window.setInterval(() => {
+      scrollTestimonials(1);
+    }, 6000);
+
+    return () => window.clearInterval(interval);
+  }, [testimonials.length]);
 
   // Calculate visible offers for carousel
   const getVisibleOffers = () => {
@@ -990,7 +1023,7 @@ function HomePage() {
           backgroundRepeat: "no-repeat",
           backgroundSize: { xs: "cover", md: "100% auto" },
           color: "white",
-          pb: { xs: 2, md: 2 },
+          pb: { xs: 4, md: 3 },
           minHeight: { xs: 620, md: "calc(100vh - 72px)" },
           position: "relative",
           display: "flex",
@@ -1010,8 +1043,8 @@ function HomePage() {
           disableGutters
           className={styles.heroContainer}
           sx={{
-            pt: { xs: 2.5, md: 0 },
-            pb: { xs: 2.5, md: 0 },
+            pt: { xs: 4, md: 3 },
+            pb: { xs: 4, md: 3 },
             position: "relative",
             zIndex: 1,
             minHeight: { xs: 620, md: "calc(100vh - 72px)" },
@@ -1021,10 +1054,10 @@ function HomePage() {
         >
           <Box
             sx={{
-              px: 0,
+              px: { xs: 2, md: 0 },
               py: { xs: 2.5, md: 2 },
               position: "relative",
-              minHeight: { xs: 540, md: 570 },
+              minHeight: { xs: 560, md: 570 },
               width: "100%",
               display: "flex",
               flexDirection: "column",
@@ -1055,12 +1088,13 @@ function HomePage() {
                   className={styles.heroContentColumn}
                   sx={{
                     minHeight: { xs: "auto", lg: 430 },
-                    maxWidth: { lg: 760 },
+                    maxWidth: { lg: 720 },
+                    px: { xs: 0, md: 1 },
                   }}
                 >
                   <Stack
                     className={`${styles.heroCopyStack} ${styles.heroRevealPrimary}`}
-                    spacing={{ xs: 2.05, md: 2.45 }}
+                    spacing={{ xs: 2.75, md: 3.2 }}
                     alignItems="flex-start"
                   >
                     <Chip
@@ -1128,8 +1162,8 @@ function HomePage() {
 
                     <Stack
                       direction={{ xs: "column", sm: "row" }}
-                      spacing={1.15}
-                      sx={{ pt: 1.05 }}
+                      spacing={2}
+                      sx={{ pt: 1.75 }}
                     >
                       <Button
                         component={RouterLink}
@@ -1171,62 +1205,69 @@ function HomePage() {
                     </Stack>
                   </Stack>
 
-                  <Stack
+                  <Box
                     className={`${styles.heroStatsRow} ${styles.heroRevealStats}`}
-                    direction={{ xs: "column", md: "row" }}
-                    spacing={{ xs: 2.3, md: 4.8 }}
                     sx={{
-                      mt: { xs: 3.6, md: 4.2 },
-                      pt: 0,
+                      position: "relative",
+                      mt: { xs: 3.5, md: 4 },
                       width: "100%",
                     }}
                   >
-                    {heroStats.map((stat) => (
-                      <Stack
-                        key={stat.label}
-                        direction="row"
-                        spacing={2}
-                        alignItems="center"
-                      >
+                    <Stack
+                      direction={{ xs: "column", md: "row" }}
+                      spacing={{ xs: 2, md: 3 }}
+                      sx={{
+                        width: "100%",
+                      }}
+                    >
+                      {heroStats.map((stat) => (
                         <Box
+                          key={stat.label}
                           sx={{
-                            width: 50,
-                            height: 50,
-                            borderRadius: "50%",
-                            bgcolor: "white",
-                            display: "grid",
-                            placeItems: "center",
-                            color: "primary.main",
+                            flex: 1,
+                            p: { xs: 2, md: 2.25 },
+                            borderRadius: "1.5rem",
+                            bgcolor: "rgba(255,255,255,0.1)",
+                            border: "1px solid rgba(255,255,255,0.14)",
+                            boxShadow: "0 18px 40px rgba(0,0,0,0.10)",
                           }}
                         >
-                          {stat.icon}
+                          <Stack direction="row" spacing={1.75} alignItems="center">
+                            <Box
+                              sx={{
+                                width: 44,
+                                height: 44,
+                                borderRadius: "50%",
+                                bgcolor: "white",
+                                display: "grid",
+                                placeItems: "center",
+                                color: "primary.main",
+                              }}
+                            >
+                              {stat.icon}
+                            </Box>
+                            <Box>
+                              <Typography
+                                sx={{
+                                  fontSize: "1.18rem",
+                                  lineHeight: 1.1,
+                                  fontWeight: 800,
+                                }}
+                              >
+                                {stat.value}
+                              </Typography>
+                              <Typography
+                                variant="body2"
+                                sx={{ color: "rgba(255,255,255,0.76)", fontWeight: 600 }}
+                              >
+                                {stat.label}
+                              </Typography>
+                            </Box>
+                          </Stack>
                         </Box>
-                        <Box>
-                          <Typography
-                            sx={{
-                              fontSize: "1.42rem",
-                              lineHeight: 1,
-                              fontWeight: 800,
-                            }}
-                          >
-                            {stat.value}
-                          </Typography>
-                          <Typography
-                            variant="body2"
-                            sx={{
-                              textTransform: "uppercase",
-                              opacity: 0.76,
-                              letterSpacing: 0.5,
-                              fontSize: "0.7rem",
-                              fontWeight: 800,
-                            }}
-                          >
-                            {stat.label}
-                          </Typography>
-                        </Box>
-                      </Stack>
-                    ))}
-                  </Stack>
+                      ))}
+                    </Stack>
+                  </Box>
                 </Stack>
               </Grid>
 
@@ -1898,7 +1939,8 @@ function HomePage() {
             sx={{ py: { xs: 7, md: 8.5 } }}
           >
             <Grid size={{ xs: 12, md: 6 }}>
-              <Box sx={{ maxWidth: 460 }}>
+
+              <Box sx={{ maxWidth: { xs: '100%', md: 620 } }}>
                 <Chip
                   label="Limited Time Offer"
                   sx={{
@@ -1934,7 +1976,7 @@ function HomePage() {
                   sx={{
                     mt: 3,
                     fontSize: { xs: "1.02rem", md: "1.08rem" },
-                    maxWidth: 380,
+                    maxWidth: { xs: '100%', md: 500 },
                     color: "rgba(255,255,255,0.84)",
                     lineHeight: 1.45,
                     fontWeight: 600,
@@ -1955,7 +1997,16 @@ function HomePage() {
                   </Box>{" "}
                   on every installation.
                 </Typography>
-                <Stack spacing={1.55} sx={{ mt: 4.25, maxWidth: 255 }}>
+                <Stack
+                  direction={{ xs: "column", sm: "row" }}
+                  spacing={2}
+                  sx={{
+                    mt: 4.25,
+                    maxWidth: { xs: '100%', md: 520 },
+                    flexWrap: "wrap",
+                    alignItems: { xs: "stretch", sm: "center" },
+                  }}
+                >
                   <Button
                     component={RouterLink}
                     to="/booking"
@@ -1969,6 +2020,7 @@ function HomePage() {
                       fontWeight: 700,
                       background: primaryBlueGradient,
                       boxShadow: "0 14px 30px rgba(21,104,230,0.28)",
+                      width: { xs: '100%', sm: 'auto' },
                     }}
                   >
                     Claim Your Discount
@@ -1984,6 +2036,7 @@ function HomePage() {
                       color: "white",
                       border: "1px solid rgba(255,255,255,0.08)",
                       boxShadow: "none",
+                      width: { xs: '100%', sm: 'auto' },
                     }}
                   >
                     Share This Sale
@@ -2710,11 +2763,15 @@ function HomePage() {
                   borderRadius: "1rem",
                 }}
               >
-                <Grid container spacing={{ xs: 2.25, md: 3 }}>
+                <Grid
+                  container
+                  spacing={{ xs: 2.25, md: 3 }}
+                  justifyContent={displayOffers.length === 1 ? "center" : undefined}
+                >
                   {getVisibleOffers().map((offer, index) => (
                     <Grid
                       key={`${offer.title}-${currentOfferIndex}-${index}`}
-                      size={{ xs: 12, md: displayOffers.length === 1 ? 12 : displayOffers.length === 2 ? 6 : 4 }}
+                      size={{ xs: 12, md: displayOffers.length === 2 ? 6 : 4 }}
                       sx={{ display: "flex" }}
                     >
                       <Box
@@ -3043,17 +3100,34 @@ function HomePage() {
                 Real stories from homeowners who made the switch.
               </Typography>
             </Stack>
-            <Grid container spacing={{ xs: 2.25, md: 3 }} sx={{ mt: 5 }}>
-              {testimonials.map((item) => (
-                <Grid
-                  key={item.name}
-                  size={{ xs: 12, md: 4 }}
-                  sx={{ display: "flex" }}
-                >
+            <Box sx={{ position: "relative", mt: 5 }}>
+              <Box
+                ref={testimonialsRef}
+                sx={{
+                  display: "flex",
+                  gap: { xs: 2, md: 3 },
+                  overflowX: "auto",
+                  pb: 1,
+                  px: { xs: 1.5, md: 0 },
+                  scrollSnapType: "x mandatory",
+                  WebkitOverflowScrolling: "touch",
+                  mx: { xs: -1.5, md: 0 },
+                  scrollbarWidth: "none",
+                  msOverflowStyle: "none",
+                  "&::-webkit-scrollbar": {
+                    display: "none",
+                  },
+                }}
+              >
+                {testimonials.map((item) => (
                   <Box
+                    key={item.name}
+                    data-testimonial-card
                     sx={{
-                      width: "100%",
-                      height: "100%",
+                      flex: "0 0 auto",
+                      minWidth: { xs: "100%", sm: 320, md: 340 },
+                      maxWidth: 380,
+                      scrollSnapAlign: "center",
                       display: "flex",
                       flexDirection: "column",
                       p: { xs: 2.5, md: 2.7 },
@@ -3122,9 +3196,9 @@ function HomePage() {
                       </Box>
                     </Stack>
                   </Box>
-                </Grid>
-              ))}
-            </Grid>
+                ))}
+              </Box>
+            </Box>
           </Box>
 
           <Box sx={{ mt: { xs: 10, md: 12 } }}>
