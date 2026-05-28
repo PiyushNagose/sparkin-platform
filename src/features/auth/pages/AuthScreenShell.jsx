@@ -596,8 +596,14 @@ export function AuthScreenShell({
                 fontSize: "0.94rem",
                 fontWeight: 700,
                 textTransform: "none",
+                color: "#FFFFFF",
                 background: "linear-gradient(180deg, #0E56C8 0%, #0D49B0 100%)",
                 boxShadow: "0 18px 28px rgba(14,86,200,0.18)",
+                "&.Mui-disabled": {
+                  color: "#FFFFFF",
+                  background: "linear-gradient(180deg, #0E56C8 0%, #0D49B0 100%)",
+                  opacity: 0.75,
+                },
               }}
             >
               {isSubmitting ? "Please wait..." : isSignup ? "Create Account ->" : keepLoggedIn ? "Login" : "Login for this session"}

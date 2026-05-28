@@ -125,119 +125,161 @@ const trustItems = [
 
 function BookingStepper() {
   return (
-    <Box
-      sx={{
-        width: "100%",
-        display: "grid",
-        gridTemplateColumns: "repeat(4, 1fr)",
-        position: "relative",
-        alignItems: "start",
-      }}
-    >
-      <Box
-        sx={{
-          position: "absolute",
-          left: "4%",
-          right: "4%",
-          top: 15,
-          height: 2,
-          bgcolor: "#E7ECF3",
-        }}
-      />
-      <Box
-        sx={{
-          position: "absolute",
-          left: "4%",
-          width: "83.5%",
-          top: 15,
-          height: 2,
-          bgcolor: "#0E56C8",
-        }}
-      />
+    <Box sx={{ width: "100%", px: { xs: 1, md: 2 } }}>
+      {/* Track line */}
+      <Box sx={{ position: "relative", mb: 2.5 }}>
+        {/* Background track */}
+        <Box
+          sx={{
+            position: "absolute",
+            left: "12.5%",
+            right: "12.5%",
+            top: 16,
+            height: 3,
+            borderRadius: 999,
+            bgcolor: "#E7ECF3",
+            zIndex: 0,
+          }}
+        />
+        {/* Filled progress — steps 1–3 complete, stop at dot 3 center = 62.5% */}
+        <Box
+          sx={{
+            position: "absolute",
+            left: "12.5%",
+            width: "50%",
+            top: 16,
+            height: 3,
+            borderRadius: 999,
+            background: "linear-gradient(90deg, #0E56C8 0%, #4F89FF 100%)",
+            zIndex: 0,
+          }}
+        />
 
-      {steps.map((step) => (
-        <Stack
-          key={step.label}
-          alignItems="center"
-          spacing={0.72}
-          sx={{ position: "relative", zIndex: 1 }}
+        {/* Step dots */}
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: "repeat(4, 1fr)",
+            position: "relative",
+            zIndex: 1,
+          }}
         >
-          <Box
-            sx={{
-              width: step.state === "active" ? 32 : 28,
-              height: step.state === "active" ? 32 : 28,
-              borderRadius: "50%",
-              border: step.state === "active" ? "3px solid #0E56C8" : "none",
-              bgcolor: step.state === "active" ? "white" : "#0E56C8",
-              boxShadow:
-                step.state === "active"
-                  ? "0 8px 20px rgba(14,86,200,0.08)"
-                  : "0 8px 20px rgba(17,31,54,0.06)",
-              display: "grid",
-              placeItems: "center",
-            }}
-          >
-            {step.state === "complete" ? (
-              <Typography
-                sx={{ color: "white", fontSize: "0.9rem", fontWeight: 800 }}
-              >
-                {"\u2713"}
-              </Typography>
-            ) : (
+          {steps.map((step, idx) => (
+            <Stack key={step.label} alignItems="center" spacing={0.9}>
+              {/* Circle */}
               <Box
                 sx={{
-                  width: 7,
-                  height: 7,
+                  width: step.state === "active" ? 34 : 30,
+                  height: step.state === "active" ? 34 : 30,
                   borderRadius: "50%",
-                  bgcolor: "#0E56C8",
+                  border: step.state === "active" ? "3px solid #0E56C8" : "none",
+                  bgcolor:
+                    step.state === "active"
+                      ? "#FFFFFF"
+                      : "#0E56C8",
+                  boxShadow:
+                    step.state === "active"
+                      ? "0 0 0 5px rgba(14,86,200,0.12), 0 8px 20px rgba(14,86,200,0.18)"
+                      : "0 4px 12px rgba(14,86,200,0.22)",
+                  display: "grid",
+                  placeItems: "center",
+                  transition: "all 0.2s",
                 }}
-              />
-            )}
-          </Box>
+              >
+                {step.state === "complete" ? (
+                  <Typography sx={{ color: "#FFFFFF", fontSize: "0.88rem", fontWeight: 900, lineHeight: 1 }}>
+                    ✓
+                  </Typography>
+                ) : (
+                  <Box
+                    sx={{
+                      width: 8,
+                      height: 8,
+                      borderRadius: "50%",
+                      bgcolor: "#0E56C8",
+                    }}
+                  />
+                )}
+              </Box>
 
-          <Typography
-            sx={{
-              color: "#202938",
-              fontSize: "0.74rem",
-              fontWeight: 500,
-              lineHeight: 1.2,
-            }}
-          >
-            {step.label}
-          </Typography>
+              {/* Label */}
+              <Typography
+                sx={{
+                  color: step.state === "active" ? "#0E56C8" : step.state === "complete" ? "#18253A" : "#8F9AAC",
+                  fontSize: "0.72rem",
+                  fontWeight: step.state === "active" ? 800 : 600,
+                  lineHeight: 1.2,
+                  textAlign: "center",
+                }}
+              >
+                {step.label}
+              </Typography>
 
-          <Typography
-            sx={{
-              minHeight: 14,
-              color: step.state === "active" ? "#0E56C8" : step.state === "complete" ? "#239654" : "transparent",
-              fontSize: "0.54rem",
-              fontWeight: 800,
-              letterSpacing: 0.48,
-              textTransform: "uppercase",
-            }}
-          >
-            {step.state === "active" ? "In Progress" : step.state === "complete" ? "Done" : "."}
-          </Typography>
-        </Stack>
-      ))}
+              {/* Status pill */}
+              <Box
+                sx={{
+                  px: 0.8,
+                  py: 0.22,
+                  borderRadius: 999,
+                  bgcolor:
+                    step.state === "active"
+                      ? "#EEF4FF"
+                      : step.state === "complete"
+                      ? "#E8FAEF"
+                      : "transparent",
+                  minHeight: 16,
+                }}
+              >
+                <Typography
+                  sx={{
+                    color:
+                      step.state === "active"
+                        ? "#0E56C8"
+                        : step.state === "complete"
+                        ? "#239654"
+                        : "transparent",
+                    fontSize: "0.52rem",
+                    fontWeight: 800,
+                    letterSpacing: "0.06em",
+                    textTransform: "uppercase",
+                    lineHeight: 1,
+                  }}
+                >
+                  {step.state === "active" ? "In Progress" : step.state === "complete" ? "Done" : "."}
+                </Typography>
+              </Box>
+            </Stack>
+          ))}
+        </Box>
+      </Box>
     </Box>
   );
 }
 
 function SectionLabel({ children }) {
   return (
-    <Typography
-      sx={{
-        mb: 1.2,
-        color: "#59667A",
-        fontSize: "0.68rem",
-        fontWeight: 700,
-        letterSpacing: 0.5,
-        textTransform: "uppercase",
-      }}
-    >
-      {children}
-    </Typography>
+    <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.4 }}>
+      <Box
+        sx={{
+          width: 3,
+          height: 16,
+          borderRadius: 999,
+          bgcolor: "#0E56C8",
+          flexShrink: 0,
+        }}
+      />
+      <Typography
+        sx={{
+          color: "#3A4A5E",
+          fontSize: "0.72rem",
+          fontWeight: 800,
+          letterSpacing: "0.06em",
+          textTransform: "uppercase",
+        }}
+      >
+        {children}
+      </Typography>
+    </Stack>
   );
 }
 
@@ -776,14 +818,14 @@ export default function BookingStepFourPage() {
               sx={{
                 width: "100%",
                 maxWidth: 720,
-                p: { xs: 2.2, md: 3 },
+                p: { xs: 2.4, md: 3.5 },
                 borderRadius: "1.65rem",
-                bgcolor: "rgba(255,255,255,0.96)",
+                bgcolor: "rgba(255,255,255,0.98)",
                 border: "1px solid rgba(228,234,241,0.98)",
-                boxShadow: "0 20px 56px rgba(20,34,56,0.08)",
+                boxShadow: "0 24px 64px rgba(20,34,56,0.09)",
               }}
             >
-              <Stack spacing={{ xs: 3, md: 3.5 }}>
+              <Stack spacing={{ xs: 3.2, md: 3.8 }}>
                 {error ? (
                   <Alert
                     severity="error"
@@ -793,34 +835,46 @@ export default function BookingStepFourPage() {
                   </Alert>
                 ) : null}
 
-                <Box sx={{ width: "100%", maxWidth: 540, mx: "auto" }}>
+                <Box sx={{ width: "100%", mx: "auto" }}>
                   <BookingStepper />
                 </Box>
 
-                <Stack spacing={1} sx={{ textAlign: "center", mx: "auto" }}>
-                  <Typography
-                    variant="h1"
-                    sx={{
-                      ...publicTypography.pageTitle,
-                      color: "#20242B",
-                    }}
-                  >
-                    Almost done!
-                    <Box component="span" sx={{ ml: 0.35 }}>
-                      {"\uD83D\uDE80"}
-                    </Box>
-                  </Typography>
-                  <Typography
-                    sx={{
-                      color: "#667084",
-                      fontSize: "0.94rem",
-                      lineHeight: 1.6,
-                    }}
-                  >
-                    Upload a few details to help vendors give you accurate
-                    quotes
-                  </Typography>
-                </Stack>
+              <Stack
+  spacing={0.6}
+  alignItems="center"
+  sx={{
+    textAlign: "center",
+    width: "100%",
+    pb: 0.5,
+  }}
+>
+  <Typography
+    variant="h1"
+    sx={{
+      ...publicTypography.pageTitle,
+      color: "#20242B",
+      lineHeight: 1.1,
+      fontWeight: 800,
+      letterSpacing: "-0.03em",
+    }}
+  >
+    Almost done!
+  </Typography>
+
+  <Typography
+    sx={{
+      color: "#667084",
+      fontSize: "1rem",
+      lineHeight: 1.5,
+      width: "100%",
+      maxWidth: "540px",
+      mx: "auto",
+      textAlign: "center",
+    }}
+  >
+    Upload a few details to help vendors give you accurate quotes
+  </Typography>
+</Stack>
 
                 <Box>
                   <SectionLabel>Roof Reference</SectionLabel>
@@ -1398,19 +1452,29 @@ export default function BookingStepFourPage() {
                     <Button
                       onClick={handleSubmit}
                       disabled={isSubmitting}
-                      endIcon={<ArrowForwardRoundedIcon />}
+                      endIcon={
+                        isSubmitting
+                          ? <CircularProgress size={16} sx={{ color: "#FFFFFF" }} />
+                          : <ArrowForwardRoundedIcon />
+                      }
                       variant="contained"
                       sx={{
                         width: { xs: "100%", sm: "auto" },
                         minWidth: 170,
-                        minHeight: 42,
+                        minHeight: 44,
                         borderRadius: "1rem",
                         fontWeight: 700,
                         fontSize: "0.84rem",
                         textTransform: "none",
+                        color: "#FFFFFF",
                         background:
                           "linear-gradient(180deg, #0E56C8 0%, #0D49B0 100%)",
                         boxShadow: "0 12px 24px rgba(14,86,200,0.24)",
+                        "&.Mui-disabled": {
+                          background: "linear-gradient(180deg, #0E56C8 0%, #0D49B0 100%)",
+                          opacity: 0.75,
+                          color: "#FFFFFF",
+                        },
                       }}
                     >
                       {isSubmitting ? "Submitting..." : "Submit Request"}

@@ -316,7 +316,7 @@ function FullResult({ estimate, onProceedToBooking }) {
             Estimate for {estimate.input.city}, {estimate.serviceability.stateName} based on a monthly bill of {formatMoney(estimate.input.monthlyBill)}.
           </Typography>
         </Box>
-        <Button onClick={onProceedToBooking} variant="contained" endIcon={<ArrowForwardRoundedIcon />} sx={{ alignSelf: { md: "center" }, minHeight: 52, px: 3.2, borderRadius: "0.9rem", bgcolor: "#0E56C8", fontWeight: 800, textTransform: "none", fontSize: "1rem" }}>
+        <Button onClick={onProceedToBooking} variant="contained" endIcon={<ArrowForwardRoundedIcon />} sx={{ alignSelf: { md: "center" }, minHeight: 52, px: 3.2, borderRadius: "0.9rem", bgcolor: "#0E56C8", fontWeight: 800, textTransform: "none", fontSize: "1rem", color: "#FFFFFF", "&.Mui-disabled": { color: "#FFFFFF", bgcolor: "#0E56C8", opacity: 0.75 } }}>
           Proceed to Booking
         </Button>
       </Stack>
