@@ -493,6 +493,7 @@ export default function BookingPaymentPage() {
                 fontWeight: 700,
                 fontSize: "0.86rem",
                 textTransform: "none",
+                color: "#FFFFFF",
                 background: "linear-gradient(180deg, #0E56C8 0%, #0D49B0 100%)",
               }}
             >
@@ -1066,9 +1067,16 @@ export default function BookingPaymentPage() {
                     fontWeight: 850,
                     fontSize: "0.9rem",
                     textTransform: "none",
+                    color: "#FFFFFF",
                     background:
                       "linear-gradient(180deg, #0E56C8 0%, #0D49B0 100%)",
                     boxShadow: "0 14px 28px rgba(14,86,200,0.28)",
+                    "&.Mui-disabled": {
+                      color: "#FFFFFF",
+                      background:
+                        "linear-gradient(180deg, #0E56C8 0%, #0D49B0 100%)",
+                      opacity: 0.75,
+                    },
                     "&:hover": {
                       background:
                         "linear-gradient(180deg, #0B49AD 0%, #0A3E9A 100%)",
