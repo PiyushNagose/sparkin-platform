@@ -133,6 +133,14 @@ function LabeledField({
             borderRadius: "0.82rem",
             bgcolor: readOnly ? "#F4F7FB" : "#FFFFFF",
             fontSize: "0.84rem",
+            boxShadow: readOnly ? "none" : "0 4px 12px rgba(16,25,47,0.07)",
+            transition: "box-shadow 200ms ease",
+            "&:hover": {
+              boxShadow: readOnly ? "none" : "0 6px 16px rgba(16,25,47,0.1)",
+            },
+            "&.Mui-focused": {
+              boxShadow: readOnly ? "none" : "0 0 0 3px rgba(14,86,200,0.12)",
+            },
           },
         }}
       />
@@ -864,6 +872,8 @@ export default function CustomerProfilePage() {
                   borderRadius: "0.82rem",
                   bgcolor: "#FFFFFF",
                   fontSize: "0.84rem",
+                  boxShadow: "0 4px 12px rgba(16,25,47,0.07)",
+                  "&.Mui-focused": { boxShadow: "0 0 0 3px rgba(14,86,200,0.12)" },
                 },
               }}
             >

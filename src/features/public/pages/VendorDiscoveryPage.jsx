@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Box, Button, CircularProgress, Container, Grid, Stack, Typography } from "@mui/material";
 import { Link as RouterLink } from "react-router-dom";
 import PlaceOutlinedIcon from "@mui/icons-material/PlaceOutlined";
@@ -239,6 +239,30 @@ export default function VendorDiscoveryPage() {
   const [vendors, setVendors] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  const heroRef = useRef(null);
+  const filtersRef = useRef(null);
+  const gridRef = useRef(null);
+  const ctaRef = useRef(null);
+  const [heroVisible, setHeroVisible] = useState(false);
+  const [filtersVisible, setFiltersVisible] = useState(false);
+  const [gridVisible, setGridVisible] = useState(false);
+  const [ctaVisible, setCtaVisible] = useState(false);
+
+  function observeOnce(ref, setter) {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) { setter(true); obs.disconnect(); }
+    }, { threshold: 0.1 });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }
+
+  useEffect(() => observeOnce(heroRef, setHeroVisible), []);
+  useEffect(() => observeOnce(filtersRef, setFiltersVisible), []);
+  useEffect(() => observeOnce(gridRef, setGridVisible), []);
+  useEffect(() => observeOnce(ctaRef, setCtaVisible), []);
+
   useEffect(() => {
     let active = true;
     publicVendorsApi.listFeaturedVendors().then((profiles) => {
@@ -272,7 +296,15 @@ export default function VendorDiscoveryPage() {
               py: { xs: 5, md: 7 },
             }}
           >
-            <Box sx={{ maxWidth: 520 }}>
+            <Box
+              ref={heroRef}
+              sx={{
+                maxWidth: 520,
+                opacity: heroVisible ? 1 : 0,
+                transform: heroVisible ? "translateY(0)" : "translateY(24px)",
+                transition: "opacity 0.7s ease, transform 0.7s ease",
+              }}
+            >
               {/* Badge */}
               <Box
                 sx={{
@@ -367,11 +399,18 @@ export default function VendorDiscoveryPage() {
       <Container maxWidth={false} disableGutters className={styles.publicContentContainer} sx={{ pb: { xs: 6, md: 9 } }}>
         {/* Filter bar */}
         <Stack
+          ref={filtersRef}
           direction={{ xs: "column", md: "row" }}
           justifyContent="space-between"
           alignItems={{ xs: "flex-start", md: "center" }}
           spacing={1.5}
-          sx={{ mt: { xs: 3.5, md: 4.5 }, mb: { xs: 3, md: 4 } }}
+          sx={{
+            mt: { xs: 3.5, md: 4.5 },
+            mb: { xs: 3, md: 4 },
+            opacity: filtersVisible ? 1 : 0,
+            transform: filtersVisible ? "translateY(0)" : "translateY(18px)",
+            transition: "opacity 0.6s ease, transform 0.6s ease",
+          }}
         >
           <Stack direction="row" flexWrap="wrap" useFlexGap spacing={0.8}>
             {filterChips.map((chip) => (
@@ -414,15 +453,31 @@ export default function VendorDiscoveryPage() {
         </Stack>
 
         {/* Vendor grid */}
-        <Grid container spacing={{ xs: 2, md: 2.2 }}>
+        <Grid
+          ref={gridRef}
+          container
+          spacing={{ xs: 2, md: 2.2 }}
+          sx={{
+            opacity: gridVisible ? 1 : 0,
+            transition: "opacity 0.6s ease",
+          }}
+        >
           {isLoading ? (
             <Grid size={{ xs: 12 }}>
               <Box sx={{ py: 6, display: "grid", placeItems: "center" }}>
                 <CircularProgress />
               </Box>
             </Grid>
-          ) : vendors.map((vendor) => (
-            <Grid key={vendor.vendorId} size={{ xs: 12, sm: 6, md: 4 }}>
+          ) : vendors.map((vendor, index) => (
+            <Grid
+              key={vendor.vendorId}
+              size={{ xs: 12, sm: 6, md: 4 }}
+              sx={{
+                opacity: gridVisible ? 1 : 0,
+                transform: gridVisible ? "translateY(0)" : "translateY(24px)",
+                transition: `opacity 0.5s ease ${index * 0.07}s, transform 0.5s ease ${index * 0.07}s`,
+              }}
+            >
               <VendorCard vendor={vendor} />
             </Grid>
           ))}
@@ -449,6 +504,7 @@ export default function VendorDiscoveryPage() {
 
         {/* CTA Banner */}
         <Box
+          ref={ctaRef}
           sx={{
             mt: { xs: 5, md: 7 },
             borderRadius: "1.6rem",
@@ -456,6 +512,9 @@ export default function VendorDiscoveryPage() {
             color: "white",
             overflow: "hidden",
             position: "relative",
+            opacity: ctaVisible ? 1 : 0,
+            transform: ctaVisible ? "translateY(0) scale(1)" : "translateY(28px) scale(0.98)",
+            transition: "opacity 0.7s ease, transform 0.7s ease",
           }}
         >
           <Grid container alignItems="center">
