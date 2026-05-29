@@ -993,7 +993,7 @@ function HomePage() {
 
     const interval = window.setInterval(() => {
       scrollTestimonials(1);
-    }, 6000);
+    }, 3500);
 
     return () => window.clearInterval(interval);
   }, [testimonials.length]);
@@ -1399,11 +1399,12 @@ function HomePage() {
                     maxWidth: 374,
                     borderRadius: "1rem",
                     px: 2.2,
-                    py: 1.2,
+                    py: 1.75,
                     bgcolor: "rgba(255,255,255,0.76)",
                     backdropFilter: "blur(16px)",
                     display: "flex",
                     justifyContent: "space-between",
+                    alignItems: "center",
                     color: "#5B677A",
                     fontWeight: 700,
                   }}
@@ -3141,7 +3142,7 @@ function HomePage() {
                       borderRadius: "2rem",
                       border: "1px solid #E8EDF4",
                       bgcolor: "white",
-                      boxShadow: "0 8px 24px rgba(16,25,47,0.03)",
+                      boxShadow: "0 8px 24px rgba(16,25,47,0.08)",
                     }}
                   >
                     <Typography
@@ -3234,7 +3235,7 @@ function HomePage() {
                   sx={{
                     borderRadius: "1.5rem !important",
                     border: "1px solid #AEBBCC",
-                    boxShadow: "none",
+                    boxShadow: "0 8px 24px rgba(16,25,47,0.08)",
                     overflow: "hidden",
                     bgcolor: "transparent",
                   }}

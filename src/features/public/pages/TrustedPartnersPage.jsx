@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react";
 import { Box, Button, Container, Grid, Stack, Typography } from "@mui/material";
 import { Link as RouterLink } from "react-router-dom";
 import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
@@ -81,7 +82,35 @@ const advantages = [
   },
 ];
 
+function useInView(options = {}) {
+  const ref = useRef(null);
+  const [inView, setInView] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setInView(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.15, ...options },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  return [ref, inView];
+}
+
 export default function TrustedPartnersPage() {
+  const [logosRef, logosInView] = useInView();
+  const [performersRef, performersInView] = useInView();
+  const [advantagesRef, advantagesInView] = useInView();
+  const [ctaRef, ctaInView] = useInView();
+
   return (
     <Box
       sx={{
@@ -91,6 +120,7 @@ export default function TrustedPartnersPage() {
           "radial-gradient(circle at top center, rgba(214,229,246,0.82) 0%, rgba(245,248,251,0.96) 22%, #F9FBFD 60%, #F7FAFB 100%)",
       }}
     >
+      {/* ── Hero ── */}
       <Box
         sx={{
           position: "relative",
@@ -111,81 +141,102 @@ export default function TrustedPartnersPage() {
               py: publicPageSpacing.pageYCompact,
             }}
           >
-            <Box sx={{ maxWidth: 470 }}>
-            <Typography
-              sx={{
-                color: "#FFFFFF",
-                ...publicTypography.heroTitle,
-              }}
-            >
-              Our Trusted
-              <Box component="span" sx={{ display: "block", color: "#E5F20D" }}>
-                Solar Partners
-              </Box>
-            </Typography>
-            <Typography
-              sx={{
-                mt: 1.25,
-                maxWidth: 420,
-                color: "rgba(241,246,255,0.78)",
-                fontSize: { xs: "0.92rem", md: "0.98rem" },
-                lineHeight: 1.72,
-              }}
-            >
-              Forging the future of energy through a meticulously verified
-              network of world-class installers and innovators.
-            </Typography>
-
-            <Stack
-              direction={{ xs: "column", sm: "row" }}
-              spacing={1.3}
-              sx={{ mt: 2.35 }}
-            >
-              <Button
-                component={RouterLink}
-                to="/vendor/signup"
-                variant="contained"
+            <Box sx={{ maxWidth: 470 }} className={styles.revealUp}>
+              <Typography
                 sx={{
-                  minHeight: 42,
-                  px: 2.1,
-                  borderRadius: "0.72rem",
-                  fontSize: "0.82rem",
-                  fontWeight: 700,
-                  textTransform: "none",
-                  bgcolor: "#0E56C8",
-                  boxShadow: "0 14px 28px rgba(14,86,200,0.16)",
-                }}
-              >
-                Become a Partner
-              </Button>
-              <Button
-                component={RouterLink}
-                to="/vendor/login"
-                variant="contained"
-                sx={{
-                  minHeight: 42,
-                  px: 2.05,
-                  borderRadius: "0.72rem",
-                  fontSize: "0.82rem",
-                  fontWeight: 700,
-                  textTransform: "none",
-                  bgcolor: "rgba(255,255,255,0.14)",
                   color: "#FFFFFF",
-                  border: "1px solid rgba(255,255,255,0.14)",
-                  boxShadow: "none",
-                  backdropFilter: "blur(8px)",
+                  ...publicTypography.heroTitle,
                 }}
               >
-                Partner Login
-              </Button>
-            </Stack>
+                Our Trusted
+                <Box component="span" sx={{ display: "block", color: "#E5F20D" }}>
+                  Solar Partners
+                </Box>
+              </Typography>
+              <Typography
+                sx={{
+                  mt: 1.25,
+                  maxWidth: 420,
+                  color: "rgba(241,246,255,0.78)",
+                  fontSize: { xs: "0.92rem", md: "0.98rem" },
+                  lineHeight: 1.72,
+                }}
+              >
+                Forging the future of energy through a meticulously verified
+                network of world-class installers and innovators.
+              </Typography>
+
+              <Stack
+                direction={{ xs: "column", sm: "row" }}
+                spacing={1.3}
+                sx={{ mt: 2.35 }}
+                className={styles.revealUpSlow}
+              >
+                <Button
+                  component={RouterLink}
+                  to="/vendor/signup"
+                  variant="contained"
+                  sx={{
+                    minHeight: 42,
+                    px: 2.1,
+                    borderRadius: "0.72rem",
+                    fontSize: "0.82rem",
+                    fontWeight: 700,
+                    textTransform: "none",
+                    bgcolor: "#0E56C8",
+                    boxShadow: "0 14px 28px rgba(14,86,200,0.16)",
+                    transition: "transform 180ms ease, box-shadow 180ms ease",
+                    "&:hover": {
+                      transform: "translateY(-2px)",
+                      boxShadow: "0 18px 32px rgba(14,86,200,0.24)",
+                    },
+                  }}
+                >
+                  Become a Partner
+                </Button>
+                <Button
+                  component={RouterLink}
+                  to="/vendor/login"
+                  variant="contained"
+                  sx={{
+                    minHeight: 42,
+                    px: 2.05,
+                    borderRadius: "0.72rem",
+                    fontSize: "0.82rem",
+                    fontWeight: 700,
+                    textTransform: "none",
+                    bgcolor: "rgba(255,255,255,0.14)",
+                    color: "#FFFFFF",
+                    border: "1px solid rgba(255,255,255,0.14)",
+                    boxShadow: "none",
+                    backdropFilter: "blur(8px)",
+                    transition: "transform 180ms ease, background 180ms ease",
+                    "&:hover": {
+                      transform: "translateY(-2px)",
+                      bgcolor: "rgba(255,255,255,0.22)",
+                    },
+                  }}
+                >
+                  Partner Login
+                </Button>
+              </Stack>
+            </Box>
           </Box>
-        </Box>
         </Container>
       </Box>
 
       <Container maxWidth={false} disableGutters className={styles.publicContentContainer}>
-        <Box sx={{ mt: { xs: 7.5, md: 9.5 } }}>
+
+        {/* ── Verification logos ── */}
+        <Box
+          ref={logosRef}
+          sx={{
+            mt: { xs: 7.5, md: 9.5 },
+            opacity: logosInView ? 1 : 0,
+            transform: logosInView ? "translateY(0)" : "translateY(22px)",
+            transition: "opacity 0.65s ease, transform 0.65s ease",
+          }}
+        >
           <Typography
             sx={{
               color: "#18253A",
@@ -201,14 +252,16 @@ export default function TrustedPartnersPage() {
           </Typography>
 
           <Grid container spacing={{ xs: 1.2, md: 1.5 }} sx={{ mt: 3 }}>
-            {verificationLogos.map((logo) => (
+            {verificationLogos.map((logo, index) => (
               <Grid key={logo} size={{ xs: 6, md: 2.4 }}>
                 <Box
+                  className={styles.interactiveSurface}
                   sx={{
                     height: 54,
                     borderRadius: "0.95rem",
                     bgcolor: "rgba(255,255,255,0.94)",
                     border: "1px solid rgba(223,231,241,0.92)",
+                    boxShadow: "0 4px 14px rgba(16,29,51,0.06)",
                     display: "grid",
                     placeItems: "center",
                     color: "#96A2B4",
@@ -216,6 +269,9 @@ export default function TrustedPartnersPage() {
                     fontWeight: 700,
                     textTransform: "uppercase",
                     letterSpacing: "0.04em",
+                    opacity: logosInView ? 1 : 0,
+                    transform: logosInView ? "translateY(0)" : "translateY(16px)",
+                    transition: `opacity 0.5s ease ${index * 0.07}s, transform 0.5s ease ${index * 0.07}s`,
                   }}
                 >
                   {logo}
@@ -225,7 +281,16 @@ export default function TrustedPartnersPage() {
           </Grid>
         </Box>
 
-        <Box sx={{ mt: { xs: 8.5, md: 10.5 } }}>
+        {/* ── Top-Tier Performers ── */}
+        <Box
+          ref={performersRef}
+          sx={{
+            mt: { xs: 8.5, md: 10.5 },
+            opacity: performersInView ? 1 : 0,
+            transform: performersInView ? "translateY(0)" : "translateY(22px)",
+            transition: "opacity 0.65s ease, transform 0.65s ease",
+          }}
+        >
           <Stack
             direction="row"
             alignItems="end"
@@ -258,6 +323,8 @@ export default function TrustedPartnersPage() {
                 color: "#0E56C8",
                 fontSize: "0.82rem",
                 fontWeight: 700,
+                transition: "opacity 180ms ease",
+                "&:hover": { opacity: 0.75 },
               }}
             >
               View All Partners
@@ -265,9 +332,10 @@ export default function TrustedPartnersPage() {
           </Stack>
 
           <Grid container spacing={{ xs: 2, md: 2.2 }}>
-            {performers.map((partner) => (
+            {performers.map((partner, index) => (
               <Grid key={partner.name} size={{ xs: 12, md: 4 }} sx={{ display: "flex" }}>
                 <Box
+                  className={styles.interactiveSurface}
                   sx={{
                     width: "100%",
                     display: "flex",
@@ -278,6 +346,9 @@ export default function TrustedPartnersPage() {
                     border: "1px solid rgba(223,231,241,0.92)",
                     boxShadow: "0 16px 34px rgba(16,29,51,0.07)",
                     height: "100%",
+                    opacity: performersInView ? 1 : 0,
+                    transform: performersInView ? "translateY(0)" : "translateY(24px)",
+                    transition: `opacity 0.55s ease ${index * 0.1}s, transform 0.55s ease ${index * 0.1}s`,
                   }}
                 >
                   <Box
@@ -383,6 +454,11 @@ export default function TrustedPartnersPage() {
                         bgcolor: "#F7F9FC",
                         color: "#18253A",
                         boxShadow: "none",
+                        transition: "background 180ms ease, transform 180ms ease",
+                        "&:hover": {
+                          bgcolor: "#EEF2FA",
+                          transform: "translateY(-1px)",
+                        },
                       }}
                     >
                       View Profile
@@ -394,7 +470,16 @@ export default function TrustedPartnersPage() {
           </Grid>
         </Box>
 
-        <Box sx={{ mt: { xs: 10.5, md: 13 } }}>
+        {/* ── Why Partner ── */}
+        <Box
+          ref={advantagesRef}
+          sx={{
+            mt: { xs: 10.5, md: 13 },
+            opacity: advantagesInView ? 1 : 0,
+            transform: advantagesInView ? "translateY(0)" : "translateY(22px)",
+            transition: "opacity 0.65s ease, transform 0.65s ease",
+          }}
+        >
           <Grid container spacing={{ xs: 2.2, md: 2.2 }}>
             <Grid size={{ xs: 12, md: 4.2 }}>
               <Typography
@@ -427,16 +512,20 @@ export default function TrustedPartnersPage() {
 
             <Grid size={{ xs: 12, md: 7.8 }}>
               <Grid container spacing={{ xs: 1.6, md: 1.7 }}>
-                {advantages.map((item) => (
+                {advantages.map((item, index) => (
                   <Grid key={item.title} size={{ xs: 12, sm: 6 }}>
                     <Box
+                      className={styles.interactiveSurface}
                       sx={{
                         p: { xs: 2, md: 2.15 },
                         minHeight: 168,
                         borderRadius: "1.35rem",
                         bgcolor: "rgba(255,255,255,0.94)",
                         border: "1px solid rgba(223,231,241,0.92)",
-                        boxShadow: "0 12px 28px rgba(16,29,51,0.05)",
+                        boxShadow: "0 8px 24px rgba(16,29,51,0.07)",
+                        opacity: advantagesInView ? 1 : 0,
+                        transform: advantagesInView ? "translateY(0)" : "translateY(20px)",
+                        transition: `opacity 0.5s ease ${index * 0.1}s, transform 0.5s ease ${index * 0.1}s`,
                       }}
                     >
                       <Box
@@ -480,7 +569,9 @@ export default function TrustedPartnersPage() {
           </Grid>
         </Box>
 
+        {/* ── CTA ── */}
         <Box
+          ref={ctaRef}
           sx={{
             mt: { xs: 10.5, md: 13 },
             p: { xs: 3.3, md: 4.5 },
@@ -492,6 +583,9 @@ export default function TrustedPartnersPage() {
             boxShadow: "0 20px 44px rgba(14,86,200,0.18)",
             position: "relative",
             overflow: "hidden",
+            opacity: ctaInView ? 1 : 0,
+            transform: ctaInView ? "translateY(0) scale(1)" : "translateY(28px) scale(0.98)",
+            transition: "opacity 0.7s ease, transform 0.7s ease",
           }}
         >
           <Box
@@ -553,6 +647,12 @@ export default function TrustedPartnersPage() {
                 bgcolor: "#DDF509",
                 color: "#162331",
                 boxShadow: "none",
+                transition: "transform 180ms ease, box-shadow 180ms ease",
+                "&:hover": {
+                  transform: "translateY(-2px)",
+                  boxShadow: "0 12px 24px rgba(221,245,9,0.28)",
+                  bgcolor: "#E8FF1A",
+                },
               }}
             >
               Apply Now

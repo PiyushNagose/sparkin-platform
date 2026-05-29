@@ -13,6 +13,7 @@ import PlaceOutlinedIcon from "@mui/icons-material/PlaceOutlined";
 import ShareOutlinedIcon from "@mui/icons-material/ShareOutlined";
 import SmsOutlinedIcon from "@mui/icons-material/SmsOutlined";
 import { Link as RouterLink } from "react-router-dom";
+import logoPlaceholder from "@/shared/assets/logo-placeholder.png";
 import styles from "@/app/layouts/PublicLayout.module.css";
 
 const footerGroups = [
@@ -58,12 +59,13 @@ export function AppFooter() {
       >
         <Box className={styles.footerTop}>
           <Box className={styles.footerBrand}>
-            <Typography
-              variant="h5"
-              sx={{ fontWeight: 800, mb: 2.2, fontSize: "1.1rem" }}
-            >
-              Sparkin Solar
-            </Typography>
+            <Box
+              component="img"
+              src={logoPlaceholder}
+              alt="Sparkin logo"
+              className={styles.brandImage}
+              sx={{ mb: 2.2 }}
+            />
             <Typography
               variant="body2"
               sx={{ opacity: 0.68, lineHeight: 1.7, maxWidth: 230 }}
@@ -138,7 +140,7 @@ export function AppFooter() {
             </Stack>
             <Stack direction="row" spacing={1} alignItems="center">
               <PhoneEnabledOutlinedIcon
-                sx={{ fontSize: 18, color: "#13C784" }}
+                sx={{ fontSize: 18, color: "#13C784", transform: "scaleX(-1)" }}
               />
               <Typography variant="body2" sx={{ fontSize: "0.95rem" }}>
                 +911800-000-000

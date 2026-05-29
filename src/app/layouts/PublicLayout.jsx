@@ -79,24 +79,45 @@ export function PublicLayout() {
               className={styles.navLinks}
               sx={{ display: { xs: "none", md: "flex" } }}
             >
-              {publicPrimaryNav.map((item) => (
-                <Typography
-                  key={item.label}
-                  component={RouterLink}
-                  to={item.href}
-                  variant="body2"
-                  color="text.primary"
-                  sx={{
-                    fontWeight: 500,
-                    fontSize: "0.85rem",
-                    textDecoration: "none",
-                    lineHeight: 1,
-                    "&:hover": { color: "#0E56C8" },
-                  }}
-                >
-                  {item.label}
-                </Typography>
-              ))}
+            {publicPrimaryNav.map((item) => {
+                const isActive = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
+                return (
+                  <Typography
+                    key={item.label}
+                    component={RouterLink}
+                    to={item.href}
+                    variant="body2"
+                    sx={{
+                      fontWeight: isActive ? 700 : 500,
+                      fontSize: "0.85rem",
+                      textDecoration: "none",
+                      lineHeight: 1,
+                      color: isActive ? "#0E56C8" : "text.primary",
+                      position: "relative",
+                      pb: 0.5,
+                      "&::after": {
+                        content: '""',
+                        position: "absolute",
+                        bottom: -2,
+                        left: 0,
+                        right: 0,
+                        height: "2px",
+                        borderRadius: "999px",
+                        bgcolor: "#0E56C8",
+                        transform: isActive ? "scaleX(1)" : "scaleX(0)",
+                        transition: "transform 200ms ease",
+                        transformOrigin: "left",
+                      },
+                      "&:hover": {
+                        color: "#0E56C8",
+                        "&::after": { transform: "scaleX(1)" },
+                      },
+                    }}
+                  >
+                    {item.label}
+                  </Typography>
+                );
+              })}
             </Stack>
 
             <Stack
