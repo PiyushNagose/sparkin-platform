@@ -5,7 +5,7 @@ import BoltRoundedIcon from "@mui/icons-material/BoltRounded";
 import PaidOutlinedIcon from "@mui/icons-material/PaidOutlined";
 import PlaceOutlinedIcon from "@mui/icons-material/PlaceOutlined";
 import TrendingUpRoundedIcon from "@mui/icons-material/TrendingUpRounded";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { calculatorApi } from "@/features/public/api/calculatorApi";
 import { calculatorStorage } from "@/features/public/calculator/calculatorStorage";
@@ -64,6 +64,28 @@ export default function CalculatorPage() {
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isCommercial = form.propertyType === "commercial";
+
+  const heroRef = useRef(null);
+  const formRef = useRef(null);
+  const cardsRef = useRef(null);
+  const [heroVisible, setHeroVisible] = useState(false);
+  const [formVisible, setFormVisible] = useState(false);
+  const [cardsVisible, setCardsVisible] = useState(false);
+
+  useEffect(() => {
+    function observe(ref, setter) {
+      const el = ref.current;
+      if (!el) return;
+      const obs = new IntersectionObserver(([entry]) => {
+        if (entry.isIntersecting) { setter(true); obs.disconnect(); }
+      }, { threshold: 0.1 });
+      obs.observe(el);
+      return () => obs.disconnect();
+    }
+    observe(heroRef, setHeroVisible);
+    observe(formRef, setFormVisible);
+    observe(cardsRef, setCardsVisible);
+  }, []);
 
   function updateForm(field, value) {
     setForm((current) => {
@@ -184,7 +206,19 @@ export default function CalculatorPage() {
         }}
       >
         <Container maxWidth={false} disableGutters className={styles.compactContainer}>
-          <Stack spacing={1.35} alignItems="center" textAlign="center" sx={{ maxWidth: 760, mx: "auto" }}>
+          <Stack
+            ref={heroRef}
+            spacing={1.35}
+            alignItems="center"
+            textAlign="center"
+            sx={{
+              maxWidth: 760,
+              mx: "auto",
+              opacity: heroVisible ? 1 : 0,
+              transform: heroVisible ? "translateY(0)" : "translateY(22px)",
+              transition: "opacity 0.7s ease, transform 0.7s ease",
+            }}
+          >
             <Typography variant="h1" sx={{ ...publicTypography.heroTitle, color: "#18253A" }}>
               Calculate Your <Box component="span" sx={{ color: "#0E56C8" }}>Solar Savings</Box>
             </Typography>
@@ -194,6 +228,7 @@ export default function CalculatorPage() {
           </Stack>
 
           <Box
+            ref={formRef}
             component="form"
             onSubmit={handleSubmit}
             sx={{
@@ -207,6 +242,9 @@ export default function CalculatorPage() {
               border: "1px solid rgba(218,228,240,0.95)",
               boxShadow: "0 18px 50px rgba(22,36,58,0.08)",
               backdropFilter: "blur(10px)",
+              opacity: formVisible ? 1 : 0,
+              transform: formVisible ? "translateY(0)" : "translateY(28px)",
+              transition: "opacity 0.7s ease 0.1s, transform 0.7s ease 0.1s",
             }}
           >
             <Stack spacing={2.2}>
@@ -298,11 +336,37 @@ export default function CalculatorPage() {
           </Box>
         </Container>
 
-        <Container maxWidth={false} disableGutters className={styles.contentContainer} sx={{ mt: { xs: 10, md: 13 }, mb: { xs: 6, md: 8 } }}>
+        <Container
+          ref={cardsRef}
+          maxWidth={false}
+          disableGutters
+          className={styles.contentContainer}
+          sx={{
+            mt: { xs: 10, md: 13 },
+            mb: { xs: 6, md: 8 },
+            opacity: cardsVisible ? 1 : 0,
+            transform: cardsVisible ? "translateY(0)" : "translateY(22px)",
+            transition: "opacity 0.65s ease, transform 0.65s ease",
+          }}
+        >
           <Grid container spacing={{ xs: 2.5, md: 4 }} justifyContent="center">
-            {insightCards.map((item) => (
+            {insightCards.map((item, index) => (
               <Grid key={item.title} size={{ xs: 12, sm: 6, md: 3.3 }}>
-                <Box sx={{ maxWidth: 300, mx: "auto", p: { xs: 1.8, md: 2 }, height: "100%", borderRadius: "1.15rem", bgcolor: "rgba(255,255,255,0.7)", border: "1px solid rgba(223,231,241,0.8)", boxShadow: "0 8px 24px rgba(16,25,47,0.08)" }}>
+                <Box
+                  sx={{
+                    maxWidth: 300,
+                    mx: "auto",
+                    p: { xs: 1.8, md: 2 },
+                    height: "100%",
+                    borderRadius: "1.15rem",
+                    bgcolor: "rgba(255,255,255,0.7)",
+                    border: "1px solid rgba(223,231,241,0.8)",
+                    boxShadow: "0 8px 24px rgba(16,25,47,0.08)",
+                    opacity: cardsVisible ? 1 : 0,
+                    transform: cardsVisible ? "translateY(0)" : "translateY(20px)",
+                    transition: `opacity 0.5s ease ${index * 0.1}s, transform 0.5s ease ${index * 0.1}s`,
+                  }}
+                >
                   <Box sx={{ width: 34, height: 34, borderRadius: "0.9rem", bgcolor: item.tone.bg, color: item.tone.fg, display: "grid", placeItems: "center", mb: 1.35 }}>
                     {item.icon}
                   </Box>
