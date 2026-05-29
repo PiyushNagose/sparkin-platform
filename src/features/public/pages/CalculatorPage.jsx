@@ -201,6 +201,7 @@ export default function CalculatorPage() {
               mx: "auto",
               maxWidth: 820,
               p: { xs: 2.3, md: 3.1 },
+              mb: { xs: 6, md: 8 },
               borderRadius: "1.45rem",
               bgcolor: "rgba(255,255,255,0.94)",
               border: "1px solid rgba(218,228,240,0.95)",
@@ -238,31 +239,32 @@ export default function CalculatorPage() {
               </Box>
 
               <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "repeat(2, minmax(0, 1fr))" }, gap: 1.45 }}>
-                <TextField select label="State" value={form.state} onChange={(event) => updateForm("state", event.target.value)}>
+                <TextField select label="State" value={form.state} onChange={(event) => updateForm("state", event.target.value)} sx={{ "& .MuiOutlinedInput-root": { borderRadius: "0.75rem", boxShadow: "0 4px 12px rgba(16,25,47,0.07)" } }}>
                   {stateOptions.map(([value, label]) => <MenuItem key={value} value={value}>{label}</MenuItem>)}
                 </TextField>
-                <TextField label="City" value={form.city} onChange={(event) => updateForm("city", event.target.value)} placeholder="Hyderabad" />
+                <TextField label="City" value={form.city} onChange={(event) => updateForm("city", event.target.value)} placeholder="Hyderabad" sx={{ "& .MuiOutlinedInput-root": { borderRadius: "0.75rem", boxShadow: "0 4px 12px rgba(16,25,47,0.07)" } }} />
                 <TextField
                   label="Pincode"
                   value={form.pincode}
                   onChange={(event) => updateForm("pincode", event.target.value.replace(/\D/g, "").slice(0, 6))}
                   placeholder="501101"
                   InputProps={{ startAdornment: <PlaceOutlinedIcon sx={{ color: "#727E92", fontSize: "1.1rem", mr: 1 }} /> }}
+                  sx={{ "& .MuiOutlinedInput-root": { borderRadius: "0.75rem", boxShadow: "0 4px 12px rgba(16,25,47,0.07)" } }}
                 />
-                <TextField label="Average Monthly Bill" type="number" value={form.monthlyBill} onChange={(event) => updateForm("monthlyBill", event.target.value)} placeholder="1200" />
-                <TextField label="Monthly Units (optional)" type="number" value={form.monthlyUnits} onChange={(event) => updateForm("monthlyUnits", event.target.value)} placeholder="Auto from bill" />
-                <TextField label="Available Roof Area sq. ft. (optional)" type="number" value={form.roofAreaSqFt} onChange={(event) => updateForm("roofAreaSqFt", event.target.value)} placeholder="600" />
-                <TextField label="Preferred System Size kW" type="number" value={form.systemSizeKw} onChange={(event) => updateForm("systemSizeKw", event.target.value)} placeholder={isCommercial ? "25" : "5"} required />
-                <TextField label="Sanctioned Load kW" type="number" value={form.sanctionedLoadKw} onChange={(event) => updateForm("sanctionedLoadKw", event.target.value)} placeholder={isCommercial ? "30" : "5"} />
-                <TextField select label="Connection Type" value={form.connectionType} onChange={(event) => updateForm("connectionType", event.target.value)}>
+                <TextField label="Average Monthly Bill" type="number" value={form.monthlyBill} onChange={(event) => updateForm("monthlyBill", event.target.value)} placeholder="1200" sx={{ "& .MuiOutlinedInput-root": { borderRadius: "0.75rem", boxShadow: "0 4px 12px rgba(16,25,47,0.07)" } }} />
+                <TextField label="Monthly Units (optional)" type="number" value={form.monthlyUnits} onChange={(event) => updateForm("monthlyUnits", event.target.value)} placeholder="Auto from bill" sx={{ "& .MuiOutlinedInput-root": { borderRadius: "0.75rem", boxShadow: "0 4px 12px rgba(16,25,47,0.07)" } }} />
+                <TextField label="Available Roof Area sq. ft. (optional)" type="number" value={form.roofAreaSqFt} onChange={(event) => updateForm("roofAreaSqFt", event.target.value)} placeholder="600" sx={{ "& .MuiOutlinedInput-root": { borderRadius: "0.75rem", boxShadow: "0 4px 12px rgba(16,25,47,0.07)" } }} />
+                <TextField label="Preferred System Size kW" type="number" value={form.systemSizeKw} onChange={(event) => updateForm("systemSizeKw", event.target.value)} placeholder={isCommercial ? "25" : "5"} required sx={{ "& .MuiOutlinedInput-root": { borderRadius: "0.75rem", boxShadow: "0 4px 12px rgba(16,25,47,0.07)" } }} />
+                <TextField label="Sanctioned Load kW" type="number" value={form.sanctionedLoadKw} onChange={(event) => updateForm("sanctionedLoadKw", event.target.value)} placeholder={isCommercial ? "30" : "5"} sx={{ "& .MuiOutlinedInput-root": { borderRadius: "0.75rem", boxShadow: "0 4px 12px rgba(16,25,47,0.07)" } }} />
+                <TextField select label="Connection Type" value={form.connectionType} onChange={(event) => updateForm("connectionType", event.target.value)} sx={{ "& .MuiOutlinedInput-root": { borderRadius: "0.75rem", boxShadow: "0 4px 12px rgba(16,25,47,0.07)" } }}>
                   {(isCommercial ? [["lt", "LT"], ["ht", "HT"]] : [["single_phase", "Single Phase"], ["three_phase", "Three Phase"]]).map(([value, label]) => (
                     <MenuItem key={value} value={value}>{label}</MenuItem>
                   ))}
                 </TextField>
                 {isCommercial ? (
-                  <TextField label="Daytime Usage %" type="number" value={form.daytimeUsagePercent} onChange={(event) => updateForm("daytimeUsagePercent", event.target.value)} />
+                  <TextField label="Daytime Usage %" type="number" value={form.daytimeUsagePercent} onChange={(event) => updateForm("daytimeUsagePercent", event.target.value)} sx={{ "& .MuiOutlinedInput-root": { borderRadius: "0.75rem", boxShadow: "0 4px 12px rgba(16,25,47,0.07)" } }} />
                 ) : null}
-                <TextField label="Target Solar Offset %" type="number" value={form.desiredOffsetPercent} onChange={(event) => updateForm("desiredOffsetPercent", event.target.value)} placeholder={isCommercial ? "70 to 90%" : "70 to 90%"} helperText={`${form.propertyType.charAt(0).toUpperCase() + form.propertyType.slice(1)} - Range: 70% to 90%`} />
+                <TextField label="Target Solar Offset %" type="number" value={form.desiredOffsetPercent} onChange={(event) => updateForm("desiredOffsetPercent", event.target.value)} placeholder={isCommercial ? "70 to 90%" : "70 to 90%"} helperText={`${form.propertyType.charAt(0).toUpperCase() + form.propertyType.slice(1)} - Range: 70% to 90%`} sx={{ "& .MuiOutlinedInput-root": { borderRadius: "0.75rem", boxShadow: "0 4px 12px rgba(16,25,47,0.07)" } }} />
               </Box>
 
               <Button
@@ -296,11 +298,11 @@ export default function CalculatorPage() {
           </Box>
         </Container>
 
-        <Container maxWidth={false} disableGutters className={styles.contentContainer} sx={{ mt: { xs: 5.8, md: 7 } }}>
+        <Container maxWidth={false} disableGutters className={styles.contentContainer} sx={{ mt: { xs: 10, md: 13 }, mb: { xs: 6, md: 8 } }}>
           <Grid container spacing={{ xs: 2.5, md: 4 }} justifyContent="center">
             {insightCards.map((item) => (
               <Grid key={item.title} size={{ xs: 12, sm: 6, md: 3.3 }}>
-                <Box sx={{ maxWidth: 300, mx: "auto", p: { xs: 1.8, md: 2 }, height: "100%", borderRadius: "1.15rem", bgcolor: "rgba(255,255,255,0.7)", border: "1px solid rgba(223,231,241,0.8)" }}>
+                <Box sx={{ maxWidth: 300, mx: "auto", p: { xs: 1.8, md: 2 }, height: "100%", borderRadius: "1.15rem", bgcolor: "rgba(255,255,255,0.7)", border: "1px solid rgba(223,231,241,0.8)", boxShadow: "0 8px 24px rgba(16,25,47,0.08)" }}>
                   <Box sx={{ width: 34, height: 34, borderRadius: "0.9rem", bgcolor: item.tone.bg, color: item.tone.fg, display: "grid", placeItems: "center", mb: 1.35 }}>
                     {item.icon}
                   </Box>
