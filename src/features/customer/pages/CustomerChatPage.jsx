@@ -32,7 +32,7 @@ function formatTime(value) {
   if (mins < 60) return `${mins}m ago`;
   const hrs = Math.floor(mins / 60);
   if (hrs < 24) return `${hrs}h ago`;
-  return new Intl.DateTimeFormat("en-IN", { day: "2-digit", month: "short" }).format(new Date(value));
+  return new Intl.DateTimeFormat("en-IN", { weekday: "short" }).format(new Date(value));
 }
 
 export default function CustomerChatPage() {
@@ -44,17 +44,13 @@ export default function CustomerChatPage() {
   const [activeRoomId, setActiveRoomId] = useState(null);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [startingChat, setStartingChat] = useState(false);
+  // mobile: "list" | "chat"
+  const [mobileView, setMobileView] = useState("list");
 
   const handleRoomUpdated = useCallback((room) => {
     const nextRoom =
       room?.roomId === activeRoomId
-        ? {
-            ...room,
-            unreadCount: {
-              ...(room.unreadCount || {}),
-              [currentUserId]: 0,
-            },
-          }
+        ? { ...room, unreadCount: { ...(room.unreadCount || {}), [currentUserId]: 0 } }
         : room;
     setRooms((prev) => upsertChatRoom(prev, nextRoom));
     if (room?.roomId === activeRoomId) {
@@ -73,9 +69,13 @@ export default function CustomerChatPage() {
   }, []);
 
   async function openRoom(room) {
-    if (activeRoomId === room.roomId) return;
+    if (activeRoomId === room.roomId) {
+      setMobileView("chat");
+      return;
+    }
     if (activeRoomId) leaveRoom(activeRoomId);
     setActiveRoomId(room.roomId);
+    setMobileView("chat");
     setLoadingMessages(true);
     try {
       const msgs = await chatApi.getMessages(room.roomId);
@@ -123,15 +123,96 @@ export default function CustomerChatPage() {
   const roomMessages = (activeRoomId && messages[activeRoomId]) || [];
   const roomTyping = (activeRoomId && typing[activeRoomId]) || [];
 
+  // ── Sidebar list ──────────────────────────────────────────────────────────
+  const sidebarContent = (
+    <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
+      <Stack
+        direction="row"
+        justifyContent="space-between"
+        alignItems="center"
+        sx={{ px: 2, py: 1.8, borderBottom: "1px solid rgba(225,232,241,0.96)", flexShrink: 0 }}
+      >
+        <Typography sx={{ color: "#18253A", fontSize: "1rem", fontWeight: 800 }}>Conversations</Typography>
+        <FilterListRoundedIcon sx={{ color: "#A0ACBA", fontSize: "1.1rem" }} />
+      </Stack>
+
+      <Box sx={{ flex: 1, overflowY: "auto" }}>
+        {rooms.length === 0 ? (
+          <Box sx={{ p: 2.5, textAlign: "center" }}>
+            <ChatOutlinedIcon sx={{ fontSize: "1.8rem", color: "#C8D4E4", mb: 0.8 }} />
+            <Typography sx={{ color: "#A0ACBA", fontSize: "0.82rem" }}>No conversations yet</Typography>
+            <Typography sx={{ mt: 0.4, color: "#C8D4E4", fontSize: "0.72rem" }}>
+              Click "Contact Support" to start
+            </Typography>
+          </Box>
+        ) : null}
+
+        {rooms.map((room) => {
+          const { name, role } = getOtherParticipant(room);
+          const isActive = room.roomId === activeRoomId;
+          const unread = room.unreadCount?.[currentUserId] || 0;
+
+          return (
+            <Box
+              key={room.roomId}
+              onClick={() => openRoom(room)}
+              sx={{
+                px: 2,
+                py: 1.6,
+                cursor: "pointer",
+                bgcolor: isActive ? "#EEF4FF" : "transparent",
+                borderLeft: isActive ? "3px solid #0E56C8" : "3px solid transparent",
+                "&:hover": { bgcolor: isActive ? "#EEF4FF" : "#F7F9FC" },
+                borderBottom: "1px solid rgba(225,232,241,0.5)",
+              }}
+            >
+              <Stack direction="row" spacing={1.3} alignItems="center">
+                <Avatar sx={{ width: 46, height: 46, bgcolor: "#132C58", fontSize: "0.88rem", fontWeight: 800, flexShrink: 0 }}>
+                  {getInitials(name)}
+                </Avatar>
+                <Box sx={{ minWidth: 0, flex: 1 }}>
+                  <Stack direction="row" justifyContent="space-between" alignItems="center">
+                    <Typography sx={{ color: "#18253A", fontSize: "0.9rem", fontWeight: 800, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {name}
+                    </Typography>
+                    <Typography sx={{ color: "#A0ACBA", fontSize: "0.68rem", flexShrink: 0, ml: 1 }}>
+                      {formatTime(room.lastMessageAt)}
+                    </Typography>
+                  </Stack>
+                  <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mt: 0.3 }}>
+                    <Typography sx={{ color: "#7A8799", fontSize: "0.76rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>
+                      {room.lastMessage || "No messages yet"}
+                    </Typography>
+                    {unread > 0 ? (
+                      <Box sx={{ ml: 1, minWidth: 20, height: 20, borderRadius: "50%", bgcolor: "#0E56C8", color: "#FFFFFF", display: "grid", placeItems: "center", fontSize: "0.6rem", fontWeight: 900, flexShrink: 0 }}>
+                        {unread}
+                      </Box>
+                    ) : null}
+                  </Stack>
+                </Box>
+              </Stack>
+            </Box>
+          );
+        })}
+      </Box>
+    </Box>
+  );
+
   return (
     <Box sx={{ width: "100%" }}>
-      {/* Header */}
-      <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" alignItems={{ xs: "flex-start", sm: "center" }} spacing={1.5} sx={{ mb: 3 }}>
+      {/* Page header */}
+      <Stack
+        direction={{ xs: "column", sm: "row" }}
+        justifyContent="space-between"
+        alignItems={{ xs: "flex-start", sm: "center" }}
+        spacing={1.5}
+        sx={{ mb: 2.5 }}
+      >
         <Box>
-          <Typography sx={{ color: "#18253A", fontSize: { xs: "1.8rem", md: "2.1rem" }, fontWeight: 800, lineHeight: 1.1, letterSpacing: "-0.02em" }}>
+          <Typography sx={{ color: "#18253A", fontSize: { xs: "1.6rem", md: "2rem" }, fontWeight: 800, lineHeight: 1.1, letterSpacing: "-0.02em" }}>
             Support Chat
           </Typography>
-          <Typography sx={{ mt: 0.5, color: "#6F7D8F", fontSize: "0.92rem" }}>
+          <Typography sx={{ mt: 0.5, color: "#6F7D8F", fontSize: "0.88rem" }}>
             Get help from the Sparkin support team.
           </Typography>
         </Box>
@@ -155,12 +236,12 @@ export default function CustomerChatPage() {
         </Button>
       </Stack>
 
-      {/* Chat layout */}
+      {/* ── Desktop layout: side-by-side ── */}
       <Box
         sx={{
-          display: "grid",
-          gridTemplateColumns: { xs: "1fr", lg: "280px 1fr" },
-          height: "calc(100vh - 260px)",
+          display: { xs: "none", lg: "grid" },
+          gridTemplateColumns: "280px 1fr",
+          height: "calc(100vh - 240px)",
           minHeight: 500,
           borderRadius: "1.3rem",
           overflow: "hidden",
@@ -168,73 +249,10 @@ export default function CustomerChatPage() {
           bgcolor: "#FFFFFF",
         }}
       >
-        {/* Sidebar */}
-        <Box sx={{ borderRight: "1px solid rgba(225,232,241,0.96)", display: "flex", flexDirection: "column" }}>
-          <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ px: 2, py: 1.8, borderBottom: "1px solid rgba(225,232,241,0.96)" }}>
-            <Typography sx={{ color: "#18253A", fontSize: "1rem", fontWeight: 800 }}>Conversations</Typography>
-            <FilterListRoundedIcon sx={{ color: "#A0ACBA", fontSize: "1.1rem" }} />
-          </Stack>
-
-          <Box sx={{ flex: 1, overflowY: "auto" }}>
-            {rooms.length === 0 ? (
-              <Box sx={{ p: 2.5, textAlign: "center" }}>
-                <ChatOutlinedIcon sx={{ fontSize: "1.8rem", color: "#C8D4E4", mb: 0.8 }} />
-                <Typography sx={{ color: "#A0ACBA", fontSize: "0.82rem" }}>No conversations yet</Typography>
-                <Typography sx={{ mt: 0.4, color: "#C8D4E4", fontSize: "0.72rem" }}>Click "Contact Support" to start</Typography>
-              </Box>
-            ) : null}
-
-            {rooms.map((room) => {
-              const { name, role } = getOtherParticipant(room);
-              const isActive = room.roomId === activeRoomId;
-              const unread = room.unreadCount?.[currentUserId] || 0;
-
-              return (
-                <Box
-                  key={room.roomId}
-                  onClick={() => openRoom(room)}
-                  sx={{
-                    px: 2,
-                    py: 1.6,
-                    cursor: "pointer",
-                    bgcolor: isActive ? "#EEF4FF" : "transparent",
-                    borderLeft: isActive ? "3px solid #0E56C8" : "3px solid transparent",
-                    "&:hover": { bgcolor: isActive ? "#EEF4FF" : "#F7F9FC" },
-                    borderBottom: "1px solid rgba(225,232,241,0.5)",
-                  }}
-                >
-                  <Stack direction="row" spacing={1.3} alignItems="flex-start">
-                    <Avatar sx={{ width: 40, height: 40, bgcolor: "#132C58", fontSize: "0.82rem", fontWeight: 800, flexShrink: 0 }}>
-                      {getInitials(name)}
-                    </Avatar>
-                    <Box sx={{ minWidth: 0, flex: 1 }}>
-                      <Stack direction="row" justifyContent="space-between" alignItems="center">
-                        <Typography sx={{ color: "#18253A", fontSize: "0.86rem", fontWeight: 800, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                          {name}
-                        </Typography>
-                        <Stack direction="row" spacing={0.5} alignItems="center">
-                          {unread > 0 ? (
-                            <Box sx={{ width: 18, height: 18, borderRadius: "50%", bgcolor: "#0E56C8", color: "#FFFFFF", display: "grid", placeItems: "center", fontSize: "0.58rem", fontWeight: 900 }}>
-                              {unread}
-                            </Box>
-                          ) : null}
-                          <Typography sx={{ color: "#A0ACBA", fontSize: "0.66rem" }}>
-                            {formatTime(room.lastMessageAt)}
-                          </Typography>
-                        </Stack>
-                      </Stack>
-                      <Typography sx={{ color: "#7A8799", fontSize: "0.74rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", mt: 0.2 }}>
-                        {room.lastMessage || "No messages yet"}
-                      </Typography>
-                    </Box>
-                  </Stack>
-                </Box>
-              );
-            })}
-          </Box>
+        <Box sx={{ borderRight: "1px solid rgba(225,232,241,0.96)" }}>
+          {sidebarContent}
         </Box>
 
-        {/* Chat area */}
         {activeRoomId ? (
           <ChatWindow
             messages={roomMessages}
@@ -255,6 +273,36 @@ export default function CustomerChatPage() {
               <Typography sx={{ mt: 0.5, color: "#C8D4E4", fontSize: "0.82rem" }}>Select a conversation or contact support</Typography>
             </Box>
           </Box>
+        )}
+      </Box>
+
+      {/* ── Mobile layout: WhatsApp-style ── */}
+      <Box
+        sx={{
+          display: { xs: "block", lg: "none" },
+          borderRadius: "1.3rem",
+          overflow: "hidden",
+          border: "1px solid rgba(225,232,241,0.96)",
+          bgcolor: "#FFFFFF",
+          height: "calc(100dvh - 220px)",
+          minHeight: 460,
+        }}
+      >
+        {mobileView === "list" && sidebarContent}
+
+        {mobileView === "chat" && activeRoomId && (
+          <ChatWindow
+            messages={roomMessages}
+            currentUserId={currentUserId}
+            otherUser={{ name: otherParticipant.name, role: "Sparkin Support", online: connected }}
+            typingUsers={roomTyping}
+            onSend={(text) => sendMessage(activeRoomId, text)}
+            onTypingStart={() => startTyping(activeRoomId)}
+            onTypingStop={() => stopTyping(activeRoomId)}
+            onBack={() => setMobileView("list")}
+            loading={loadingMessages}
+            accentColor="#0E56C8"
+          />
         )}
       </Box>
     </Box>

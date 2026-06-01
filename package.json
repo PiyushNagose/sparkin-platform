@@ -1,6 +1,7 @@
 {
   "name": "sparkin-platform-frontend",
   "private": true,
+  "homepage": "/",
   "version": "0.1.0",
   "type": "module",
   "scripts": {

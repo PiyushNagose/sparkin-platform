@@ -25,7 +25,7 @@ const contactCards = [
   {
     title: "Phone",
     body: "Available Mon-Fri, 9am - 6pm IST",
-    value: "+91 800-SPARKIN",
+    value: "+91 9618668427",
     icon: <CallOutlinedIcon sx={{ fontSize: "0.95rem" }} />,
     tone: { bg: "#EAF1FF", fg: "#285DDE" },
   },
@@ -39,7 +39,7 @@ const contactCards = [
   {
     title: "Office",
     body: "Visit our sustainable headquarters in the tech hub.",
-    value: "Hyderabad, Telangana, India",
+    value: "Rajamahendravaram, Andhrapradesh, India",
     icon: <PlaceOutlinedIcon sx={{ fontSize: "0.95rem" }} />,
     tone: { bg: "#DDF8E8", fg: "#14A75B" },
   },
