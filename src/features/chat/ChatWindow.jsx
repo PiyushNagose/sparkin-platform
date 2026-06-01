@@ -7,6 +7,7 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
+import ArrowBackIosRoundedIcon from "@mui/icons-material/ArrowBackIosRounded";
 import AttachFileRoundedIcon from "@mui/icons-material/AttachFileRounded";
 import EmojiEmotionsOutlinedIcon from "@mui/icons-material/EmojiEmotionsOutlined";
 import SendRoundedIcon from "@mui/icons-material/SendRounded";
@@ -44,6 +45,7 @@ function getInitials(name = "") {
  *  - onSend: (text) => Promise<void>
  *  - onTypingStart: () => void
  *  - onTypingStop: () => void
+ *  - onBack: () => void  — mobile back button handler
  *  - loading: boolean
  *  - accentColor: string (default "#0E56C8")
  */
@@ -55,6 +57,7 @@ export function ChatWindow({
   onSend,
   onTypingStart,
   onTypingStop,
+  onBack,
   loading = false,
   accentColor = "#0E56C8",
 }) {
@@ -64,8 +67,12 @@ export function ChatWindow({
   const typingTimerRef = useRef(null);
   const isTypingRef = useRef(false);
 
+  const messagesContainerRef = useRef(null);
+
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+    }
   }, [messages, typingUsers]);
 
   function handleTextChange(e) {
@@ -116,20 +123,34 @@ export function ChatWindow({
   }
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0 }}>
+    <Box sx={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0, overflow: "hidden" }}>
       {/* Header */}
       <Stack
         direction="row"
-        spacing={1.5}
+        spacing={1}
         alignItems="center"
         sx={{
-          px: 2.5,
+          px: { xs: 1.5, md: 2.5 },
           py: 1.8,
           borderBottom: "1px solid rgba(225,232,241,0.96)",
           bgcolor: "#FFFFFF",
           flexShrink: 0,
         }}
       >
+        {/* Back button — mobile only */}
+        {onBack && (
+          <IconButton
+            onClick={onBack}
+            size="small"
+            sx={{
+              display: { xs: "inline-flex", lg: "none" },
+              color: accentColor,
+              mr: 0.5,
+            }}
+          >
+            <ArrowBackIosRoundedIcon sx={{ fontSize: "1rem" }} />
+          </IconButton>
+        )}
         <Box sx={{ position: "relative" }}>
           <Avatar sx={{ width: 42, height: 42, bgcolor: accentColor, fontSize: "0.9rem", fontWeight: 800 }}>
             {getInitials(otherUser.name)}
@@ -154,7 +175,7 @@ export function ChatWindow({
       </Stack>
 
       {/* Messages */}
-      <Box sx={{ flex: 1, overflowY: "auto", px: 2.5, py: 2, bgcolor: "#F7F9FC", minHeight: 0 }}>
+      <Box ref={messagesContainerRef} sx={{ flex: 1, overflowY: "auto", px: { xs: 1.5, md: 2.5 }, py: 2, bgcolor: "#F7F9FC", minHeight: 0 }}>
         {loading ? (
           <Box sx={{ display: "grid", placeItems: "center", height: "100%" }}>
             <CircularProgress size={28} />
@@ -196,16 +217,9 @@ export function ChatWindow({
                 </Avatar>
               ) : null}
 
-              <Box sx={{ maxWidth: "68%" }}>
+              <Box sx={{ maxWidth: { xs: "80%", md: "68%" } }}>
                 {msg.attachmentUrl ? (
-                  <Box
-                    sx={{
-                      borderRadius: "1rem",
-                      overflow: "hidden",
-                      mb: msg.text ? 0.5 : 0,
-                      border: "1px solid rgba(225,232,241,0.96)",
-                    }}
-                  >
+                  <Box sx={{ borderRadius: "1rem", overflow: "hidden", mb: msg.text ? 0.5 : 0, border: "1px solid rgba(225,232,241,0.96)" }}>
                     <Box
                       component="img"
                       src={msg.attachmentUrl}
@@ -283,25 +297,29 @@ export function ChatWindow({
           </Stack>
         ) : null}
 
-        <div ref={bottomRef} />
+        <div ref={bottomRef} style={{ height: 1 }} />
       </Box>
 
       {/* Input */}
       <Box
         sx={{
-          px: 2,
+          px: { xs: 1.5, md: 2 },
           py: 1.5,
           borderTop: "1px solid rgba(225,232,241,0.96)",
           bgcolor: "#FFFFFF",
           flexShrink: 0,
         }}
       >
-        <Stack direction="row" spacing={1} alignItems="center"
-          sx={{ px: 1.5, py: 0.8, borderRadius: "999px", border: "1px solid rgba(225,232,241,0.96)", bgcolor: "#F7F9FC" }}>
+        <Stack
+          direction="row"
+          spacing={1}
+          alignItems="center"
+          sx={{ px: 1.5, py: 0.8, borderRadius: "999px", border: "1px solid rgba(225,232,241,0.96)", bgcolor: "#F7F9FC" }}
+        >
           <IconButton size="small" sx={{ color: "#A0ACBA" }}>
             <AddCircleOutlineRoundedIcon sx={{ fontSize: "1.2rem" }} />
           </IconButton>
-          <IconButton size="small" sx={{ color: "#A0ACBA" }}>
+          <IconButton size="small" sx={{ color: "#A0ACBA", display: { xs: "none", sm: "inline-flex" } }}>
             <AttachFileRoundedIcon sx={{ fontSize: "1.1rem" }} />
           </IconButton>
           <InputBase
@@ -314,7 +332,7 @@ export function ChatWindow({
             placeholder="Type your message here..."
             sx={{ fontSize: "0.88rem", color: "#18253A" }}
           />
-          <IconButton size="small" sx={{ color: "#A0ACBA" }}>
+          <IconButton size="small" sx={{ color: "#A0ACBA", display: { xs: "none", sm: "inline-flex" } }}>
             <EmojiEmotionsOutlinedIcon sx={{ fontSize: "1.1rem" }} />
           </IconButton>
           <IconButton
@@ -324,14 +342,14 @@ export function ChatWindow({
               bgcolor: accentColor,
               color: "#FFFFFF",
               borderRadius: "999px",
-              px: 1.5,
+              px: { xs: 1, md: 1.5 },
               py: 0.8,
               "&:hover": { bgcolor: "#0B49AD" },
               "&.Mui-disabled": { bgcolor: "#C8D4E4", color: "#FFFFFF" },
             }}
           >
             <Stack direction="row" spacing={0.5} alignItems="center">
-              <Typography sx={{ fontSize: "0.8rem", fontWeight: 700 }}>Send</Typography>
+              <Typography sx={{ fontSize: "0.8rem", fontWeight: 700, display: { xs: "none", sm: "block" } }}>Send</Typography>
               <SendRoundedIcon sx={{ fontSize: "0.9rem" }} />
             </Stack>
           </IconButton>

@@ -135,7 +135,7 @@ export function AppFooter() {
             <Stack direction="row" spacing={1} alignItems="center">
               <MailOutlineRoundedIcon sx={{ fontSize: 18, color: "#13C784" }} />
               <Typography variant="body2" sx={{ fontSize: "0.95rem" }}>
-                hello@sparkin.com
+                info@sparkinsolar.com
               </Typography>
             </Stack>
             <Stack direction="row" spacing={1} alignItems="center">
@@ -143,13 +143,14 @@ export function AppFooter() {
                 sx={{ fontSize: 18, color: "#13C784", transform: "scaleX(-1)" }}
               />
               <Typography variant="body2" sx={{ fontSize: "0.95rem" }}>
-                +911800-000-000
+                +919618668427
+
               </Typography>
             </Stack>
             <Stack direction="row" spacing={1} alignItems="center">
               <PlaceOutlinedIcon sx={{ fontSize: 18, color: "#13C784" }} />
               <Typography variant="body2" sx={{ fontSize: "0.95rem" }}>
-                Hyderabad, India
+                Rajamahendravaram, Andhrapradesh, India
               </Typography>
             </Stack>
           </Stack>

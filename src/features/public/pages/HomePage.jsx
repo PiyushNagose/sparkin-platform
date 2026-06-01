@@ -2973,7 +2973,7 @@ function HomePage() {
             {serviceCards.map((card, idx) => (
               <Grid
                 key={card.title}
-                size={{ xs: 12, md: 4 }}
+                size={{ xs: 12, md: idx === 2 ? 5 : 3.5 }}
                 sx={{ display: "flex" }}
               >
                 <Box
@@ -2984,33 +2984,47 @@ function HomePage() {
                     height: "100%",
                     borderRadius: "2.25rem",
                     overflow: "hidden",
-                    minHeight: 438,
+                    minHeight: idx === 2 ? 480 : 438,
                     backgroundImage: `url(${card.image})`,
                     backgroundSize: "cover",
                     backgroundPosition: "center",
-                    boxShadow: "0 12px 28px rgba(16,25,47,0.08)",
+                    boxShadow: idx === 2 
+                      ? "0 16px 40px rgba(16,25,47,0.12)" 
+                      : "0 12px 28px rgba(16,25,47,0.08)",
+                    transition: "all 0.3s ease",
+                    "&:hover": {
+                      boxShadow: idx === 2 
+                        ? "0 20px 50px rgba(16,25,47,0.16)" 
+                        : "0 14px 32px rgba(16,25,47,0.1)",
+                      transform: "translateY(-2px)",
+                    },
                   }}
                 >
                   <Box
                     sx={{
                       position: "absolute",
                       inset: 0,
-                      background:
-                        "linear-gradient(180deg, rgba(0,0,0,0) 20%, rgba(16,25,47,0.1) 48%, rgba(16,25,47,0.65) 100%)",
+                      background: idx === 2
+                        ? "linear-gradient(180deg, rgba(0,0,0,0) 15%, rgba(16,25,47,0.08) 40%, rgba(16,25,47,0.72) 100%)"
+                        : "linear-gradient(180deg, rgba(0,0,0,0) 20%, rgba(16,25,47,0.1) 48%, rgba(16,25,47,0.65) 100%)",
                     }}
                   />
                   <Box
                     sx={{
                       position: "absolute",
-                      left: { xs: 18, md: 28 },
-                      right: { xs: 18, md: 28 },
-                      bottom: { xs: 18, md: 28 },
-                      p: { xs: 1.85, md: 2 },
-                      minHeight: { xs: 212, md: 218 },
+                      left: { xs: 18, md: idx === 2 ? 32 : 28 },
+                      right: { xs: 18, md: idx === 2 ? 32 : 28 },
+                      bottom: { xs: 18, md: idx === 2 ? 32 : 28 },
+                      p: { xs: idx === 2 ? 2.2 : 1.85, md: idx === 2 ? 2.4 : 2 },
+                      minHeight: { xs: idx === 2 ? 240 : 212, md: idx === 2 ? 260 : 218 },
                       borderRadius: "1.45rem",
                       color: "white",
-                      bgcolor: "rgba(255,255,255,0.12)",
-                      border: "1px solid rgba(255,255,255,0.18)",
+                      bgcolor: idx === 2
+                        ? "rgba(255,255,255,0.14)"
+                        : "rgba(255,255,255,0.12)",
+                      border: idx === 2
+                        ? "1px solid rgba(255,255,255,0.22)"
+                        : "1px solid rgba(255,255,255,0.18)",
                       backdropFilter: "blur(20px)",
                       display: "flex",
                       flexDirection: "column",
@@ -3018,14 +3032,19 @@ function HomePage() {
                   >
                     <Box
                       sx={{
-                        width: 42,
-                        height: 42,
+                        width: idx === 2 ? 48 : 42,
+                        height: idx === 2 ? 48 : 42,
                         borderRadius: "50%",
-                        bgcolor: "rgba(255,255,255,0.16)",
-                        border: "1px solid rgba(255,255,255,0.28)",
+                        bgcolor: idx === 2
+                          ? "rgba(255,255,255,0.2)"
+                          : "rgba(255,255,255,0.16)",
+                        border: idx === 2
+                          ? "1.5px solid rgba(255,255,255,0.32)"
+                          : "1px solid rgba(255,255,255,0.28)",
                         display: "grid",
                         placeItems: "center",
-                        mb: 1.2,
+                        mb: idx === 2 ? 1.4 : 1.2,
+                        fontSize: idx === 2 ? "1.3rem" : "1rem",
                       }}
                     >
                       {card.icon}
@@ -3033,10 +3052,11 @@ function HomePage() {
                     <Typography
                       variant="h4"
                       sx={{
-                        fontSize: "1.08rem",
-                        mb: 0.8,
-                        maxWidth: 220,
-                        minHeight: "2.45em",
+                        fontSize: idx === 2 ? "1.25rem" : "1.08rem",
+                        fontWeight: idx === 2 ? 800 : 700,
+                        mb: idx === 2 ? 1 : 0.8,
+                        maxWidth: idx === 2 ? 260 : 220,
+                        minHeight: idx === 2 ? "2.8em" : "2.45em",
                         lineHeight: 1.15,
                         display: "flex",
                         alignItems: "flex-start",
@@ -3046,10 +3066,13 @@ function HomePage() {
                     </Typography>
                     <Typography
                       sx={{
-                        color: "rgba(255,255,255,0.76)",
-                        lineHeight: 1.55,
-                        fontSize: "0.82rem",
-                        maxWidth: 235,
+                        color: idx === 2
+                          ? "rgba(255,255,255,0.82)"
+                          : "rgba(255,255,255,0.76)",
+                        lineHeight: 1.6,
+                        fontSize: idx === 2 ? "0.88rem" : "0.82rem",
+                        maxWidth: idx === 2 ? 280 : 235,
+                        fontWeight: idx === 2 ? 500 : 400,
                       }}
                     >
                       {card.text}
@@ -3064,6 +3087,10 @@ function HomePage() {
                         color: "white",
                         fontWeight: 800,
                         letterSpacing: 0.5,
+                        fontSize: idx === 2 ? "0.82rem" : "0.78rem",
+                        "&:hover": {
+                          bgcolor: "transparent",
+                        },
                       }}
                     >
                       {card.action}
