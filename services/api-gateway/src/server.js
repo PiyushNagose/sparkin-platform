@@ -106,26 +106,6 @@ server.keepAliveTimeout = 65_000;
 server.headersTimeout = 66_000;
 server.requestTimeout = 60_000;
 
-await verifyDownstreamServices();
-
-server.listen(env.PORT, () => {
-  log("INFO", "Service started", { port: env.PORT });
-  log("INFO", "Routing to downstream services", {
-    identity: env.IDENTITY_SERVICE_URL,
-    business: env.BUSINESS_SERVICE_URL,
-    fulfillment: env.FULFILLMENT_SERVICE_URL,
-  });
-});
-
-server.on("error", (error) => {
-  if (error.code === "EADDRINUSE") {
-    log("ERROR", "Port already in use", { port: env.PORT });
-  } else {
-    log("ERROR", "Server error", { error: error.message });
-  }
-  process.exit(1);
-});
-
 const shutdown = (signal) => {
   if (shuttingDown) return;
   shuttingDown = true;
@@ -140,6 +120,33 @@ const shutdown = (signal) => {
     process.exit(0);
   });
 };
+
+async function startServer() {
+  await verifyDownstreamServices();
+
+  server.listen(env.PORT, () => {
+    log("INFO", "Service started", { port: env.PORT });
+    log("INFO", "Routing to downstream services", {
+      identity: env.IDENTITY_SERVICE_URL,
+      business: env.BUSINESS_SERVICE_URL,
+      fulfillment: env.FULFILLMENT_SERVICE_URL,
+    });
+  });
+
+  server.on("error", (error) => {
+    if (error.code === "EADDRINUSE") {
+      log("ERROR", "Port already in use", { port: env.PORT });
+    } else {
+      log("ERROR", "Server error", { error: error.message });
+    }
+    process.exit(1);
+  });
+}
+
+startServer().catch((error) => {
+  log("ERROR", "Failed to start server", { error: error.message });
+  process.exit(1);
+});
 
 process.on("SIGINT", shutdown);
 process.on("SIGTERM", shutdown);
