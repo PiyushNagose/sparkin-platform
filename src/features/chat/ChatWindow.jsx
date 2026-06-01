@@ -67,8 +67,12 @@ export function ChatWindow({
   const typingTimerRef = useRef(null);
   const isTypingRef = useRef(false);
 
+  const messagesContainerRef = useRef(null);
+
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+    }
   }, [messages, typingUsers]);
 
   function handleTextChange(e) {
@@ -119,7 +123,7 @@ export function ChatWindow({
   }
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0 }}>
+    <Box sx={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0, overflow: "hidden" }}>
       {/* Header */}
       <Stack
         direction="row"
@@ -171,7 +175,7 @@ export function ChatWindow({
       </Stack>
 
       {/* Messages */}
-      <Box sx={{ flex: 1, overflowY: "auto", px: { xs: 1.5, md: 2.5 }, py: 2, bgcolor: "#F7F9FC", minHeight: 0 }}>
+      <Box ref={messagesContainerRef} sx={{ flex: 1, overflowY: "auto", px: { xs: 1.5, md: 2.5 }, py: 2, bgcolor: "#F7F9FC", minHeight: 0 }}>
         {loading ? (
           <Box sx={{ display: "grid", placeItems: "center", height: "100%" }}>
             <CircularProgress size={28} />
@@ -293,7 +297,7 @@ export function ChatWindow({
           </Stack>
         ) : null}
 
-        <div ref={bottomRef} />
+        <div ref={bottomRef} style={{ height: 1 }} />
       </Box>
 
       {/* Input */}

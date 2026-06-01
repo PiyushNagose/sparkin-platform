@@ -24,7 +24,7 @@ import KeyboardArrowRightRoundedIcon from "@mui/icons-material/KeyboardArrowRigh
 import RefreshRoundedIcon from "@mui/icons-material/RefreshRounded";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import ChatOutlinedIcon from "@mui/icons-material/ChatOutlined";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChatWindow } from "@/features/chat/ChatWindow";
 import { markChatRoomRead, sortChatRooms, upsertChatRoom } from "@/features/chat/chatRooms";
@@ -401,6 +401,8 @@ function ChatTab({ currentUserId, token }) {
   const [startingChat, setStartingChat] = useState(false);
   const [mobileView, setMobileView] = useState("list"); // "list" | "chat"
 
+  const chatBoxRef = useRef(null);
+
   const handleNewRoom = useCallback((room) => { setRooms((prev) => upsertChatRoom(prev, room)); }, []);
 
   const handleRoomUpdated = useCallback((room) => {
@@ -422,6 +424,7 @@ function ChatTab({ currentUserId, token }) {
   async function openRoom(room) {
     if (activeRoomId === room.roomId) { setMobileView("chat"); return; }
     if (activeRoomId) leaveRoom(activeRoomId);
+    document.getElementById("portal-scroll-container")?.scrollTo({ top: 0, behavior: "instant" });
     setActiveRoomId(room.roomId);
     setMobileView("chat");
     setLoadingMessages(true);
@@ -430,7 +433,9 @@ function ChatTab({ currentUserId, token }) {
       seedMessages(room.roomId, Array.isArray(msgs) ? msgs : msgs.messages || []);
       setRooms((prev) => markChatRoomRead(prev, room.roomId, currentUserId));
       chatApi.markRead(room.roomId).catch(() => {});
-    } finally { setLoadingMessages(false); }
+    } finally {
+      setLoadingMessages(false);
+    }
     joinRoom(room.roomId);
   }
 
@@ -538,9 +543,9 @@ function ChatTab({ currentUserId, token }) {
       <UserPickerDialog open={pickerOpen} onClose={() => setPickerOpen(false)} onSelect={handleSelectVendor} />
 
       {/* Desktop: side-by-side */}
-      <Box sx={{ display: { xs: "none", lg: "grid" }, gridTemplateColumns: "300px 1fr", height: "calc(100vh - 280px)", minHeight: 520, borderRadius: "1.3rem", overflow: "hidden", border: "1px solid rgba(225,232,241,0.96)", bgcolor: "#FFFFFF" }}>
-        <Box sx={{ borderRight: "1px solid rgba(225,232,241,0.96)" }}>{sidebarContent}</Box>
-        {chatArea}
+      <Box ref={chatBoxRef} sx={{ display: { xs: "none", lg: "grid" }, gridTemplateColumns: "300px 1fr", height: 600, minHeight: 600, borderRadius: "1.3rem", overflow: "hidden", border: "1px solid rgba(225,232,241,0.96)", bgcolor: "#FFFFFF" }}>
+        <Box sx={{ borderRight: "1px solid rgba(225,232,241,0.96)", height: "100%", display: "flex", flexDirection: "column", overflow: "hidden" }}>{sidebarContent}</Box>
+        <Box sx={{ height: "100%", minHeight: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>{chatArea}</Box>
       </Box>
 
       {/* Mobile: WhatsApp-style */}

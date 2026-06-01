@@ -8,7 +8,7 @@ import {
 } from "@mui/material";
 import FilterListRoundedIcon from "@mui/icons-material/FilterListRounded";
 import ChatOutlinedIcon from "@mui/icons-material/ChatOutlined";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ChatWindow } from "@/features/chat/ChatWindow";
 import {
   markChatRoomRead,
@@ -81,6 +81,7 @@ export default function VendorChatPage() {
     setActiveRoomId(room.roomId);
     setMobileView("chat");
     setLoadingMessages(true);
+    document.getElementById("portal-scroll-container")?.scrollTo({ top: 0, behavior: "instant" });
     try {
       const msgs = await chatApi.getMessages(room.roomId);
       seedMessages(room.roomId, msgs);
@@ -237,8 +238,8 @@ export default function VendorChatPage() {
         sx={{
           display: { xs: "none", lg: "grid" },
           gridTemplateColumns: "280px 1fr",
-          height: "calc(100vh - 220px)",
-          minHeight: 520,
+          height: 600,
+          minHeight: 600,
           borderRadius: "1.3rem",
           overflow: "hidden",
           border: "1px solid rgba(225,232,241,0.96)",
