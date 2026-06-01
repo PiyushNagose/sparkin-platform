@@ -1,5 +1,7 @@
 import { ProjectModel } from "./project.model.js";
 
+const LIST_QUERY_MAX_TIME_MS = 8_000;
+
 function normalizeProject(project) {
   const value = project?.toObject ? project.toObject() : project;
 
@@ -38,22 +40,33 @@ export const projectsRepository = {
   },
 
   async findByIds(projectIds) {
-    const projects = await ProjectModel.find({ _id: { $in: projectIds } }).lean({ virtuals: true });
+    const projects = await ProjectModel.find({ _id: { $in: projectIds } })
+      .maxTimeMS(LIST_QUERY_MAX_TIME_MS)
+      .lean({ virtuals: true });
     return normalizeProjects(projects);
   },
 
   async findForCustomer(customerId) {
-    const projects = await ProjectModel.find({ customerId }).sort({ createdAt: -1 }).lean({ virtuals: true });
+    const projects = await ProjectModel.find({ customerId })
+      .sort({ createdAt: -1 })
+      .maxTimeMS(LIST_QUERY_MAX_TIME_MS)
+      .lean({ virtuals: true });
     return normalizeProjects(projects);
   },
 
   async findForVendor(vendorId) {
-    const projects = await ProjectModel.find({ vendorId }).sort({ createdAt: -1 }).lean({ virtuals: true });
+    const projects = await ProjectModel.find({ vendorId })
+      .sort({ createdAt: -1 })
+      .maxTimeMS(LIST_QUERY_MAX_TIME_MS)
+      .lean({ virtuals: true });
     return normalizeProjects(projects);
   },
 
   async findAll() {
-    const projects = await ProjectModel.find({}).sort({ createdAt: -1 }).lean({ virtuals: true });
+    const projects = await ProjectModel.find({})
+      .sort({ createdAt: -1 })
+      .maxTimeMS(LIST_QUERY_MAX_TIME_MS)
+      .lean({ virtuals: true });
     return normalizeProjects(projects);
   },
 

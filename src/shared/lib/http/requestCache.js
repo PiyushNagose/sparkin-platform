@@ -1,6 +1,8 @@
 const DEFAULT_TTL_MS = 10000;
+const MAX_CACHE_ENTRIES = 200;
 const cache = new Map();
 const TRANSIENT_STATUS_CODES = new Set([502, 503, 504]);
+const NON_RETRYABLE_ERROR_CODES = new Set(["ERR_CANCELED", "ECONNABORTED"]);
 
 function delay(ms) {
   return new Promise((resolve) => {
@@ -13,12 +15,35 @@ function shouldRetryRequest(error, retryCount) {
     return false;
   }
 
+  if (
+    error?.name === "CanceledError" ||
+    NON_RETRYABLE_ERROR_CODES.has(error?.code)
+  ) {
+    return false;
+  }
+
   const status = error?.response?.status;
   if (TRANSIENT_STATUS_CODES.has(status)) {
     return true;
   }
 
   return !error?.response;
+}
+
+function pruneCache(now = Date.now()) {
+  for (const [key, entry] of cache.entries()) {
+    if (!entry.promise && entry.expiresAt <= now) {
+      cache.delete(key);
+    }
+  }
+
+  while (cache.size > MAX_CACHE_ENTRIES) {
+    const oldestKey = cache.keys().next().value;
+    if (!oldestKey) {
+      break;
+    }
+    cache.delete(oldestKey);
+  }
 }
 
 function normalizeValue(value) {
@@ -61,6 +86,7 @@ export async function cachedGet(client, url, options = {}) {
   } = options;
   const key = createCacheKey(client, url, params);
   const now = Date.now();
+  pruneCache(now);
   const entry = cache.get(key);
 
   if (!force && entry) {
@@ -81,6 +107,7 @@ export async function cachedGet(client, url, options = {}) {
         response,
         expiresAt: Date.now() + ttlMs,
       });
+      pruneCache();
       return response;
     })
     .catch(async (error) => {
@@ -108,6 +135,7 @@ export async function cachedGet(client, url, options = {}) {
     promise,
     expiresAt: now + ttlMs,
   });
+  pruneCache(now);
 
   return promise;
 }

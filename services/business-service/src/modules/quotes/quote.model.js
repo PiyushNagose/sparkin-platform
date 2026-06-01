@@ -58,6 +58,10 @@ const quoteSchema = new mongoose.Schema(
 
 // Enforce one quote per vendor per lead at the DB level
 quoteSchema.index({ vendorId: 1, leadId: 1 }, { unique: true });
+quoteSchema.index({ leadId: 1, createdAt: -1 });
+quoteSchema.index({ customerId: 1, createdAt: -1 });
+quoteSchema.index({ vendorId: 1, createdAt: -1 });
+quoteSchema.index({ status: 1, createdAt: -1 });
 
 export const QuoteModel =
   mongoose.models.Quote ?? mongoose.model("Quote", quoteSchema);

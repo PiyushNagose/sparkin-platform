@@ -1,4 +1,11 @@
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { io } from "socket.io-client";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { authStorage } from "@/features/auth/authStorage";
@@ -18,6 +25,22 @@ const RESOURCE_MATCHERS = [
   { pattern: "/broadcasts", match: "/broadcasts" },
   { pattern: "/platform-settings", match: "/platform-settings" },
 ];
+
+function stripApiPath(url) {
+  return url.replace(/\/api\/v1\/?$/, "");
+}
+
+function resolveSocketUrl() {
+  const fallbackApiBase = import.meta.env.DEV
+    ? "http://localhost:4000/api/v1"
+    : window.location.origin;
+
+  return stripApiPath(
+    import.meta.env.VITE_SOCKET_URL ||
+      import.meta.env.VITE_API_BASE_URL ||
+      fallbackApiBase,
+  );
+}
 
 function invalidateFromRefreshEvent(payload) {
   const path = payload?.path?.split("?")[0] || "";
@@ -48,6 +71,8 @@ const SocketContext = createContext({
 export function SocketProvider({ children }) {
   const [connected, setConnected] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const refreshTimerRef = useRef(null);
+  const pendingRefreshPayloadsRef = useRef([]);
   const { isAuthenticated, isBootstrapping } = useAuth();
   const token = authStorage.getAccessToken();
 
@@ -57,25 +82,38 @@ export function SocketProvider({ children }) {
       return undefined;
     }
 
-    const socketUrl =
-      import.meta.env.VITE_SOCKET_URL ||
-      import.meta.env.VITE_API_BASE_URL ||
-      window.location.origin;
+    const socketUrl = resolveSocketUrl();
 
     const socket = io(socketUrl, {
       path: "/socket.io",
-      transports: ["websocket", "polling"],
+      transports: ["websocket"],
       auth: token ? { token } : undefined,
-      reconnectionAttempts: Infinity,
-      reconnectionDelay: 2000,
-      timeout: 20000,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1500,
+      reconnectionDelayMax: 10000,
+      timeout: 8000,
     });
 
     socket.on("connect", () => setConnected(true));
     socket.on("disconnect", () => setConnected(false));
     socket.on("refresh:page", (payload) => {
-      invalidateFromRefreshEvent(payload);
-      setRefreshKey((current) => current + 1);
+      pendingRefreshPayloadsRef.current.push(payload);
+
+      if (refreshTimerRef.current) {
+        return;
+      }
+
+      refreshTimerRef.current = window.setTimeout(() => {
+        const payloads = pendingRefreshPayloadsRef.current;
+        pendingRefreshPayloadsRef.current = [];
+
+        for (const pendingPayload of payloads) {
+          invalidateFromRefreshEvent(pendingPayload);
+        }
+
+        refreshTimerRef.current = null;
+        setRefreshKey((current) => current + 1);
+      }, 750);
     });
     socket.on("connect_error", () => {
       setConnected(false);
@@ -87,6 +125,13 @@ export function SocketProvider({ children }) {
       socket.off("refresh:page");
       socket.off("connect_error");
       socket.disconnect();
+
+      if (refreshTimerRef.current) {
+        window.clearTimeout(refreshTimerRef.current);
+        refreshTimerRef.current = null;
+      }
+
+      pendingRefreshPayloadsRef.current = [];
     };
   }, [isAuthenticated, isBootstrapping, token]);
 

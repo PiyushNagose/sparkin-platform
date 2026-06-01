@@ -1,0 +1,8 @@
+{
+  "name": "@sparkin/services",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File ./scripts/dev-runner.ps1"
+  }
+}

@@ -56,5 +56,8 @@ const referralSchema = new mongoose.Schema(
 );
 
 referralSchema.index({ referrerId: 1, "friend.email": 1 }, { unique: true });
+referralSchema.index({ referrerId: 1, createdAt: -1 });
+referralSchema.index({ status: 1, createdAt: -1 });
+referralSchema.index({ rewardStatus: 1, createdAt: -1 });
 
 export const ReferralModel = mongoose.models.Referral ?? mongoose.model("Referral", referralSchema);

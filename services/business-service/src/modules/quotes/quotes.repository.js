@@ -1,5 +1,7 @@
 import { QuoteModel } from "./quote.model.js";
 
+const LIST_QUERY_MAX_TIME_MS = 8_000;
+
 function normalizeQuote(quote) {
   const value = quote?.toObject ? quote.toObject() : quote;
 
@@ -58,6 +60,7 @@ export const quotesRepository = {
   async findQuotesByLeadId(leadId) {
     const quotes = await QuoteModel.find({ leadId })
       .sort({ createdAt: -1 })
+      .maxTimeMS(LIST_QUERY_MAX_TIME_MS)
       .lean({ virtuals: true });
     return normalizeQuotes(quotes);
   },
@@ -65,6 +68,7 @@ export const quotesRepository = {
   async findAll() {
     const quotes = await QuoteModel.find({})
       .sort({ createdAt: -1 })
+      .maxTimeMS(LIST_QUERY_MAX_TIME_MS)
       .lean({ virtuals: true });
     return normalizeQuotes(quotes);
   },
@@ -72,6 +76,7 @@ export const quotesRepository = {
   async findQuotesByLeadIds(leadIds) {
     const quotes = await QuoteModel.find({ leadId: { $in: leadIds } })
       .sort({ createdAt: -1 })
+      .maxTimeMS(LIST_QUERY_MAX_TIME_MS)
       .lean({ virtuals: true });
     return normalizeQuotes(quotes);
   },
@@ -84,6 +89,7 @@ export const quotesRepository = {
 
     const quotes = await QuoteModel.find(query)
       .sort({ createdAt: -1 })
+      .maxTimeMS(LIST_QUERY_MAX_TIME_MS)
       .lean({ virtuals: true });
     return normalizeQuotes(quotes);
   },
@@ -91,6 +97,7 @@ export const quotesRepository = {
   async findQuotesByVendor(vendorId) {
     const quotes = await QuoteModel.find({ vendorId })
       .sort({ createdAt: -1 })
+      .maxTimeMS(LIST_QUERY_MAX_TIME_MS)
       .lean({ virtuals: true });
     return normalizeQuotes(quotes);
   },

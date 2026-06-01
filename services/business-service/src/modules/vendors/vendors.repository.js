@@ -1,5 +1,7 @@
 import { VendorProfileModel } from "./vendor-profile.model.js";
 
+const LIST_QUERY_MAX_TIME_MS = 8_000;
+
 function normalizeVendorProfile(profile) {
   const value = profile?.toObject ? profile.toObject() : profile;
 
@@ -24,6 +26,7 @@ export const vendorsRepository = {
     })
       .sort({ updatedAt: -1, createdAt: -1 })
       .limit(limit)
+      .maxTimeMS(LIST_QUERY_MAX_TIME_MS)
       .lean({ virtuals: true });
 
     return profiles.map((profile) => normalizeVendorProfile(profile));
@@ -32,6 +35,7 @@ export const vendorsRepository = {
   async findAll() {
     const profiles = await VendorProfileModel.find({})
       .sort({ updatedAt: -1, createdAt: -1 })
+      .maxTimeMS(LIST_QUERY_MAX_TIME_MS)
       .lean({ virtuals: true });
 
     return profiles.map((profile) => normalizeVendorProfile(profile));
@@ -40,6 +44,7 @@ export const vendorsRepository = {
   async findApproved() {
     const profiles = await VendorProfileModel.find({ verificationStatus: "verified" })
       .sort({ updatedAt: -1, createdAt: -1 })
+      .maxTimeMS(LIST_QUERY_MAX_TIME_MS)
       .lean({ virtuals: true });
 
     return profiles.map((profile) => normalizeVendorProfile(profile));

@@ -3,6 +3,8 @@ import { Server as SocketIOServer } from "socket.io";
 import { env } from "./config/env.js";
 
 const REFRESH_EXCLUDED_PREFIXES = ["/api/v1/chat"];
+const REFRESH_DEBOUNCE_MS = 500;
+const pendingRefreshEvents = new Map();
 
 function shouldEmitRefresh(req) {
   const method = req.method.toUpperCase();
@@ -22,7 +24,9 @@ export function createGatewaySocketServer(server) {
       credentials: true,
     },
     path: "/socket.io",
-    transports: ["websocket", "polling"],
+    transports: ["websocket"],
+    pingInterval: 25_000,
+    pingTimeout: 20_000,
   });
 
   io.use((socket, next) => {
@@ -31,8 +35,7 @@ export function createGatewaySocketServer(server) {
       socket.handshake.headers?.authorization?.replace("Bearer ", "").trim();
 
     if (!token) {
-      socket.user = null;
-      return next();
+      return next(new Error("Unauthorized socket connection"));
     }
 
     try {
@@ -43,7 +46,7 @@ export function createGatewaySocketServer(server) {
         email: payload.email,
       };
     } catch {
-      socket.user = null;
+      return next(new Error("Unauthorized socket connection"));
     }
 
     return next();
@@ -72,11 +75,24 @@ export function createGatewayRefreshMiddleware(io) {
       emitted = true;
 
       if (res.statusCode >= 200 && res.statusCode < 400) {
-        io.to("global").emit("refresh:page", {
+        const payload = {
           path: req.originalUrl,
           method,
           timestamp: new Date().toISOString(),
-        });
+        };
+        const key = `${method}:${payload.path}`;
+
+        if (pendingRefreshEvents.has(key)) {
+          clearTimeout(pendingRefreshEvents.get(key));
+        }
+
+        pendingRefreshEvents.set(
+          key,
+          setTimeout(() => {
+            pendingRefreshEvents.delete(key);
+            io.to("global").emit("refresh:page", payload);
+          }, REFRESH_DEBOUNCE_MS),
+        );
       }
     };
 

@@ -68,5 +68,7 @@ const vendorProfileSchema = new mongoose.Schema(
   },
 );
 
+vendorProfileSchema.index({ verificationStatus: 1, updatedAt: -1, createdAt: -1 });
+
 export const VendorProfileModel =
   mongoose.models.VendorProfile ?? mongoose.model("VendorProfile", vendorProfileSchema);
