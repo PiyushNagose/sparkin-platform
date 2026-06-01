@@ -5,6 +5,7 @@ import proxy from "express-http-proxy";
 const agentCache = new Map();
 const RETRYABLE_ERROR_CODES = new Set(["ECONNRESET", "EPIPE"]);
 const RETRYABLE_ERROR_MESSAGES = ["socket hang up"];
+const SOCKET_TIMEOUT_MS = 50_000;
 
 function isRetryableProxyError(error) {
   if (!error) {
@@ -33,7 +34,7 @@ function getKeepAliveAgent(targetUrl) {
     maxSockets: 100,
     maxFreeSockets: 10,
     scheduling: "lifo",
-    timeout: 70_000,
+    timeout: SOCKET_TIMEOUT_MS,
   });
 
   agentCache.set(targetUrl, agent);
@@ -134,7 +135,6 @@ export function createProxy(targetUrl) {
 
       if (canRetry) {
         req._gatewayProxyRetried = true;
-        logProxyError(targetUrl, req, error, { retryAttempt: 1 });
         freshConnectionProxy(req, res, (retryError) => {
           if (retryError) {
             logProxyError(targetUrl, req, retryError, { retryAttempt: 2 });

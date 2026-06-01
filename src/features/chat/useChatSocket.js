@@ -7,9 +7,9 @@ function stripApiPath(url) {
 
 // Socket traffic connects directly to business-service for realtime chat.
 const SOCKET_URL =
-  import.meta.env.VITE_BUSINESS_SOCKET_URL ||
   stripApiPath(
-    import.meta.env.VITE_BUSINESS_API_BASE_URL ||
+    import.meta.env.VITE_BUSINESS_SOCKET_URL ||
+      import.meta.env.VITE_BUSINESS_API_BASE_URL ||
       "http://localhost:4002/api/v1",
   );
 
@@ -43,10 +43,11 @@ export function useChatSocket(token, { onNewRoom, onRoomUpdated } = {}) {
     const socket = io(SOCKET_URL, {
       auth: { token },
       path: "/socket.io",
-      transports: ["websocket", "polling"],
-      reconnectionAttempts: 10,
+      transports: ["websocket"],
+      reconnectionAttempts: 5,
       reconnectionDelay: 1500,
-      timeout: 20000,
+      reconnectionDelayMax: 10000,
+      timeout: 8000,
     });
 
     socketRef.current = socket;

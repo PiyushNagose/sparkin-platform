@@ -1,7 +1,7 @@
 import { createServer } from "node:http";
 import { Server as SocketIOServer } from "socket.io";
-import { createApp } from "./app.js";
 import { connectDatabase, disconnectDatabase } from "./config/database.js";
+import { createApp } from "./app.js";
 import { env } from "./config/env.js";
 import { attachChatSocket } from "./modules/chat/chat.socket.js";
 import { logger } from "./common/utils/logger.js";
@@ -38,6 +38,9 @@ async function startServer() {
       credentials: true,
     },
     path: "/socket.io",
+    transports: ["websocket"],
+    pingInterval: 25_000,
+    pingTimeout: 20_000,
   });
 
   // Attach socket handlers (uses io internally)

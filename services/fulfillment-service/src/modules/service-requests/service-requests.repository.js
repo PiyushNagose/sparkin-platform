@@ -1,5 +1,7 @@
 import { ServiceRequestModel } from "./service-request.model.js";
 
+const LIST_QUERY_MAX_TIME_MS = 8_000;
+
 function normalizeRequest(request) {
   const value = request?.toObject ? request.toObject() : request;
 
@@ -27,7 +29,10 @@ export const serviceRequestsRepository = {
   },
 
   async findForCustomer(customerId) {
-    const requests = await ServiceRequestModel.find({ customerId }).sort({ createdAt: -1 }).lean({ virtuals: true });
+    const requests = await ServiceRequestModel.find({ customerId })
+      .sort({ createdAt: -1 })
+      .maxTimeMS(LIST_QUERY_MAX_TIME_MS)
+      .lean({ virtuals: true });
     return normalizeRequests(requests);
   },
 
@@ -36,12 +41,18 @@ export const serviceRequestsRepository = {
       return [];
     }
 
-    const requests = await ServiceRequestModel.find({ projectId: { $in: projectIds } }).sort({ createdAt: -1 }).lean({ virtuals: true });
+    const requests = await ServiceRequestModel.find({ projectId: { $in: projectIds } })
+      .sort({ createdAt: -1 })
+      .maxTimeMS(LIST_QUERY_MAX_TIME_MS)
+      .lean({ virtuals: true });
     return normalizeRequests(requests);
   },
 
   async findAll() {
-    const requests = await ServiceRequestModel.find({}).sort({ createdAt: -1 }).lean({ virtuals: true });
+    const requests = await ServiceRequestModel.find({})
+      .sort({ createdAt: -1 })
+      .maxTimeMS(LIST_QUERY_MAX_TIME_MS)
+      .lean({ virtuals: true });
     return normalizeRequests(requests);
   },
 

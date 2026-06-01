@@ -1,5 +1,7 @@
 import { PaymentModel } from "./payment.model.js";
 
+const LIST_QUERY_MAX_TIME_MS = 8_000;
+
 function normalizePayment(payment) {
   const value = payment?.toObject ? payment.toObject() : payment;
 
@@ -31,6 +33,7 @@ export const paymentsRepository = {
   async findForProject(projectId) {
     const payments = await PaymentModel.find({ projectId })
       .sort({ dueAt: 1 })
+      .maxTimeMS(LIST_QUERY_MAX_TIME_MS)
       .lean({ virtuals: true });
     return normalizePayments(payments);
   },
@@ -45,6 +48,7 @@ export const paymentsRepository = {
   async findForCustomer(customerId) {
     const payments = await PaymentModel.find({ customerId })
       .sort({ createdAt: -1 })
+      .maxTimeMS(LIST_QUERY_MAX_TIME_MS)
       .lean({ virtuals: true });
     return normalizePayments(payments);
   },
@@ -52,6 +56,7 @@ export const paymentsRepository = {
   async findForVendor(vendorId) {
     const payments = await PaymentModel.find({ vendorId })
       .sort({ createdAt: -1 })
+      .maxTimeMS(LIST_QUERY_MAX_TIME_MS)
       .lean({ virtuals: true });
     return normalizePayments(payments);
   },
@@ -59,6 +64,7 @@ export const paymentsRepository = {
   async findAll() {
     const payments = await PaymentModel.find({})
       .sort({ createdAt: -1 })
+      .maxTimeMS(LIST_QUERY_MAX_TIME_MS)
       .lean({ virtuals: true });
     return normalizePayments(payments);
   },

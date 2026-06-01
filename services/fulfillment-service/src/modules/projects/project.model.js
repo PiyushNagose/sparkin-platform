@@ -137,5 +137,9 @@ const projectSchema = new mongoose.Schema(
   },
 );
 
+projectSchema.index({ customerId: 1, createdAt: -1 });
+projectSchema.index({ vendorId: 1, createdAt: -1 });
+projectSchema.index({ status: 1, createdAt: -1 });
+
 export const ProjectModel =
   mongoose.models.Project ?? mongoose.model("Project", projectSchema);

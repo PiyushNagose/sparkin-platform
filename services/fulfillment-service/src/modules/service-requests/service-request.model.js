@@ -42,5 +42,9 @@ const serviceRequestSchema = new mongoose.Schema(
   },
 );
 
+serviceRequestSchema.index({ customerId: 1, createdAt: -1 });
+serviceRequestSchema.index({ projectId: 1, createdAt: -1 });
+serviceRequestSchema.index({ status: 1, createdAt: -1 });
+
 export const ServiceRequestModel =
   mongoose.models.ServiceRequest ?? mongoose.model("ServiceRequest", serviceRequestSchema);

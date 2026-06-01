@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { requireDatabase } from "../common/database/database-health.js";
 import { broadcastsRouter } from "../modules/broadcasts/broadcasts.routes.js";
 import { calculatorRouter } from "../modules/calculator/calculator.routes.js";
 import { createChatRouter } from "../modules/chat/chat.routes.js";
@@ -11,6 +12,8 @@ import { vendorsRouter } from "../modules/vendors/vendors.routes.js";
 
 export function createApiRouter(io) {
   const apiRouter = Router();
+
+  apiRouter.use(requireDatabase);
 
   apiRouter.use("/broadcasts", broadcastsRouter);
   apiRouter.use("/calculator", calculatorRouter);

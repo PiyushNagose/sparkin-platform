@@ -2,6 +2,9 @@ import cors from "cors";
 import express from "express";
 import helmet from "helmet";
 import path from "node:path";
+import {
+  getDatabaseHealth,
+} from "./common/database/database-health.js";
 import { errorHandler } from "./common/middleware/error-handler.js";
 import { notFoundHandler } from "./common/middleware/not-found-handler.js";
 import { requestContext } from "./common/middleware/request-context.js";
@@ -26,9 +29,11 @@ export function createApp() {
   app.use("/uploads", express.static(path.resolve("uploads")));
 
   app.get("/health", (req, res) => {
-    res.status(200).json({
+    const database = getDatabaseHealth();
+    res.status(database.status === "ok" ? 200 : 503).json({
       service: env.serviceName,
-      status: "ok",
+      status: database.status === "ok" ? "ok" : "degraded",
+      database,
       requestId: req.requestId,
       timestamp: new Date().toISOString(),
     });

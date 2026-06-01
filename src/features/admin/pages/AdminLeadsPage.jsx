@@ -324,7 +324,7 @@ function LeadFormDialog({ open, onClose, onSubmit, saving, error }) {
         <DialogContent dividers sx={{ borderColor: adminUi.colors.border }}>
           {error ? <AdminErrorState>{error}</AdminErrorState> : null}
           <Grid container spacing={1.6}>
-            <Grid item xs={12} md={4}>
+            <Grid size={{ xs: 12, md: 4 }}>
               <TextField
                 required
                 fullWidth
@@ -333,7 +333,7 @@ function LeadFormDialog({ open, onClose, onSubmit, saving, error }) {
                 onChange={(e) => updateField("fullName", e.target.value)}
               />
             </Grid>
-            <Grid item xs={12} md={4}>
+            <Grid size={{ xs: 12, md: 4 }}>
               <TextField
                 required
                 fullWidth
@@ -342,7 +342,7 @@ function LeadFormDialog({ open, onClose, onSubmit, saving, error }) {
                 onChange={(e) => updateField("phoneNumber", e.target.value)}
               />
             </Grid>
-            <Grid item xs={12} md={4}>
+            <Grid size={{ xs: 12, md: 4 }}>
               <TextField
                 fullWidth
                 type="email"
@@ -351,7 +351,7 @@ function LeadFormDialog({ open, onClose, onSubmit, saving, error }) {
                 onChange={(e) => updateField("email", e.target.value)}
               />
             </Grid>
-            <Grid item xs={12}>
+            <Grid size={{ xs: 12 }}>
               <TextField
                 required
                 fullWidth
@@ -360,7 +360,7 @@ function LeadFormDialog({ open, onClose, onSubmit, saving, error }) {
                 onChange={(e) => updateField("street", e.target.value)}
               />
             </Grid>
-            <Grid item xs={12} md={4}>
+            <Grid size={{ xs: 12, md: 4 }}>
               <TextField
                 required
                 fullWidth
@@ -369,7 +369,7 @@ function LeadFormDialog({ open, onClose, onSubmit, saving, error }) {
                 onChange={(e) => updateField("city", e.target.value)}
               />
             </Grid>
-            <Grid item xs={12} md={4}>
+            <Grid size={{ xs: 12, md: 4 }}>
               <TextField
                 required
                 fullWidth
@@ -378,7 +378,7 @@ function LeadFormDialog({ open, onClose, onSubmit, saving, error }) {
                 onChange={(e) => updateField("state", e.target.value)}
               />
             </Grid>
-            <Grid item xs={12} md={4}>
+            <Grid size={{ xs: 12, md: 4 }}>
               <TextField
                 required
                 fullWidth
@@ -387,7 +387,7 @@ function LeadFormDialog({ open, onClose, onSubmit, saving, error }) {
                 onChange={(e) => updateField("pincode", e.target.value)}
               />
             </Grid>
-            <Grid item xs={12} md={4}>
+            <Grid size={{ xs: 12, md: 4 }}>
               <TextField
                 fullWidth
                 type="number"
@@ -396,7 +396,7 @@ function LeadFormDialog({ open, onClose, onSubmit, saving, error }) {
                 onChange={(e) => updateField("systemSizeKw", e.target.value)}
               />
             </Grid>
-            <Grid item xs={12} md={4}>
+            <Grid size={{ xs: 12, md: 4 }}>
               <FormControl fullWidth>
                 <InputLabel>Property Type</InputLabel>
                 <Select
@@ -412,7 +412,7 @@ function LeadFormDialog({ open, onClose, onSubmit, saving, error }) {
                 </Select>
               </FormControl>
             </Grid>
-            <Grid item xs={12} md={4}>
+            <Grid size={{ xs: 12, md: 4 }}>
               <FormControl fullWidth>
                 <InputLabel>Roof Size</InputLabel>
                 <Select
@@ -426,7 +426,7 @@ function LeadFormDialog({ open, onClose, onSubmit, saving, error }) {
                 </Select>
               </FormControl>
             </Grid>
-            <Grid item xs={12}>
+            <Grid size={{ xs: 12 }}>
               <TextField
                 fullWidth
                 multiline
@@ -676,7 +676,7 @@ export default function AdminLeadsPage() {
 
       <AdminPanel sx={{ p: { xs: 1.6, md: 2 }, mb: 2.6 }}>
         <Grid container spacing={1.5} alignItems="center">
-          <Grid item xs={12} md={2.4}>
+          <Grid size={{ xs: 12, md: 2.4 }}>
             <Typography
               sx={{
                 mb: 0.5,
@@ -712,7 +712,7 @@ export default function AdminLeadsPage() {
               </Select>
             </FormControl>
           </Grid>
-          <Grid item xs={12} md={2.4}>
+          <Grid size={{ xs: 12, md: 2.4 }}>
             <Typography
               sx={{
                 mb: 0.5,
@@ -749,7 +749,7 @@ export default function AdminLeadsPage() {
               </Select>
             </FormControl>
           </Grid>
-          <Grid item xs={12} md={2.4}>
+          <Grid size={{ xs: 12, md: 2.4 }}>
             <Typography
               sx={{
                 mb: 0.5,
@@ -785,7 +785,7 @@ export default function AdminLeadsPage() {
               </Select>
             </FormControl>
           </Grid>
-          <Grid item xs={12} md={2.4}>
+          <Grid size={{ xs: 12, md: 2.4 }}>
             <Typography
               sx={{
                 mb: 0.5,
@@ -821,7 +821,7 @@ export default function AdminLeadsPage() {
               </Select>
             </FormControl>
           </Grid>
-          <Grid item xs={12} md={2.4}>
+          <Grid size={{ xs: 12, md: 2.4 }}>
             <Typography
               sx={{
                 mb: 0.5,
@@ -1199,7 +1199,7 @@ export default function AdminLeadsPage() {
       </AdminPanel>
 
       <Grid container spacing={2.2} sx={{ mt: 2.8 }}>
-        <Grid item xs={12} md={4}>
+        <Grid size={{ xs: 12, md: 4 }}>
           <MetricCard
             icon={BoltOutlinedIcon}
             title="Total Capacity"
@@ -1207,7 +1207,7 @@ export default function AdminLeadsPage() {
             accent="#0E56C8"
           />
         </Grid>
-        <Grid item xs={12} md={4}>
+        <Grid size={{ xs: 12, md: 4 }}>
           <MetricCard
             icon={TrendingUpRoundedIcon}
             title="Revenue Pipeline"
@@ -1215,7 +1215,7 @@ export default function AdminLeadsPage() {
             accent="#8A9700"
           />
         </Grid>
-        <Grid item xs={12} md={4}>
+        <Grid size={{ xs: 12, md: 4 }}>
           <MetricCard
             icon={GroupAddOutlinedIcon}
             title="Conversion Rate"

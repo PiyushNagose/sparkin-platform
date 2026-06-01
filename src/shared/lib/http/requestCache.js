@@ -1,5 +1,50 @@
 const DEFAULT_TTL_MS = 10000;
+const MAX_CACHE_ENTRIES = 200;
 const cache = new Map();
+const TRANSIENT_STATUS_CODES = new Set([502, 503, 504]);
+const NON_RETRYABLE_ERROR_CODES = new Set(["ERR_CANCELED", "ECONNABORTED"]);
+
+function delay(ms) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
+function shouldRetryRequest(error, retryCount) {
+  if (retryCount >= 1) {
+    return false;
+  }
+
+  if (
+    error?.name === "CanceledError" ||
+    NON_RETRYABLE_ERROR_CODES.has(error?.code)
+  ) {
+    return false;
+  }
+
+  const status = error?.response?.status;
+  if (TRANSIENT_STATUS_CODES.has(status)) {
+    return true;
+  }
+
+  return !error?.response;
+}
+
+function pruneCache(now = Date.now()) {
+  for (const [key, entry] of cache.entries()) {
+    if (!entry.promise && entry.expiresAt <= now) {
+      cache.delete(key);
+    }
+  }
+
+  while (cache.size > MAX_CACHE_ENTRIES) {
+    const oldestKey = cache.keys().next().value;
+    if (!oldestKey) {
+      break;
+    }
+    cache.delete(oldestKey);
+  }
+}
 
 function normalizeValue(value) {
   if (value instanceof URLSearchParams) {
@@ -33,6 +78,7 @@ function createCacheKey(client, url, params) {
 export async function cachedGet(client, url, options = {}) {
   const {
     allowStaleOnError = true,
+    retryCount = 0,
     ttlMs = DEFAULT_TTL_MS,
     force = false,
     params,
@@ -40,6 +86,7 @@ export async function cachedGet(client, url, options = {}) {
   } = options;
   const key = createCacheKey(client, url, params);
   const now = Date.now();
+  pruneCache(now);
   const entry = cache.get(key);
 
   if (!force && entry) {
@@ -52,16 +99,30 @@ export async function cachedGet(client, url, options = {}) {
     }
   }
 
-  const promise = client
-    .get(url, { ...axiosOptions, params })
+  const request = () => client.get(url, { ...axiosOptions, params });
+
+  const promise = request()
     .then((response) => {
       cache.set(key, {
         response,
         expiresAt: Date.now() + ttlMs,
       });
+      pruneCache();
       return response;
     })
-    .catch((error) => {
+    .catch(async (error) => {
+      if (shouldRetryRequest(error, retryCount)) {
+        await delay(250);
+        return cachedGet(client, url, {
+          ...axiosOptions,
+          allowStaleOnError,
+          force: true,
+          params,
+          retryCount: retryCount + 1,
+          ttlMs,
+        });
+      }
+
       if (allowStaleOnError && entry?.response) {
         return entry.response;
       }
@@ -74,6 +135,7 @@ export async function cachedGet(client, url, options = {}) {
     promise,
     expiresAt: now + ttlMs,
   });
+  pruneCache(now);
 
   return promise;
 }

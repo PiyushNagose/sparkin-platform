@@ -176,5 +176,9 @@ const leadSchema = new mongoose.Schema(
   },
 );
 
+leadSchema.index({ customerId: 1, createdAt: -1 });
+leadSchema.index({ status: 1, createdAt: -1 });
+leadSchema.index({ assignedVendorIds: 1, status: 1, createdAt: -1 });
+
 export const LeadModel =
   mongoose.models.Lead ?? mongoose.model("Lead", leadSchema);

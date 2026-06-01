@@ -1,4 +1,8 @@
 import { ZodError } from "zod";
+import {
+  isDatabaseConnectivityError,
+  markDatabaseUnhealthy,
+} from "../database/database-health.js";
 import { AppError } from "../errors/app-error.js";
 import { logger } from "../utils/logger.js";
 
@@ -29,6 +33,23 @@ export function errorHandler(error, req, res, next) {
     return res.status(error.statusCode).json({
       message: error.message,
       details: error.details ?? null,
+      requestId: req.requestId,
+    });
+  }
+
+  if (isDatabaseConnectivityError(error)) {
+    markDatabaseUnhealthy(error);
+
+    logger.error("Database connectivity error", {
+      requestId: req.requestId,
+      method: req.method,
+      path: req.path,
+      error: error.message,
+    });
+
+    return res.status(503).json({
+      message:
+        "Database is unavailable. Check MongoDB connection and Atlas network access.",
       requestId: req.requestId,
     });
   }

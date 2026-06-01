@@ -1,6 +1,8 @@
 import { ReferralModel } from "./referral.model.js";
 import { ReferralCodeModel } from "./referral-code.model.js";
 
+const LIST_QUERY_MAX_TIME_MS = 8_000;
+
 function normalizeReferral(referral) {
   const value = referral?.toObject ? referral.toObject() : referral;
 
@@ -43,7 +45,10 @@ export const referralsRepository = {
   },
 
   async findForCustomer(customerId) {
-    const referrals = await ReferralModel.find({ referrerId: customerId }).sort({ createdAt: -1 }).lean({ virtuals: true });
+    const referrals = await ReferralModel.find({ referrerId: customerId })
+      .sort({ createdAt: -1 })
+      .maxTimeMS(LIST_QUERY_MAX_TIME_MS)
+      .lean({ virtuals: true });
     return normalizeReferrals(referrals);
   },
 
@@ -114,7 +119,10 @@ export const referralsRepository = {
   },
 
   async findAll() {
-    const referrals = await ReferralModel.find({}).sort({ createdAt: -1 }).lean({ virtuals: true });
+    const referrals = await ReferralModel.find({})
+      .sort({ createdAt: -1 })
+      .maxTimeMS(LIST_QUERY_MAX_TIME_MS)
+      .lean({ virtuals: true });
     return normalizeReferrals(referrals);
   },
 

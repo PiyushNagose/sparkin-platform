@@ -10,6 +10,20 @@ Backend services are now grouped by domain instead of creating one microservice 
 - `fulfillment-service`
 - `notification-service`
 
+## Local Dev
+
+Run all four active backend services together from the `services` folder:
+
+```bash
+npm run dev
+```
+
+The runner frees any existing listeners on ports `4000`, `4001`, `4002`, and
+`4003` before starting. When you stop the runner with `Ctrl+C`, it shuts down
+the child backend processes it started so those ports are released cleanly.
+The orchestrator runs each service with its stable `start` script so one command
+works reliably on Windows.
+
 ## Ownership
 
 ### `identity-service`

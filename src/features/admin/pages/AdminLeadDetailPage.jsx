@@ -696,7 +696,7 @@ export default function AdminLeadDetailPage() {
               Update System Details
             </Typography>
             <Grid container spacing={1.5} alignItems="flex-end">
-              <Grid item xs={12} sm={4}>
+              <Grid size={{ xs: 12, sm: 4 }}>
                 <Typography
                   sx={{
                     mb: 0.5,
@@ -751,7 +751,7 @@ export default function AdminLeadDetailPage() {
                   }}
                 />
               </Grid>
-              <Grid item xs={12} sm={5}>
+              <Grid size={{ xs: 12, sm: 5 }}>
                 <Typography
                   sx={{
                     mb: 0.5,
@@ -794,7 +794,7 @@ export default function AdminLeadDetailPage() {
                   />
                 </Tooltip>
               </Grid>
-              <Grid item xs={12} sm={3}>
+              <Grid size={{ xs: 12, sm: 3 }}>
                 <Button
                   fullWidth
                   startIcon={<SaveOutlinedIcon />}
@@ -822,7 +822,7 @@ export default function AdminLeadDetailPage() {
               </Grid>
             </Grid>
             <Grid container spacing={1.5} sx={{ mt: 1.5 }}>
-              <Grid item xs={12} sm={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <Typography
                   sx={{
                     mb: 0.5,
@@ -852,7 +852,7 @@ export default function AdminLeadDetailPage() {
                   }}
                 />
               </Grid>
-              <Grid item xs={12} sm={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <Typography
                   sx={{
                     mb: 0.5,

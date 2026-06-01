@@ -1,5 +1,12 @@
 import { LeadModel } from "./lead.model.js";
 
+const LIST_QUERY_MAX_TIME_MS = 8_000;
+const LEAD_LIST_PROJECTION = {
+  "attachments.roofPhotos.dataUrl": 0,
+  "attachments.electricityBill.dataUrl": 0,
+  "attachments.photoId.dataUrl": 0,
+};
+
 function normalizeLead(lead) {
   const value = lead?.toObject ? lead.toObject() : lead;
 
@@ -48,14 +55,18 @@ export const leadsRepository = {
 
   async findLeadsForCustomer(customerId) {
     const leads = await LeadModel.find({ customerId })
+      .select(LEAD_LIST_PROJECTION)
       .sort({ createdAt: -1 })
+      .maxTimeMS(LIST_QUERY_MAX_TIME_MS)
       .lean({ virtuals: true });
     return normalizeLeanList(leads);
   },
 
   async findAll() {
     const leads = await LeadModel.find({})
+      .select(LEAD_LIST_PROJECTION)
       .sort({ createdAt: -1 })
+      .maxTimeMS(LIST_QUERY_MAX_TIME_MS)
       .lean({ virtuals: true });
     return normalizeLeanList(leads);
   },
@@ -66,9 +77,12 @@ export const leadsRepository = {
   },
 
   async findLeadsByIds(ids) {
-    const leads = await LeadModel.find({ _id: { $in: ids } }).lean({
-      virtuals: true,
-    });
+    const leads = await LeadModel.find({ _id: { $in: ids } })
+      .select(LEAD_LIST_PROJECTION)
+      .maxTimeMS(LIST_QUERY_MAX_TIME_MS)
+      .lean({
+        virtuals: true,
+      });
     return normalizeLeanList(leads);
   },
 
@@ -79,7 +93,9 @@ export const leadsRepository = {
       status: { $in: ["vendors_assigned", "open_for_quotes", "quote_selected"] },
       assignedVendorIds: vendorId,
     })
+      .select(LEAD_LIST_PROJECTION)
       .sort({ createdAt: -1 })
+      .maxTimeMS(LIST_QUERY_MAX_TIME_MS)
       .lean({ virtuals: true });
 
     return normalizeLeanList(leads);
