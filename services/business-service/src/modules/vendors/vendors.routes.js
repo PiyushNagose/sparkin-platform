@@ -8,6 +8,7 @@ import { updateVendorProfileSchema, updateVendorStatusSchema, uploadVendorDocume
 export const vendorsRouter = Router();
 
 vendorsRouter.get("/public/featured", asyncHandler(vendorsController.listFeatured));
+vendorsRouter.get("/public/approved", asyncHandler(vendorsController.listAllApproved));
 vendorsRouter.get("/public/:vendorId", asyncHandler(vendorsController.getPublicByVendorId));
 
 vendorsRouter.get("/", requireAuth, asyncHandler(vendorsController.list));

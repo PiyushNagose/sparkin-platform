@@ -11,6 +11,11 @@ export const vendorsController = {
     res.status(200).json({ vendors });
   },
 
+  async listAllApproved(req, res) {
+    const vendors = await vendorsService.listAllApprovedVendors();
+    res.status(200).json({ vendors });
+  },
+
   async getMe(req, res) {
     const vendorProfile = await vendorsService.getMyProfile(req.auth);
     res.status(200).json({ vendorProfile });

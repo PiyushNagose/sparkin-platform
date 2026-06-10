@@ -103,6 +103,23 @@ export const vendorsService = {
     }));
   },
 
+  async listAllApprovedVendors() {
+    const profiles = await vendorsRepository.listAllApproved();
+
+    return profiles.map((profile) => ({
+      vendorId: profile.vendorId,
+      verificationStatus: profile.verificationStatus,
+      company: {
+        name: profile.company?.name || profile.account?.fullName || "Verified Partner",
+        city: profile.company?.city || "",
+        state: profile.company?.state || "",
+        experienceYears: profile.company?.experienceYears || 0,
+        projectsCompleted: profile.company?.projectsCompleted || 0,
+      },
+      services: profile.services,
+    }));
+  },
+
   async getMyProfile(user) {
     assertVendor(user);
     return ensureProfile(user);
