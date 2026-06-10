@@ -5,8 +5,8 @@
  *
  * Returns:
  *   stateOptions  — [{ id, key, name, rate, cities }]
- *   getCities(key) — () => string[]  (cities for a state key)
- *   loading       — boolean
+ *   getCities(key) — string[]   (cities for a given state key)
+ *   loading       — boolean     (true while the first fetch is in flight)
  *   error         — string | null
  */
 import { useCallback, useEffect, useState } from "react";
@@ -26,16 +26,13 @@ export function usePlatformStates() {
       .getStates({ ttlMs: 60_000 })
       .then((states) => {
         if (cancelled) return;
-        if (states?.length) {
-          setStateOptions(states);
-        }
+        if (states?.length) setStateOptions(states);
         setError(null);
       })
       .catch((err) => {
         if (cancelled) return;
         console.error("[usePlatformStates] Failed to load states:", err);
         setError("Could not load state list. Using defaults.");
-        // Keep whatever stateOptions already loaded (possibly empty)
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -47,15 +44,16 @@ export function usePlatformStates() {
   }, []);
 
   /**
-   * Get the city list for a given state key.
-   * Uses the live API data first; falls back to static data.
+   * City list for a given state key.
+   * Prefers live API data; falls back to bundled static list.
+   * Returns [] when no cities exist for the state at all.
    */
   const getCities = useCallback(
     (stateKey) => {
       if (!stateKey) return [];
       const match = stateOptions.find((s) => s.key === stateKey);
-      if (match?.cities?.length) return match.cities;
-      // Fallback to bundled static list
+      if (match) return match.cities?.length ? match.cities : [];
+      // Fallback for states not yet in the API response
       return getStaticCities(stateKey);
     },
     [stateOptions],
