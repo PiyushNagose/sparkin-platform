@@ -11,8 +11,12 @@ function mergeWithDefaults(settings) {
     pricing: { ...defaultPlatformSettings.pricing, ...settings.pricing },
     bidding: { ...defaultPlatformSettings.bidding, ...settings.bidding },
     subsidy: { ...defaultPlatformSettings.subsidy, ...settings.subsidy },
-    states: settings.states?.length ? settings.states : defaultPlatformSettings.states,
-    discoms: settings.discoms?.length ? settings.discoms : defaultPlatformSettings.discoms,
+    states: settings.states?.length
+      ? settings.states
+      : defaultPlatformSettings.states,
+    discoms: settings.discoms?.length
+      ? settings.discoms
+      : defaultPlatformSettings.discoms,
   };
 }
 
@@ -26,16 +30,21 @@ async function updateSettings(user, input) {
     throw new AppError(403, "Only admins can update platform settings");
   }
 
-  if (Number(input.pricing.minBidAmount) >= Number(input.pricing.maxBidAmount)) {
-    throw new AppError(400, "Minimum bid amount must be less than maximum bid amount");
+  if (
+    Number(input.pricing.minBidAmount) >= Number(input.pricing.maxBidAmount)
+  ) {
+    throw new AppError(
+      400,
+      "Minimum bid amount must be less than maximum bid amount",
+    );
   }
 
-  const requiredStates = new Set(["andhra_pradesh", "telangana", "karnataka"]);
-  const incomingStates = new Set(input.states.map((state) => state.key));
-  const missing = [...requiredStates].filter((state) => !incomingStates.has(state));
-
-  if (missing.length) {
-    throw new AppError(400, "Platform settings must include Andhra Pradesh, Telangana, and Karnataka rates");
+  // No longer restrict to a single required state — admin decides which states to configure
+  if (!input.states?.length) {
+    throw new AppError(
+      400,
+      "Platform settings must include at least one state rate",
+    );
   }
 
   const settings = await platformSettingsRepository.upsertGlobal({
@@ -49,10 +58,16 @@ async function updateSettings(user, input) {
 function getStateRate(settings, stateKey, propertyType = "residential") {
   const stateRate = settings.states.find((state) => state.key === stateKey);
   const baseRate = Number(stateRate?.rate) || 7;
-  return propertyType === "commercial" ? Number((baseRate * 1.35).toFixed(2)) : baseRate;
+  return propertyType === "commercial"
+    ? Number((baseRate * 1.35).toFixed(2))
+    : baseRate;
 }
 
-function calculateResidentialSubsidy(settings, systemSizeKw, propertyType = "residential") {
+function calculateResidentialSubsidy(
+  settings,
+  systemSizeKw,
+  propertyType = "residential",
+) {
   if (propertyType === "commercial" && settings.subsidy.residentialOnly) {
     return 0;
   }

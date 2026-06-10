@@ -39,7 +39,7 @@ const contactCards = [
   {
     title: "Office",
     body: "Visit our sustainable headquarters in the tech hub.",
-    value: "Hyderabad, Telangana, India",
+    value: "Vijayawada, Andhra Pradesh, India",
     icon: <PlaceOutlinedIcon sx={{ fontSize: "0.95rem" }} />,
     tone: { bg: "#DDF8E8", fg: "#14A75B" },
   },
@@ -403,7 +403,7 @@ export default function ContactPage() {
                       fontWeight: 800,
                     }}
                   >
-                    Visit our Innovation Lab in Hyderabad
+                    Visit our Innovation Lab in Vijayawada
                   </Typography>
                 </Box>
               </Box>

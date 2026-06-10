@@ -96,7 +96,7 @@ const testimonials = [
     quote:
       "The delivery for our home was fast. The team was professional and the forecast accuracy was spot-on throughout.",
     name: "Sanjay Mehta",
-    meta: "Whitefield, Karnataka",
+    meta: "Vijayawada, Andhra Pradesh",
     initials: "SM",
   },
 ];

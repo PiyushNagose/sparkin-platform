@@ -52,7 +52,7 @@ const initialLeadForm = {
   email: "",
   street: "",
   city: "",
-  state: "Telangana",
+  state: "Andhra Pradesh",
   pincode: "",
   systemSizeKw: "",
   propertyType: "independent_house",

@@ -209,7 +209,7 @@ const testimonials = [
     quote:
       '"Sparkin guided me through the subsidy paperwork and helped me compare installers quickly. Now my home is nearly energy independent and my rooftop feels like a smart asset."',
     name: "Neha Singh",
-    city: "Hyderabad, TS",
+    city: "Vijayawada, AP",
     avatar: animeshAvatarPlaceholder,
   },
   {
@@ -698,7 +698,7 @@ function HomePage() {
   const { user } = useAuth();
   const [monthlyBill, setMonthlyBill] = useState(5000);
   const [roofArea, setRoofArea] = useState(800);
-  const [pinCode, setPinCode] = useState("500001");
+  const [pinCode, setPinCode] = useState("520010");
   const [systemType, setSystemType] = useState("residential");
   const [estimateLoading, setEstimateLoading] = useState(false);
   const [estimateError, setEstimateError] = useState("");
@@ -1777,7 +1777,7 @@ function HomePage() {
                   }}
                 >
                   Preview uses live platform tariff settings and pincode
-                  coverage for Andhra Pradesh, Telangana, and Karnataka.
+                  coverage for Andhra Pradesh.
                 </Typography>
               </Grid>
             </Grid>

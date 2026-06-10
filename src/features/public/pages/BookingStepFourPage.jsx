@@ -46,13 +46,7 @@ import {
   isStep2Complete,
   isStep3Complete,
 } from "@/features/public/booking/bookingValidation";
-
-const steps = [
-  { label: "Basic Info", state: "complete" },
-  { label: "Property Info", state: "complete" },
-  { label: "Roof Info", state: "complete" },
-  { label: "Document Info", state: "active" },
-];
+import BookingStepper from "@/features/public/booking/BookingStepper";
 
 const whyUploadItems = [
   {
@@ -83,7 +77,8 @@ const whyUploadItems = [
 const documents = [
   {
     title: "Electricity Bill",
-    meta: "Last 3 months required for usage analysis.",
+    meta: "Upload your latest electricity bill for usage analysis.",
+    hint: "JPG, PNG or PDF · Max 2 MB per file",
     icon: <DescriptionOutlinedIcon sx={{ fontSize: "1rem" }} />,
     tone: "#2E7D4F",
     bg: "#E8F6EC",
@@ -92,6 +87,7 @@ const documents = [
   {
     title: "Govt Photo ID",
     meta: "Aadhaar or PAN for KYC verification.",
+    hint: "JPG, PNG or PDF · Max 2 MB per file",
     icon: <ShieldRoundedIcon sx={{ fontSize: "1rem" }} />,
     tone: "#3566DA",
     bg: "#ECF2FF",
@@ -122,139 +118,6 @@ const trustItems = [
     bg: "#E9EEFF",
   },
 ];
-
-function BookingStepper() {
-  return (
-    <Box sx={{ width: "100%", px: { xs: 1, md: 2 } }}>
-      {/* Track line */}
-      <Box sx={{ position: "relative", mb: 2.5 }}>
-        {/* Background track */}
-        <Box
-          sx={{
-            position: "absolute",
-            left: "12.5%",
-            right: "12.5%",
-            top: 16,
-            height: 3,
-            borderRadius: 999,
-            bgcolor: "#E7ECF3",
-            zIndex: 0,
-          }}
-        />
-        {/* Filled progress — steps 1–3 complete, stop at dot 3 center = 62.5% */}
-        <Box
-          sx={{
-            position: "absolute",
-            left: "12.5%",
-            width: "50%",
-            top: 16,
-            height: 3,
-            borderRadius: 999,
-            background: "linear-gradient(90deg, #0E56C8 0%, #4F89FF 100%)",
-            zIndex: 0,
-          }}
-        />
-
-        {/* Step dots */}
-        <Box
-          sx={{
-            display: "grid",
-            gridTemplateColumns: "repeat(4, 1fr)",
-            position: "relative",
-            zIndex: 1,
-          }}
-        >
-          {steps.map((step, idx) => (
-            <Stack key={step.label} alignItems="center" spacing={0.9}>
-              {/* Circle */}
-              <Box
-                sx={{
-                  width: step.state === "active" ? 34 : 30,
-                  height: step.state === "active" ? 34 : 30,
-                  borderRadius: "50%",
-                  border: step.state === "active" ? "3px solid #0E56C8" : "none",
-                  bgcolor:
-                    step.state === "active"
-                      ? "#FFFFFF"
-                      : "#0E56C8",
-                  boxShadow:
-                    step.state === "active"
-                      ? "0 0 0 5px rgba(14,86,200,0.12), 0 8px 20px rgba(14,86,200,0.18)"
-                      : "0 4px 12px rgba(14,86,200,0.22)",
-                  display: "grid",
-                  placeItems: "center",
-                  transition: "all 0.2s",
-                }}
-              >
-                {step.state === "complete" ? (
-                  <Typography sx={{ color: "#FFFFFF", fontSize: "0.88rem", fontWeight: 900, lineHeight: 1 }}>
-                    ✓
-                  </Typography>
-                ) : (
-                  <Box
-                    sx={{
-                      width: 8,
-                      height: 8,
-                      borderRadius: "50%",
-                      bgcolor: "#0E56C8",
-                    }}
-                  />
-                )}
-              </Box>
-
-              {/* Label */}
-              <Typography
-                sx={{
-                  color: step.state === "active" ? "#0E56C8" : step.state === "complete" ? "#18253A" : "#8F9AAC",
-                  fontSize: "0.72rem",
-                  fontWeight: step.state === "active" ? 800 : 600,
-                  lineHeight: 1.2,
-                  textAlign: "center",
-                }}
-              >
-                {step.label}
-              </Typography>
-
-              {/* Status pill */}
-              <Box
-                sx={{
-                  px: 0.8,
-                  py: 0.22,
-                  borderRadius: 999,
-                  bgcolor:
-                    step.state === "active"
-                      ? "#EEF4FF"
-                      : step.state === "complete"
-                      ? "#E8FAEF"
-                      : "transparent",
-                  minHeight: 16,
-                }}
-              >
-                <Typography
-                  sx={{
-                    color:
-                      step.state === "active"
-                        ? "#0E56C8"
-                        : step.state === "complete"
-                        ? "#239654"
-                        : "transparent",
-                    fontSize: "0.52rem",
-                    fontWeight: 800,
-                    letterSpacing: "0.06em",
-                    textTransform: "uppercase",
-                    lineHeight: 1,
-                  }}
-                >
-                  {step.state === "active" ? "In Progress" : step.state === "complete" ? "Done" : "."}
-                </Typography>
-              </Box>
-            </Stack>
-          ))}
-        </Box>
-      </Box>
-    </Box>
-  );
-}
 
 function SectionLabel({ children }) {
   return (
@@ -403,19 +266,38 @@ function UploadZone({
                 }}
                 onClick={(event) => event.stopPropagation()}
               >
-                <Stack direction="row" spacing={0.8} alignItems="center" sx={{ minWidth: 0 }}>
+                <Stack
+                  direction="row"
+                  spacing={0.8}
+                  alignItems="center"
+                  sx={{ minWidth: 0 }}
+                >
                   {file.dataUrl?.startsWith("data:image") ? (
                     <Box
                       component="img"
                       src={file.dataUrl}
                       alt={file.fileName}
-                      sx={{ width: 34, height: 34, borderRadius: "0.55rem", objectFit: "cover" }}
+                      sx={{
+                        width: 34,
+                        height: 34,
+                        borderRadius: "0.55rem",
+                        objectFit: "cover",
+                      }}
                     />
                   ) : (
-                    <DescriptionOutlinedIcon sx={{ color: "#0E56C8", fontSize: "1rem" }} />
+                    <DescriptionOutlinedIcon
+                      sx={{ color: "#0E56C8", fontSize: "1rem" }}
+                    />
                   )}
                   <Box sx={{ minWidth: 0 }}>
-                    <Typography noWrap sx={{ color: "#263244", fontSize: "0.72rem", fontWeight: 800 }}>
+                    <Typography
+                      noWrap
+                      sx={{
+                        color: "#263244",
+                        fontSize: "0.72rem",
+                        fontWeight: 800,
+                      }}
+                    >
                       {file.fileName}
                     </Typography>
                     <Typography sx={{ color: "#7A8798", fontSize: "0.62rem" }}>
@@ -424,7 +306,11 @@ function UploadZone({
                   </Box>
                 </Stack>
                 {onRemove ? (
-                  <IconButton size="small" onClick={() => onRemove(index)} sx={{ color: "#D74C4C" }}>
+                  <IconButton
+                    size="small"
+                    onClick={() => onRemove(index)}
+                    sx={{ color: "#D74C4C" }}
+                  >
                     <DeleteOutlineRoundedIcon sx={{ fontSize: "0.95rem" }} />
                   </IconButton>
                 ) : null}
@@ -484,14 +370,21 @@ function getLocationSnapshot() {
 }
 
 function waitForVideoReady(video) {
-  if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA && video.videoWidth > 0) {
+  if (
+    video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA &&
+    video.videoWidth > 0
+  ) {
     return Promise.resolve();
   }
 
   return new Promise((resolve, reject) => {
     const timeoutId = window.setTimeout(() => {
       cleanup();
-      reject(new Error("Camera preview is not ready yet. Please wait a moment and try again."));
+      reject(
+        new Error(
+          "Camera preview is not ready yet. Please wait a moment and try again.",
+        ),
+      );
     }, 5000);
 
     function cleanup() {
@@ -550,7 +443,9 @@ export default function BookingStepFourPage() {
     const video = videoRef.current;
     video.srcObject = mediaStreamRef.current;
     video.play().catch(() => {
-      setCameraError("Camera preview could not start. Please stop and open the camera again.");
+      setCameraError(
+        "Camera preview could not start. Please stop and open the camera again.",
+      );
     });
   }, [cameraActive]);
 
@@ -590,7 +485,9 @@ export default function BookingStepFourPage() {
     setUploadError("");
     try {
       const attachments = await Promise.all(
-        selected.slice(0, limit).map((file) => fileToAttachment(file, category)),
+        selected
+          .slice(0, limit)
+          .map((file) => fileToAttachment(file, category)),
       );
       const current = draft.attachments?.[bucket] || [];
       updateAttachments({
@@ -629,7 +526,9 @@ export default function BookingStepFourPage() {
       mediaStreamRef.current = stream;
       setCameraActive(true);
     } catch {
-      setCameraError("Camera permission is blocked or unavailable on this device.");
+      setCameraError(
+        "Camera permission is blocked or unavailable on this device.",
+      );
     }
   }
 
@@ -647,7 +546,9 @@ export default function BookingStepFourPage() {
       await waitForVideoReady(video);
       await new Promise((resolve) => window.requestAnimationFrame(resolve));
     } catch (captureError) {
-      setCameraError(captureError.message || "Camera preview is not ready yet.");
+      setCameraError(
+        captureError.message || "Camera preview is not ready yet.",
+      );
       return;
     }
 
@@ -655,7 +556,9 @@ export default function BookingStepFourPage() {
     canvas.height = video.videoHeight;
     const context = canvas.getContext("2d");
     if (!context || canvas.width === 0 || canvas.height === 0) {
-      setCameraError("Camera preview is not ready yet. Please wait a moment and try again.");
+      setCameraError(
+        "Camera preview is not ready yet. Please wait a moment and try again.",
+      );
       return;
     }
 
@@ -721,13 +624,21 @@ export default function BookingStepFourPage() {
     if (isSubmitting) return; // guard against double-click
     setError("");
 
-    // Validate required documents
+    // Validate required documents with specific messages
     const missingDocs = [];
-    if (!(draft.attachments?.roofPhotos?.length)) missingDocs.push("Roof Image");
-    if (!(draft.attachments?.electricityBill?.length)) missingDocs.push("Electricity Bill");
-    if (!(draft.attachments?.photoId?.length)) missingDocs.push("Govt Photo ID");
+    if (!draft.attachments?.roofPhotos?.length) missingDocs.push("Roof Photo");
+    if (!draft.attachments?.electricityBill?.length)
+      missingDocs.push("Electricity Bill");
+    if (!draft.attachments?.photoId?.length) missingDocs.push("Govt Photo ID");
+
     if (missingDocs.length > 0) {
-      setError(`Please upload the required documents: ${missingDocs.join(" and ")}.`);
+      setError(
+        `Please upload the following required documents before submitting: ${missingDocs.join(", ")}.`,
+      );
+      // Scroll to the required documents section
+      document
+        .getElementById("required-documents")
+        ?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
 
@@ -736,7 +647,9 @@ export default function BookingStepFourPage() {
     try {
       let roofAnalysisForSubmit = draft.roofAnalysis;
       if (!draft.roofAnalysis && draft.attachments?.roofPhotos?.[0]) {
-        roofAnalysisForSubmit = await analyzeRoofAttachment(draft.attachments.roofPhotos[0]);
+        roofAnalysisForSubmit = await analyzeRoofAttachment(
+          draft.attachments.roofPhotos[0],
+        );
       }
       const payload = {
         ...buildLeadPayload(),
@@ -836,45 +749,46 @@ export default function BookingStepFourPage() {
                 ) : null}
 
                 <Box sx={{ width: "100%", mx: "auto" }}>
-                  <BookingStepper />
+                  <BookingStepper activeStep={3} />
                 </Box>
 
-              <Stack
-  spacing={0.6}
-  alignItems="center"
-  sx={{
-    textAlign: "center",
-    width: "100%",
-    pb: 0.5,
-  }}
->
-  <Typography
-    variant="h1"
-    sx={{
-      ...publicTypography.pageTitle,
-      color: "#20242B",
-      lineHeight: 1.1,
-      fontWeight: 800,
-      letterSpacing: "-0.03em",
-    }}
-  >
-    Almost done!
-  </Typography>
+                <Stack
+                  spacing={0.6}
+                  alignItems="center"
+                  sx={{
+                    textAlign: "center",
+                    width: "100%",
+                    pb: 0.5,
+                  }}
+                >
+                  <Typography
+                    variant="h1"
+                    sx={{
+                      ...publicTypography.pageTitle,
+                      color: "#20242B",
+                      lineHeight: 1.1,
+                      fontWeight: 800,
+                      letterSpacing: "-0.03em",
+                    }}
+                  >
+                    Almost done!
+                  </Typography>
 
-  <Typography
-    sx={{
-      color: "#667084",
-      fontSize: "1rem",
-      lineHeight: 1.5,
-      width: "100%",
-      maxWidth: "540px",
-      mx: "auto",
-      textAlign: "center",
-    }}
-  >
-    Upload a few details to help vendors give you accurate quotes
-  </Typography>
-</Stack>
+                  <Typography
+                    sx={{
+                      color: "#667084",
+                      fontSize: "1rem",
+                      lineHeight: 1.5,
+                      width: "100%",
+                      maxWidth: "540px",
+                      mx: "auto",
+                      textAlign: "center",
+                    }}
+                  >
+                    Upload a few details to help vendors give you accurate
+                    quotes
+                  </Typography>
+                </Stack>
 
                 <Box>
                   <SectionLabel>Roof Reference</SectionLabel>
@@ -896,10 +810,12 @@ export default function BookingStepFourPage() {
                       title="Upload roof photos (required)"
                       description="Provide at least one roof image so vendors can prepare accurate proposals"
                       buttonLabel="Browse Files"
-                      helper="JPG, PNG, PDF up to 2 MB"
+                      helper="JPG, PNG or PDF · Max 2 MB per file"
                       files={draft.attachments?.roofPhotos || []}
                       onClick={() => roofInputRef.current?.click()}
-                      onRemove={(index) => removeAttachment("roofPhotos", index)}
+                      onRemove={(index) =>
+                        removeAttachment("roofPhotos", index)
+                      }
                     />
 
                     <Box
@@ -939,7 +855,11 @@ export default function BookingStepFourPage() {
                               }}
                             />
                           ) : (
-                            <Stack spacing={1} alignItems="center" textAlign="center">
+                            <Stack
+                              spacing={1}
+                              alignItems="center"
+                              textAlign="center"
+                            >
                               <Box
                                 sx={{
                                   width: 42,
@@ -951,12 +871,22 @@ export default function BookingStepFourPage() {
                                   placeItems: "center",
                                 }}
                               >
-                                <CameraAltOutlinedIcon sx={{ fontSize: "0.95rem" }} />
+                                <CameraAltOutlinedIcon
+                                  sx={{ fontSize: "0.95rem" }}
+                                />
                               </Box>
-                              <Typography sx={{ color: "#202938", fontSize: "0.92rem", fontWeight: 700 }}>
+                              <Typography
+                                sx={{
+                                  color: "#202938",
+                                  fontSize: "0.92rem",
+                                  fontWeight: 700,
+                                }}
+                              >
                                 Capture Live Photo
                               </Typography>
-                              <Typography sx={{ color: "#6D7889", fontSize: "0.78rem" }}>
+                              <Typography
+                                sx={{ color: "#6D7889", fontSize: "0.78rem" }}
+                              >
                                 Uses camera and location when allowed
                               </Typography>
                             </Stack>
@@ -964,11 +894,22 @@ export default function BookingStepFourPage() {
                         </Box>
                         <canvas ref={canvasRef} hidden />
                         {cameraError ? (
-                          <Alert severity="warning" sx={{ width: "100%", borderRadius: "0.85rem", fontSize: "0.78rem" }}>
+                          <Alert
+                            severity="warning"
+                            sx={{
+                              width: "100%",
+                              borderRadius: "0.85rem",
+                              fontSize: "0.78rem",
+                            }}
+                          >
                             {cameraError}
                           </Alert>
                         ) : null}
-                        <Stack direction={{ xs: "column", sm: "row" }} spacing={1} sx={{ width: "100%" }}>
+                        <Stack
+                          direction={{ xs: "column", sm: "row" }}
+                          spacing={1}
+                          sx={{ width: "100%" }}
+                        >
                           <Button
                             fullWidth
                             variant={cameraActive ? "outlined" : "contained"}
@@ -1002,7 +943,14 @@ export default function BookingStepFourPage() {
                     </Box>
                   </Stack>
                   {uploadError ? (
-                    <Alert severity="error" sx={{ mt: 1.4, borderRadius: "0.85rem", fontSize: "0.78rem" }}>
+                    <Alert
+                      severity="error"
+                      sx={{
+                        mt: 1.4,
+                        borderRadius: "0.85rem",
+                        fontSize: "0.78rem",
+                      }}
+                    >
                       {uploadError}
                     </Alert>
                   ) : null}
@@ -1090,6 +1038,7 @@ export default function BookingStepFourPage() {
                 </Box>
 
                 <Box
+                  id="required-documents"
                   sx={{
                     p: { xs: 1.8, md: 2 },
                     borderRadius: "1.1rem",
@@ -1104,7 +1053,12 @@ export default function BookingStepFourPage() {
                     accept="image/*,.pdf"
                     multiple
                     onChange={(event) =>
-                      handleFiles(event, "electricityBill", "electricity_bill", 3)
+                      handleFiles(
+                        event,
+                        "electricityBill",
+                        "electricity_bill",
+                        3,
+                      )
                     }
                   />
                   <input
@@ -1141,103 +1095,159 @@ export default function BookingStepFourPage() {
                             : "photoId";
                         const files = draft.attachments?.[bucket] || [];
                         const inputRef =
-                          bucket === "electricityBill" ? billInputRef : idInputRef;
+                          bucket === "electricityBill"
+                            ? billInputRef
+                            : idInputRef;
                         return (
-                        <Grid key={item.title} size={{ xs: 12, md: 6 }}>
-                          <Box
-                            role="button"
-                            tabIndex={0}
-                            onClick={() => inputRef.current?.click()}
-                            sx={{
-                              minHeight: 120,
-                              borderRadius: "1rem",
-                              bgcolor: "white",
-                              border: files.length === 0 && item.required
-                                ? "1.5px solid #FFCDD2"
-                                : "1px solid #E9EDF4",
-                              px: 1.5,
-                              py: 1.3,
-                              cursor: "pointer",
-                              transition: "border-color 0.2s",
-                              "&:hover": { borderColor: item.tone },
-                            }}
-                          >
-                            <Stack spacing={1}>
-                              <Stack
-                                direction="row"
-                                justifyContent="space-between"
-                                alignItems="center"
-                              >
-                                <Box
-                                  sx={{
-                                    width: 30,
-                                    height: 30,
-                                    borderRadius: "0.55rem",
-                                    bgcolor: item.bg,
-                                    color: item.tone,
-                                    display: "grid",
-                                    placeItems: "center",
-                                  }}
+                          <Grid key={item.title} size={{ xs: 12, md: 6 }}>
+                            <Box
+                              role="button"
+                              tabIndex={0}
+                              onClick={() => inputRef.current?.click()}
+                              sx={{
+                                minHeight: 140,
+                                borderRadius: "1rem",
+                                bgcolor: "white",
+                                border:
+                                  files.length === 0 && item.required
+                                    ? "1.5px solid #FFCDD2"
+                                    : "1px solid #E9EDF4",
+                                px: 1.5,
+                                py: 1.3,
+                                cursor: "pointer",
+                                transition: "border-color 0.2s",
+                                "&:hover": { borderColor: item.tone },
+                              }}
+                            >
+                              <Stack spacing={1}>
+                                <Stack
+                                  direction="row"
+                                  justifyContent="space-between"
+                                  alignItems="center"
                                 >
-                                  {item.icon}
-                                </Box>
-                                {files.length > 0 ? (
-                                  <Box sx={{ width: 20, height: 20, borderRadius: "50%", bgcolor: "#239654", display: "grid", placeItems: "center" }}>
-                                    <Typography sx={{ color: "white", fontSize: "0.6rem", fontWeight: 800 }}>✓</Typography>
+                                  <Box
+                                    sx={{
+                                      width: 30,
+                                      height: 30,
+                                      borderRadius: "0.55rem",
+                                      bgcolor: item.bg,
+                                      color: item.tone,
+                                      display: "grid",
+                                      placeItems: "center",
+                                    }}
+                                  >
+                                    {item.icon}
                                   </Box>
-                                ) : item.required ? (
-                                  <Box sx={{ px: 0.8, py: 0.2, borderRadius: "999px", bgcolor: "#FFF0F0", border: "1px solid #FFCDD2" }}>
-                                    <Typography sx={{ color: "#D32F2F", fontSize: "0.52rem", fontWeight: 800, letterSpacing: 0.4, textTransform: "uppercase" }}>Required</Typography>
-                                  </Box>
-                                ) : (
-                                  <AddCircleOutlineRoundedIcon sx={{ fontSize: "1rem", color: "#C3CAD8" }} />
-                                )}
-                              </Stack>
-
-                              <Typography
-                                sx={{
-                                  color: "#202938",
-                                  fontSize: "0.82rem",
-                                  fontWeight: 700,
-                                }}
-                              >
-                                {item.title}
-                              </Typography>
-
-                              <Typography
-                                sx={{
-                                  color: "#687588",
-                                  fontSize: "0.72rem",
-                                  lineHeight: 1.5,
-                                  maxWidth: 180,
-                                }}
-                              >
-                                {item.meta}
-                              </Typography>
-                              {files.length ? (
-                                <Stack spacing={0.6}>
-                                  {files.map((file, index) => (
-                                    <Chip
-                                      key={`${file.fileName}-${index}`}
-                                      label={file.fileName}
-                                      onDelete={(event) => {
-                                        event.stopPropagation();
-                                        removeAttachment(bucket, index);
-                                      }}
+                                  {files.length > 0 ? (
+                                    <Box
                                       sx={{
-                                        justifyContent: "space-between",
-                                        maxWidth: "100%",
-                                        bgcolor: "#F4F7FB",
-                                        fontSize: "0.68rem",
-                                        fontWeight: 700,
+                                        width: 20,
+                                        height: 20,
+                                        borderRadius: "50%",
+                                        bgcolor: "#239654",
+                                        display: "grid",
+                                        placeItems: "center",
+                                      }}
+                                    >
+                                      <Typography
+                                        sx={{
+                                          color: "white",
+                                          fontSize: "0.6rem",
+                                          fontWeight: 800,
+                                        }}
+                                      >
+                                        ✓
+                                      </Typography>
+                                    </Box>
+                                  ) : item.required ? (
+                                    <Box
+                                      sx={{
+                                        px: 0.8,
+                                        py: 0.2,
+                                        borderRadius: "999px",
+                                        bgcolor: "#FFF0F0",
+                                        border: "1px solid #FFCDD2",
+                                      }}
+                                    >
+                                      <Typography
+                                        sx={{
+                                          color: "#D32F2F",
+                                          fontSize: "0.52rem",
+                                          fontWeight: 800,
+                                          letterSpacing: 0.4,
+                                          textTransform: "uppercase",
+                                        }}
+                                      >
+                                        Required
+                                      </Typography>
+                                    </Box>
+                                  ) : (
+                                    <AddCircleOutlineRoundedIcon
+                                      sx={{
+                                        fontSize: "1rem",
+                                        color: "#C3CAD8",
                                       }}
                                     />
-                                  ))}
+                                  )}
                                 </Stack>
-                              ) : null}
-                            </Stack>
-                          </Box>
-                        </Grid>
+
+                                <Typography
+                                  sx={{
+                                    color: "#202938",
+                                    fontSize: "0.82rem",
+                                    fontWeight: 700,
+                                  }}
+                                >
+                                  {item.title}
+                                </Typography>
+
+                                <Typography
+                                  sx={{
+                                    color: "#687588",
+                                    fontSize: "0.72rem",
+                                    lineHeight: 1.5,
+                                    maxWidth: 180,
+                                  }}
+                                >
+                                  {item.meta}
+                                </Typography>
+
+                                {/* Size hint */}
+                                <Typography
+                                  sx={{
+                                    color: "#9AA5B5",
+                                    fontSize: "0.62rem",
+                                    fontWeight: 700,
+                                    letterSpacing: 0.3,
+                                  }}
+                                >
+                                  {item.hint}
+                                </Typography>
+
+                                {files.length ? (
+                                  <Stack spacing={0.6}>
+                                    {files.map((file, index) => (
+                                      <Chip
+                                        key={`${file.fileName}-${index}`}
+                                        label={`${file.fileName} · ${(file.size / 1024).toFixed(0)} KB`}
+                                        onDelete={(event) => {
+                                          event.stopPropagation();
+                                          removeAttachment(bucket, index);
+                                        }}
+                                        sx={{
+                                          justifyContent: "space-between",
+                                          maxWidth: "100%",
+                                          bgcolor: "#F4F7FB",
+                                          fontSize: "0.66rem",
+                                          fontWeight: 700,
+                                        }}
+                                      />
+                                    ))}
+                                  </Stack>
+                                ) : null}
+                              </Stack>
+                            </Box>
+                          </Grid>
                         );
                       })}
                     </Grid>
@@ -1278,8 +1288,12 @@ export default function BookingStepFourPage() {
                               px: 0.7,
                               py: 0.2,
                               borderRadius: 999,
-                              bgcolor: isAnalyzingRoof ? "#EAF1FF" : statusTone.bg,
-                              color: isAnalyzingRoof ? "#0E56C8" : statusTone.color,
+                              bgcolor: isAnalyzingRoof
+                                ? "#EAF1FF"
+                                : statusTone.bg,
+                              color: isAnalyzingRoof
+                                ? "#0E56C8"
+                                : statusTone.color,
                               fontSize: "0.46rem",
                               fontWeight: 800,
                               letterSpacing: 0.38,
@@ -1320,9 +1334,16 @@ export default function BookingStepFourPage() {
                             width: "fit-content",
                           }}
                         >
-                          <Stack direction="row" spacing={0.7} alignItems="center">
+                          <Stack
+                            direction="row"
+                            spacing={0.7}
+                            alignItems="center"
+                          >
                             {isAnalyzingRoof ? (
-                              <CircularProgress size={12} sx={{ color: "#0E56C8" }} />
+                              <CircularProgress
+                                size={12}
+                                sx={{ color: "#0E56C8" }}
+                              />
                             ) : null}
                             <Typography
                               sx={{
@@ -1331,20 +1352,28 @@ export default function BookingStepFourPage() {
                                 fontWeight: 700,
                               }}
                             >
-                              {isAnalyzingRoof ? "Analyzing image" : accuracyLabel}
+                              {isAnalyzingRoof
+                                ? "Analyzing image"
+                                : accuracyLabel}
                             </Typography>
                           </Stack>
                         </Box>
                         {roofAnalysis?.findings?.length ? (
                           <Stack spacing={0.45}>
-                            {roofAnalysis.findings.slice(0, 2).map((finding) => (
-                              <Typography
-                                key={finding}
-                                sx={{ color: "#6A778A", fontSize: "0.56rem", lineHeight: 1.4 }}
-                              >
-                                {finding}
-                              </Typography>
-                            ))}
+                            {roofAnalysis.findings
+                              .slice(0, 2)
+                              .map((finding) => (
+                                <Typography
+                                  key={finding}
+                                  sx={{
+                                    color: "#6A778A",
+                                    fontSize: "0.56rem",
+                                    lineHeight: 1.4,
+                                  }}
+                                >
+                                  {finding}
+                                </Typography>
+                              ))}
                           </Stack>
                         ) : null}
                       </Stack>
@@ -1453,9 +1482,14 @@ export default function BookingStepFourPage() {
                       onClick={handleSubmit}
                       disabled={isSubmitting}
                       endIcon={
-                        isSubmitting
-                          ? <CircularProgress size={16} sx={{ color: "#FFFFFF" }} />
-                          : <ArrowForwardRoundedIcon />
+                        isSubmitting ? (
+                          <CircularProgress
+                            size={16}
+                            sx={{ color: "#FFFFFF" }}
+                          />
+                        ) : (
+                          <ArrowForwardRoundedIcon />
+                        )
                       }
                       variant="contained"
                       sx={{
@@ -1471,7 +1505,8 @@ export default function BookingStepFourPage() {
                           "linear-gradient(180deg, #0E56C8 0%, #0D49B0 100%)",
                         boxShadow: "0 12px 24px rgba(14,86,200,0.24)",
                         "&.Mui-disabled": {
-                          background: "linear-gradient(180deg, #0E56C8 0%, #0D49B0 100%)",
+                          background:
+                            "linear-gradient(180deg, #0E56C8 0%, #0D49B0 100%)",
                           opacity: 0.75,
                           color: "#FFFFFF",
                         },

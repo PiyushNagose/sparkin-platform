@@ -4,7 +4,9 @@ import { ScreenPlaceholder } from "@/shared/ui/placeholder/ScreenPlaceholder";
 import { LazyRoute } from "@/shared/ui/placeholder/LazyRoute";
 import { RequireAuth } from "@/features/auth/RequireAuth";
 
-const CalculatorPage = lazy(() => import("@/features/public/pages/CalculatorPage"));
+const CalculatorPage = lazy(
+  () => import("@/features/public/pages/CalculatorPage"),
+);
 const CalculatorProcessingPage = lazy(
   () => import("@/features/public/pages/CalculatorProcessingPage"),
 );

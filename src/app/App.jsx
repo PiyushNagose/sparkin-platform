@@ -2,6 +2,7 @@ import { RouterProvider } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import { appRouter } from "@/app/router";
 import { AppCrashBoundary } from "@/app/errors/AppCrashBoundary";
+import { NavigationProgress } from "@/shared/ui/progress/NavigationProgress";
 
 export function App() {
   return (
@@ -11,4 +12,3 @@ export function App() {
     </AppCrashBoundary>
   );
 }
-

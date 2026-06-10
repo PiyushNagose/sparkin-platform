@@ -61,6 +61,16 @@ export function createRouter() {
 
   // Public platform settings read (no auth required)
   router.get("/api/v1/platform-settings", standardRateLimit, businessProxy);
+  router.get(
+    "/api/v1/platform-settings/states",
+    standardRateLimit,
+    businessProxy,
+  );
+  router.get(
+    "/api/v1/platform-settings/states/:stateKey/cities",
+    standardRateLimit,
+    businessProxy,
+  );
 
   // Public offers shown on the home page (no auth required)
   router.get("/api/v1/offers/public", standardRateLimit, businessProxy);

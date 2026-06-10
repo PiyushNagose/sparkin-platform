@@ -59,16 +59,50 @@ const DEFAULT_SETTINGS = {
     residentialOnly: true,
   },
   states: [
-    { id: "ap", key: "andhra_pradesh", name: "Andhra Pradesh", rate: "7.50" },
-    { id: "ts", key: "telangana", name: "Telangana", rate: "6.20" },
-    { id: "ka", key: "karnataka", name: "Karnataka", rate: "8.10" },
+    {
+      id: "ap",
+      key: "andhra_pradesh",
+      name: "Andhra Pradesh",
+      rate: "7.50",
+      cities: [
+        "Visakhapatnam",
+        "Vijayawada",
+        "Guntur",
+        "Nellore",
+        "Kurnool",
+        "Rajamahendravaram",
+        "Kakinada",
+        "Tirupati",
+        "Kadapa",
+        "Eluru",
+        "Ongole",
+        "Nandyal",
+        "Vizianagaram",
+        "Anantapur",
+        "Proddatur",
+        "Srikakulam",
+        "Adoni",
+        "Tenali",
+        "Chittoor",
+        "Hindupur",
+      ],
+    },
   ],
   discoms: [
-    { id: "apspdcl", stateKey: "andhra_pradesh", name: "Southern Power Distribution Company of AP", code: "APSPDCL", status: "active" },
-    { id: "apepdcl", stateKey: "andhra_pradesh", name: "Eastern Power Distribution Company of AP", code: "APEPDCL", status: "active" },
-    { id: "tsspdcl", stateKey: "telangana", name: "Southern Power Distribution Company of Telangana", code: "TSSPDCL", status: "active" },
-    { id: "tsnpdcl", stateKey: "telangana", name: "Northern Power Distribution Company of Telangana", code: "TSNPDCL", status: "active" },
-    { id: "bescom", stateKey: "karnataka", name: "Bangalore Electricity Supply Company", code: "BESCOM", status: "active" },
+    {
+      id: "apspdcl",
+      stateKey: "andhra_pradesh",
+      name: "Southern Power Distribution Company of AP",
+      code: "APSPDCL",
+      status: "active",
+    },
+    {
+      id: "apepdcl",
+      stateKey: "andhra_pradesh",
+      name: "Eastern Power Distribution Company of AP",
+      code: "APEPDCL",
+      status: "active",
+    },
   ],
 };
 
@@ -82,8 +116,14 @@ function loadSettings() {
     return {
       ...structuredClone(DEFAULT_SETTINGS),
       ...parsed,
-      pricing: { ...structuredClone(DEFAULT_SETTINGS).pricing, ...parsed.pricing },
-      bidding: { ...structuredClone(DEFAULT_SETTINGS).bidding, ...parsed.bidding },
+      pricing: {
+        ...structuredClone(DEFAULT_SETTINGS).pricing,
+        ...parsed.pricing,
+      },
+      bidding: {
+        ...structuredClone(DEFAULT_SETTINGS).bidding,
+        ...parsed.bidding,
+      },
       subsidy: {
         ...structuredClone(DEFAULT_SETTINGS).subsidy,
         ...parsed.subsidy,
@@ -92,6 +132,13 @@ function loadSettings() {
           parsed.subsidy?.maxAmount ??
           structuredClone(DEFAULT_SETTINGS).subsidy.above3Kw,
       },
+      // Restore states and discoms from localStorage if present
+      states: parsed.states?.length
+        ? parsed.states.map((s) => ({ cities: [], ...s }))
+        : structuredClone(DEFAULT_SETTINGS.states),
+      discoms: parsed.discoms?.length
+        ? parsed.discoms
+        : structuredClone(DEFAULT_SETTINGS.discoms),
     };
   } catch {
     return structuredClone(DEFAULT_SETTINGS);
@@ -102,59 +149,78 @@ function saveSettings(settings) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
 }
 
-function normalizeStateKey(name = "", fallback = "") {
-  const normalized = name.trim().toLowerCase();
-  if (fallback) return fallback;
-  if (normalized.includes("andhra")) return "andhra_pradesh";
-  if (normalized.includes("telangana")) return "telangana";
-  if (normalized.includes("karnataka")) return "karnataka";
-  return "";
+function toStateKey(name = "") {
+  // Convert a display name to a key: "Andhra Pradesh" → "andhra_pradesh"
+  return name.trim().toLowerCase().replaceAll(/\s+/g, "_");
 }
 
 function normalizeSettingsForUi(settings) {
+  // Preserve all states as-is — just ensure numeric fields are strings for inputs
+  const states = (
+    settings.states?.length ? settings.states : DEFAULT_SETTINGS.states
+  ).map((state) => ({
+    ...state,
+    // Generate key from name if key is missing
+    key: state.key || toStateKey(state.name),
+    id: state.id || toStateKey(state.name),
+    rate: String(state.rate),
+    cities: Array.isArray(state.cities) ? state.cities : [],
+  }));
+
   return {
     ...settings,
     pricing: Object.fromEntries(
-      Object.entries(settings.pricing).map(([key, value]) => [key, String(value)]),
+      Object.entries(settings.pricing).map(([key, value]) => [
+        key,
+        String(value),
+      ]),
     ),
     bidding: Object.fromEntries(
-      Object.entries(settings.bidding).map(([key, value]) => [key, String(value)]),
+      Object.entries(settings.bidding).map(([key, value]) => [
+        key,
+        String(value),
+      ]),
     ),
     subsidy: {
       ...settings.subsidy,
       for1Kw: String(settings.subsidy.for1Kw ?? 30000),
       for2Kw: String(settings.subsidy.for2Kw ?? 60000),
-      above3Kw: String(settings.subsidy.above3Kw ?? settings.subsidy.maxAmount ?? 78000),
+      above3Kw: String(
+        settings.subsidy.above3Kw ?? settings.subsidy.maxAmount ?? 78000,
+      ),
       residentialOnly: settings.subsidy.residentialOnly !== false,
     },
-    states: settings.states.map((state) => ({
-      ...state,
-      key: normalizeStateKey(state.name, state.key),
-      rate: String(state.rate),
-    })),
+    states,
     discoms: (settings.discoms || DEFAULT_SETTINGS.discoms).map((discom) => ({
       ...discom,
-      stateKey: normalizeStateKey("", discom.stateKey),
       status: discom.status === "disabled" ? "disabled" : "active",
     })),
   };
 }
 
 function normalizeSettingsForApi(settings) {
+  // Build a key→state map so DISCOMs can reference the correct key
+  const stateKeyMap = Object.fromEntries(
+    settings.states.map((s) => [s.id, s.key || toStateKey(s.name)]),
+  );
+
   return {
     ...settings,
     states: settings.states
+      .filter((state) => state.name?.trim())
       .map((state) => ({
         ...state,
-        key: normalizeStateKey(state.name, state.key),
-      }))
-      .filter((state) => state.key),
+        key: state.key || toStateKey(state.name),
+        cities: Array.isArray(state.cities) ? state.cities : [],
+      })),
     discoms: (settings.discoms || [])
       .map((discom) => ({
         ...discom,
-        code: String(discom.code || "").trim().toUpperCase(),
+        code: String(discom.code || "")
+          .trim()
+          .toUpperCase(),
         name: String(discom.name || "").trim(),
-        stateKey: normalizeStateKey("", discom.stateKey),
+        stateKey: stateKeyMap[discom.stateKey] || discom.stateKey,
         status: discom.status === "disabled" ? "disabled" : "active",
       }))
       .filter((discom) => discom.stateKey && discom.name && discom.code),
@@ -387,7 +453,20 @@ export default function AdminSettingsPage() {
   const addState = useCallback(() => {
     setSettings((s) => ({
       ...s,
-      states: [...s.states, { id: uid(), name: "", rate: "" }],
+      states: [...s.states, { id: uid(), name: "", rate: "", cities: [] }],
+    }));
+    setIsDirty(true);
+  }, []);
+
+  const updateStateCities = useCallback((id, rawValue) => {
+    // Parse comma-separated string into a trimmed array of non-empty city names
+    const cities = rawValue
+      .split(",")
+      .map((c) => c.trim())
+      .filter(Boolean);
+    setSettings((s) => ({
+      ...s,
+      states: s.states.map((st) => (st.id === id ? { ...st, cities } : st)),
     }));
     setIsDirty(true);
   }, []);
@@ -412,7 +491,7 @@ export default function AdminSettingsPage() {
         ...(s.discoms || []),
         {
           id: uid(),
-          stateKey: s.states[0]?.key || "telangana",
+          stateKey: s.states[0]?.key || "andhra_pradesh",
           name: "",
           code: "",
           status: "active",
@@ -502,7 +581,7 @@ export default function AdminSettingsPage() {
         errors.push(`State row ${i + 1}: valid rate required`);
     });
     (settings.discoms || []).forEach((discom, i) => {
-      if (!normalizeStateKey("", discom.stateKey))
+      if (!String(discom.stateKey || "").trim())
         errors.push(`DISCOM row ${i + 1}: state required`);
       if (!String(discom.name || "").trim())
         errors.push(`DISCOM row ${i + 1}: company name required`);
@@ -910,111 +989,128 @@ export default function AdminSettingsPage() {
       {/* State Electricity Rates */}
       <SectionRow
         icon={LocationOnOutlinedIcon}
-        title="State Electricity Rates"
-        description="Regional unit rates used to calculate projected savings and ROI for customers in different states."
+        title="State Electricity Rates & Cities"
+        description="Add states with their electricity tariff rates and city lists. Customers will see these states and their cities in the calculator and booking dropdowns."
         accent="#F47C22"
       >
-        <Box>
-          <Box
-            sx={{
-              display: "grid",
-              gridTemplateColumns: "1fr 160px 100px",
-              gap: 1.5,
-              mb: 1.2,
-              px: 0.5,
-            }}
-          >
-            {["State / UT", "Rate Per Unit (â‚¹)", "Actions"].map((h) => (
-              <Typography key={h} sx={fieldLabelSx}>
-                {h}
-              </Typography>
-            ))}
-          </Box>
-
-          <Stack spacing={1.1}>
-            {settings.states.map((row) => (
-              <Box
-                key={row.id}
-                sx={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 160px 100px",
-                  gap: 1.5,
-                  alignItems: "center",
-                  p: 1,
-                  borderRadius: "0.85rem",
-                  bgcolor: stateErrors[row.id] ? "#FFF8F0" : "transparent",
-                  border: stateErrors[row.id]
-                    ? "1px solid #F5C97A"
-                    : "1px solid transparent",
-                  transition: "all 0.15s",
-                }}
+        <Stack spacing={2.5}>
+          {settings.states.map((row) => (
+            <Box
+              key={row.id}
+              sx={{
+                p: { xs: 1.8, md: 2.2 },
+                borderRadius: "1rem",
+                border: stateErrors[row.id]
+                  ? "1.5px solid #F5C97A"
+                  : "1.5px solid #EEF2F7",
+                bgcolor: stateErrors[row.id] ? "#FFF8F0" : "#FAFBFD",
+                transition: "all 0.15s",
+              }}
+            >
+              {/* Row header */}
+              <Stack
+                direction="row"
+                justifyContent="space-between"
+                alignItems="center"
+                sx={{ mb: 1.8 }}
               >
-                <TextField
-                  size="small"
-                  value={row.name}
-                  onChange={(e) => updateStateName(row.id, e.target.value)}
-                  placeholder="State name"
-                  sx={inputSx}
-                />
-                <TextField
-                  size="small"
-                  value={row.rate}
-                  onChange={(e) => updateStateRate(row.id, e.target.value)}
-                  placeholder="0.00"
-                  inputProps={{ inputMode: "decimal" }}
-                  error={Boolean(stateErrors[row.id])}
-                  sx={inputSx}
-                />
-                <Stack direction="row" spacing={0.5} alignItems="center">
-                  <Button
+                <Typography
+                  sx={{
+                    fontSize: "0.78rem",
+                    fontWeight: 800,
+                    color: "#505C70",
+                    letterSpacing: "0.05em",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  {row.name?.trim() || "New State"}
+                </Typography>
+                <Tooltip title="Remove state" placement="top">
+                  <IconButton
                     size="small"
-                    onClick={() => {
-                      if (!row.name.trim() || !isPositiveNumber(row.rate))
-                        return;
-                      setToast({
-                        open: true,
-                        message: `${row.name} rate updated.`,
-                        severity: "success",
-                      });
-                    }}
+                    onClick={() => removeState(row.id)}
                     sx={{
-                      px: 1,
-                      color: "#0E56C8",
-                      fontSize: "0.8rem",
-                      fontWeight: 800,
-                      textTransform: "none",
-                      minWidth: 0,
+                      color: "#D74C4C",
                       borderRadius: "0.65rem",
-                      "&:hover": { bgcolor: "#EEF4FF" },
+                      "&:hover": { bgcolor: "#FFF0F0" },
                     }}
                   >
-                    Update
-                  </Button>
-                  <Tooltip title="Remove state" placement="top">
-                    <IconButton
-                      size="small"
-                      onClick={() => removeState(row.id)}
-                      sx={{
-                        color: "#D74C4C",
-                        borderRadius: "0.65rem",
-                        "&:hover": { bgcolor: "#FFF0F0" },
-                      }}
-                    >
-                      <DeleteOutlineRoundedIcon sx={{ fontSize: "0.95rem" }} />
-                    </IconButton>
-                  </Tooltip>
-                </Stack>
+                    <DeleteOutlineRoundedIcon sx={{ fontSize: "0.95rem" }} />
+                  </IconButton>
+                </Tooltip>
+              </Stack>
+
+              {/* Name + Rate */}
+              <Box
+                sx={{
+                  display: "grid",
+                  gridTemplateColumns: { xs: "1fr", sm: "1fr 160px" },
+                  gap: 1.5,
+                  mb: 1.5,
+                }}
+              >
+                <Box>
+                  <FieldLabel tooltip="Display name shown to customers in dropdowns (e.g. Andhra Pradesh)">
+                    State Name
+                  </FieldLabel>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    value={row.name}
+                    onChange={(e) => updateStateName(row.id, e.target.value)}
+                    placeholder="e.g. Andhra Pradesh"
+                    sx={inputSx}
+                  />
+                </Box>
+                <Box>
+                  <FieldLabel tooltip="Electricity tariff rate per unit (₹/kWh) used in savings calculations">
+                    Rate Per Unit (₹)
+                  </FieldLabel>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    value={row.rate}
+                    onChange={(e) => updateStateRate(row.id, e.target.value)}
+                    placeholder="7.50"
+                    inputProps={{ inputMode: "decimal" }}
+                    error={Boolean(stateErrors[row.id])}
+                    sx={inputSx}
+                  />
+                  <ValidationHint value={row.rate} label="Rate" />
+                </Box>
               </Box>
-            ))}
-          </Stack>
+
+              {/* Cities */}
+              <Box>
+                <FieldLabel tooltip="Comma-separated list of cities in this state. Customers will see these in the city dropdown.">
+                  Cities (comma-separated)
+                </FieldLabel>
+                <TextField
+                  fullWidth
+                  size="small"
+                  multiline
+                  minRows={2}
+                  value={(row.cities || []).join(", ")}
+                  onChange={(e) => updateStateCities(row.id, e.target.value)}
+                  placeholder="Visakhapatnam, Vijayawada, Guntur, Tirupati, Nellore"
+                  helperText={`${(row.cities || []).length} cities configured`}
+                  sx={{
+                    ...inputSx,
+                    "& .MuiOutlinedInput-root": {
+                      ...inputSx["& .MuiOutlinedInput-root"],
+                      alignItems: "flex-start",
+                    },
+                  }}
+                  FormHelperTextProps={{
+                    sx: { fontSize: "0.68rem", mx: 0.5, color: "#8B97A8" },
+                  }}
+                />
+              </Box>
+            </Box>
+          ))}
 
           {hasStateErrors ? (
-            <Stack
-              direction="row"
-              spacing={0.5}
-              alignItems="center"
-              sx={{ mt: 1 }}
-            >
+            <Stack direction="row" spacing={0.5} alignItems="center">
               <WarningAmberRoundedIcon
                 sx={{ color: "#E07B00", fontSize: "0.82rem" }}
               />
@@ -1030,12 +1126,12 @@ export default function AdminSettingsPage() {
             startIcon={<AddRoundedIcon />}
             onClick={addState}
             sx={{
-              mt: 1.8,
               color: "#0E56C8",
               fontSize: "0.82rem",
               fontWeight: 800,
               textTransform: "none",
               px: 0,
+              alignSelf: "flex-start",
               "&:hover": {
                 bgcolor: "transparent",
                 textDecoration: "underline",
@@ -1044,7 +1140,7 @@ export default function AdminSettingsPage() {
           >
             + Add New State
           </Button>
-        </Box>
+        </Stack>
       </SectionRow>
 
       <Divider
@@ -1072,7 +1168,13 @@ export default function AdminSettingsPage() {
               borderBottom: "1px solid #EEF2F7",
             }}
           >
-            {["State", "Distribution Company Name", "Code", "Status", "Actions"].map((h) => (
+            {[
+              "State",
+              "Distribution Company Name",
+              "Code",
+              "Status",
+              "Actions",
+            ].map((h) => (
               <Typography key={h} sx={fieldLabelSx}>
                 {h}
               </Typography>
@@ -1099,7 +1201,9 @@ export default function AdminSettingsPage() {
                   select
                   size="small"
                   value={discom.stateKey}
-                  onChange={(e) => updateDiscom(discom.id, "stateKey", e.target.value)}
+                  onChange={(e) =>
+                    updateDiscom(discom.id, "stateKey", e.target.value)
+                  }
                   sx={inputSx}
                 >
                   {settings.states.map((state) => (
@@ -1111,14 +1215,18 @@ export default function AdminSettingsPage() {
                 <TextField
                   size="small"
                   value={discom.name}
-                  onChange={(e) => updateDiscom(discom.id, "name", e.target.value)}
+                  onChange={(e) =>
+                    updateDiscom(discom.id, "name", e.target.value)
+                  }
                   placeholder="Distribution company name"
                   sx={inputSx}
                 />
                 <TextField
                   size="small"
                   value={discom.code}
-                  onChange={(e) => updateDiscom(discom.id, "code", e.target.value)}
+                  onChange={(e) =>
+                    updateDiscom(discom.id, "code", e.target.value)
+                  }
                   placeholder="BESCOM"
                   sx={inputSx}
                 />
@@ -1127,7 +1235,8 @@ export default function AdminSettingsPage() {
                   size="small"
                   sx={{
                     width: "fit-content",
-                    bgcolor: discom.status === "disabled" ? "#EEF2F6" : "#DDFBEF",
+                    bgcolor:
+                      discom.status === "disabled" ? "#EEF2F6" : "#DDFBEF",
                     color: discom.status === "disabled" ? "#667386" : "#0B7D44",
                     fontWeight: 900,
                     fontSize: "0.66rem",

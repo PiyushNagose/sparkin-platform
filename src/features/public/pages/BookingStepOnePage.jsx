@@ -4,10 +4,12 @@ import {
   Container,
   Divider,
   Grid,
+  MenuItem,
   Stack,
   TextField,
   Typography,
 } from "@mui/material";
+import KeyboardArrowDownRoundedIcon from "@mui/icons-material/KeyboardArrowDownRounded";
 import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
 import CalendarMonthRoundedIcon from "@mui/icons-material/CalendarMonthRounded";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
@@ -15,7 +17,7 @@ import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
 import PersonOutlineRoundedIcon from "@mui/icons-material/PersonOutlineRounded";
 import ReorderRoundedIcon from "@mui/icons-material/ReorderRounded";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import styles from "@/features/public/pages/CalculatorPage.module.css";
 import {
   publicPageSpacing,
@@ -23,126 +25,131 @@ import {
 } from "@/features/public/pages/publicPageStyles";
 import { useBookingDraft } from "@/features/public/booking/BookingDraftProvider";
 import { validateStep1 } from "@/features/public/booking/bookingValidation";
+import BookingStepper from "@/features/public/booking/BookingStepper";
+import { usePlatformStates } from "@/shared/hooks/usePlatformStates";
 
-const stepItems = [
-  { label: "Basic Info", status: "In Progress", active: true },
-  { label: "Property Info", status: "", active: false },
-  { label: "Roof Info", status: "", active: false },
-  { label: "Document Info", status: "", active: false },
-];
+const FIELD_SX = {
+  "& .MuiOutlinedInput-root": {
+    borderRadius: "0.85rem",
+    bgcolor: "#F3F5F9",
+    minHeight: 48,
+    fontSize: "0.9rem",
+    "& fieldset": { border: "none" },
+    "&.Mui-focused fieldset": { border: "1.5px solid #0E56C8" },
+    "&.Mui-error fieldset": { border: "1.5px solid #D32F2F" },
+    "&.Mui-error": { bgcolor: "#FFF5F5" },
+  },
+};
+
+const MULTILINE_SX = {
+  "& .MuiOutlinedInput-root": {
+    borderRadius: "0.85rem",
+    bgcolor: "#F3F5F9",
+    fontSize: "0.9rem",
+    alignItems: "flex-start",
+    "& fieldset": { border: "none" },
+    "&.Mui-focused fieldset": { border: "1.5px solid #0E56C8" },
+  },
+};
 
 const timeSlots = [
-  { title: "Morning", time: "9-12 PM" },
-  { title: "Afternoon", time: "1-3 PM" },
-  { title: "Evening", time: "3-6 PM" },
+  { title: "Morning", time: "9 AM – 12 PM" },
+  { title: "Afternoon", time: "12 PM – 3 PM" },
+  { title: "Evening", time: "3 PM – 6 PM" },
 ];
 
 function SectionLabel({ icon, title }) {
   return (
-    <Stack direction="row" spacing={0.75} alignItems="center" sx={{ mb: 2 }}>
-      <Box sx={{ color: "#0E56C8", display: "grid", placeItems: "center" }}>
-        {icon}
-      </Box>
-      <Typography
+    <Stack direction="row" spacing={0.9} alignItems="center" sx={{ mb: 2.2 }}>
+      <Box
         sx={{
-          color: "#202938",
-          fontWeight: 700,
-          fontSize: "1.05rem",
+          width: 30,
+          height: 30,
+          borderRadius: "0.7rem",
+          bgcolor: "#EEF4FF",
+          color: "#0E56C8",
+          display: "grid",
+          placeItems: "center",
+          flexShrink: 0,
         }}
       >
+        {icon}
+      </Box>
+      <Typography sx={{ color: "#1A2535", fontWeight: 700, fontSize: "1rem" }}>
         {title}
       </Typography>
     </Stack>
   );
 }
 
-function InputField({
-  label,
-  placeholder,
-  value,
-  onChange,
-  optional = false,
-  multiline = false,
-  minRows = 1,
-  type = "text",
-  error = false,
-  helperText = "",
-}) {
+function FieldLabel({ children, optional = false }) {
   return (
-    <Box>
-      <Stack
-        direction="row"
-        justifyContent="space-between"
-        alignItems="center"
-        sx={{ mb: 0.8 }}
+    <Stack
+      direction="row"
+      justifyContent="space-between"
+      alignItems="center"
+      sx={{ mb: 0.65 }}
+    >
+      <Typography
+        sx={{ color: "#505C70", fontSize: "0.72rem", fontWeight: 700 }}
       >
+        {children}
+      </Typography>
+      {optional && (
         <Typography
-          sx={{
-            color: error ? "#D32F2F" : "#505C70",
-            fontSize: "0.72rem",
-            fontWeight: 700,
-          }}
+          sx={{ color: "#9AA5B5", fontSize: "0.62rem", fontWeight: 600 }}
         >
-          {label}
+          Optional
         </Typography>
-        {optional ? (
-          <Typography
-            sx={{
-              color: "#9AA5B5",
-              fontSize: "0.62rem",
-              fontWeight: 700,
-            }}
-          >
-            Optional
-          </Typography>
-        ) : null}
-      </Stack>
-      <TextField
-        fullWidth
-        type={type}
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        placeholder={placeholder}
-        multiline={multiline}
-        minRows={minRows}
-        error={error}
-        helperText={helperText}
-        InputProps={{
-          sx: {
-            borderRadius: "0.95rem",
-            bgcolor: error ? "#FFF5F5" : "#F3F5F9",
-            minHeight: multiline ? "auto" : 48,
-            alignItems: multiline ? "flex-start" : "center",
-            border: error ? "1px solid #D32F2F" : "none",
-          },
-        }}
-        FormHelperTextProps={{ sx: { fontSize: "0.68rem", mt: 0.4 } }}
-      />
-    </Box>
+      )}
+    </Stack>
   );
+}
+
+function clearError(setErrors, key) {
+  setErrors((prev) => {
+    const next = { ...prev };
+    delete next[key];
+    return next;
+  });
 }
 
 export default function BookingStepOnePage() {
   const { draft, updateDraft, updateField } = useBookingDraft();
   const navigate = useNavigate();
   const [errors, setErrors] = useState({});
+  const { stateOptions, getCities } = usePlatformStates();
+
+  // Auto-select the first state if none chosen yet
+  useEffect(() => {
+    if (stateOptions.length && !draft.installationAddress.state) {
+      const first = stateOptions[0];
+      updateDraft("installationAddress", {
+        state: first.key,
+        city: getCities(first.key)[0] ?? "",
+      });
+    }
+  }, [stateOptions]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function updateContact(values) {
     updateDraft("contact", values);
   }
-
   function updateAddress(values) {
     updateDraft("installationAddress", values);
   }
-
   function updateInspection(values) {
     updateDraft("inspection", values);
   }
 
   function handleContinue() {
-    const { valid, errors: validationErrors } = validateStep1(draft);
+    const { valid, errors: ve } = validateStep1(draft);
     if (!valid) {
-      setErrors(validationErrors);
+      setErrors(ve);
+      // scroll to first error
+      const firstKey = Object.keys(ve)[0];
+      document
+        .querySelector(`[data-field="${firstKey}"]`)
+        ?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
     navigate("/booking/property");
@@ -162,299 +169,308 @@ export default function BookingStepOnePage() {
           maxWidth={false}
           disableGutters
           className={styles.compactContainer}
-          sx={{
-            maxWidth: "1120px !important",
-          }}
         >
           <Stack
-            spacing={{ xs: 3.4, md: 4.2 }}
+            spacing={{ xs: 3, md: 3.8 }}
             alignItems="center"
             sx={{ width: "100%" }}
           >
-            <Stack alignItems="center" sx={{ width: "100%", maxWidth: 920 }}>
-              <Box
-                sx={{
-                  width: "100%",
-                  maxWidth: 760,
-                  display: "grid",
-                  gridTemplateColumns: "repeat(4, 1fr)",
-                  position: "relative",
-                  alignItems: "start",
-                }}
-              >
-                <Box
-                  sx={{
-                    position: "absolute",
-                    left: "4%",
-                    right: "4%",
-                    top: 15,
-                    height: 2,
-                    bgcolor: "#E9EDF3",
-                  }}
-                />
-                <Box
-                  sx={{
-                    position: "absolute",
-                    left: "4%",
-                    width: "8.5%",
-                    top: 15,
-                    height: 2,
-                    bgcolor: "#0E56C8",
-                  }}
-                />
+            {/* ── Stepper ── */}
+            <Box sx={{ width: "100%", maxWidth: 720 }}>
+              <BookingStepper activeStep={0} />
+            </Box>
 
-                {stepItems.map((step) => (
-                  <Stack
-                    key={step.label}
-                    alignItems="center"
-                    spacing={0.72}
-                    sx={{ position: "relative", zIndex: 1 }}
-                  >
-                    <Box
-                      sx={{
-                        width: step.active ? 32 : 28,
-                        height: step.active ? 32 : 28,
-                        borderRadius: "50%",
-                        border: step.active ? "3px solid #0E56C8" : "none",
-                        bgcolor: step.active ? "white" : "#EEF3FA",
-                        boxShadow: step.active
-                          ? "0 8px 20px rgba(14,86,200,0.08)"
-                          : "0 6px 16px rgba(17,31,54,0.04)",
-                        position: "relative",
-                        "&::after": {
-                          content: '""',
-                          position: "absolute",
-                          top: "50%",
-                          left: "50%",
-                          width: step.active ? 7 : 6,
-                          height: step.active ? 7 : 6,
-                          borderRadius: "50%",
-                          bgcolor: "#0E56C8",
-                          transform: "translate(-50%, -50%)",
-                        },
-                      }}
-                    />
-                    <Typography
-                      sx={{
-                        color: "#202938",
-                        fontSize: "0.74rem",
-                        fontWeight: 500,
-                        lineHeight: 1.2,
-                      }}
-                    >
-                      {step.label}
-                    </Typography>
-                    <Typography
-                      sx={{
-                        minHeight: 14,
-                        color: step.active ? "#0E56C8" : "transparent",
-                        fontSize: "0.54rem",
-                        fontWeight: 800,
-                        letterSpacing: 0.48,
-                        textTransform: "uppercase",
-                      }}
-                    >
-                      {step.status || "."}
-                    </Typography>
-                  </Stack>
-                ))}
-              </Box>
-
-              <Stack
-                spacing={1}
-                alignItems="center"
-                textAlign="center"
-                sx={{
-                  mt: { xs: 4.2, md: 5 },
-                  width: "100%",
-                  maxWidth: 520,
-                  mx: "auto",
-                }}
+            {/* ── Heading ── */}
+            <Stack
+              spacing={0.9}
+              alignItems="center"
+              textAlign="center"
+              sx={{ maxWidth: 500 }}
+            >
+              <Typography
+                variant="h1"
+                sx={{ ...publicTypography.pageTitle, color: "#18253A" }}
               >
-                <Typography
-                  variant="h1"
-                  sx={{
-                    ...publicTypography.pageTitle,
-                    color: "#18253A",
-                  }}
-                >
-                  Let&apos;s get started
-                  <Box component="span" sx={{ ml: 0.35 }}>
-                    {"\uD83D\uDC4B"}
-                  </Box>
-                </Typography>
-                <Typography
-                  sx={{
-                    color: "#707D90",
-                    fontSize: "0.96rem",
-                    lineHeight: 1.6,
-                  }}
-                >
-                  Tell us a few details to begin your solar journey
-                </Typography>
-              </Stack>
+                Let&apos;s get started 👋
+              </Typography>
+              <Typography
+                sx={{ color: "#707D90", fontSize: "0.94rem", lineHeight: 1.65 }}
+              >
+                Tell us a few details to begin your solar journey
+              </Typography>
             </Stack>
 
+            {/* ── Main card ── */}
             <Box
               sx={{
                 width: "100%",
-                maxWidth: 1000,
-                p: { xs: 2.2, md: 3.2 },
-                borderRadius: "1.35rem",
-                bgcolor: "rgba(255,255,255,0.95)",
+                maxWidth: 860,
+                p: { xs: 2.4, md: 3.4 },
+                borderRadius: "1.4rem",
+                bgcolor: "rgba(255,255,255,0.97)",
                 border: "1px solid rgba(221,229,239,0.98)",
-                boxShadow: "0 22px 54px rgba(20,34,56,0.08)",
+                boxShadow: "0 20px 50px rgba(20,34,56,0.08)",
               }}
             >
-              <Grid container spacing={{ xs: 3.2, md: 3.6 }}>
+              {/* ── Personal + Address ── */}
+              <Grid
+                container
+                spacing={{ xs: 3, md: 4 }}
+                alignItems="flex-start"
+              >
+                {/* Personal Details */}
                 <Grid size={{ xs: 12, md: 6 }}>
                   <SectionLabel
                     icon={
-                      <PersonOutlineRoundedIcon sx={{ fontSize: "0.98rem" }} />
+                      <PersonOutlineRoundedIcon sx={{ fontSize: "1rem" }} />
                     }
                     title="Personal Details"
                   />
-                  <Stack spacing={2.1}>
-                    <InputField
-                      label="Full name"
-                      placeholder="John Doe"
-                      value={draft.contact.fullName}
-                      onChange={(fullName) => {
-                        updateContact({ fullName });
-                        setErrors((prev) => {
-                          const next = { ...prev };
-                          delete next["contact.fullName"];
-                          return next;
-                        });
-                      }}
-                      error={!!errors["contact.fullName"]}
-                      helperText={errors["contact.fullName"]}
-                    />
-                    <InputField
-                      label="Phone number"
-                      placeholder="1234567890"
-                      value={draft.contact.phoneNumber}
-                      onChange={(phoneNumber) => {
-                        // Only allow digits and limit to 10 characters
-                        const cleanedPhone = phoneNumber.replace(/\D/g, '').slice(0, 10);
-                        updateContact({ phoneNumber: cleanedPhone });
-                        setErrors((prev) => {
-                          const next = { ...prev };
-                          delete next["contact.phoneNumber"];
-                          return next;
-                        });
-                      }}
-                      error={!!errors["contact.phoneNumber"]}
-                      helperText={errors["contact.phoneNumber"]}
-                    />
-                    <InputField
-                      label="Email"
-                      placeholder="name@example.com"
-                      type="email"
-                      value={draft.contact.email}
-                      onChange={(email) => {
-                        updateContact({ email });
-                        setErrors((prev) => {
-                          const next = { ...prev };
-                          delete next["contact.email"];
-                          return next;
-                        });
-                      }}
-                      optional
-                      error={!!errors["contact.email"]}
-                      helperText={errors["contact.email"]}
-                    />
+                  <Stack spacing={2}>
+                    <Box data-field="contact.fullName">
+                      <FieldLabel>Full name</FieldLabel>
+                      <TextField
+                        fullWidth
+                        placeholder="e.g. Ravi Kumar"
+                        value={draft.contact.fullName}
+                        error={!!errors["contact.fullName"]}
+                        helperText={errors["contact.fullName"]}
+                        onChange={(e) => {
+                          updateContact({ fullName: e.target.value });
+                          clearError(setErrors, "contact.fullName");
+                        }}
+                        sx={FIELD_SX}
+                        FormHelperTextProps={{
+                          sx: { fontSize: "0.68rem", mx: 0.5 },
+                        }}
+                      />
+                    </Box>
+
+                    <Box data-field="contact.phoneNumber">
+                      <FieldLabel>Phone number</FieldLabel>
+                      <TextField
+                        fullWidth
+                        placeholder="10-digit mobile number"
+                        value={draft.contact.phoneNumber}
+                        error={!!errors["contact.phoneNumber"]}
+                        helperText={errors["contact.phoneNumber"]}
+                        inputProps={{ inputMode: "numeric", maxLength: 10 }}
+                        onChange={(e) => {
+                          const cleaned = e.target.value
+                            .replace(/\D/g, "")
+                            .slice(0, 10);
+                          updateContact({ phoneNumber: cleaned });
+                          clearError(setErrors, "contact.phoneNumber");
+                        }}
+                        sx={FIELD_SX}
+                        FormHelperTextProps={{
+                          sx: { fontSize: "0.68rem", mx: 0.5 },
+                        }}
+                      />
+                    </Box>
+
+                    <Box data-field="contact.email">
+                      <FieldLabel optional>Email address</FieldLabel>
+                      <TextField
+                        fullWidth
+                        type="email"
+                        placeholder="name@example.com"
+                        value={draft.contact.email}
+                        error={!!errors["contact.email"]}
+                        helperText={errors["contact.email"]}
+                        onChange={(e) => {
+                          updateContact({ email: e.target.value });
+                          clearError(setErrors, "contact.email");
+                        }}
+                        sx={FIELD_SX}
+                        FormHelperTextProps={{
+                          sx: { fontSize: "0.68rem", mx: 0.5 },
+                        }}
+                      />
+                    </Box>
+
+                    <Box data-field="installationAddress.pincode">
+                      <FieldLabel>Pincode</FieldLabel>
+                      <TextField
+                        fullWidth
+                        placeholder="e.g. 520001"
+                        value={draft.installationAddress.pincode}
+                        error={!!errors["installationAddress.pincode"]}
+                        helperText={
+                          errors["installationAddress.pincode"] ||
+                          "Enter your 6-digit pincode"
+                        }
+                        inputProps={{ inputMode: "numeric", maxLength: 6 }}
+                        onChange={(e) => {
+                          const cleaned = e.target.value
+                            .replace(/\D/g, "")
+                            .slice(0, 6);
+                          updateAddress({ pincode: cleaned });
+                          clearError(setErrors, "installationAddress.pincode");
+                        }}
+                        sx={FIELD_SX}
+                        FormHelperTextProps={{
+                          sx: { fontSize: "0.68rem", mx: 0.5 },
+                        }}
+                      />
+                    </Box>
                   </Stack>
                 </Grid>
 
+                {/* Installation Address */}
                 <Grid size={{ xs: 12, md: 6 }}>
                   <SectionLabel
                     icon={<LocationOnOutlinedIcon sx={{ fontSize: "1rem" }} />}
                     title="Installation Address"
                   />
-                  <Stack spacing={2.1}>
-                    <InputField
-                      label="Street Address / House No."
-                      placeholder="e.g. 123 Solar Street"
-                      value={draft.installationAddress.street}
-                      onChange={(street) => {
-                        updateAddress({ street });
-                        setErrors((prev) => {
-                          const next = { ...prev };
-                          delete next["installationAddress.street"];
-                          return next;
-                        });
-                      }}
-                      error={!!errors["installationAddress.street"]}
-                      helperText={errors["installationAddress.street"]}
-                    />
-                    <InputField
-                      label="Landmark"
-                      placeholder="e.g. Near Central Park"
-                      value={draft.installationAddress.landmark}
-                      onChange={(landmark) => updateAddress({ landmark })}
-                      optional
-                    />
+                  <Stack spacing={2}>
+                    <Box data-field="installationAddress.street">
+                      <FieldLabel>Street / House no.</FieldLabel>
+                      <TextField
+                        fullWidth
+                        placeholder="e.g. 12-3-45, MG Road"
+                        value={draft.installationAddress.street}
+                        error={!!errors["installationAddress.street"]}
+                        helperText={errors["installationAddress.street"]}
+                        onChange={(e) => {
+                          updateAddress({ street: e.target.value });
+                          clearError(setErrors, "installationAddress.street");
+                        }}
+                        sx={FIELD_SX}
+                        FormHelperTextProps={{
+                          sx: { fontSize: "0.68rem", mx: 0.5 },
+                        }}
+                      />
+                    </Box>
+
+                    <Box>
+                      <FieldLabel optional>Landmark</FieldLabel>
+                      <TextField
+                        fullWidth
+                        placeholder="e.g. Near Bus Stand"
+                        value={draft.installationAddress.landmark}
+                        onChange={(e) =>
+                          updateAddress({ landmark: e.target.value })
+                        }
+                        sx={FIELD_SX}
+                      />
+                    </Box>
+
                     <Grid container spacing={1.5}>
                       <Grid size={{ xs: 12, sm: 6 }}>
-                        <InputField
-                          label="City"
-                          placeholder="City"
-                          value={draft.installationAddress.city}
-                          onChange={(city) => {
-                            updateAddress({ city });
-                            setErrors((prev) => {
-                              const next = { ...prev };
-                              delete next["installationAddress.city"];
-                              return next;
-                            });
-                          }}
-                          error={!!errors["installationAddress.city"]}
-                          helperText={errors["installationAddress.city"]}
-                        />
+                        <Box data-field="installationAddress.state">
+                          <FieldLabel>State</FieldLabel>
+                          <TextField
+                            select
+                            fullWidth
+                            value={draft.installationAddress.state || ""}
+                            error={!!errors["installationAddress.state"]}
+                            helperText={errors["installationAddress.state"]}
+                            onChange={(e) => {
+                              const newState = e.target.value;
+                              const cities = getCities(newState);
+                              updateAddress({
+                                state: newState,
+                                city: cities[0] ?? "",
+                              });
+                              clearError(
+                                setErrors,
+                                "installationAddress.state",
+                              );
+                            }}
+                            SelectProps={{
+                              displayEmpty: true,
+                              IconComponent: KeyboardArrowDownRoundedIcon,
+                              MenuProps: {
+                                PaperProps: {
+                                  sx: {
+                                    maxHeight: 260,
+                                    borderRadius: "0.85rem",
+                                    boxShadow:
+                                      "0 16px 40px rgba(14,34,64,0.12)",
+                                    mt: 0.5,
+                                  },
+                                },
+                              },
+                            }}
+                            sx={FIELD_SX}
+                            FormHelperTextProps={{
+                              sx: { fontSize: "0.68rem", mx: 0.5 },
+                            }}
+                          >
+                            <MenuItem value="" disabled>
+                              Select state
+                            </MenuItem>
+                            {stateOptions.map((s) => (
+                              <MenuItem key={s.key} value={s.key}>
+                                {s.name}
+                              </MenuItem>
+                            ))}
+                          </TextField>
+                        </Box>
                       </Grid>
                       <Grid size={{ xs: 12, sm: 6 }}>
-                        <InputField
-                          label="State"
-                          placeholder="State"
-                          value={draft.installationAddress.state}
-                          onChange={(state) => {
-                            updateAddress({ state });
-                            setErrors((prev) => {
-                              const next = { ...prev };
-                              delete next["installationAddress.state"];
-                              return next;
-                            });
-                          }}
-                          error={!!errors["installationAddress.state"]}
-                          helperText={errors["installationAddress.state"]}
-                        />
+                        <Box data-field="installationAddress.city">
+                          <FieldLabel>City</FieldLabel>
+                          <TextField
+                            select
+                            fullWidth
+                            value={draft.installationAddress.city}
+                            error={!!errors["installationAddress.city"]}
+                            helperText={errors["installationAddress.city"]}
+                            onChange={(e) => {
+                              updateAddress({ city: e.target.value });
+                              clearError(setErrors, "installationAddress.city");
+                            }}
+                            SelectProps={{
+                              displayEmpty: true,
+                              IconComponent: KeyboardArrowDownRoundedIcon,
+                              MenuProps: {
+                                PaperProps: {
+                                  sx: {
+                                    maxHeight: 260,
+                                    borderRadius: "0.85rem",
+                                    boxShadow:
+                                      "0 16px 40px rgba(14,34,64,0.12)",
+                                    mt: 0.5,
+                                  },
+                                },
+                              },
+                            }}
+                            sx={FIELD_SX}
+                            FormHelperTextProps={{
+                              sx: { fontSize: "0.68rem", mx: 0.5 },
+                            }}
+                          >
+                            <MenuItem value="" disabled>
+                              Select city
+                            </MenuItem>
+                            {getCities(
+                              draft.installationAddress.state || "",
+                            ).map((city) => (
+                              <MenuItem key={city} value={city}>
+                                {city}
+                              </MenuItem>
+                            ))}
+                          </TextField>
+                        </Box>
                       </Grid>
                     </Grid>
-                    <InputField
-                      label="Pincode"
-                      placeholder="000000"
-                      value={draft.installationAddress.pincode}
-                      onChange={(pincode) => {
-                        updateAddress({ pincode });
-                        setErrors((prev) => {
-                          const next = { ...prev };
-                          delete next["installationAddress.pincode"];
-                          return next;
-                        });
-                      }}
-                      error={!!errors["installationAddress.pincode"]}
-                      helperText={errors["installationAddress.pincode"]}
-                    />
                   </Stack>
                 </Grid>
               </Grid>
 
               <Divider
-                sx={{ my: { xs: 3, md: 3.4 }, borderColor: "#EDF1F6" }}
+                sx={{ my: { xs: 3, md: 3.5 }, borderColor: "#EDF1F6" }}
               />
 
-              <Grid container spacing={{ xs: 3.2, md: 3.6 }}>
+              {/* ── Inspection + Additional Info ── */}
+              <Grid
+                container
+                spacing={{ xs: 3, md: 4 }}
+                alignItems="flex-start"
+              >
+                {/* Inspection */}
                 <Grid size={{ xs: 12, md: 6 }}>
                   <SectionLabel
                     icon={
@@ -462,120 +478,127 @@ export default function BookingStepOnePage() {
                     }
                     title="Preferred Inspection"
                   />
-                  <Stack spacing={2.1}>
-                    <InputField
-                      label="Preferred Date"
-                      placeholder="mm/dd/yyyy"
-                      type="date"
-                      value={draft.inspection.preferredDate}
-                      onChange={(preferredDate) =>
-                        updateInspection({ preferredDate })
-                      }
-                    />
+                  <Stack spacing={2}>
                     <Box>
-                      <Typography
-                        sx={{
-                          mb: 0.8,
-                          color: "#505C70",
-                          fontSize: "0.72rem",
-                          fontWeight: 700,
+                      <FieldLabel optional>Preferred date</FieldLabel>
+                      <TextField
+                        fullWidth
+                        type="date"
+                        value={draft.inspection.preferredDate}
+                        inputProps={{
+                          min: new Date().toISOString().split("T")[0],
                         }}
-                      >
-                        Preferred Time Slot
-                      </Typography>
-                      <Grid container spacing={1.1}>
-                        {timeSlots.map((slot) => (
-                          <Grid key={slot.title} size={{ xs: 12, sm: 4 }}>
-                            <Button
-                              fullWidth
-                              variant="outlined"
-                              onClick={() =>
-                                updateInspection({
-                                  preferredTimeSlot: slot.title.toLowerCase(),
-                                })
-                              }
-                              sx={{
-                                minHeight: 50,
-                                borderRadius: "0.9rem",
-                                borderColor:
-                                  draft.inspection.preferredTimeSlot ===
-                                  slot.title.toLowerCase()
-                                    ? "#0E56C8"
-                                    : "#E5EAF0",
-                                bgcolor:
-                                  draft.inspection.preferredTimeSlot ===
-                                  slot.title.toLowerCase()
-                                    ? "#F3F6FF"
-                                    : "#F7F9FC",
-                                color:
-                                  draft.inspection.preferredTimeSlot ===
-                                  slot.title.toLowerCase()
-                                    ? "#0E56C8"
-                                    : "#1D293B",
-                                display: "flex",
-                                flexDirection: "column",
-                                gap: 0.2,
-                                textTransform: "none",
-                                "&:hover": {
-                                  borderColor: "#D9E1EB",
-                                  bgcolor: "#F3F6FA",
-                                },
-                              }}
-                            >
-                              <Typography
-                                sx={{ fontSize: "0.68rem", fontWeight: 700 }}
+                        onChange={(e) =>
+                          updateInspection({ preferredDate: e.target.value })
+                        }
+                        sx={FIELD_SX}
+                      />
+                    </Box>
+
+                    <Box>
+                      <FieldLabel optional>Preferred time slot</FieldLabel>
+                      <Grid container spacing={1}>
+                        {timeSlots.map((slot) => {
+                          const active =
+                            draft.inspection.preferredTimeSlot ===
+                            slot.title.toLowerCase();
+                          return (
+                            <Grid key={slot.title} size={{ xs: 4 }}>
+                              <Box
+                                role="button"
+                                tabIndex={0}
+                                onClick={() =>
+                                  updateInspection({
+                                    preferredTimeSlot: slot.title.toLowerCase(),
+                                  })
+                                }
+                                onKeyDown={(e) =>
+                                  e.key === "Enter" &&
+                                  updateInspection({
+                                    preferredTimeSlot: slot.title.toLowerCase(),
+                                  })
+                                }
+                                sx={{
+                                  minHeight: 56,
+                                  borderRadius: "0.85rem",
+                                  border: active
+                                    ? "2px solid #0E56C8"
+                                    : "1.5px solid #E5EAF0",
+                                  bgcolor: active ? "#F0F6FF" : "#F7F9FC",
+                                  display: "flex",
+                                  flexDirection: "column",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  cursor: "pointer",
+                                  gap: 0.3,
+                                  transition: "all 0.15s",
+                                }}
                               >
-                                {slot.title}
-                              </Typography>
-                              <Typography
-                                sx={{ fontSize: "0.56rem", color: "#7D899D" }}
-                              >
-                                {slot.time}
-                              </Typography>
-                            </Button>
-                          </Grid>
-                        ))}
+                                <Typography
+                                  sx={{
+                                    fontSize: "0.74rem",
+                                    fontWeight: 700,
+                                    color: active ? "#0E56C8" : "#1D293B",
+                                  }}
+                                >
+                                  {slot.title}
+                                </Typography>
+                                <Typography
+                                  sx={{ fontSize: "0.58rem", color: "#7D899D" }}
+                                >
+                                  {slot.time}
+                                </Typography>
+                              </Box>
+                            </Grid>
+                          );
+                        })}
                       </Grid>
                     </Box>
                   </Stack>
                 </Grid>
 
+                {/* Additional Info */}
                 <Grid size={{ xs: 12, md: 6 }}>
                   <SectionLabel
                     icon={<ReorderRoundedIcon sx={{ fontSize: "1rem" }} />}
                     title="Additional Information"
                   />
-                  <InputField
-                    label="Special Instructions"
-                    placeholder="Any specific instructions (e.g., gate code, pets)"
-                    value={draft.specialInstructions}
-                    onChange={(specialInstructions) =>
-                      updateField("specialInstructions", specialInstructions)
-                    }
-                    multiline
-                    minRows={5}
-                  />
+                  <Box>
+                    <FieldLabel optional>Special instructions</FieldLabel>
+                    <TextField
+                      fullWidth
+                      multiline
+                      minRows={5}
+                      placeholder="Any specific instructions (e.g. gate code, parking, pets)"
+                      value={draft.specialInstructions}
+                      onChange={(e) =>
+                        updateField("specialInstructions", e.target.value)
+                      }
+                      sx={MULTILINE_SX}
+                    />
+                  </Box>
                 </Grid>
               </Grid>
 
               <Divider
-                sx={{ my: { xs: 3, md: 3.4 }, borderColor: "#EDF1F6" }}
+                sx={{ my: { xs: 3, md: 3.5 }, borderColor: "#EDF1F6" }}
               />
 
+              {/* ── Footer ── */}
               <Stack
                 direction={{ xs: "column", sm: "row" }}
-                spacing={{ xs: 1.5, sm: 2 }}
                 justifyContent="space-between"
-                alignItems={{ xs: "flex-start", sm: "center" }}
+                alignItems={{ xs: "stretch", sm: "center" }}
+                spacing={1.5}
               >
-                <Stack direction="row" spacing={0.7} alignItems="center">
+                <Stack direction="row" spacing={0.8} alignItems="center">
                   <InfoOutlinedIcon
-                    sx={{ fontSize: "0.9rem", color: "#B3A208" }}
+                    sx={{ fontSize: "0.88rem", color: "#B3A208" }}
                   />
                   <Typography
                     sx={{
                       color: "#7A879A",
-                      fontSize: "0.76rem",
+                      fontSize: "0.75rem",
                       lineHeight: 1.5,
                     }}
                   >
@@ -588,15 +611,15 @@ export default function BookingStepOnePage() {
                   variant="contained"
                   endIcon={<ArrowForwardRoundedIcon />}
                   sx={{
-                    width: { xs: "100%", sm: "auto" },
-                    minWidth: 188,
+                    minWidth: 190,
                     minHeight: 50,
                     borderRadius: "0.85rem",
                     fontWeight: 700,
                     fontSize: "0.92rem",
                     background:
                       "linear-gradient(180deg, #0E56C8 0%, #0D49B0 100%)",
-                    boxShadow: "0 14px 28px rgba(14,86,200,0.22)",
+                    boxShadow: "0 12px 28px rgba(14,86,200,0.22)",
+                    textTransform: "none",
                   }}
                 >
                   Continue to Next Step

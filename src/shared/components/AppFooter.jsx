@@ -149,7 +149,7 @@ export function AppFooter() {
             <Stack direction="row" spacing={1} alignItems="center">
               <PlaceOutlinedIcon sx={{ fontSize: 18, color: "#13C784" }} />
               <Typography variant="body2" sx={{ fontSize: "0.95rem" }}>
-                Hyderabad, India
+                Vijayawada, Andhra Pradesh, India
               </Typography>
             </Stack>
           </Stack>
