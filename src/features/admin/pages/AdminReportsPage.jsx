@@ -1,4 +1,4 @@
-import {
+﻿import {
   Box,
   Button,
   Divider,
@@ -32,7 +32,7 @@ import {
 import { getAdminDashboardData } from "@/features/admin/api/adminApi";
 import regionalMapImg from "@/shared/assets/images/admin/reports/admin-reports-regional-map-placeholder.png";
 
-// ─── constants ────────────────────────────────────────────────────────────────
+// â”€â”€â”€ constants â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const RANGE_OPTIONS = [
   { value: "all", label: "All Time" },
@@ -41,7 +41,7 @@ const RANGE_OPTIONS = [
   { value: "1m", label: "Last Month" },
 ];
 
-// months back → cutoff date
+// months back â†’ cutoff date
 function getCutoff(range) {
   if (range === "all") return null;
   const months = range === "6m" ? 6 : range === "3m" ? 3 : 1;
@@ -50,7 +50,7 @@ function getCutoff(range) {
   return d;
 }
 
-// ─── helpers ─────────────────────────────────────────────────────────────────
+// â”€â”€â”€ helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const rupeeFormatter = new Intl.NumberFormat("en-IN", {
   style: "currency",
@@ -60,8 +60,8 @@ const rupeeFormatter = new Intl.NumberFormat("en-IN", {
 
 function formatMoney(value) {
   const amount = Number(value || 0);
-  if (amount >= 10_000_000) return `₹${(amount / 10_000_000).toFixed(1)}Cr`;
-  if (amount >= 100_000) return `₹${(amount / 100_000).toFixed(1)}L`;
+  if (amount >= 10_000_000) return `â‚¹${(amount / 10_000_000).toFixed(1)}Cr`;
+  if (amount >= 100_000) return `â‚¹${(amount / 100_000).toFixed(1)}L`;
   return rupeeFormatter.format(amount);
 }
 
@@ -91,7 +91,7 @@ function downloadBlob(name, content, type = "text/csv;charset=utf-8") {
   URL.revokeObjectURL(url);
 }
 
-// ─── sub-components ──────────────────────────────────────────────────────────
+// â”€â”€â”€ sub-components â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function KpiCard({
   icon: Icon,
@@ -388,7 +388,10 @@ export default function AdminReportsPage() {
       if (active)
         setState({
           loading: false,
-          error: err?.response?.data?.message || err.message || "Unable to load reports",
+          error:
+            err?.response?.data?.message ||
+            err.message ||
+            "Unable to load reports",
           data: null,
         });
     }
@@ -397,7 +400,9 @@ export default function AdminReportsPage() {
   useEffect(() => {
     let active = true;
     load(active);
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, [load]);
 
   // -- derived metrics --------------------------------------------------------
@@ -412,7 +417,9 @@ export default function AdminReportsPage() {
     const cutoff = getCutoff(range);
     const inRange = (item) => {
       if (!cutoff) return true;
-      const d = new Date(item.createdAt || item.submittedAt || item.updatedAt || 0);
+      const d = new Date(
+        item.createdAt || item.submittedAt || item.updatedAt || 0,
+      );
       return d >= cutoff;
     };
 
@@ -428,17 +435,27 @@ export default function AdminReportsPage() {
     const paid = payments.filter((p) => p.status === "paid");
     const pending = payments.filter((p) => p.status === "pending");
     const totalRevenue = paid.reduce((s, p) => s + Number(p.amount || 0), 0);
-    const pendingRevenue = pending.reduce((s, p) => s + Number(p.amount || 0), 0);
-    const activeVendors = vendors.filter((v) => v.verificationStatus === "verified");
-    const completedProjects = projects.filter((p) => ["activated", "completed"].includes(p.status));
-    const activeProjects = projects.filter((p) => !["activated", "completed", "cancelled"].includes(p.status));
+    const pendingRevenue = pending.reduce(
+      (s, p) => s + Number(p.amount || 0),
+      0,
+    );
+    const activeVendors = vendors.filter(
+      (v) => v.verificationStatus === "verified",
+    );
+    const completedProjects = projects.filter((p) =>
+      ["activated", "completed"].includes(p.status),
+    );
+    const activeProjects = projects.filter(
+      (p) => !["activated", "completed", "cancelled"].includes(p.status),
+    );
 
-    // Vendor performance � rank by completed projects
+    // Vendor performance — rank by completed projects
     const vendorProjectMap = new Map();
     projects.forEach((p) => {
       const vid = p.vendorId;
       if (!vid) return;
-      if (!vendorProjectMap.has(vid)) vendorProjectMap.set(vid, { total: 0, completed: 0 });
+      if (!vendorProjectMap.has(vid))
+        vendorProjectMap.set(vid, { total: 0, completed: 0 });
       const entry = vendorProjectMap.get(vid);
       entry.total += 1;
       if (["activated", "completed"].includes(p.status)) entry.completed += 1;
@@ -448,7 +465,9 @@ export default function AdminReportsPage() {
       .map((v) => {
         const vid = v.vendorId || v.id;
         const stats = vendorProjectMap.get(vid) || { total: 0, completed: 0 };
-        const completionPct = stats.total ? Math.round((stats.completed / stats.total) * 100) : 0;
+        const completionPct = stats.total
+          ? Math.round((stats.completed / stats.total) * 100)
+          : 0;
         return {
           id: vid,
           name: v.company?.name || v.account?.fullName || "Unnamed Vendor",
@@ -458,17 +477,44 @@ export default function AdminReportsPage() {
         };
       })
       .filter((v) => v.totalProjects > 0)
-      .sort((a, b) => b.pct - a.pct || b.completedProjects - a.completedProjects)
+      .sort(
+        (a, b) => b.pct - a.pct || b.completedProjects - a.completedProjects,
+      )
       .slice(0, 5);
 
     // Conversion funnel
     const funnelSteps = [
       { label: "Leads", value: leads.length, pctValue: 100, color: "#0E56C8" },
-      { label: "Verified", value: verified.length, pctValue: pct(verified.length, leads.length), color: "#1A66E8" },
-      { label: "Paid", value: paid.length, pctValue: pct(paid.length, leads.length), color: "#4F89FF" },
-      { label: "Assigned", value: projects.length, pctValue: pct(projects.length, leads.length), color: "#7AAEFF" },
-      { label: "Bidding", value: quotes.length, pctValue: pct(quotes.length, leads.length), color: "#A8C8FF" },
-      { label: "Customers", value: completedProjects.length, pctValue: pct(completedProjects.length, leads.length), color: "#239654" },
+      {
+        label: "Verified",
+        value: verified.length,
+        pctValue: pct(verified.length, leads.length),
+        color: "#1A66E8",
+      },
+      {
+        label: "Paid",
+        value: paid.length,
+        pctValue: pct(paid.length, leads.length),
+        color: "#4F89FF",
+      },
+      {
+        label: "Assigned",
+        value: projects.length,
+        pctValue: pct(projects.length, leads.length),
+        color: "#7AAEFF",
+      },
+      {
+        label: "Bidding",
+        value: quotes.length,
+        pctValue: pct(quotes.length, leads.length),
+        color: "#A8C8FF",
+      },
+      {
+        label: "Customers",
+        value: completedProjects.length,
+        pctValue: pct(completedProjects.length, leads.length),
+        color: "#239654",
+      },
     ];
 
     // Regional breakdown from lead installationAddress
@@ -476,22 +522,27 @@ export default function AdminReportsPage() {
     leads.forEach((l) => {
       const s = l.installationAddress?.state;
       if (!s) return;
-      stateMap.set(s, (stateMap.get(s) || 0) + 1);
+      // Normalise: "andhra_pradesh" → "Andhra Pradesh", or use raw value
+      const label = String(s)
+        .replace(/_/g, " ")
+        .replace(/\b\w/g, (c) => c.toUpperCase());
+      stateMap.set(label, (stateMap.get(label) || 0) + 1);
     });
     const sortedStates = [...stateMap.entries()].sort((a, b) => b[1] - a[1]);
     const regionData = sortedStates.slice(0, 3).map(([stateName, count]) => ({
       state: stateName,
       count,
       share: pct(count, leads.length),
-      delta: "+�",
+      delta: "+—",
     }));
     // fallback if no real data
     if (!regionData.length && leads.length === 0) {
-      regionData.push(
-        { state: "Andhra Pradesh", count: 0, share: 0, delta: "�" },
-        { state: "Telangana", count: 0, share: 0, delta: "�" },
-        { state: "Karnataka", count: 0, share: 0, delta: "�" },
-      );
+      regionData.push({
+        state: "Andhra Pradesh",
+        count: 0,
+        share: 0,
+        delta: "—",
+      });
     }
 
     return {
@@ -533,7 +584,13 @@ export default function AdminReportsPage() {
         [],
         ["Vendor Performance"],
         ["Rank", "Vendor", "Completed", "Total", "Completion %"],
-        ...metrics.vendorPerf.map((v, i) => [i + 1, v.name, v.completedProjects, v.totalProjects, `${v.pct}%`]),
+        ...metrics.vendorPerf.map((v, i) => [
+          i + 1,
+          v.name,
+          v.completedProjects,
+          v.totalProjects,
+          `${v.pct}%`,
+        ]),
         [],
         ["Regional Breakdown"],
         ["State", "Leads", "Share %"],
@@ -552,7 +609,8 @@ export default function AdminReportsPage() {
 
   if (state.loading) return <AdminLoadingState />;
 
-  const rangeLabel = RANGE_OPTIONS.find((o) => o.value === range)?.label || "All Time";
+  const rangeLabel =
+    RANGE_OPTIONS.find((o) => o.value === range)?.label || "All Time";
 
   return (
     <AdminPageShell>
@@ -578,12 +636,16 @@ export default function AdminReportsPage() {
               }}
               InputProps={{
                 startAdornment: (
-                  <CalendarTodayOutlinedIcon sx={{ color: "#667386", fontSize: "0.95rem", mr: 0.8 }} />
+                  <CalendarTodayOutlinedIcon
+                    sx={{ color: "#667386", fontSize: "0.95rem", mr: 0.8 }}
+                  />
                 ),
               }}
             >
               {RANGE_OPTIONS.map((o) => (
-                <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>
+                <MenuItem key={o.value} value={o.value}>
+                  {o.label}
+                </MenuItem>
               ))}
             </TextField>
 
@@ -620,7 +682,7 @@ export default function AdminReportsPage() {
                 boxShadow: "0 8px 20px rgba(14,86,200,0.2)",
               }}
             >
-              {isExporting ? "Exporting�" : "Export CSV"}
+              {isExporting ? "Exporting…" : "Export CSV"}
             </Button>
           </Stack>
         }
@@ -629,15 +691,24 @@ export default function AdminReportsPage() {
       {state.error ? <AdminErrorState>{state.error}</AdminErrorState> : null}
 
       {/* Range label */}
-      <Typography sx={{ mb: 2.2, color: "#8B97A8", fontSize: "0.76rem", fontWeight: 700 }}>
-        Showing data for: <Box component="span" sx={{ color: "#0E56C8", fontWeight: 900 }}>{rangeLabel}</Box>
+      <Typography
+        sx={{ mb: 2.2, color: "#8B97A8", fontSize: "0.76rem", fontWeight: 700 }}
+      >
+        Showing data for:{" "}
+        <Box component="span" sx={{ color: "#0E56C8", fontWeight: 900 }}>
+          {rangeLabel}
+        </Box>
       </Typography>
 
       {/* KPI Cards */}
       <Box
         sx={{
           display: "grid",
-          gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)", lg: "repeat(5, 1fr)" },
+          gridTemplateColumns: {
+            xs: "1fr",
+            sm: "repeat(2, 1fr)",
+            lg: "repeat(5, 1fr)",
+          },
           gap: 2,
           mb: 3,
         }}
@@ -691,19 +762,43 @@ export default function AdminReportsPage() {
       >
         {/* Vendor Performance */}
         <AdminPanel sx={{ p: { xs: 2, md: 2.6 } }}>
-          <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 2.4 }}>
+          <Stack
+            direction="row"
+            justifyContent="space-between"
+            alignItems="flex-start"
+            sx={{ mb: 2.4 }}
+          >
             <Box>
-              <Typography sx={{ color: adminUi.colors.text, fontSize: "1.1rem", fontWeight: 900 }}>
+              <Typography
+                sx={{
+                  color: adminUi.colors.text,
+                  fontSize: "1.1rem",
+                  fontWeight: 900,
+                }}
+              >
                 Vendor Performance
               </Typography>
-              <Typography sx={{ mt: 0.3, color: adminUi.colors.muted, fontSize: "0.76rem" }}>
+              <Typography
+                sx={{
+                  mt: 0.3,
+                  color: adminUi.colors.muted,
+                  fontSize: "0.76rem",
+                }}
+              >
                 Top vendors ranked by project completion rate
               </Typography>
             </Box>
             <Button
               component={NavLink}
               to="/admin/vendors"
-              sx={{ color: "#0E56C8", fontSize: "0.78rem", fontWeight: 800, textTransform: "none", px: 0, whiteSpace: "nowrap" }}
+              sx={{
+                color: "#0E56C8",
+                fontSize: "0.78rem",
+                fontWeight: 800,
+                textTransform: "none",
+                px: 0,
+                whiteSpace: "nowrap",
+              }}
             >
               View All Vendors ?
             </Button>
@@ -724,13 +819,21 @@ export default function AdminReportsPage() {
             </Stack>
           ) : (
             <Box sx={{ py: 3, textAlign: "center" }}>
-              <Typography sx={{ color: adminUi.colors.muted, fontSize: "0.84rem" }}>
+              <Typography
+                sx={{ color: adminUi.colors.muted, fontSize: "0.84rem" }}
+              >
                 No vendor project data available for this period.
               </Typography>
               <Button
                 component={NavLink}
                 to="/admin/vendors"
-                sx={{ mt: 1.2, color: "#0E56C8", fontSize: "0.78rem", fontWeight: 800, textTransform: "none" }}
+                sx={{
+                  mt: 1.2,
+                  color: "#0E56C8",
+                  fontSize: "0.78rem",
+                  fontWeight: 800,
+                  textTransform: "none",
+                }}
               >
                 Manage Vendors ?
               </Button>
@@ -740,10 +843,19 @@ export default function AdminReportsPage() {
 
         {/* Conversion Funnel */}
         <AdminPanel sx={{ p: { xs: 2, md: 2.6 } }}>
-          <Typography sx={{ color: adminUi.colors.text, fontSize: "1.1rem", fontWeight: 900, mb: 0.4 }}>
+          <Typography
+            sx={{
+              color: adminUi.colors.text,
+              fontSize: "1.1rem",
+              fontWeight: 900,
+              mb: 0.4,
+            }}
+          >
             Conversion Funnel
           </Typography>
-          <Typography sx={{ color: adminUi.colors.muted, fontSize: "0.76rem", mb: 2.4 }}>
+          <Typography
+            sx={{ color: adminUi.colors.muted, fontSize: "0.76rem", mb: 2.4 }}
+          >
             Lead-to-customer pipeline for {rangeLabel.toLowerCase()}
           </Typography>
           <Stack spacing={1.8}>
@@ -771,22 +883,56 @@ export default function AdminReportsPage() {
       >
         {/* Lead Summary */}
         <AdminPanel sx={{ p: { xs: 2, md: 2.4 } }}>
-          <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1.8 }}>
-            <Box sx={{ width: 34, height: 34, borderRadius: "0.85rem", bgcolor: "#EEF4FF", color: "#0E56C8", display: "grid", placeItems: "center" }}>
+          <Stack
+            direction="row"
+            spacing={1}
+            alignItems="center"
+            sx={{ mb: 1.8 }}
+          >
+            <Box
+              sx={{
+                width: 34,
+                height: 34,
+                borderRadius: "0.85rem",
+                bgcolor: "#EEF4FF",
+                color: "#0E56C8",
+                display: "grid",
+                placeItems: "center",
+              }}
+            >
               <Groups2OutlinedIcon sx={{ fontSize: "1.05rem" }} />
             </Box>
-            <Typography sx={{ color: adminUi.colors.text, fontSize: "0.95rem", fontWeight: 900 }}>
+            <Typography
+              sx={{
+                color: adminUi.colors.text,
+                fontSize: "0.95rem",
+                fontWeight: 900,
+              }}
+            >
               Lead Summary
             </Typography>
           </Stack>
           <Divider sx={{ mb: 1.4, borderColor: "rgba(225,232,241,0.96)" }} />
-          <SummaryRow label="Total Leads" value={metrics.leads.length.toLocaleString("en-IN")} />
+          <SummaryRow
+            label="Total Leads"
+            value={metrics.leads.length.toLocaleString("en-IN")}
+          />
           <Divider sx={{ borderColor: "rgba(225,232,241,0.6)" }} />
-          <SummaryRow label="Verified" value={metrics.verified.length.toLocaleString("en-IN")} />
+          <SummaryRow
+            label="Verified"
+            value={metrics.verified.length.toLocaleString("en-IN")}
+          />
           <Divider sx={{ borderColor: "rgba(225,232,241,0.6)" }} />
-          <SummaryRow label="Conversion Rate" value={`${pct(metrics.verified.length, metrics.leads.length)}%`} highlight />
+          <SummaryRow
+            label="Conversion Rate"
+            value={`${pct(metrics.verified.length, metrics.leads.length)}%`}
+            highlight
+          />
           <Divider sx={{ borderColor: "rgba(225,232,241,0.6)" }} />
-          <SummaryRow label="Total Quotes" value={metrics.quotes.length.toLocaleString("en-IN")} />
+          <SummaryRow
+            label="Total Quotes"
+            value={metrics.quotes.length.toLocaleString("en-IN")}
+          />
           <Divider sx={{ borderColor: "rgba(225,232,241,0.6)" }} />
           <SummaryRow
             label="Quote Acceptance"
@@ -797,20 +943,51 @@ export default function AdminReportsPage() {
 
         {/* Project Stats */}
         <AdminPanel sx={{ p: { xs: 2, md: 2.4 } }}>
-          <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1.8 }}>
-            <Box sx={{ width: 34, height: 34, borderRadius: "0.85rem", bgcolor: "#E4F7EA", color: "#239654", display: "grid", placeItems: "center" }}>
+          <Stack
+            direction="row"
+            spacing={1}
+            alignItems="center"
+            sx={{ mb: 1.8 }}
+          >
+            <Box
+              sx={{
+                width: 34,
+                height: 34,
+                borderRadius: "0.85rem",
+                bgcolor: "#E4F7EA",
+                color: "#239654",
+                display: "grid",
+                placeItems: "center",
+              }}
+            >
               <AssignmentOutlinedIcon sx={{ fontSize: "1.05rem" }} />
             </Box>
-            <Typography sx={{ color: adminUi.colors.text, fontSize: "0.95rem", fontWeight: 900 }}>
+            <Typography
+              sx={{
+                color: adminUi.colors.text,
+                fontSize: "0.95rem",
+                fontWeight: 900,
+              }}
+            >
               Project Stats
             </Typography>
           </Stack>
           <Divider sx={{ mb: 1.4, borderColor: "rgba(225,232,241,0.96)" }} />
-          <SummaryRow label="Total Projects" value={metrics.projects.length.toLocaleString("en-IN")} />
+          <SummaryRow
+            label="Total Projects"
+            value={metrics.projects.length.toLocaleString("en-IN")}
+          />
           <Divider sx={{ borderColor: "rgba(225,232,241,0.6)" }} />
-          <SummaryRow label="Active" value={metrics.activeProjects.length.toLocaleString("en-IN")} />
+          <SummaryRow
+            label="Active"
+            value={metrics.activeProjects.length.toLocaleString("en-IN")}
+          />
           <Divider sx={{ borderColor: "rgba(225,232,241,0.6)" }} />
-          <SummaryRow label="Completed" value={metrics.completedProjects.length.toLocaleString("en-IN")} highlight />
+          <SummaryRow
+            label="Completed"
+            value={metrics.completedProjects.length.toLocaleString("en-IN")}
+            highlight
+          />
           <Divider sx={{ borderColor: "rgba(225,232,241,0.6)" }} />
           <SummaryRow
             label="Completion Rate"
@@ -818,31 +995,68 @@ export default function AdminReportsPage() {
             highlight
           />
           <Divider sx={{ borderColor: "rgba(225,232,241,0.6)" }} />
-          <SummaryRow label="Avg. System Size" value={
-            metrics.projects.length
-              ? `${(metrics.projects.reduce((s, p) => s + Number(p.system?.sizeKw || 0), 0) / metrics.projects.length).toFixed(1)} kW`
-              : "�"
-          } />
+          <SummaryRow
+            label="Avg. System Size"
+            value={
+              metrics.projects.length
+                ? `${(metrics.projects.reduce((s, p) => s + Number(p.system?.sizeKw || 0), 0) / metrics.projects.length).toFixed(1)} kW`
+                : "—"
+            }
+          />
         </AdminPanel>
 
         {/* Revenue Stats */}
         <AdminPanel sx={{ p: { xs: 2, md: 2.4 } }}>
-          <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1.8 }}>
-            <Box sx={{ width: 34, height: 34, borderRadius: "0.85rem", bgcolor: "#FFF4E8", color: "#F47C22", display: "grid", placeItems: "center" }}>
+          <Stack
+            direction="row"
+            spacing={1}
+            alignItems="center"
+            sx={{ mb: 1.8 }}
+          >
+            <Box
+              sx={{
+                width: 34,
+                height: 34,
+                borderRadius: "0.85rem",
+                bgcolor: "#FFF4E8",
+                color: "#F47C22",
+                display: "grid",
+                placeItems: "center",
+              }}
+            >
               <CheckCircleOutlineRoundedIcon sx={{ fontSize: "1.05rem" }} />
             </Box>
-            <Typography sx={{ color: adminUi.colors.text, fontSize: "0.95rem", fontWeight: 900 }}>
+            <Typography
+              sx={{
+                color: adminUi.colors.text,
+                fontSize: "0.95rem",
+                fontWeight: 900,
+              }}
+            >
               Revenue Stats
             </Typography>
           </Stack>
           <Divider sx={{ mb: 1.4, borderColor: "rgba(225,232,241,0.96)" }} />
-          <SummaryRow label="Total Invoices" value={metrics.paid.length + metrics.pending.length} />
+          <SummaryRow
+            label="Total Invoices"
+            value={metrics.paid.length + metrics.pending.length}
+          />
           <Divider sx={{ borderColor: "rgba(225,232,241,0.6)" }} />
-          <SummaryRow label="Paid" value={metrics.paid.length.toLocaleString("en-IN")} />
+          <SummaryRow
+            label="Paid"
+            value={metrics.paid.length.toLocaleString("en-IN")}
+          />
           <Divider sx={{ borderColor: "rgba(225,232,241,0.6)" }} />
-          <SummaryRow label="Collected Revenue" value={formatMoney(metrics.totalRevenue)} highlight />
+          <SummaryRow
+            label="Collected Revenue"
+            value={formatMoney(metrics.totalRevenue)}
+            highlight
+          />
           <Divider sx={{ borderColor: "rgba(225,232,241,0.6)" }} />
-          <SummaryRow label="Pending Revenue" value={formatMoney(metrics.pendingRevenue)} />
+          <SummaryRow
+            label="Pending Revenue"
+            value={formatMoney(metrics.pendingRevenue)}
+          />
           <Divider sx={{ borderColor: "rgba(225,232,241,0.6)" }} />
           <SummaryRow
             label="Collection Rate"
@@ -854,10 +1068,19 @@ export default function AdminReportsPage() {
 
       {/* Regional Insights */}
       <Box sx={{ mb: 3 }}>
-        <Typography sx={{ color: adminUi.colors.text, fontSize: "1.1rem", fontWeight: 900, mb: 0.5 }}>
+        <Typography
+          sx={{
+            color: adminUi.colors.text,
+            fontSize: "1.1rem",
+            fontWeight: 900,
+            mb: 0.5,
+          }}
+        >
           Regional Insights
         </Typography>
-        <Typography sx={{ color: adminUi.colors.muted, fontSize: "0.82rem", mb: 2 }}>
+        <Typography
+          sx={{ color: adminUi.colors.muted, fontSize: "0.82rem", mb: 2 }}
+        >
           Lead distribution across key metropolitan clusters
         </Typography>
 

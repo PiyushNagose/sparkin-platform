@@ -1,50 +1,7 @@
 import { AppError } from "../../common/errors/app-error.js";
 import { platformSettingsService } from "../platform-settings/platform-settings.service.js";
 
-const stateProfiles = {
-  andhra_pradesh: {
-    label: "Andhra Pradesh",
-    aliases: ["andhra pradesh", "ap"],
-    pincodePrefixes: ["50", "51", "52", "53"],
-    discoms: ["APSPDCL", "APEPDCL"],
-    cityFallback: "Vijayawada",
-    residentialTariff: 7.2,
-    commercialTariff: 9.6,
-    solarYieldPerKwYear: 1550,
-    costPerWattResidential: 62000,
-    costPerWattCommercial: 52000,
-  },
-  telangana: {
-    label: "Telangana",
-    aliases: ["telangana", "ts"],
-    pincodePrefixes: ["50"],
-    discoms: ["TSSPDCL", "TSNPDCL"],
-    cityFallback: "Hyderabad",
-    residentialTariff: 7.4,
-    commercialTariff: 10.2,
-    solarYieldPerKwYear: 1580,
-    costPerWattResidential: 63000,
-    costPerWattCommercial: 53000,
-  },
-  karnataka: {
-    label: "Karnataka",
-    aliases: ["karnataka", "ka"],
-    pincodePrefixes: ["56", "57", "58", "59"],
-    discoms: ["BESCOM", "MESCOM", "HESCOM", "GESCOM", "CESC"],
-    cityFallback: "Bengaluru",
-    residentialTariff: 7.8,
-    commercialTariff: 10.8,
-    solarYieldPerKwYear: 1520,
-    costPerWattResidential: 64000,
-    costPerWattCommercial: 54000,
-  },
-};
-
-const stateByPincodeHints = [
-  { test: (pin) => /^50[0-9]{4}$/.test(pin), states: ["telangana", "andhra_pradesh"] },
-  { test: (pin) => /^5[1-3][0-9]{4}$/.test(pin), states: ["andhra_pradesh"] },
-  { test: (pin) => /^5[6-9][0-9]{4}$/.test(pin), states: ["karnataka"] },
-];
+// ─── utilities ────────────────────────────────────────────────────────────────
 
 function round(value, digits = 0) {
   const factor = 10 ** digits;
@@ -55,87 +12,180 @@ function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
 }
 
-function normalizeState(value) {
-  const normalized = String(value || "").trim().toLowerCase().replaceAll(/\s+/g, "_");
-  if (stateProfiles[normalized]) return normalized;
-
-  return Object.entries(stateProfiles).find(([, profile]) => profile.aliases.includes(String(value || "").trim().toLowerCase()))?.[0] || null;
+function normalizeKey(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replaceAll(/\s+/g, "_");
 }
 
-function inferStateFromPincode(pincode) {
-  return stateByPincodeHints.find((hint) => hint.test(pincode))?.states || [];
+// ─── state resolution ────────────────────────────────────────────────────────
+
+/**
+ * Find a state config from the DB-driven settings list.
+ * Matches by key (e.g. "andhra_pradesh") or display name.
+ */
+function resolveStateProfile(states, stateInput) {
+  if (!stateInput || !states?.length) return null;
+  const normalized = normalizeKey(stateInput);
+  // exact key match first
+  const byKey = states.find((s) => s.key === normalized);
+  if (byKey) return byKey;
+  // fallback: match on normalised name
+  return states.find((s) => normalizeKey(s.name) === normalized) || null;
 }
 
-function getServiceability({ pincode, state }) {
-  const selectedState = normalizeState(state);
-  const inferredStates = inferStateFromPincode(pincode);
-  const resolvedState = selectedState || inferredStates[0];
-  const profile = resolvedState ? stateProfiles[resolvedState] : null;
+/**
+ * Try to infer a state from a 6-digit pincode using the stored prefixes.
+ */
+function inferStateFromPincode(states, pincode) {
+  if (!pincode || !states?.length) return null;
+  const pin = String(pincode).trim();
+  for (const state of states) {
+    if (!state.pincodePrefixes?.length) continue;
+    for (const prefix of state.pincodePrefixes) {
+      if (pin.startsWith(prefix)) return state;
+    }
+  }
+  return null;
+}
 
-  if (!profile || (selectedState && inferredStates.length && !inferredStates.includes(selectedState))) {
+// ─── serviceability ──────────────────────────────────────────────────────────
+
+function getServiceability({ pincode, state, city }, settings) {
+  const states = settings?.states || [];
+
+  const selectedProfile = resolveStateProfile(states, state);
+  const pincodeProfile = inferStateFromPincode(states, pincode);
+  const resolvedProfile = selectedProfile || pincodeProfile;
+
+  const supportedStateNames = states.map((s) => s.name);
+
+  if (!resolvedProfile) {
     return {
       serviceable: false,
-      reason: "This pincode is outside Sparkin's current calculator coverage.",
+      reason: supportedStateNames.length
+        ? `This location is outside the supported regions: ${supportedStateNames.join(", ")}.`
+        : "No serviceable states have been configured yet. Please contact support.",
       pincode,
-      selectedState: selectedState || null,
-      inferredState: inferredStates[0] || null,
-      inferredStates,
-      supportedStates: Object.values(stateProfiles).map((item) => item.label),
+      selectedState: state || null,
+      supportedStates: supportedStateNames,
     };
   }
 
+  // If a specific state was requested but it doesn't match the pincode prefix, warn
+  // but still allow (admin may not have configured prefixes for all states).
+  const confidence =
+    pincodeProfile?.key === resolvedProfile.key
+      ? "pincode_match"
+      : "state_selected";
+
+  const cities = resolvedProfile.cities || [];
+  const cityFallback = cities[0] || resolvedProfile.name;
+
   return {
     serviceable: true,
-    state: resolvedState,
-    stateName: profile.label,
-    city: profile.cityFallback,
-    discoms: profile.discoms,
+    state: resolvedProfile.key,
+    stateName: resolvedProfile.name,
+    city: city || cityFallback,
+    discoms:
+      (settings.discoms || [])
+        .filter(
+          (d) => d.stateKey === resolvedProfile.key && d.status !== "disabled",
+        )
+        .map((d) => d.code) || [],
     pincode,
-    confidence: inferredStates.includes(resolvedState) ? "pincode_match" : "state_selected",
+    supportedCities: cities,
+    confidence,
   };
 }
+
+// ─── EMI helper ──────────────────────────────────────────────────────────────
 
 function calculateEmi(principal, annualRate = 0.0865, months = 60) {
   if (principal <= 0) return 0;
   const monthlyRate = annualRate / 12;
-  return Math.round((principal * monthlyRate * (1 + monthlyRate) ** months) / ((1 + monthlyRate) ** months - 1));
+  return Math.round(
+    (principal * monthlyRate * (1 + monthlyRate) ** months) /
+      ((1 + monthlyRate) ** months - 1),
+  );
 }
 
+// ─── estimate ────────────────────────────────────────────────────────────────
+
 async function buildEstimate(input) {
-  const serviceability = getServiceability(input);
+  const settings = await platformSettingsService.getSettings();
+
+  const serviceability = getServiceability(input, settings);
 
   if (!serviceability.serviceable) {
     throw new AppError(422, serviceability.reason, { serviceability });
   }
 
-  const settings = await platformSettingsService.getSettings();
-  const profile = stateProfiles[serviceability.state];
+  const profile = resolveStateProfile(settings.states, serviceability.state);
   const isCommercial = input.propertyType === "commercial";
+
+  // Tariff — commercial gets a 35% premium over the base residential rate
   const tariff = platformSettingsService.getStateRate(
     settings,
     serviceability.state,
     input.propertyType,
   );
+
+  // Solar generation assumptions from state profile (or safe defaults)
+  const solarYieldPerKwYear = Number(profile.solarYieldPerKwYear) || 1500;
+  const derateFactor = 0.82;
+
+  // Cost per kW from state profile or global pricing setting
+  const defaultCostPerKw =
+    Number(settings.pricing.standardCostPerKw) ||
+    (isCommercial
+      ? Number(profile.costPerKwCommercial) || 50000
+      : Number(profile.costPerKwResidential) || 55000);
+  const costPerKw = isCommercial
+    ? Number(profile.costPerKwCommercial) || defaultCostPerKw
+    : Number(profile.costPerKwResidential) || defaultCostPerKw;
+
   const monthlyUnits = input.monthlyUnits || input.monthlyBill / tariff;
   const annualConsumption = monthlyUnits * 12;
-  const desiredOffset = (input.desiredOffsetPercent || (isCommercial ? 75 : 90)) / 100;
-  const derateFactor = 0.82;
-  const billDrivenSystemSize = annualConsumption * desiredOffset / (profile.solarYieldPerKwYear * derateFactor);
+  const desiredOffset =
+    (input.desiredOffsetPercent || (isCommercial ? 75 : 90)) / 100;
+
+  const billDrivenSystemSize =
+    (annualConsumption * desiredOffset) / (solarYieldPerKwYear * derateFactor);
+
   const requestedSystemSize = Number(input.systemSizeKw || 0);
-  const rawSystemSize = requestedSystemSize > 0 ? requestedSystemSize : billDrivenSystemSize;
-  const sanctionedLimit = input.sanctionedLoadKw ? input.sanctionedLoadKw * 1.15 : Infinity;
+  const rawSystemSize =
+    requestedSystemSize > 0 ? requestedSystemSize : billDrivenSystemSize;
+
+  const sanctionedLimit = input.sanctionedLoadKw
+    ? input.sanctionedLoadKw * 1.15
+    : Infinity;
   const roofLimit = input.roofAreaSqFt ? input.roofAreaSqFt / 90 : Infinity;
-  const recommendedSystemSizeKw = clamp(rawSystemSize, 1, Math.min(roofLimit, sanctionedLimit, isCommercial ? 500 : 10));
+  const recommendedSystemSizeKw = clamp(
+    rawSystemSize,
+    1,
+    Math.min(roofLimit, sanctionedLimit, isCommercial ? 500 : 10),
+  );
   const roundedSystemSizeKw = round(recommendedSystemSizeKw, 1);
-  const annualGenerationKwh = Math.round(roundedSystemSizeKw * profile.solarYieldPerKwYear * derateFactor);
+
+  const annualGenerationKwh = Math.round(
+    roundedSystemSizeKw * solarYieldPerKwYear * derateFactor,
+  );
   const monthlyGenerationKwh = Math.round(annualGenerationKwh / 12);
   const requiredRoofAreaSqFt = Math.ceil(roundedSystemSizeKw * 90);
   const roofUtilizationPercent = input.roofAreaSqFt
-    ? Math.min(100, Math.round((requiredRoofAreaSqFt / input.roofAreaSqFt) * 100))
+    ? Math.min(
+        100,
+        Math.round((requiredRoofAreaSqFt / input.roofAreaSqFt) * 100),
+      )
     : null;
-  const firstYearSavings = Math.round(Math.min(annualGenerationKwh, annualConsumption) * tariff);
+
+  const firstYearSavings = Math.round(
+    Math.min(annualGenerationKwh, annualConsumption) * tariff,
+  );
   const monthlySavings = Math.round(firstYearSavings / 12);
-  const costPerKw = Number(settings.pricing.standardCostPerKw) || (isCommercial ? profile.costPerWattCommercial : profile.costPerWattResidential);
+
   const grossCost = Math.round(roundedSystemSizeKw * costPerKw);
   const subsidy = platformSettingsService.calculateResidentialSubsidy(
     settings,
@@ -143,15 +193,22 @@ async function buildEstimate(input) {
     input.propertyType,
   );
   const netCost = Math.max(0, grossCost - subsidy);
-  const paybackYears = firstYearSavings ? round(netCost / firstYearSavings, 1) : null;
+  const paybackYears = firstYearSavings
+    ? round(netCost / firstYearSavings, 1)
+    : null;
+
   const degradation = 0.01;
   const inflation = 0.03;
   const lifetimeYears = 25;
-  const lifetimeSavings = Array.from({ length: lifetimeYears }).reduce((sum, _, index) => {
-    const generationMultiplier = (1 - degradation) ** index;
-    const tariffMultiplier = (1 + inflation) ** index;
-    return sum + firstYearSavings * generationMultiplier * tariffMultiplier;
-  }, 0);
+  const lifetimeSavings = Array.from({ length: lifetimeYears }).reduce(
+    (sum, _, index) => {
+      const generationMultiplier = (1 - degradation) ** index;
+      const tariffMultiplier = (1 + inflation) ** index;
+      return sum + firstYearSavings * generationMultiplier * tariffMultiplier;
+    },
+    0,
+  );
+
   const co2OffsetKgYear = Math.round(annualGenerationKwh * 0.71);
   const treesEquivalent = Math.round(co2OffsetKgYear / 21);
 
@@ -167,7 +224,7 @@ async function buildEstimate(input) {
     serviceability,
     assumptions: {
       tariffPerUnit: tariff,
-      solarYieldPerKwYear: profile.solarYieldPerKwYear,
+      solarYieldPerKwYear,
       derateFactor,
       standardCostPerKw: costPerKw,
       annualPanelDegradationPercent: 1,
@@ -185,7 +242,10 @@ async function buildEstimate(input) {
       panelCount: Math.ceil((roundedSystemSizeKw * 1000) / 540),
       annualGenerationKwh,
       monthlyGenerationKwh,
-      energyOffsetPercent: Math.min(100, Math.round((annualGenerationKwh / annualConsumption) * 100)),
+      energyOffsetPercent: Math.min(
+        100,
+        Math.round((annualGenerationKwh / annualConsumption) * 100),
+      ),
     },
     savings: {
       monthly: monthlySavings,
@@ -193,7 +253,9 @@ async function buildEstimate(input) {
       fiveYear: Math.round(lifetimeSavings * (5 / lifetimeYears)),
       lifetime: Math.round(lifetimeSavings),
       paybackYears,
-      roiPercentAnnual: netCost ? round((firstYearSavings / netCost) * 100, 1) : null,
+      roiPercentAnnual: netCost
+        ? round((firstYearSavings / netCost) * 100, 1)
+        : null,
     },
     investment: {
       grossCost,
@@ -215,15 +277,18 @@ async function buildEstimate(input) {
       benefitCards: [
         {
           title: "Subsidy Value",
-          description: "Direct central government support based on your configured system size slab.",
+          description:
+            "Direct central government support based on your configured system size slab.",
         },
         {
           title: "Lowered Loan Load",
-          description: "Reduced upfront project cost helps improve loan eligibility and EMI comfort.",
+          description:
+            "Reduced upfront project cost helps improve loan eligibility and EMI comfort.",
         },
         {
           title: "DBT / DISCOM Ready",
-          description: "Designed to align with residential rooftop subsidy planning and approval workflows.",
+          description:
+            "Designed to align with residential rooftop subsidy planning and approval workflows.",
         },
       ],
     },
@@ -235,7 +300,14 @@ async function buildEstimate(input) {
   };
 }
 
+// ─── serviceability endpoint helper (uses live settings) ────────────────────
+
+async function getServiceabilityLive(query) {
+  const settings = await platformSettingsService.getSettings();
+  return getServiceability(query, settings);
+}
+
 export const calculatorService = {
-  getServiceability,
+  getServiceability: getServiceabilityLive,
   buildEstimate,
 };

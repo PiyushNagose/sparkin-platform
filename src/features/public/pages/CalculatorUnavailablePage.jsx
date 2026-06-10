@@ -13,7 +13,7 @@ import { publicPageSpacing, publicTypography } from "@/features/public/pages/pub
 const insightCards = [
   {
     title: "Target Launch",
-    text: "Sparkin calculator coverage is currently focused on Andhra Pradesh, Telangana, and Karnataka.",
+    text: "Sparkin calculator coverage is currently focused on Andhra Pradesh only.",
     icon: <GridViewRoundedIcon sx={{ fontSize: "0.96rem" }} />,
   },
   {
@@ -30,7 +30,7 @@ const insightCards = [
 
 export default function CalculatorUnavailablePage() {
   const serviceability = calculatorStorage.getServiceability();
-  const supportedStates = serviceability?.supportedStates?.join(", ") || "Andhra Pradesh, Telangana, Karnataka";
+  const supportedCities = serviceability?.supportedCities?.join(", ") || "Vijayawada, Visakhapatnam, Guntur, Tirupati";
 
   return (
     <Box className={styles.pageShell}>
@@ -65,7 +65,7 @@ export default function CalculatorUnavailablePage() {
                   </Typography>
 
                   <Typography sx={{ mt: 1.55, maxWidth: 370, color: "#606F84", ...publicTypography.sectionBody }}>
-                    {serviceability?.reason || "This pincode is outside the current Sparkin calculator coverage."} Current calculator states: {supportedStates}.
+                    {serviceability?.reason || "This pincode is outside the current Sparkin calculator coverage."} Supported Andhra Pradesh cities include {supportedCities}.
                   </Typography>
 
                   <Typography sx={{ mt: 2.2, mb: 0.85, color: "#414C5F", fontSize: "0.76rem", fontWeight: 700 }}>

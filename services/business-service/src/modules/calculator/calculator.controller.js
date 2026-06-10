@@ -2,7 +2,7 @@ import { calculatorService } from "./calculator.service.js";
 
 export const calculatorController = {
   async serviceability(req, res) {
-    const serviceability = calculatorService.getServiceability(req.query);
+    const serviceability = await calculatorService.getServiceability(req.query);
     res.status(200).json({ serviceability });
   },
 

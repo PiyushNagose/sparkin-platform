@@ -51,6 +51,7 @@ import { useSocket } from "@/shared/websocket/SocketProvider";
 import logoPlaceholder from "@/shared/assets/logo-placeholder.png";
 import { AppFooter } from "@/shared/components/AppFooter";
 import { useAuth } from "@/features/auth/AuthProvider";
+import { PageTransition } from "@/shared/ui/transition/PageTransition";
 import { leadsApi, quotesApi } from "@/features/public/api/leadsApi";
 import { projectsApi } from "@/features/public/api/projectsApi";
 import { paymentsApi } from "@/features/public/api/paymentsApi";
@@ -1001,73 +1002,73 @@ export function PortalLayout({ portal }) {
                     >
                       {notificationItems.length > 0 ? (
                         notificationItems.map((item) => (
-                            <MenuItem
-                              key={item.id}
-                              component={NavLink}
-                              to={item.path}
-                              onClick={() => {
-                                setAdminNotificationReadIds(
-                                  markAdminNotificationsRead([item.id]),
-                                );
-                                setNotificationAnchor(null);
-                              }}
-                              sx={{
-                                alignItems: "flex-start",
-                                py: 1.1,
-                                whiteSpace: "normal",
-                                bgcolor: "#F8FBFF",
-                              }}
-                            >
-                              <Box sx={{ minWidth: 0 }}>
-                                <Stack
-                                  direction="row"
-                                  spacing={0.8}
-                                  alignItems="center"
-                                  sx={{ mb: 0.3 }}
-                                >
-                                  <Box
-                                    sx={{
-                                      width: 7,
-                                      height: 7,
-                                      borderRadius: "50%",
-                                      bgcolor: "#0E56C8",
-                                      flexShrink: 0,
-                                    }}
-                                  />
-                                  <Typography
-                                    sx={{
-                                      color: "#223146",
-                                      fontSize: "0.78rem",
-                                      fontWeight: 850,
-                                      lineHeight: 1.3,
-                                    }}
-                                  >
-                                    {item.title}
-                                  </Typography>
-                                </Stack>
-                                <Typography
+                          <MenuItem
+                            key={item.id}
+                            component={NavLink}
+                            to={item.path}
+                            onClick={() => {
+                              setAdminNotificationReadIds(
+                                markAdminNotificationsRead([item.id]),
+                              );
+                              setNotificationAnchor(null);
+                            }}
+                            sx={{
+                              alignItems: "flex-start",
+                              py: 1.1,
+                              whiteSpace: "normal",
+                              bgcolor: "#F8FBFF",
+                            }}
+                          >
+                            <Box sx={{ minWidth: 0 }}>
+                              <Stack
+                                direction="row"
+                                spacing={0.8}
+                                alignItems="center"
+                                sx={{ mb: 0.3 }}
+                              >
+                                <Box
                                   sx={{
-                                    color: "#7A8799",
-                                    fontSize: "0.68rem",
-                                    lineHeight: 1.45,
+                                    width: 7,
+                                    height: 7,
+                                    borderRadius: "50%",
+                                    bgcolor: "#0E56C8",
+                                    flexShrink: 0,
                                   }}
-                                >
-                                  {item.message}
-                                </Typography>
+                                />
                                 <Typography
                                   sx={{
-                                    mt: 0.35,
-                                    color: "#0E56C8",
-                                    fontSize: "0.64rem",
+                                    color: "#223146",
+                                    fontSize: "0.78rem",
                                     fontWeight: 850,
+                                    lineHeight: 1.3,
                                   }}
                                 >
-                                  {formatAdminNotificationTime(item.createdAt)}{" "}
-                                  - {item.type}
+                                  {item.title}
                                 </Typography>
-                              </Box>
-                            </MenuItem>
-                          ))
+                              </Stack>
+                              <Typography
+                                sx={{
+                                  color: "#7A8799",
+                                  fontSize: "0.68rem",
+                                  lineHeight: 1.45,
+                                }}
+                              >
+                                {item.message}
+                              </Typography>
+                              <Typography
+                                sx={{
+                                  mt: 0.35,
+                                  color: "#0E56C8",
+                                  fontSize: "0.64rem",
+                                  fontWeight: 850,
+                                }}
+                              >
+                                {formatAdminNotificationTime(item.createdAt)} -{" "}
+                                {item.type}
+                              </Typography>
+                            </Box>
+                          </MenuItem>
+                        ))
                       ) : (
                         <MenuItem
                           key="empty-admin-notifications"
@@ -1155,73 +1156,73 @@ export function PortalLayout({ portal }) {
                     >
                       {notificationItems.length > 0 ? (
                         notificationItems.map((item) => (
-                            <MenuItem
-                              key={item.id}
-                              component={NavLink}
-                              to={item.path}
-                              onClick={() => {
-                                setVendorNotificationReadIds(
-                                  markVendorNotificationsRead([item.id]),
-                                );
-                                setNotificationAnchor(null);
-                              }}
-                              sx={{
-                                alignItems: "flex-start",
-                                py: 1.1,
-                                whiteSpace: "normal",
-                                bgcolor: "#F8FBFF",
-                              }}
-                            >
-                              <Box sx={{ minWidth: 0 }}>
-                                <Stack
-                                  direction="row"
-                                  spacing={0.8}
-                                  alignItems="center"
-                                  sx={{ mb: 0.3 }}
-                                >
-                                  <Box
-                                    sx={{
-                                      width: 7,
-                                      height: 7,
-                                      borderRadius: "50%",
-                                      bgcolor: "#0E56C8",
-                                      flexShrink: 0,
-                                    }}
-                                  />
-                                  <Typography
-                                    sx={{
-                                      color: "#223146",
-                                      fontSize: "0.78rem",
-                                      fontWeight: 850,
-                                      lineHeight: 1.3,
-                                    }}
-                                  >
-                                    {item.title}
-                                  </Typography>
-                                </Stack>
-                                <Typography
+                          <MenuItem
+                            key={item.id}
+                            component={NavLink}
+                            to={item.path}
+                            onClick={() => {
+                              setVendorNotificationReadIds(
+                                markVendorNotificationsRead([item.id]),
+                              );
+                              setNotificationAnchor(null);
+                            }}
+                            sx={{
+                              alignItems: "flex-start",
+                              py: 1.1,
+                              whiteSpace: "normal",
+                              bgcolor: "#F8FBFF",
+                            }}
+                          >
+                            <Box sx={{ minWidth: 0 }}>
+                              <Stack
+                                direction="row"
+                                spacing={0.8}
+                                alignItems="center"
+                                sx={{ mb: 0.3 }}
+                              >
+                                <Box
                                   sx={{
-                                    color: "#7A8799",
-                                    fontSize: "0.68rem",
-                                    lineHeight: 1.45,
+                                    width: 7,
+                                    height: 7,
+                                    borderRadius: "50%",
+                                    bgcolor: "#0E56C8",
+                                    flexShrink: 0,
                                   }}
-                                >
-                                  {item.message}
-                                </Typography>
+                                />
                                 <Typography
                                   sx={{
-                                    mt: 0.35,
-                                    color: "#0E56C8",
-                                    fontSize: "0.64rem",
+                                    color: "#223146",
+                                    fontSize: "0.78rem",
                                     fontWeight: 850,
+                                    lineHeight: 1.3,
                                   }}
                                 >
-                                  {formatVendorNotificationTime(item.createdAt)}{" "}
-                                  - {item.type}
+                                  {item.title}
                                 </Typography>
-                              </Box>
-                            </MenuItem>
-                          ))
+                              </Stack>
+                              <Typography
+                                sx={{
+                                  color: "#7A8799",
+                                  fontSize: "0.68rem",
+                                  lineHeight: 1.45,
+                                }}
+                              >
+                                {item.message}
+                              </Typography>
+                              <Typography
+                                sx={{
+                                  mt: 0.35,
+                                  color: "#0E56C8",
+                                  fontSize: "0.64rem",
+                                  fontWeight: 850,
+                                }}
+                              >
+                                {formatVendorNotificationTime(item.createdAt)} -{" "}
+                                {item.type}
+                              </Typography>
+                            </Box>
+                          </MenuItem>
+                        ))
                       ) : (
                         <MenuItem
                           key="empty-vendor-notifications"
@@ -1295,75 +1296,73 @@ export function PortalLayout({ portal }) {
                     >
                       {notificationItems.length > 0 ? (
                         notificationItems.map((item) => (
-                            <MenuItem
-                              key={item.id}
-                              component={NavLink}
-                              to={item.path}
-                              onClick={() => {
-                                setCustomerNotificationReadIds(
-                                  markCustomerNotificationsRead([item.id]),
-                                );
-                                setNotificationAnchor(null);
-                              }}
-                              sx={{
-                                alignItems: "flex-start",
-                                py: 1.1,
-                                whiteSpace: "normal",
-                                bgcolor: "#F8FBFF",
-                              }}
-                            >
-                              <Box sx={{ minWidth: 0 }}>
-                                <Stack
-                                  direction="row"
-                                  spacing={0.8}
-                                  alignItems="center"
-                                  sx={{ mb: 0.3 }}
-                                >
-                                  <Box
-                                    sx={{
-                                      width: 7,
-                                      height: 7,
-                                      borderRadius: "50%",
-                                      bgcolor: "#0E56C8",
-                                      flexShrink: 0,
-                                    }}
-                                  />
-                                  <Typography
-                                    sx={{
-                                      color: "#223146",
-                                      fontSize: "0.78rem",
-                                      fontWeight: 850,
-                                      lineHeight: 1.3,
-                                    }}
-                                  >
-                                    {item.title}
-                                  </Typography>
-                                </Stack>
-                                <Typography
+                          <MenuItem
+                            key={item.id}
+                            component={NavLink}
+                            to={item.path}
+                            onClick={() => {
+                              setCustomerNotificationReadIds(
+                                markCustomerNotificationsRead([item.id]),
+                              );
+                              setNotificationAnchor(null);
+                            }}
+                            sx={{
+                              alignItems: "flex-start",
+                              py: 1.1,
+                              whiteSpace: "normal",
+                              bgcolor: "#F8FBFF",
+                            }}
+                          >
+                            <Box sx={{ minWidth: 0 }}>
+                              <Stack
+                                direction="row"
+                                spacing={0.8}
+                                alignItems="center"
+                                sx={{ mb: 0.3 }}
+                              >
+                                <Box
                                   sx={{
-                                    color: "#7A8799",
-                                    fontSize: "0.68rem",
-                                    lineHeight: 1.45,
+                                    width: 7,
+                                    height: 7,
+                                    borderRadius: "50%",
+                                    bgcolor: "#0E56C8",
+                                    flexShrink: 0,
                                   }}
-                                >
-                                  {item.message}
-                                </Typography>
+                                />
                                 <Typography
                                   sx={{
-                                    mt: 0.35,
-                                    color: "#0E56C8",
-                                    fontSize: "0.64rem",
+                                    color: "#223146",
+                                    fontSize: "0.78rem",
                                     fontWeight: 850,
+                                    lineHeight: 1.3,
                                   }}
                                 >
-                                  {formatCustomerNotificationTime(
-                                    item.createdAt,
-                                  )}{" "}
-                                  - {item.type}
+                                  {item.title}
                                 </Typography>
-                              </Box>
-                            </MenuItem>
-                          ))
+                              </Stack>
+                              <Typography
+                                sx={{
+                                  color: "#7A8799",
+                                  fontSize: "0.68rem",
+                                  lineHeight: 1.45,
+                                }}
+                              >
+                                {item.message}
+                              </Typography>
+                              <Typography
+                                sx={{
+                                  mt: 0.35,
+                                  color: "#0E56C8",
+                                  fontSize: "0.64rem",
+                                  fontWeight: 850,
+                                }}
+                              >
+                                {formatCustomerNotificationTime(item.createdAt)}{" "}
+                                - {item.type}
+                              </Typography>
+                            </Box>
+                          </MenuItem>
+                        ))
                       ) : (
                         <MenuItem
                           key="empty-customer-notifications"
@@ -1566,7 +1565,9 @@ export function PortalLayout({ portal }) {
               borderRadius: { lg: "0 0 1.35rem 1.35rem" },
             }}
           >
-            <Outlet />
+            <PageTransition>
+              <Outlet />
+            </PageTransition>
           </Box>
         </Box>
       </Box>
@@ -1603,7 +1604,11 @@ export function PortalLayout({ portal }) {
           >
             <LogoutRoundedIcon sx={{ fontSize: "2rem" }} />
           </Box>
-          <Typography component="div" variant="h6" sx={{ fontWeight: 700, color: "#1a1a1a" }}>
+          <Typography
+            component="div"
+            variant="h6"
+            sx={{ fontWeight: 700, color: "#1a1a1a" }}
+          >
             Confirm Logout
           </Typography>
         </DialogTitle>

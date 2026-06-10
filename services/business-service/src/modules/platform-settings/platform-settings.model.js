@@ -3,13 +3,18 @@ import mongoose from "mongoose";
 const stateRateSchema = new mongoose.Schema(
   {
     id: { type: String, trim: true, required: true },
-    key: {
-      type: String,
-      enum: ["andhra_pradesh", "telangana", "karnataka"],
-      required: true,
-    },
+    key: { type: String, trim: true, required: true },
     name: { type: String, trim: true, required: true },
     rate: { type: Number, min: 0, required: true },
+    // Comma-separated or array of city names for this state
+    cities: { type: [String], default: [] },
+    // Solar yield per kW per year (kWh) — used by calculator
+    solarYieldPerKwYear: { type: Number, min: 0, default: 1500 },
+    // Cost per kW for residential and commercial (paise/W → ₹/kW)
+    costPerKwResidential: { type: Number, min: 0, default: 55000 },
+    costPerKwCommercial: { type: Number, min: 0, default: 50000 },
+    // Pincode prefixes that belong to this state (for auto-detect)
+    pincodePrefixes: { type: [String], default: [] },
   },
   { _id: false },
 );
@@ -17,11 +22,7 @@ const stateRateSchema = new mongoose.Schema(
 const discomSchema = new mongoose.Schema(
   {
     id: { type: String, trim: true, required: true },
-    stateKey: {
-      type: String,
-      enum: ["andhra_pradesh", "telangana", "karnataka"],
-      required: true,
-    },
+    stateKey: { type: String, trim: true, required: true },
     name: { type: String, trim: true, required: true },
     code: { type: String, trim: true, required: true },
     status: {

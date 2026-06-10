@@ -28,13 +28,9 @@ import {
   isStep1Complete,
 } from "@/features/public/booking/bookingValidation";
 import { publicPlatformSettingsApi } from "@/features/public/api/platformSettingsApi";
+import BookingStepper from "@/features/public/booking/BookingStepper";
 
-const steps = [
-  { label: "Basic Info", state: "complete" },
-  { label: "Property Info", state: "active" },
-  { label: "Roof Info", state: "upcoming" },
-  { label: "Document Info", state: "upcoming" },
-];
+// ─── data ────────────────────────────────────────────────────────────────────
 
 const propertyTypes = [
   {
@@ -54,11 +50,6 @@ const propertyTypes = [
   },
 ];
 
-const roofTypes = [
-  { title: "Flat", value: "flat" },
-  { title: "Sloped", value: "sloped" },
-];
-
 const ownershipTypes = [
   { title: "Owned", value: "owned" },
   { title: "Rented", value: "rented" },
@@ -67,127 +58,9 @@ const ownershipTypes = [
 const fallbackDiscoms = [
   { value: "apspdcl", label: "APSPDCL", stateKey: "andhra_pradesh" },
   { value: "apepdcl", label: "APEPDCL", stateKey: "andhra_pradesh" },
-  { value: "tsspdcl", label: "TSSPDCL", stateKey: "telangana" },
-  { value: "tsnpdcl", label: "TSNPDCL", stateKey: "telangana" },
-  { value: "bescom", label: "BESCOM", stateKey: "karnataka" },
-  { value: "mescom", label: "MESCOM", stateKey: "karnataka" },
-  { value: "hescom", label: "HESCOM", stateKey: "karnataka" },
-  { value: "gescom", label: "GESCOM", stateKey: "karnataka" },
-  { value: "cesc", label: "CESC", stateKey: "karnataka" },
 ];
 
-function normalizeStateKey(value = "") {
-  const normalized = value.trim().toLowerCase().replaceAll(/\s+/g, "_");
-  if (normalized.includes("andhra")) return "andhra_pradesh";
-  if (normalized.includes("telangana")) return "telangana";
-  if (normalized.includes("karnataka")) return "karnataka";
-  return normalized;
-}
-
-function BookingStepper() {
-  return (
-    <Box
-      sx={{
-        width: "100%",
-        display: "grid",
-        gridTemplateColumns: "repeat(4, 1fr)",
-        alignItems: "start",
-        position: "relative",
-      }}
-    >
-      <Box
-        sx={{
-          position: "absolute",
-          left: "4%",
-          right: "4%",
-          top: 15,
-          height: 2,
-          bgcolor: "#E7ECF3",
-        }}
-      />
-      <Box
-        sx={{
-          position: "absolute",
-          left: "4%",
-          width: "33.5%",
-          top: 15,
-          height: 2,
-          bgcolor: "#0E56C8",
-        }}
-      />
-
-      {steps.map((step) => (
-        <Stack
-          key={step.label}
-          alignItems="center"
-          spacing={0.7}
-          sx={{ position: "relative", zIndex: 1 }}
-        >
-          <Box
-            sx={{
-              width: step.state === "active" ? 32 : 28,
-              height: step.state === "active" ? 32 : 28,
-              borderRadius: "50%",
-              border: step.state === "active" ? "3px solid #0E56C8" : "none",
-              bgcolor:
-                step.state === "complete"
-                  ? "#0E56C8"
-                  : step.state === "active"
-                    ? "white"
-                    : "#EEF3FA",
-              boxShadow:
-                step.state === "active"
-                  ? "0 8px 20px rgba(14,86,200,0.08)"
-                  : "0 6px 16px rgba(17,31,54,0.04)",
-              position: "relative",
-              display: "grid",
-              placeItems: "center",
-            }}
-          >
-            {step.state === "complete" ? (
-              <Typography
-                sx={{ color: "white", fontSize: "0.9rem", fontWeight: 800 }}
-              >
-                {"\u2713"}
-              </Typography>
-            ) : (
-              <Box
-                sx={{
-                  width: step.state === "active" ? 7 : 6,
-                  height: step.state === "active" ? 7 : 6,
-                  borderRadius: "50%",
-                  bgcolor: "#0E56C8",
-                }}
-              />
-            )}
-          </Box>
-          <Typography
-            sx={{
-              color: "#202938",
-              fontSize: "0.74rem",
-              fontWeight: 500,
-              lineHeight: 1.2,
-            }}
-          >
-            {step.label}
-          </Typography>
-          <Typography
-            sx={{
-              minHeight: 14,
-              color: step.state === "active" ? "#0E56C8" : step.state === "complete" ? "#239654" : "transparent",
-              fontSize: "0.54rem",
-              fontWeight: 800,
-              letterSpacing: 0.48,
-              textTransform: "uppercase",
-            }}
-          >
-            {step.state === "active" ? "In Progress" : step.state === "complete" ? "Done" : "."}
-          </Typography>
-        </Stack>
-      ))}
-    </Box>
-  );
-}
+// ─── sub-components ───────────────────────────────────────────────────────────
 
 function OptionCard({ icon, title, selected = false, onClick }) {
   return (
@@ -195,12 +68,14 @@ function OptionCard({ icon, title, selected = false, onClick }) {
       role="button"
       tabIndex={0}
       onClick={onClick}
+      onKeyDown={(e) => e.key === "Enter" && onClick()}
       sx={{
         position: "relative",
-        minHeight: 108,
+        height: "100%",
+        minHeight: 130,
         borderRadius: "0.95rem",
-        px: 2,
-        py: 1.6,
+        px: 1.5,
+        py: 2,
         bgcolor: selected ? "white" : "#F5F7FB",
         border: selected ? "2px solid #0E56C8" : "1px solid #EEF2F7",
         boxShadow: selected ? "0 10px 22px rgba(14,86,200,0.08)" : "none",
@@ -210,9 +85,10 @@ function OptionCard({ icon, title, selected = false, onClick }) {
         justifyContent: "center",
         textAlign: "center",
         cursor: "pointer",
+        transition: "all 0.15s",
       }}
     >
-      {selected ? (
+      {selected && (
         <Box
           sx={{
             position: "absolute",
@@ -229,9 +105,9 @@ function OptionCard({ icon, title, selected = false, onClick }) {
             placeItems: "center",
           }}
         >
-          {"\u2713"}
+          ✓
         </Box>
-      ) : null}
+      )}
       <Box
         sx={{ color: "#344153", display: "grid", placeItems: "center", mb: 1 }}
       >
@@ -269,8 +145,9 @@ function SegmentedChoice({ items, value, onChange }) {
           role="button"
           tabIndex={0}
           onClick={() => onChange(item.value)}
+          onKeyDown={(e) => e.key === "Enter" && onChange(item.value)}
           sx={{
-            minHeight: 38,
+            minHeight: 40,
             borderRadius: "0.72rem",
             bgcolor: item.value === value ? "white" : "transparent",
             border:
@@ -283,6 +160,7 @@ function SegmentedChoice({ items, value, onChange }) {
             display: "grid",
             placeItems: "center",
             cursor: "pointer",
+            transition: "all 0.15s",
           }}
         >
           {item.title}
@@ -292,98 +170,126 @@ function SegmentedChoice({ items, value, onChange }) {
   );
 }
 
-function FieldLabel({ children }) {
+function FieldLabel({ children, optional = false }) {
   return (
-    <Typography
-      sx={{
-        mb: 0.75,
-        color: "#59667A",
-        fontSize: "0.68rem",
-        fontWeight: 700,
-        letterSpacing: 0.5,
-        textTransform: "uppercase",
-      }}
+    <Stack
+      direction="row"
+      justifyContent="space-between"
+      alignItems="center"
+      sx={{ mb: 0.75 }}
     >
-      {children}
-    </Typography>
+      <Typography
+        sx={{
+          color: "#59667A",
+          fontSize: "0.68rem",
+          fontWeight: 700,
+          letterSpacing: 0.5,
+          textTransform: "uppercase",
+        }}
+      >
+        {children}
+      </Typography>
+      {optional && (
+        <Typography
+          sx={{ color: "#9AA5B5", fontSize: "0.62rem", fontWeight: 600 }}
+        >
+          Optional
+        </Typography>
+      )}
+    </Stack>
   );
 }
+
+const INPUT_SX = {
+  "& .MuiOutlinedInput-root": {
+    borderRadius: "0.95rem",
+    bgcolor: "#F3F5F9",
+    minHeight: 48,
+    "& fieldset": { border: "none" },
+    "&.Mui-focused fieldset": { border: "1.5px solid #0E56C8" },
+    "&.Mui-error fieldset": { border: "1.5px solid #D32F2F" },
+    "&.Mui-error": { bgcolor: "#FFF5F5" },
+  },
+};
+
+// ─── page ─────────────────────────────────────────────────────────────────────
 
 export default function BookingStepTwoPage() {
   const { draft, updateDraft } = useBookingDraft();
   const navigate = useNavigate();
   const [errors, setErrors] = useState({});
-  const [discomOptions, setDiscomOptions] = useState(fallbackDiscoms);
+  const [discomOptions, setDiscomOptions] = useState([]);
+  const [discomsLoading, setDiscomsLoading] = useState(true);
 
   useEffect(() => {
-    if (!isStep1Complete(draft)) {
-      navigate("/booking", { replace: true });
-    }
+    if (!isStep1Complete(draft)) navigate("/booking", { replace: true });
   }, []);
 
   useEffect(() => {
     let active = true;
-
     async function loadDiscoms() {
       try {
         const settings = await publicPlatformSettingsApi.getSettings();
         if (!active) return;
-
         const activeDiscoms = (settings.discoms || [])
-          .filter((discom) => discom.status !== "disabled")
-          .map((discom) => ({
-            value: String(discom.code || discom.id).toLowerCase(),
-            label: discom.code || discom.name,
-            stateKey: discom.stateKey,
+          .filter((d) => d.status !== "disabled")
+          .map((d) => ({
+            value: String(d.code || d.id).toLowerCase(),
+            label: d.code || d.name,
+            stateKey: d.stateKey,
           }));
-
-        if (activeDiscoms.length) {
-          setDiscomOptions(activeDiscoms);
-        }
+        setDiscomOptions(
+          activeDiscoms.length ? activeDiscoms : fallbackDiscoms,
+        );
       } catch {
-        setDiscomOptions(fallbackDiscoms);
+        if (active) setDiscomOptions(fallbackDiscoms);
+      } finally {
+        if (active) setDiscomsLoading(false);
       }
     }
-
     loadDiscoms();
     return () => {
       active = false;
     };
   }, []);
 
-  const stateDiscomOptions = useMemo(
-    () =>
-      discomOptions.filter(
-        (option) =>
-          option.stateKey === normalizeStateKey(draft.installationAddress.state),
-      ),
-    [discomOptions, draft.installationAddress.state],
-  );
+  const stateDiscomOptions = useMemo(() => {
+    const userStateKey = draft.installationAddress?.state;
+    if (!userStateKey) return discomOptions;
+    // Strictly filter by state — empty means none configured for this state
+    return discomOptions.filter((o) => o.stateKey === userStateKey);
+  }, [discomOptions, draft.installationAddress?.state]);
 
   useEffect(() => {
-    if (!stateDiscomOptions.length) return;
-
-    const hasCurrent = stateDiscomOptions.some(
-      (option) => option.value === draft.property.distributionCompany,
-    );
-
-    if (!hasCurrent) {
-      updateProperty({ distributionCompany: stateDiscomOptions[0].value });
+    // Only auto-select if there are actual options for this state
+    if (!stateDiscomOptions.length) {
+      // Clear any previously selected company that no longer applies
+      updateProperty({ distributionCompany: "" });
+      return;
     }
-  }, [
-    draft.installationAddress.state,
-    draft.property.distributionCompany,
-    stateDiscomOptions,
-  ]);
+    const hasCurrent = stateDiscomOptions.some(
+      (o) => o.value === draft.property.distributionCompany,
+    );
+    if (!hasCurrent)
+      updateProperty({ distributionCompany: stateDiscomOptions[0].value });
+  }, [draft.property.distributionCompany, stateDiscomOptions]);
 
   function updateProperty(values) {
     updateDraft("property", values);
   }
 
+  function clearError(key) {
+    setErrors((prev) => {
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+  }
+
   function handleContinue() {
-    const { valid, errors: validationErrors } = validateStep2(draft);
+    const { valid, errors: ve } = validateStep2(draft);
     if (!valid) {
-      setErrors(validationErrors);
+      setErrors(ve);
       return;
     }
     navigate("/booking/roof");
@@ -403,131 +309,296 @@ export default function BookingStepTwoPage() {
           maxWidth={false}
           disableGutters
           className={styles.compactContainer}
-          sx={{ maxWidth: "1200px !important" }}
         >
           <Stack
-            spacing={{ xs: 3.4, md: 4.2 }}
+            spacing={{ xs: 3, md: 3.8 }}
             alignItems="center"
             sx={{ width: "100%" }}
           >
-            <Stack alignItems="center" sx={{ width: "100%", maxWidth: 920 }}>
-              <Box sx={{ width: "100%", maxWidth: 760 }}>
-                <BookingStepper />
-              </Box>
-            </Stack>
+            {/* Stepper */}
+            <Box sx={{ width: "100%", maxWidth: 720 }}>
+              <BookingStepper activeStep={1} />
+            </Box>
 
+            {/* Heading */}
             <Stack
-              spacing={1}
+              spacing={0.9}
               alignItems="center"
               textAlign="center"
-              sx={{
-                width: "100%",
-                maxWidth: 520,
-                mx: "auto",
-              }}
+              sx={{ maxWidth: 500 }}
             >
               <Typography
                 variant="h1"
-                sx={{
-                  ...publicTypography.pageTitle,
-                  color: "#18253A",
-                }}
+                sx={{ ...publicTypography.pageTitle, color: "#18253A" }}
               >
-                Tell us about your property
-                <Box component="span" sx={{ ml: 0.32 }}>
-                  {"\uD83C\uDFE0"}
-                </Box>
+                Tell us about your property 🏠
               </Typography>
               <Typography
-                sx={{
-                  color: "#707D90",
-                  fontSize: "0.96rem",
-                  lineHeight: 1.65,
-                }}
+                sx={{ color: "#707D90", fontSize: "0.94rem", lineHeight: 1.65 }}
               >
-                This helps us recommend the right solar system for you and
-                accurately calculate your potential savings.
+                This helps us recommend the right solar system and accurately
+                calculate your savings.
               </Typography>
             </Stack>
 
+            {/* Main card */}
             <Box
               sx={{
                 width: "100%",
-                maxWidth: 1000,
-                p: { xs: 2.2, md: 3.2 },
-                borderRadius: "1.35rem",
-                bgcolor: "rgba(255,255,255,0.95)",
+                maxWidth: 860,
+                p: { xs: 2.4, md: 3.4 },
+                borderRadius: "1.4rem",
+                bgcolor: "rgba(255,255,255,0.97)",
                 border: "1px solid rgba(221,229,239,0.98)",
-                boxShadow: "0 22px 54px rgba(20,34,56,0.08)",
+                boxShadow: "0 20px 50px rgba(20,34,56,0.08)",
               }}
             >
-
-              <Grid container spacing={{ xs: 3.4, md: 3.8 }}>
-                <Grid size={{ xs: 12, md: 6 }}>
-                  <FieldLabel>Property Type</FieldLabel>
-                  <Grid container spacing={1.2}>
-                    {propertyTypes.map((item) => (
-                      <Grid key={item.title} size={{ xs: 12, sm: 4 }}>
-                        <OptionCard
-                          {...item}
-                          selected={draft.property.type === item.value}
-                          onClick={() => {
-                            updateProperty({ type: item.value });
-                            setErrors((prev) => {
-                              const next = { ...prev };
-                              delete next["property.type"];
-                              return next;
-                            });
-                          }}
-                        />
-                      </Grid>
-                    ))}
-                  </Grid>
-                  {errors["property.type"] ? (
-                    <Typography
-                      sx={{ mt: 0.8, color: "#D32F2F", fontSize: "0.72rem" }}
-                    >
-                      {errors["property.type"]}
-                    </Typography>
-                  ) : null}
-                </Grid>
-
-                <Grid size={{ xs: 12, md: 6 }}>
-                  <Stack spacing={2.2}>
-                    <Box>
-                      <FieldLabel>Ownership Status</FieldLabel>
-                      <SegmentedChoice
-                        items={ownershipTypes}
-                        value={draft.property.ownership}
-                        onChange={(ownership) => {
-                          updateProperty({ ownership });
-                          setErrors((prev) => {
-                            const next = { ...prev };
-                            delete next["property.ownership"];
-                            return next;
-                          });
+              {/* ── Property Type — full width ── */}
+              <Box>
+                <FieldLabel>Property Type</FieldLabel>
+                <Grid container spacing={1.4} sx={{ mt: 0.2 }}>
+                  {propertyTypes.map((item) => (
+                    <Grid key={item.value} size={{ xs: 12, sm: 4 }}>
+                      <OptionCard
+                        {...item}
+                        selected={draft.property.type === item.value}
+                        onClick={() => {
+                          updateProperty({ type: item.value });
+                          clearError("property.type");
                         }}
                       />
-                      {errors["property.ownership"] ? (
-                        <Typography
+                    </Grid>
+                  ))}
+                </Grid>
+                {errors["property.type"] && (
+                  <Typography
+                    sx={{ mt: 0.8, color: "#D32F2F", fontSize: "0.72rem" }}
+                  >
+                    {errors["property.type"]}
+                  </Typography>
+                )}
+              </Box>
+
+              <Divider
+                sx={{ my: { xs: 2.6, md: 3 }, borderColor: "#EDF1F6" }}
+              />
+
+              {/* ── Ownership + Discom + Connection — 3 equal columns ── */}
+              <Grid
+                container
+                spacing={{ xs: 2.4, md: 2.8 }}
+                alignItems="stretch"
+              >
+                {/* Ownership */}
+                <Grid size={{ xs: 12, sm: 4 }}>
+                  <Box
+                    sx={{
+                      height: "100%",
+                      p: 1.6,
+                      borderRadius: "0.95rem",
+                      border: errors["property.ownership"]
+                        ? "1.5px solid #D32F2F"
+                        : "1px solid #EEF2F7",
+                      bgcolor: "#FAFBFD",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 1,
+                    }}
+                  >
+                    <FieldLabel>Ownership Status</FieldLabel>
+                    <SegmentedChoice
+                      items={ownershipTypes}
+                      value={draft.property.ownership}
+                      onChange={(ownership) => {
+                        updateProperty({ ownership });
+                        clearError("property.ownership");
+                      }}
+                    />
+                    {errors["property.ownership"] && (
+                      <Typography
+                        sx={{ color: "#D32F2F", fontSize: "0.72rem", mt: 0.2 }}
+                      >
+                        {errors["property.ownership"]}
+                      </Typography>
+                    )}
+                  </Box>
+                </Grid>
+
+                {/* Distribution Company */}
+                <Grid size={{ xs: 12, sm: 4 }}>
+                  <Box
+                    sx={{
+                      height: "100%",
+                      p: 1.6,
+                      borderRadius: "0.95rem",
+                      border:
+                        !discomsLoading && stateDiscomOptions.length === 0
+                          ? "1.5px solid #FFA726"
+                          : errors["property.distributionCompany"]
+                            ? "1.5px solid #D32F2F"
+                            : "1px solid #EEF2F7",
+                      bgcolor:
+                        !discomsLoading && stateDiscomOptions.length === 0
+                          ? "#FFFBF5"
+                          : "#FAFBFD",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 1,
+                    }}
+                  >
+                    <FieldLabel>Distribution Company</FieldLabel>
+
+                    {/* ── not yet configured ── */}
+                    {!discomsLoading && stateDiscomOptions.length === 0 ? (
+                      <Stack spacing={0.6}>
+                        <Box
                           sx={{
-                            mt: 0.8,
-                            color: "#D32F2F",
-                            fontSize: "0.72rem",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 0.8,
+                            px: 1.2,
+                            py: 1,
+                            borderRadius: "0.75rem",
+                            bgcolor: "#FFF3E0",
+                            border: "1px solid #FFE0B2",
                           }}
                         >
-                          {errors["property.ownership"]}
-                        </Typography>
-                      ) : null}
-                    </Box>
-                  </Stack>
+                          <Typography sx={{ fontSize: "1rem", lineHeight: 1 }}>
+                            ⚠️
+                          </Typography>
+                          <Box>
+                            <Typography
+                              sx={{
+                                color: "#E65100",
+                                fontSize: "0.74rem",
+                                fontWeight: 800,
+                                lineHeight: 1.3,
+                              }}
+                            >
+                              Not configured for this state
+                            </Typography>
+                            <Typography
+                              sx={{
+                                color: "#BF360C",
+                                fontSize: "0.66rem",
+                                lineHeight: 1.45,
+                                mt: 0.25,
+                              }}
+                            >
+                              Please contact your admin to add distribution
+                              companies for this state.
+                            </Typography>
+                          </Box>
+                        </Box>
+                      </Stack>
+                    ) : (
+                      /* ── normal dropdown ── */
+                      <TextField
+                        select
+                        fullWidth
+                        disabled={discomsLoading}
+                        value={
+                          discomsLoading
+                            ? ""
+                            : (draft.property.distributionCompany ?? "")
+                        }
+                        onChange={(e) => {
+                          updateProperty({
+                            distributionCompany: e.target.value,
+                          });
+                          clearError("property.distributionCompany");
+                        }}
+                        error={!!errors["property.distributionCompany"]}
+                        helperText={errors["property.distributionCompany"]}
+                        SelectProps={{
+                          displayEmpty: true,
+                          IconComponent: KeyboardArrowDownRoundedIcon,
+                        }}
+                        sx={{
+                          ...INPUT_SX,
+                          "& .MuiOutlinedInput-root": {
+                            ...INPUT_SX["& .MuiOutlinedInput-root"],
+                            bgcolor: discomsLoading ? "#F0F2F5" : "#F3F5F9",
+                          },
+                        }}
+                        FormHelperTextProps={{
+                          sx: { fontSize: "0.68rem", mx: 0.5 },
+                        }}
+                      >
+                        {discomsLoading ? (
+                          <MenuItem value="" disabled>
+                            Loading...
+                          </MenuItem>
+                        ) : (
+                          stateDiscomOptions.map((o) => (
+                            <MenuItem key={o.value} value={o.value}>
+                              {o.label}
+                            </MenuItem>
+                          ))
+                        )}
+                      </TextField>
+                    )}
+                  </Box>
+                </Grid>
+
+                {/* Connection Type */}
+                <Grid size={{ xs: 12, sm: 4 }}>
+                  <Box
+                    sx={{
+                      height: "100%",
+                      p: 1.6,
+                      borderRadius: "0.95rem",
+                      border: errors["property.connectionType"]
+                        ? "1.5px solid #D32F2F"
+                        : "1px solid #EEF2F7",
+                      bgcolor: "#FAFBFD",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 1,
+                    }}
+                  >
+                    <FieldLabel>Connection Type</FieldLabel>
+                    <TextField
+                      select
+                      fullWidth
+                      value={draft.property.connectionType ?? ""}
+                      onChange={(e) => {
+                        updateProperty({ connectionType: e.target.value });
+                        clearError("property.connectionType");
+                      }}
+                      error={!!errors["property.connectionType"]}
+                      helperText={errors["property.connectionType"]}
+                      SelectProps={{
+                        displayEmpty: true,
+                        IconComponent: KeyboardArrowDownRoundedIcon,
+                      }}
+                      sx={INPUT_SX}
+                      FormHelperTextProps={{
+                        sx: { fontSize: "0.68rem", mx: 0.5 },
+                      }}
+                    >
+                      <MenuItem value="" disabled>
+                        Select Type
+                      </MenuItem>
+                      <MenuItem value="single_phase">Single Phase</MenuItem>
+                      <MenuItem value="three_phase">Three Phase</MenuItem>
+                    </TextField>
+                    {errors["property.connectionType"] && (
+                      <Typography
+                        sx={{ color: "#D32F2F", fontSize: "0.72rem", mt: 0.2 }}
+                      >
+                        {errors["property.connectionType"]}
+                      </Typography>
+                    )}
+                  </Box>
                 </Grid>
               </Grid>
 
               <Divider
-                sx={{ my: { xs: 0.35, md: 0.55 }, borderColor: "#EDF1F6" }}
+                sx={{ my: { xs: 2.8, md: 3.2 }, borderColor: "#EDF1F6" }}
               />
 
+              {/* ── Consumer Number + Sanctioned Load ── */}
               <Box>
                 <Typography
                   sx={{
@@ -536,111 +607,46 @@ export default function BookingStepTwoPage() {
                     fontWeight: 700,
                     letterSpacing: 0.5,
                     textTransform: "uppercase",
-                    mb: 1.3,
+                    mb: 1.6,
                   }}
                 >
-                  Electricity Connection
+                  Electricity Details
                 </Typography>
-
                 <Grid container spacing={{ xs: 2.4, md: 2.9 }}>
                   <Grid size={{ xs: 12, md: 6 }}>
-                    <FieldLabel>Distribution Company</FieldLabel>
+                    <FieldLabel optional>
+                      Consumer Number (from bill)
+                    </FieldLabel>
                     <TextField
-                      select
                       fullWidth
-                      value={draft.property.distributionCompany}
-                      onChange={(event) =>
+                      placeholder="As printed on your electricity bill"
+                      value={draft.property.consumerNumber}
+                      onChange={(e) =>
                         updateProperty({
-                          distributionCompany: event.target.value,
+                          consumerNumber: e.target.value.replace(/\D/g, ""),
                         })
                       }
-                      SelectProps={{
-                        displayEmpty: true,
-                        IconComponent: KeyboardArrowDownRoundedIcon,
-                      }}
-                      InputProps={{
-                        sx: {
-                          borderRadius: "0.95rem",
-                          bgcolor: "#F3F5F9",
-                          minHeight: 48,
-                        },
-                      }}
-                    >
-                      <MenuItem value="">
-                        {stateDiscomOptions.length
-                          ? "Select Company"
-                          : "Select state first"}
-                      </MenuItem>
-                      {stateDiscomOptions.map((option) => (
-                        <MenuItem key={option.value} value={option.value}>
-                          {option.label}
-                        </MenuItem>
-                      ))}
-                    </TextField>
-                  </Grid>
-
-                  <Grid size={{ xs: 12, md: 6 }}>
-                    <FieldLabel>Connection Type</FieldLabel>
-                    <TextField
-                      select
-                      fullWidth
-                      value={draft.property.connectionType}
-                      onChange={(event) =>
-                        updateProperty({ connectionType: event.target.value })
-                      }
-                      SelectProps={{
-                        displayEmpty: true,
-                        IconComponent: KeyboardArrowDownRoundedIcon,
-                      }}
-                      InputProps={{
-                        sx: {
-                          borderRadius: "0.95rem",
-                          bgcolor: "#F3F5F9",
-                          minHeight: 48,
-                        },
-                      }}
-                    >
-                      <MenuItem value="">Select Type</MenuItem>
-                      <MenuItem value="single_phase">Single Phase</MenuItem>
-                      <MenuItem value="three_phase">Three Phase</MenuItem>
-                    </TextField>
-                  </Grid>
-
-                  <Grid size={{ xs: 12, md: 6 }}>
-                    <FieldLabel>Consumer Number (from bill)</FieldLabel>
-                    <TextField
-                      fullWidth
-                      placeholder="1234567890"
-                      value={draft.property.consumerNumber}
-                      onChange={(event) => {
-                        // Only allow digits and limit to 10 characters
-                        const cleanedConsumerNumber = event.target.value.replace(/\D/g, '').slice(0, 10);
-                        updateProperty({ consumerNumber: cleanedConsumerNumber });
-                      }}
-                      InputProps={{
-                        sx: {
-                          borderRadius: "0.95rem",
-                          bgcolor: "#F3F5F9",
-                          minHeight: 48,
-                        },
-                      }}
+                      sx={INPUT_SX}
                     />
                   </Grid>
-
                   <Grid size={{ xs: 12, md: 6 }}>
-                    <FieldLabel>Sanctioned Load</FieldLabel>
+                    <FieldLabel optional>Sanctioned Load</FieldLabel>
                     <TextField
                       fullWidth
                       placeholder="e.g. 5"
                       value={draft.property.sanctionedLoadKw}
-                      onChange={(event) =>
-                        updateProperty({ sanctionedLoadKw: event.target.value })
+                      onChange={(e) =>
+                        updateProperty({ sanctionedLoadKw: e.target.value })
                       }
                       InputProps={{
                         sx: {
                           borderRadius: "0.95rem",
                           bgcolor: "#F3F5F9",
                           minHeight: 48,
+                          "& fieldset": { border: "none" },
+                          "&.Mui-focused fieldset": {
+                            border: "1.5px solid #0E56C8",
+                          },
                         },
                         endAdornment: (
                           <Typography
@@ -655,12 +661,16 @@ export default function BookingStepTwoPage() {
                 </Grid>
               </Box>
 
+              <Divider
+                sx={{ my: { xs: 2.8, md: 3.2 }, borderColor: "#EDF1F6" }}
+              />
+
+              {/* Footer */}
               <Stack
                 direction={{ xs: "column", sm: "row" }}
-                spacing={{ xs: 1.5, sm: 2 }}
                 justifyContent="space-between"
-                alignItems={{ xs: "flex-start", sm: "center" }}
-                sx={{ pt: { xs: 1, md: 1.35 } }}
+                alignItems={{ xs: "stretch", sm: "center" }}
+                spacing={1.5}
               >
                 <Button
                   component={RouterLink}
@@ -677,20 +687,20 @@ export default function BookingStepTwoPage() {
                 >
                   Back
                 </Button>
-
                 <Button
                   onClick={handleContinue}
                   variant="contained"
                   endIcon={<ArrowForwardRoundedIcon />}
                   sx={{
-                    minWidth: 140,
-                    minHeight: 48,
+                    minWidth: 150,
+                    minHeight: 50,
                     borderRadius: "0.85rem",
                     fontWeight: 700,
                     fontSize: "0.92rem",
+                    textTransform: "none",
                     background:
                       "linear-gradient(180deg, #0E56C8 0%, #0D49B0 100%)",
-                    boxShadow: "0 14px 28px rgba(14,86,200,0.22)",
+                    boxShadow: "0 12px 28px rgba(14,86,200,0.22)",
                   }}
                 >
                   Continue

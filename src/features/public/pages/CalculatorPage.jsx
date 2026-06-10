@@ -1,5 +1,16 @@
 import toast from "react-hot-toast";
-import { Alert, Box, Button, Chip, Container, Grid, MenuItem, Stack, TextField, Typography } from "@mui/material";
+import {
+  Alert,
+  Box,
+  Button,
+  Chip,
+  Container,
+  Grid,
+  MenuItem,
+  Stack,
+  TextField,
+  Typography,
+} from "@mui/material";
 import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
 import BoltRoundedIcon from "@mui/icons-material/BoltRounded";
 import PaidOutlinedIcon from "@mui/icons-material/PaidOutlined";
@@ -10,18 +21,16 @@ import { useNavigate } from "react-router-dom";
 import { calculatorApi } from "@/features/public/api/calculatorApi";
 import { calculatorStorage } from "@/features/public/calculator/calculatorStorage";
 import styles from "@/features/public/pages/CalculatorPage.module.css";
-import { publicPageSpacing, publicTypography } from "@/features/public/pages/publicPageStyles";
-
-const stateOptions = [
-  ["telangana", "Telangana"],
-  ["andhra_pradesh", "Andhra Pradesh"],
-  ["karnataka", "Karnataka"],
-];
+import {
+  publicPageSpacing,
+  publicTypography,
+} from "@/features/public/pages/publicPageStyles";
+import { usePlatformStates } from "@/shared/hooks/usePlatformStates";
 
 const insightCards = [
   {
     title: "State Tariff",
-    text: "We estimate usage from your monthly bill using AP, Telangana, and Karnataka tariff assumptions.",
+    text: "We estimate usage from your monthly bill using the tariff rate configured for your selected state.",
     icon: <BoltRoundedIcon sx={{ fontSize: "1rem" }} />,
     tone: { bg: "#F0F3A6", fg: "#5B6200" },
   },
@@ -41,8 +50,8 @@ const insightCards = [
 
 const initialForm = {
   propertyType: "residential",
-  state: "telangana",
-  city: "Hyderabad",
+  state: "",
+  city: "",
   pincode: "",
   monthlyBill: "",
   monthlyUnits: "",
@@ -63,7 +72,20 @@ export default function CalculatorPage() {
   const [form, setForm] = useState(initialForm);
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { stateOptions, getCities } = usePlatformStates();
   const isCommercial = form.propertyType === "commercial";
+
+  // Auto-select the first state when states load and form.state is still empty
+  useEffect(() => {
+    if (stateOptions.length && !form.state) {
+      const first = stateOptions[0];
+      setForm((prev) => ({
+        ...prev,
+        state: first.key,
+        city: getCities(first.key)[0] ?? "",
+      }));
+    }
+  }, [stateOptions]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const heroRef = useRef(null);
   const formRef = useRef(null);
@@ -76,9 +98,15 @@ export default function CalculatorPage() {
     function observe(ref, setter) {
       const el = ref.current;
       if (!el) return;
-      const obs = new IntersectionObserver(([entry]) => {
-        if (entry.isIntersecting) { setter(true); obs.disconnect(); }
-      }, { threshold: 0.1 });
+      const obs = new IntersectionObserver(
+        ([entry]) => {
+          if (entry.isIntersecting) {
+            setter(true);
+            obs.disconnect();
+          }
+        },
+        { threshold: 0.1 },
+      );
       obs.observe(el);
       return () => obs.disconnect();
     }
@@ -96,57 +124,113 @@ export default function CalculatorPage() {
         next.desiredOffsetPercent = value === "commercial" ? "80" : "90";
       }
 
+      // Reset city when state changes — auto-select first available city
+      if (field === "state") {
+        const cities = getCities(value);
+        next.city = cities[0] ?? "";
+      }
+
       return next;
     });
   }
 
   function validateForm() {
-    if (!form.systemSizeKw.trim() || !Number(form.systemSizeKw)) return "Please enter your preferred system size.";
-    if (Number(form.systemSizeKw) < 3) return "Preferred system size must be at least 3 kW.";
-    if (!/^\d{6}$/.test(form.pincode.trim())) return "Please enter a valid 6-digit pincode.";
-    if (!form.city.trim()) return "Please enter your city.";
-    if (!Number(form.monthlyBill) || Number(form.monthlyBill) < 500) return "Monthly bill should be at least Rs 500.";
-    if (form.roofAreaSqFt && Number(form.roofAreaSqFt) < 100) return "Roof area should be at least 100 sq. ft.";
-    return "";
+    if (!form.systemSizeKw.trim() || !Number(form.systemSizeKw))
+      return { error: "Please enter your preferred system size." };
+    if (Number(form.systemSizeKw) < 3)
+      return { error: "Preferred system size must be at least 3 kW." };
+    if (!/^\d{6}$/.test(form.pincode.trim()))
+      return { error: "Please enter a valid 6-digit pincode." };
+    if (!form.city.trim()) return { error: "Please select a city." };
+
+    if (!Number(form.monthlyBill) || Number(form.monthlyBill) < 500)
+      return { error: "Monthly bill should be at least Rs 500." };
+    if (form.roofAreaSqFt && Number(form.roofAreaSqFt) < 100)
+      return { error: "Roof area should be at least 100 sq. ft." };
+    return {};
   }
 
   async function handleSubmit(event) {
     event.preventDefault();
-    const validationMessage = validateForm();
-    setError(validationMessage);
-    if (validationMessage) return;
+    const validation = validateForm();
+
+    if (validation.unavailable) {
+      // Location is outside Andhra Pradesh — go straight to unavailable screen
+      calculatorStorage.setServiceability({
+        serviceable: false,
+        reason: "This location is outside Sparkin's Andhra Pradesh coverage.",
+        supportedCities: [
+          "Vijayawada",
+          "Visakhapatnam",
+          "Guntur",
+          "Tirupati",
+          "Nellore",
+          "Kurnool",
+        ],
+      });
+      navigate("/calculator/unavailable");
+      return;
+    }
+
+    if (validation.error) {
+      setError(validation.error);
+      return;
+    }
+
+    setError("");
 
     // Enforce 70-90% solar offset range for both residential and commercial
     const desiredOffset = Number(form.desiredOffsetPercent);
-    if (!Number(form.desiredOffsetPercent) || desiredOffset < 70 || desiredOffset > 90) {
-      toast.custom((t) => (
-        <Box
-          sx={{
-            backgroundColor: "#FFF3E0",
-            border: "2px solid #FF9800",
-            borderRadius: "0.8rem",
-            padding: "1rem 1.2rem",
-            display: "flex",
-            alignItems: "center",
-            gap: "0.8rem",
-            boxShadow: "0 10px 30px rgba(255, 152, 0, 0.2)",
-            maxWidth: "400px",
-          }}
-        >
-          <Box sx={{ color: "#FF6F00", fontSize: "1.3rem", fontWeight: "bold" }}>⚠️</Box>
-          <Box>
-            <Typography sx={{ fontWeight: 800, color: "#E65100", fontSize: "0.95rem", mb: 0.3 }}>
-              Solar Offset Range Required
-            </Typography>
-            <Typography sx={{ color: "#E65100", fontSize: "0.85rem", lineHeight: 1.4 }}>
-              Please enter a value between <strong>70% to 90%</strong> for optimal system performance.
-            </Typography>
+    if (
+      !Number(form.desiredOffsetPercent) ||
+      desiredOffset < 70 ||
+      desiredOffset > 90
+    ) {
+      toast.custom(
+        (t) => (
+          <Box
+            sx={{
+              backgroundColor: "#FFF3E0",
+              border: "2px solid #FF9800",
+              borderRadius: "0.8rem",
+              padding: "1rem 1.2rem",
+              display: "flex",
+              alignItems: "center",
+              gap: "0.8rem",
+              boxShadow: "0 10px 30px rgba(255, 152, 0, 0.2)",
+              maxWidth: "400px",
+            }}
+          >
+            <Box
+              sx={{ color: "#FF6F00", fontSize: "1.3rem", fontWeight: "bold" }}
+            >
+              ⚠️
+            </Box>
+            <Box>
+              <Typography
+                sx={{
+                  fontWeight: 800,
+                  color: "#E65100",
+                  fontSize: "0.95rem",
+                  mb: 0.3,
+                }}
+              >
+                Solar Offset Range Required
+              </Typography>
+              <Typography
+                sx={{ color: "#E65100", fontSize: "0.85rem", lineHeight: 1.4 }}
+              >
+                Please enter a value between <strong>70% to 90%</strong> for
+                optimal system performance.
+              </Typography>
+            </Box>
           </Box>
-        </Box>
-      ), {
-        duration: 4000,
-        position: "top-right",
-      });
+        ),
+        {
+          duration: 4000,
+          position: "top-right",
+        },
+      );
       return;
     }
 
@@ -164,7 +248,9 @@ export default function CalculatorPage() {
         systemSizeKw: toNumberOrUndefined(form.systemSizeKw),
         sanctionedLoadKw: toNumberOrUndefined(form.sanctionedLoadKw),
         connectionType: form.connectionType,
-        daytimeUsagePercent: isCommercial ? toNumberOrUndefined(form.daytimeUsagePercent) : undefined,
+        daytimeUsagePercent: isCommercial
+          ? toNumberOrUndefined(form.daytimeUsagePercent)
+          : undefined,
         desiredOffsetPercent: Number(form.desiredOffsetPercent),
       });
 
@@ -190,7 +276,11 @@ export default function CalculatorPage() {
         return;
       }
 
-      setError(apiError?.response?.data?.message || apiError?.message || "Could not calculate savings right now.");
+      setError(
+        apiError?.response?.data?.message ||
+          apiError?.message ||
+          "Could not calculate savings right now.",
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -202,10 +292,15 @@ export default function CalculatorPage() {
         sx={{
           py: publicPageSpacing.pageYCompact,
           minHeight: "calc(100vh - 72px)",
-          background: "radial-gradient(circle at top center, rgba(214,229,246,0.8) 0%, rgba(245,248,251,0.96) 24%, #F9FBFD 62%, #F7FAFB 100%)",
+          background:
+            "radial-gradient(circle at top center, rgba(214,229,246,0.8) 0%, rgba(245,248,251,0.96) 24%, #F9FBFD 62%, #F7FAFB 100%)",
         }}
       >
-        <Container maxWidth={false} disableGutters className={styles.compactContainer}>
+        <Container
+          maxWidth={false}
+          disableGutters
+          className={styles.compactContainer}
+        >
           <Stack
             ref={heroRef}
             spacing={1.35}
@@ -219,11 +314,24 @@ export default function CalculatorPage() {
               transition: "opacity 0.7s ease, transform 0.7s ease",
             }}
           >
-            <Typography variant="h1" sx={{ ...publicTypography.heroTitle, color: "#18253A" }}>
-              Calculate Your <Box component="span" sx={{ color: "#0E56C8" }}>Solar Savings</Box>
+            <Typography
+              variant="h1"
+              sx={{ ...publicTypography.heroTitle, color: "#18253A" }}
+            >
+              Calculate Your{" "}
+              <Box component="span" sx={{ color: "#0E56C8" }}>
+                Solar Savings
+              </Box>
             </Typography>
-            <Typography sx={{ maxWidth: 590, color: "#7A889D", ...publicTypography.sectionBody }}>
-              Get a state-aware estimate for Andhra Pradesh, Telangana, or Karnataka using your bill, pincode, roof area, and connection details.
+            <Typography
+              sx={{
+                maxWidth: 590,
+                color: "#7A889D",
+                ...publicTypography.sectionBody,
+              }}
+            >
+              Get an accurate estimate for your state using your bill, pincode,
+              roof area, and connection details.
             </Typography>
           </Stack>
 
@@ -248,13 +356,35 @@ export default function CalculatorPage() {
             }}
           >
             <Stack spacing={2.2}>
-              {error ? <Alert severity="error" sx={{ borderRadius: "0.9rem" }}>{error}</Alert> : null}
+              {error ? (
+                <Alert severity="error" sx={{ borderRadius: "0.9rem" }}>
+                  {error}
+                </Alert>
+              ) : null}
 
               <Box>
-                <Typography sx={{ mb: 1.1, fontSize: "0.78rem", fontWeight: 800, letterSpacing: 1.1, textTransform: "uppercase", color: "#3B4658" }}>
+                <Typography
+                  sx={{
+                    mb: 1.1,
+                    fontSize: "0.78rem",
+                    fontWeight: 800,
+                    letterSpacing: 1.1,
+                    textTransform: "uppercase",
+                    color: "#3B4658",
+                  }}
+                >
                   Property Type
                 </Typography>
-                <Box sx={{ p: 0.45, borderRadius: "0.85rem", bgcolor: "#EFF2F7", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 0.55 }}>
+                <Box
+                  sx={{
+                    p: 0.45,
+                    borderRadius: "0.85rem",
+                    bgcolor: "#EFF2F7",
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    gap: 0.55,
+                  }}
+                >
                   {[
                     ["residential", "Residential"],
                     ["commercial", "Commercial"],
@@ -266,43 +396,254 @@ export default function CalculatorPage() {
                       sx={{
                         height: 38,
                         borderRadius: "0.65rem",
-                        bgcolor: form.propertyType === value ? "white" : "transparent",
-                        color: form.propertyType === value ? "#0E56C8" : "#4C586C",
+                        bgcolor:
+                          form.propertyType === value ? "white" : "transparent",
+                        color:
+                          form.propertyType === value ? "#0E56C8" : "#4C586C",
                         fontWeight: 700,
-                        boxShadow: form.propertyType === value ? "0 4px 12px rgba(16,29,51,0.08)" : "none",
+                        boxShadow:
+                          form.propertyType === value
+                            ? "0 4px 12px rgba(16,29,51,0.08)"
+                            : "none",
                       }}
                     />
                   ))}
                 </Box>
               </Box>
 
-              <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "repeat(2, minmax(0, 1fr))" }, gap: 1.45 }}>
-                <TextField select label="State" value={form.state} onChange={(event) => updateForm("state", event.target.value)} sx={{ "& .MuiOutlinedInput-root": { borderRadius: "0.75rem", boxShadow: "0 4px 12px rgba(16,25,47,0.07)" } }}>
-                  {stateOptions.map(([value, label]) => <MenuItem key={value} value={value}>{label}</MenuItem>)}
+              <Box
+                sx={{
+                  display: "grid",
+                  gridTemplateColumns: {
+                    xs: "1fr",
+                    md: "repeat(2, minmax(0, 1fr))",
+                  },
+                  gap: 1.45,
+                }}
+              >
+                <TextField
+                  select
+                  label="State"
+                  value={form.state}
+                  onChange={(event) => updateForm("state", event.target.value)}
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: "0.75rem",
+                      boxShadow: "0 4px 12px rgba(16,25,47,0.07)",
+                    },
+                  }}
+                  SelectProps={{
+                    displayEmpty: true,
+                  }}
+                >
+                  <MenuItem value="" disabled>
+                    Select state
+                  </MenuItem>
+                  {stateOptions.map((s) => (
+                    <MenuItem key={s.key} value={s.key}>
+                      {s.name}
+                    </MenuItem>
+                  ))}
                 </TextField>
-                <TextField label="City" value={form.city} onChange={(event) => updateForm("city", event.target.value)} placeholder="Hyderabad" sx={{ "& .MuiOutlinedInput-root": { borderRadius: "0.75rem", boxShadow: "0 4px 12px rgba(16,25,47,0.07)" } }} />
+                <TextField
+                  select
+                  label="City"
+                  value={form.city}
+                  onChange={(event) => updateForm("city", event.target.value)}
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: "0.75rem",
+                      boxShadow: "0 4px 12px rgba(16,25,47,0.07)",
+                    },
+                  }}
+                  SelectProps={{
+                    displayEmpty: true,
+                    MenuProps: {
+                      PaperProps: {
+                        sx: { maxHeight: 260 },
+                      },
+                    },
+                  }}
+                >
+                  <MenuItem value="" disabled>
+                    Select city
+                  </MenuItem>
+                  {getCities(form.state).map((city) => (
+                    <MenuItem key={city} value={city}>
+                      {city}
+                    </MenuItem>
+                  ))}
+                </TextField>
                 <TextField
                   label="Pincode"
                   value={form.pincode}
-                  onChange={(event) => updateForm("pincode", event.target.value.replace(/\D/g, "").slice(0, 6))}
-                  placeholder="501101"
-                  InputProps={{ startAdornment: <PlaceOutlinedIcon sx={{ color: "#727E92", fontSize: "1.1rem", mr: 1 }} /> }}
-                  sx={{ "& .MuiOutlinedInput-root": { borderRadius: "0.75rem", boxShadow: "0 4px 12px rgba(16,25,47,0.07)" } }}
+                  onChange={(event) =>
+                    updateForm(
+                      "pincode",
+                      event.target.value.replace(/\D/g, "").slice(0, 6),
+                    )
+                  }
+                  placeholder="e.g. 520001"
+                  helperText="Enter your 6-digit pincode"
+                  InputProps={{
+                    startAdornment: (
+                      <PlaceOutlinedIcon
+                        sx={{ color: "#727E92", fontSize: "1.1rem", mr: 1 }}
+                      />
+                    ),
+                  }}
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: "0.75rem",
+                      boxShadow: "0 4px 12px rgba(16,25,47,0.07)",
+                    },
+                  }}
                 />
-                <TextField label="Average Monthly Bill" type="number" value={form.monthlyBill} onChange={(event) => updateForm("monthlyBill", event.target.value)} placeholder="1200" sx={{ "& .MuiOutlinedInput-root": { borderRadius: "0.75rem", boxShadow: "0 4px 12px rgba(16,25,47,0.07)" } }} />
-                <TextField label="Monthly Units (optional)" type="number" value={form.monthlyUnits} onChange={(event) => updateForm("monthlyUnits", event.target.value)} placeholder="Auto from bill" sx={{ "& .MuiOutlinedInput-root": { borderRadius: "0.75rem", boxShadow: "0 4px 12px rgba(16,25,47,0.07)" } }} />
-                <TextField label="Available Roof Area sq. ft. (optional)" type="number" value={form.roofAreaSqFt} onChange={(event) => updateForm("roofAreaSqFt", event.target.value)} placeholder="600" sx={{ "& .MuiOutlinedInput-root": { borderRadius: "0.75rem", boxShadow: "0 4px 12px rgba(16,25,47,0.07)" } }} />
-                <TextField label="Preferred System Size kW" type="number" value={form.systemSizeKw} onChange={(event) => updateForm("systemSizeKw", event.target.value)} placeholder={isCommercial ? "25" : "5"} required sx={{ "& .MuiOutlinedInput-root": { borderRadius: "0.75rem", boxShadow: "0 4px 12px rgba(16,25,47,0.07)" } }} />
-                <TextField label="Sanctioned Load kW" type="number" value={form.sanctionedLoadKw} onChange={(event) => updateForm("sanctionedLoadKw", event.target.value)} placeholder={isCommercial ? "30" : "5"} sx={{ "& .MuiOutlinedInput-root": { borderRadius: "0.75rem", boxShadow: "0 4px 12px rgba(16,25,47,0.07)" } }} />
-                <TextField select label="Connection Type" value={form.connectionType} onChange={(event) => updateForm("connectionType", event.target.value)} sx={{ "& .MuiOutlinedInput-root": { borderRadius: "0.75rem", boxShadow: "0 4px 12px rgba(16,25,47,0.07)" } }}>
-                  {(isCommercial ? [["lt", "LT"], ["ht", "HT"]] : [["single_phase", "Single Phase"], ["three_phase", "Three Phase"]]).map(([value, label]) => (
-                    <MenuItem key={value} value={value}>{label}</MenuItem>
+                <TextField
+                  label="Average Monthly Bill"
+                  type="number"
+                  value={form.monthlyBill}
+                  onChange={(event) =>
+                    updateForm("monthlyBill", event.target.value)
+                  }
+                  placeholder="1200"
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: "0.75rem",
+                      boxShadow: "0 4px 12px rgba(16,25,47,0.07)",
+                    },
+                  }}
+                />
+                <TextField
+                  label="Monthly Units (optional)"
+                  type="number"
+                  value={form.monthlyUnits}
+                  onChange={(event) =>
+                    updateForm("monthlyUnits", event.target.value)
+                  }
+                  placeholder="Auto from bill"
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: "0.75rem",
+                      boxShadow: "0 4px 12px rgba(16,25,47,0.07)",
+                    },
+                  }}
+                />
+                <TextField
+                  label="Available Roof Area sq. ft. (optional)"
+                  type="number"
+                  value={form.roofAreaSqFt}
+                  onChange={(event) =>
+                    updateForm("roofAreaSqFt", event.target.value)
+                  }
+                  placeholder="600"
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: "0.75rem",
+                      boxShadow: "0 4px 12px rgba(16,25,47,0.07)",
+                    },
+                  }}
+                />
+                <TextField
+                  label="Preferred System Size kW"
+                  type="number"
+                  value={form.systemSizeKw}
+                  onChange={(event) =>
+                    updateForm("systemSizeKw", event.target.value)
+                  }
+                  placeholder={isCommercial ? "25" : "5"}
+                  required
+                  helperText={
+                    form.systemSizeKw && Number(form.systemSizeKw) < 3
+                      ? "Minimum system size is 3 kW"
+                      : `${isCommercial ? "Commercial" : "Residential"} — Minimum 3 kW`
+                  }
+                  error={Boolean(
+                    form.systemSizeKw && Number(form.systemSizeKw) < 3,
+                  )}
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: "0.75rem",
+                      boxShadow: "0 4px 12px rgba(16,25,47,0.07)",
+                    },
+                  }}
+                />
+                <TextField
+                  label="Sanctioned Load kW"
+                  type="number"
+                  value={form.sanctionedLoadKw}
+                  onChange={(event) =>
+                    updateForm("sanctionedLoadKw", event.target.value)
+                  }
+                  placeholder={isCommercial ? "30" : "5"}
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: "0.75rem",
+                      boxShadow: "0 4px 12px rgba(16,25,47,0.07)",
+                    },
+                  }}
+                />
+                <TextField
+                  select
+                  label="Connection Type"
+                  value={form.connectionType}
+                  onChange={(event) =>
+                    updateForm("connectionType", event.target.value)
+                  }
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: "0.75rem",
+                      boxShadow: "0 4px 12px rgba(16,25,47,0.07)",
+                    },
+                  }}
+                >
+                  {(isCommercial
+                    ? [
+                        ["lt", "LT"],
+                        ["ht", "HT"],
+                      ]
+                    : [
+                        ["single_phase", "Single Phase"],
+                        ["three_phase", "Three Phase"],
+                      ]
+                  ).map(([value, label]) => (
+                    <MenuItem key={value} value={value}>
+                      {label}
+                    </MenuItem>
                   ))}
                 </TextField>
                 {isCommercial ? (
-                  <TextField label="Daytime Usage %" type="number" value={form.daytimeUsagePercent} onChange={(event) => updateForm("daytimeUsagePercent", event.target.value)} sx={{ "& .MuiOutlinedInput-root": { borderRadius: "0.75rem", boxShadow: "0 4px 12px rgba(16,25,47,0.07)" } }} />
+                  <TextField
+                    label="Daytime Usage %"
+                    type="number"
+                    value={form.daytimeUsagePercent}
+                    onChange={(event) =>
+                      updateForm("daytimeUsagePercent", event.target.value)
+                    }
+                    sx={{
+                      "& .MuiOutlinedInput-root": {
+                        borderRadius: "0.75rem",
+                        boxShadow: "0 4px 12px rgba(16,25,47,0.07)",
+                      },
+                    }}
+                  />
                 ) : null}
-                <TextField label="Target Solar Offset %" type="number" value={form.desiredOffsetPercent} onChange={(event) => updateForm("desiredOffsetPercent", event.target.value)} placeholder={isCommercial ? "70 to 90%" : "70 to 90%"} helperText={`${form.propertyType.charAt(0).toUpperCase() + form.propertyType.slice(1)} - Range: 70% to 90%`} sx={{ "& .MuiOutlinedInput-root": { borderRadius: "0.75rem", boxShadow: "0 4px 12px rgba(16,25,47,0.07)" } }} />
+                <TextField
+                  label="Target Solar Offset %"
+                  type="number"
+                  value={form.desiredOffsetPercent}
+                  onChange={(event) =>
+                    updateForm("desiredOffsetPercent", event.target.value)
+                  }
+                  placeholder={isCommercial ? "70 to 90%" : "70 to 90%"}
+                  helperText={`${form.propertyType.charAt(0).toUpperCase() + form.propertyType.slice(1)} - Range: 70% to 90%`}
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: "0.75rem",
+                      boxShadow: "0 4px 12px rgba(16,25,47,0.07)",
+                    },
+                  }}
+                />
               </Box>
 
               <Button
@@ -317,15 +658,18 @@ export default function CalculatorPage() {
                   fontSize: "1rem",
                   fontWeight: 700,
                   color: "#FFFFFF",
-                  background: "linear-gradient(180deg, #1A66E8 0%, #0E56C8 100%)",
+                  background:
+                    "linear-gradient(180deg, #1A66E8 0%, #0E56C8 100%)",
                   boxShadow: "0 10px 24px rgba(14,86,200,0.18)",
                   "&.Mui-disabled": {
                     color: "#FFFFFF",
-                    background: "linear-gradient(180deg, #1A66E8 0%, #0E56C8 100%)",
+                    background:
+                      "linear-gradient(180deg, #1A66E8 0%, #0E56C8 100%)",
                     opacity: 0.75,
                   },
                   "&:hover": {
-                    background: "linear-gradient(180deg, #2C76F0 0%, #145FCF 100%)",
+                    background:
+                      "linear-gradient(180deg, #2C76F0 0%, #145FCF 100%)",
                     boxShadow: "0 16px 30px rgba(14,86,200,0.22)",
                   },
                 }}
@@ -363,15 +707,45 @@ export default function CalculatorPage() {
                     border: "1px solid rgba(223,231,241,0.8)",
                     boxShadow: "0 8px 24px rgba(16,25,47,0.08)",
                     opacity: cardsVisible ? 1 : 0,
-                    transform: cardsVisible ? "translateY(0)" : "translateY(20px)",
+                    transform: cardsVisible
+                      ? "translateY(0)"
+                      : "translateY(20px)",
                     transition: `opacity 0.5s ease ${index * 0.1}s, transform 0.5s ease ${index * 0.1}s`,
                   }}
                 >
-                  <Box sx={{ width: 34, height: 34, borderRadius: "0.9rem", bgcolor: item.tone.bg, color: item.tone.fg, display: "grid", placeItems: "center", mb: 1.35 }}>
+                  <Box
+                    sx={{
+                      width: 34,
+                      height: 34,
+                      borderRadius: "0.9rem",
+                      bgcolor: item.tone.bg,
+                      color: item.tone.fg,
+                      display: "grid",
+                      placeItems: "center",
+                      mb: 1.35,
+                    }}
+                  >
                     {item.icon}
                   </Box>
-                  <Typography sx={{ color: "#18253A", fontWeight: 800, fontSize: "1.05rem" }}>{item.title}</Typography>
-                  <Typography sx={{ mt: 1, color: "#6C7990", lineHeight: 1.72, fontSize: "0.9rem" }}>{item.text}</Typography>
+                  <Typography
+                    sx={{
+                      color: "#18253A",
+                      fontWeight: 800,
+                      fontSize: "1.05rem",
+                    }}
+                  >
+                    {item.title}
+                  </Typography>
+                  <Typography
+                    sx={{
+                      mt: 1,
+                      color: "#6C7990",
+                      lineHeight: 1.72,
+                      fontSize: "0.9rem",
+                    }}
+                  >
+                    {item.text}
+                  </Typography>
                 </Box>
               </Grid>
             ))}

@@ -1,4 +1,4 @@
-import * as React from "react";
+﻿import * as React from "react";
 import {
   Accordion,
   AccordionDetails,
@@ -25,10 +25,22 @@ import {
 import layoutStyles from "@/app/layouts/PublicLayout.module.css";
 
 const categories = [
-  { label: "General", icon: <ElectricBoltRoundedIcon sx={{ fontSize: "0.85rem" }} /> },
-  { label: "Pricing", icon: <CurrencyRupeeRoundedIcon sx={{ fontSize: "0.85rem" }} /> },
-  { label: "Installation", icon: <ConstructionRoundedIcon sx={{ fontSize: "0.85rem" }} /> },
-  { label: "Subsidy", icon: <AccountBalanceRoundedIcon sx={{ fontSize: "0.85rem" }} /> },
+  {
+    label: "General",
+    icon: <ElectricBoltRoundedIcon sx={{ fontSize: "0.85rem" }} />,
+  },
+  {
+    label: "Pricing",
+    icon: <CurrencyRupeeRoundedIcon sx={{ fontSize: "0.85rem" }} />,
+  },
+  {
+    label: "Installation",
+    icon: <ConstructionRoundedIcon sx={{ fontSize: "0.85rem" }} />,
+  },
+  {
+    label: "Subsidy",
+    icon: <AccountBalanceRoundedIcon sx={{ fontSize: "0.85rem" }} />,
+  },
   { label: "Service", icon: <BuildRoundedIcon sx={{ fontSize: "0.85rem" }} /> },
 ];
 
@@ -36,7 +48,7 @@ const faqs = [
   {
     question: "How long does the typical installation process take?",
     answer:
-      "The physical installation of panels usually takes only 1–3 days depending on the size of your roof. However, the entire process — including site assessment, design, permitting, and final utility interconnection — typically takes between 4 to 8 weeks from the moment you sign your contract.",
+      "The physical installation of panels usually takes only 1â€“3 days depending on the size of your roof. However, the entire process â€” including site assessment, design, permitting, and final utility interconnection â€” typically takes between 4 to 8 weeks from the moment you sign your contract.",
     highlights: [
       { label: "Permitting", text: "Handled by your specialist team" },
       { label: "Grid Connect", text: "Final utility inspection required" },
@@ -45,37 +57,37 @@ const faqs = [
   {
     question: "What happens to my energy production on cloudy days?",
     answer:
-      "Solar panels still generate electricity on cloudy days — just at a reduced output, typically 10–25% of their rated capacity. Modern monocrystalline panels are designed to capture diffuse light effectively. On overcast days your system draws the shortfall from the grid, and any surplus generated on sunny days can be exported back via net metering to offset those costs.",
+      "Solar panels still generate electricity on cloudy days â€” just at a reduced output, typically 10â€“25% of their rated capacity. Modern monocrystalline panels are designed to capture diffuse light effectively. On overcast days your system draws the shortfall from the grid, and any surplus generated on sunny days can be exported back via net metering to offset those costs.",
     highlights: [
-      { label: "Cloudy Output", text: "10–25% of peak capacity retained" },
+      { label: "Cloudy Output", text: "10â€“25% of peak capacity retained" },
       { label: "Net Metering", text: "Surplus credits offset grid usage" },
     ],
   },
   {
     question: "Do solar panels require regular maintenance?",
     answer:
-      "Solar panels are largely maintenance-free. The main task is periodic cleaning — typically every 3 to 6 months — to remove dust, bird droppings, and debris that can reduce efficiency. Most reputable installers include an Annual Maintenance Contract (AMC) covering cleaning visits, inverter health checks, and wiring inspections. Panels themselves carry a 25-year performance warranty.",
+      "Solar panels are largely maintenance-free. The main task is periodic cleaning â€” typically every 3 to 6 months â€” to remove dust, bird droppings, and debris that can reduce efficiency. Most reputable installers include an Annual Maintenance Contract (AMC) covering cleaning visits, inverter health checks, and wiring inspections. Panels themselves carry a 25-year performance warranty.",
     highlights: [
-      { label: "Cleaning", text: "Every 3–6 months recommended" },
+      { label: "Cleaning", text: "Every 3â€“6 months recommended" },
       { label: "AMC", text: "Annual check-up usually included" },
     ],
   },
   {
     question: "How much can I realistically save on my monthly bill?",
     answer:
-      "Savings depend on your current consumption, local electricity tariff, and system size. On average, a 5 kW residential system in Telangana or Andhra Pradesh can offset 60–90% of a household's monthly bill, translating to ₹1,500–₹4,000 in monthly savings. Over a 25-year panel life, total savings typically range from ₹8–₹15 lakhs after accounting for the initial investment.",
+      "Savings depend on your current consumption, local electricity tariff, and system size. On average, a 5 kW residential system in Andhra Pradesh can offset 60-90% of a household's monthly bill, translating to Rs 1,500-Rs 4,000 in monthly savings. Over a 25-year panel life, total savings typically range from Rs 8-Rs 15 lakhs after accounting for the initial investment.",
     highlights: [
-      { label: "Monthly Saving", text: "₹1,500–₹4,000 on average" },
-      { label: "Payback Period", text: "Typically 4–6 years" },
+      { label: "Monthly Saving", text: "â‚¹1,500â€“â‚¹4,000 on average" },
+      { label: "Payback Period", text: "Typically 4â€“6 years" },
     ],
   },
   {
     question: "What are the available government solar subsidies?",
     answer:
-      "Under the PM Surya Ghar Muft Bijli Yojana, residential consumers can avail a central subsidy of up to ₹78,000 for systems up to 3 kW, and proportionally higher for larger systems. Several state governments in Andhra Pradesh, Telangana, and Karnataka also offer additional incentives. Our platform automatically factors in applicable subsidies when generating your savings estimate.",
+      "Under the PM Surya Ghar Muft Bijli Yojana, residential consumers can avail a central subsidy of up to â‚¹78,000 for systems up to 3 kW, and proportionally higher for larger systems. Andhra Pradesh also offers additional state-level incentives for rooftop solar. Our platform automatically factors in applicable subsidies when generating your savings estimate.",
     highlights: [
-      { label: "Central Subsidy", text: "Up to ₹78,000 under PM Surya Ghar" },
-      { label: "State Schemes", text: "Additional benefits in AP, TS & KA" },
+      { label: "Central Subsidy", text: "Up to â‚¹78,000 under PM Surya Ghar" },
+      { label: "State Schemes", text: "Additional benefits in Andhra Pradesh" },
     ],
   },
 ];
@@ -91,7 +103,11 @@ export default function FaqPage() {
           "radial-gradient(circle at top center, rgba(214,229,246,0.82) 0%, rgba(245,248,251,0.96) 22%, #F9FBFD 60%, #F7FAFB 100%)",
       }}
     >
-      <Container maxWidth={false} disableGutters className={layoutStyles.publicContentContainer}>
+      <Container
+        maxWidth={false}
+        disableGutters
+        className={layoutStyles.publicContentContainer}
+      >
         <Stack
           direction={{ xs: "column", md: "row" }}
           justifyContent="space-between"
@@ -117,8 +133,9 @@ export default function FaqPage() {
                 ...publicTypography.sectionBody,
               }}
             >
-              We&apos;re here to help you understand solar and make the transition as
-              smooth as possible. Explore our comprehensive guides and quick answers.
+              We&apos;re here to help you understand solar and make the
+              transition as smooth as possible. Explore our comprehensive guides
+              and quick answers.
             </Typography>
           </Box>
 
@@ -154,7 +171,9 @@ export default function FaqPage() {
             placeholder="What are you looking for today?"
             InputProps={{
               startAdornment: (
-                <SearchRoundedIcon sx={{ color: "#8B97A9", fontSize: "1rem", mr: 1 }} />
+                <SearchRoundedIcon
+                  sx={{ color: "#8B97A9", fontSize: "1rem", mr: 1 }}
+                />
               ),
 
               sx: {
@@ -184,8 +203,12 @@ export default function FaqPage() {
                   borderRadius: "0.8rem",
                   bgcolor: active ? "white" : "transparent",
                   color: active ? "#0E56C8" : "#4E5A6F",
-                  border: active ? "1px solid #DCE6F5" : "1px solid transparent",
-                  boxShadow: active ? "0 8px 18px rgba(14,86,200,0.08)" : "none",
+                  border: active
+                    ? "1px solid #DCE6F5"
+                    : "1px solid transparent",
+                  boxShadow: active
+                    ? "0 8px 18px rgba(14,86,200,0.08)"
+                    : "none",
                   fontSize: "0.8rem",
                   fontWeight: 700,
                   "& .MuiChip-icon": {
@@ -207,7 +230,9 @@ export default function FaqPage() {
                 key={item.question}
                 expanded={isOpen}
                 onChange={() =>
-                  setExpanded((current) => (current === item.question ? "" : item.question))
+                  setExpanded((current) =>
+                    current === item.question ? "" : item.question,
+                  )
                 }
                 disableGutters
                 elevation={0}
@@ -220,7 +245,8 @@ export default function FaqPage() {
                     ? "0 16px 34px rgba(16,29,51,0.08)"
                     : "0 10px 24px rgba(16,29,51,0.04)",
                   "&::before": { display: "none" },
-                  transition: "transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease",
+                  transition:
+                    "transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease",
                   "&:hover": {
                     transform: "translateY(-2px)",
                     borderColor: "rgba(14,86,200,0.22)",
@@ -370,8 +396,8 @@ export default function FaqPage() {
               lineHeight: 1.8,
             }}
           >
-            Our solar experts are available for a one-on-one consultation to discuss
-            your home&apos;s unique energy potential.
+            Our solar experts are available for a one-on-one consultation to
+            discuss your home&apos;s unique energy potential.
           </Typography>
 
           <Stack
@@ -419,4 +445,3 @@ export default function FaqPage() {
     </Box>
   );
 }
-

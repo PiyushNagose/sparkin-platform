@@ -8,7 +8,6 @@ import {
   Typography,
 } from "@mui/material";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
-import HelpOutlineRoundedIcon from "@mui/icons-material/HelpOutlineRounded";
 import LightbulbRoundedIcon from "@mui/icons-material/LightbulbRounded";
 import WbSunnyOutlinedIcon from "@mui/icons-material/WbSunnyOutlined";
 import WbTwilightRoundedIcon from "@mui/icons-material/WbTwilightRounded";
@@ -27,13 +26,7 @@ import {
   isStep1Complete,
   isStep2Complete,
 } from "@/features/public/booking/bookingValidation";
-
-const steps = [
-  { label: "Basic Info", state: "complete" },
-  { label: "Property Info", state: "complete" },
-  { label: "Roof Info", state: "active" },
-  { label: "Document Info", state: "upcoming" },
-];
+import BookingStepper from "@/features/public/booking/BookingStepper";
 
 const roofTypes = [
   { title: "Flat", value: "flat" },
@@ -76,118 +69,6 @@ const roofConditions = [
   { title: "Average", value: "average" },
   { title: "Needs Repair", value: "needs_repair" },
 ];
-
-function BookingStepper() {
-  return (
-    <Box
-      sx={{
-        width: "100%",
-        display: "grid",
-        gridTemplateColumns: "repeat(4, 1fr)",
-        position: "relative",
-        alignItems: "start",
-      }}
-    >
-      <Box
-        sx={{
-          position: "absolute",
-          left: "4%",
-          right: "4%",
-          top: 15,
-          height: 2,
-          bgcolor: "#E7ECF3",
-        }}
-      />
-      <Box
-        sx={{
-          position: "absolute",
-          left: "4%",
-          width: "58.5%",
-          top: 15,
-          height: 2,
-          bgcolor: "#0E56C8",
-        }}
-      />
-
-      {steps.map((step) => (
-        <Stack
-          key={step.label}
-          alignItems="center"
-          spacing={0.72}
-          sx={{ position: "relative", zIndex: 1 }}
-        >
-          <Box
-            sx={{
-              width: step.state === "active" ? 32 : 28,
-              height: step.state === "active" ? 32 : 28,
-              borderRadius: "50%",
-              border:
-                step.state === "active"
-                  ? "3px solid #0E56C8"
-                  : step.state === "upcoming"
-                    ? "none"
-                    : "none",
-              bgcolor:
-                step.state === "complete"
-                  ? "#0E56C8"
-                  : step.state === "active"
-                    ? "white"
-                    : "#EEF3FA",
-              boxShadow:
-                step.state === "active"
-                  ? "0 8px 20px rgba(14,86,200,0.08)"
-                  : "0 6px 16px rgba(17,31,54,0.04)",
-              display: "grid",
-              placeItems: "center",
-              position: "relative",
-            }}
-          >
-            {step.state === "complete" ? (
-              <Typography
-                sx={{ color: "white", fontSize: "0.9rem", fontWeight: 800 }}
-              >
-                {"\u2713"}
-              </Typography>
-            ) : (
-              <Box
-                sx={{
-                  width: step.state === "active" ? 7 : 6,
-                  height: step.state === "active" ? 7 : 6,
-                  borderRadius: "50%",
-                  bgcolor: "#0E56C8",
-                }}
-              />
-            )}
-          </Box>
-
-          <Typography
-            sx={{
-              color: "#202938",
-              fontSize: "0.74rem",
-              fontWeight: 500,
-              lineHeight: 1.2,
-            }}
-          >
-            {step.label}
-          </Typography>
-
-          <Typography
-            sx={{
-              minHeight: 14,
-              color: step.state === "active" ? "#0E56C8" : step.state === "complete" ? "#239654" : "transparent",
-              fontSize: "0.54rem",
-              fontWeight: 800,
-              letterSpacing: 0.48,
-              textTransform: "uppercase",
-            }}
-          >
-            {step.state === "active" ? "In Progress" : step.state === "complete" ? "Done" : "."}
-          </Typography>
-        </Stack>
-      ))}
-    </Box>
-  );
-}
 
 function SelectCard({ title, subtitle, selected = false, onClick }) {
   return (
@@ -254,7 +135,10 @@ function SegmentedChoice({ items, value, onChange }) {
             minHeight: 38,
             borderRadius: "0.72rem",
             bgcolor: item.value === value ? "white" : "transparent",
-            border: item.value === value ? "1px solid #E8EDF5" : "1px solid transparent",
+            border:
+              item.value === value
+                ? "1px solid #E8EDF5"
+                : "1px solid transparent",
             color: item.value === value ? "#0E56C8" : "#2D3A4C",
             fontWeight: 700,
             fontSize: "0.76rem",
@@ -362,393 +246,369 @@ export default function BookingStepThreePage() {
             alignItems="center"
             sx={{ width: "100%" }}
           >
+            {/* Stepper */}
+            <Box sx={{ width: "100%", maxWidth: 720, mx: "auto" }}>
+              <BookingStepper activeStep={2} />
+            </Box>
+
             <Stack
-              spacing={{ xs: 3.8, md: 4.8 }}
+              sx={{ width: "100%", maxWidth: 760, mx: "auto" }}
+              spacing={{ xs: 3.8, md: 4.4 }}
               alignItems="center"
-              sx={{ width: "100%" }}
             >
               <Stack
+                spacing={1}
                 alignItems="center"
-                sx={{ width: "100%", maxWidth: 1080, mx: "auto" }}
+                textAlign="center"
+                sx={{ width: "100%", maxWidth: 640, mx: "auto" }}
               >
-                <Box sx={{ width: "100%", maxWidth: 880 }}>
-                  <BookingStepper />
-                </Box>
-              </Stack>
-
-              <Stack
-                sx={{ width: "100%", maxWidth: 760, mx: "auto" }}
-                spacing={{ xs: 3.8, md: 4.4 }}
-                alignItems="center"
-              >
-                <Stack
-                  spacing={1}
-                  alignItems="center"
-                  textAlign="center"
-                  sx={{ width: "100%", maxWidth: 640, mx: "auto" }}
-                >
-                  <Typography
-                    variant="h1"
-                    sx={{
-                      ...publicTypography.pageTitle,
-                      color: "#18253A",
-                    }}
-                  >
-                    Tell us about your roof
-                    <Box component="span" sx={{ ml: 0.32 }}>
-                      {"\u2600\uFE0F"}
-                    </Box>
-                  </Typography>
-                  <Typography
-                    sx={{
-                      color: "#707D90",
-                      fontSize: "0.96rem",
-                      lineHeight: 1.65,
-                      maxWidth: 500,
-                    }}
-                  >
-                    This helps us estimate how much solar capacity your roof can
-                    support and design the perfect energy layout.
-                  </Typography>
-                </Stack>
-
-                <Box
+                <Typography
+                  variant="h1"
                   sx={{
-                    width: "100%",
-                    p: { xs: 2.25, md: 3.2 },
-                    borderRadius: "1.35rem",
-                    bgcolor: "rgba(255,255,255,0.95)",
-                    border: "1px solid rgba(221,229,239,0.98)",
-                    boxShadow: "0 22px 54px rgba(20,34,56,0.08)",
+                    ...publicTypography.pageTitle,
+                    color: "#18253A",
                   }}
                 >
-                  <Stack spacing={{ xs: 3.2, md: 3.8 }}>
-                    <Box>
-                      <Typography
-                        sx={{
-                          mb: 1.2,
-                          color: "#59667A",
-                          fontSize: "0.68rem",
-                          fontWeight: 700,
-                          letterSpacing: 0.5,
-                          textTransform: "uppercase",
-                        }}
-                      >
-                        Roof Type
-                      </Typography>
-                      <SegmentedChoice
-                        items={roofTypes}
-                        value={draft.property.roofType}
-                        onChange={(roofType) => {
-                          updateProperty({ roofType });
-                          setErrors((prev) => {
-                            const next = { ...prev };
-                            delete next["property.roofType"];
-                            return next;
-                          });
-                        }}
-                      />
-                      {errors["property.roofType"] ? (
-                        <Typography sx={{ mt: 0.8, color: "#D32F2F", fontSize: "0.72rem" }}>
-                          {errors["property.roofType"]}
-                        </Typography>
-                      ) : null}
-                    </Box>
+                  Tell us about your roof
+                  <Box component="span" sx={{ ml: 0.32 }}>
+                    {"\u2600\uFE0F"}
+                  </Box>
+                </Typography>
+                <Typography
+                  sx={{
+                    color: "#707D90",
+                    fontSize: "0.96rem",
+                    lineHeight: 1.65,
+                    maxWidth: 500,
+                  }}
+                >
+                  This helps us estimate how much solar capacity your roof can
+                  support and design the perfect energy layout.
+                </Typography>
+              </Stack>
 
-                    <Box>
+              <Box
+                sx={{
+                  width: "100%",
+                  p: { xs: 2.25, md: 3.2 },
+                  borderRadius: "1.35rem",
+                  bgcolor: "rgba(255,255,255,0.95)",
+                  border: "1px solid rgba(221,229,239,0.98)",
+                  boxShadow: "0 22px 54px rgba(20,34,56,0.08)",
+                }}
+              >
+                <Stack spacing={{ xs: 3.2, md: 3.8 }}>
+                  <Box>
+                    <Typography
+                      sx={{
+                        mb: 1.2,
+                        color: "#59667A",
+                        fontSize: "0.68rem",
+                        fontWeight: 700,
+                        letterSpacing: 0.5,
+                        textTransform: "uppercase",
+                      }}
+                    >
+                      Roof Type
+                    </Typography>
+                    <SegmentedChoice
+                      items={roofTypes}
+                      value={draft.property.roofType}
+                      onChange={(roofType) => {
+                        updateProperty({ roofType });
+                        setErrors((prev) => {
+                          const next = { ...prev };
+                          delete next["property.roofType"];
+                          return next;
+                        });
+                      }}
+                    />
+                    {errors["property.roofType"] ? (
                       <Typography
                         sx={{
-                          mb: 1.2,
-                          color: "#59667A",
-                          fontSize: "0.68rem",
-                          fontWeight: 700,
-                          letterSpacing: 0.5,
-                          textTransform: "uppercase",
+                          mt: 0.8,
+                          color: "#D32F2F",
+                          fontSize: "0.72rem",
                         }}
                       >
-                        Roof Size
+                        {errors["property.roofType"]}
                       </Typography>
-                      <Grid container spacing={1.15}>
-                        {roofSizes.map((item) => (
-                          <Grid key={item.title} size={{ xs: 12, sm: 4 }}>
-                            <SelectCard
-                              {...item}
-                              selected={draft.roof.sizeRange === item.value}
-                              onClick={() => {
-                                updateRoof({ sizeRange: item.value });
-                                setErrors((prev) => {
-                                  const next = { ...prev };
-                                  delete next["roof.sizeRange"];
-                                  return next;
-                                });
-                              }}
-                            />
-                          </Grid>
-                        ))}
-                      </Grid>
-                      {errors["roof.sizeRange"] ? (
-                        <Typography
-                          sx={{
-                            mt: 0.8,
-                            color: "#D32F2F",
-                            fontSize: "0.72rem",
-                          }}
-                        >
-                          {errors["roof.sizeRange"]}
-                        </Typography>
-                      ) : null}
-                    </Box>
+                    ) : null}
+                  </Box>
 
-                    <Box>
-                      <Typography
-                        sx={{
-                          mb: 1.2,
-                          color: "#59667A",
-                          fontSize: "0.68rem",
-                          fontWeight: 700,
-                          letterSpacing: 0.5,
-                          textTransform: "uppercase",
-                        }}
-                      >
-                        Shadow Availability
-                      </Typography>
-                      <Grid container spacing={1.15}>
-                        {shadowItems.map((item) => (
-                          <Grid key={item.title} size={{ xs: 12, sm: 4 }}>
-                            <ShadowCard
-                              {...item}
-                              selected={draft.roof.shadow === item.value}
-                              onClick={() => {
-                                updateRoof({ shadow: item.value });
-                                setErrors((prev) => {
-                                  const next = { ...prev };
-                                  delete next["roof.shadow"];
-                                  return next;
-                                });
-                              }}
-                            />
-                          </Grid>
-                        ))}
-                      </Grid>
-                      {errors["roof.shadow"] ? (
-                        <Typography
-                          sx={{
-                            mt: 0.8,
-                            color: "#D32F2F",
-                            fontSize: "0.72rem",
-                          }}
-                        >
-                          {errors["roof.shadow"]}
-                        </Typography>
-                      ) : null}
-                    </Box>
-
-                    <Box>
-                      <Typography
-                        sx={{
-                          mb: 1.2,
-                          color: "#59667A",
-                          fontSize: "0.68rem",
-                          fontWeight: 700,
-                          letterSpacing: 0.5,
-                          textTransform: "uppercase",
-                        }}
-                      >
-                        Roof Condition
-                      </Typography>
-                      <Stack
-                        direction="row"
-                        spacing={1}
-                        useFlexGap
-                        flexWrap="wrap"
-                      >
-                        {roofConditions.map((item) => (
-                          <Box
-                            key={item.title}
-                            role="button"
-                            tabIndex={0}
+                  <Box>
+                    <Typography
+                      sx={{
+                        mb: 1.2,
+                        color: "#59667A",
+                        fontSize: "0.68rem",
+                        fontWeight: 700,
+                        letterSpacing: 0.5,
+                        textTransform: "uppercase",
+                      }}
+                    >
+                      Roof Size
+                    </Typography>
+                    <Grid container spacing={1.15}>
+                      {roofSizes.map((item) => (
+                        <Grid key={item.title} size={{ xs: 12, sm: 4 }}>
+                          <SelectCard
+                            {...item}
+                            selected={draft.roof.sizeRange === item.value}
                             onClick={() => {
-                              updateRoof({ condition: item.value });
+                              updateRoof({ sizeRange: item.value });
                               setErrors((prev) => {
                                 const next = { ...prev };
-                                delete next["roof.condition"];
+                                delete next["roof.sizeRange"];
                                 return next;
                               });
                             }}
-                            sx={{
-                              px: 1.45,
-                              py: 0.78,
-                              borderRadius: 999,
-                              bgcolor:
-                                draft.roof.condition === item.value
-                                  ? "#0E56C8"
-                                  : "#F2F4F8",
-                              color:
-                                draft.roof.condition === item.value
-                                  ? "white"
-                                  : "#243143",
-                              fontSize: "0.76rem",
-                              fontWeight: 700,
-                              cursor: "pointer",
-                              boxShadow:
-                                draft.roof.condition === item.value
-                                  ? "0 10px 20px rgba(14,86,200,0.18)"
-                                  : "none",
-                            }}
-                          >
-                            {item.title}
-                          </Box>
-                        ))}
-                      </Stack>
-                      {errors["roof.condition"] ? (
-                        <Typography
-                          sx={{
-                            mt: 0.8,
-                            color: "#D32F2F",
-                            fontSize: "0.72rem",
-                          }}
-                        >
-                          {errors["roof.condition"]}
-                        </Typography>
-                      ) : null}
-                    </Box>
-
-                    <Divider sx={{ borderColor: "#EDF1F6" }} />
-
-                    <Stack alignItems="center" spacing={1.1}>
-                      <Button
-                        onClick={handleContinue}
-                        variant="contained"
-                        sx={{
-                          width: { xs: "100%", sm: "auto" },
-                          minWidth: 126,
-                          minHeight: 48,
-                          borderRadius: "0.85rem",
-                          fontWeight: 700,
-                          fontSize: "0.92rem",
-                          background:
-                            "linear-gradient(180deg, #0E56C8 0%, #0D49B0 100%)",
-                          boxShadow: "0 14px 28px rgba(14,86,200,0.22)",
-                        }}
-                      >
-                        Continue
-                      </Button>
-                      <Button
-                        startIcon={
-                          <HelpOutlineRoundedIcon
-                            sx={{ fontSize: "0.95rem" }}
                           />
-                        }
+                        </Grid>
+                      ))}
+                    </Grid>
+                    {errors["roof.sizeRange"] ? (
+                      <Typography
                         sx={{
-                          color: "#0E56C8",
-                          fontSize: "0.76rem",
-                          fontWeight: 600,
-                          textTransform: "none",
+                          mt: 0.8,
+                          color: "#D32F2F",
+                          fontSize: "0.72rem",
                         }}
                       >
-                        I&apos;m not sure
-                      </Button>
-                    </Stack>
-                  </Stack>
-                </Box>
+                        {errors["roof.sizeRange"]}
+                      </Typography>
+                    ) : null}
+                  </Box>
 
-                <Grid
-                  container
-                  spacing={{ xs: 1.5, md: 1.8 }}
-                  sx={{ width: "100%", maxWidth: 760, mx: "auto" }}
-                >
-                  <Grid size={{ xs: 12, md: 5.3 }}>
-                    <Box
+                  <Box>
+                    <Typography
                       sx={{
-                        minHeight: { xs: 124, md: 138 },
-                        borderRadius: "1rem",
-                        bgcolor: "#F0F6B4",
-                        borderLeft: "4px solid #78800B",
-                        px: 2,
-                        py: 1.9,
+                        mb: 1.2,
+                        color: "#59667A",
+                        fontSize: "0.68rem",
+                        fontWeight: 700,
+                        letterSpacing: 0.5,
+                        textTransform: "uppercase",
                       }}
                     >
-                      <Stack direction="row" spacing={0.8} alignItems="center">
-                        <LightbulbRoundedIcon
-                          sx={{ fontSize: "1rem", color: "#5F6500" }}
-                        />
-                        <Typography
+                      Shadow Availability
+                    </Typography>
+                    <Grid container spacing={1.15}>
+                      {shadowItems.map((item) => (
+                        <Grid key={item.title} size={{ xs: 12, sm: 4 }}>
+                          <ShadowCard
+                            {...item}
+                            selected={draft.roof.shadow === item.value}
+                            onClick={() => {
+                              updateRoof({ shadow: item.value });
+                              setErrors((prev) => {
+                                const next = { ...prev };
+                                delete next["roof.shadow"];
+                                return next;
+                              });
+                            }}
+                          />
+                        </Grid>
+                      ))}
+                    </Grid>
+                    {errors["roof.shadow"] ? (
+                      <Typography
+                        sx={{
+                          mt: 0.8,
+                          color: "#D32F2F",
+                          fontSize: "0.72rem",
+                        }}
+                      >
+                        {errors["roof.shadow"]}
+                      </Typography>
+                    ) : null}
+                  </Box>
+
+                  <Box>
+                    <Typography
+                      sx={{
+                        mb: 1.2,
+                        color: "#59667A",
+                        fontSize: "0.68rem",
+                        fontWeight: 700,
+                        letterSpacing: 0.5,
+                        textTransform: "uppercase",
+                      }}
+                    >
+                      Roof Condition
+                    </Typography>
+                    <Stack
+                      direction="row"
+                      spacing={1}
+                      useFlexGap
+                      flexWrap="wrap"
+                    >
+                      {roofConditions.map((item) => (
+                        <Box
+                          key={item.title}
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => {
+                            updateRoof({ condition: item.value });
+                            setErrors((prev) => {
+                              const next = { ...prev };
+                              delete next["roof.condition"];
+                              return next;
+                            });
+                          }}
                           sx={{
-                            color: "#283240",
+                            px: 1.45,
+                            py: 0.78,
+                            borderRadius: 999,
+                            bgcolor:
+                              draft.roof.condition === item.value
+                                ? "#0E56C8"
+                                : "#F2F4F8",
+                            color:
+                              draft.roof.condition === item.value
+                                ? "white"
+                                : "#243143",
+                            fontSize: "0.76rem",
                             fontWeight: 700,
-                            fontSize: "0.9rem",
+                            cursor: "pointer",
+                            boxShadow:
+                              draft.roof.condition === item.value
+                                ? "0 10px 20px rgba(14,86,200,0.18)"
+                                : "none",
                           }}
                         >
-                          Solar Pro Tip
-                        </Typography>
-                      </Stack>
+                          {item.title}
+                        </Box>
+                      ))}
+                    </Stack>
+                    {errors["roof.condition"] ? (
                       <Typography
                         sx={{
-                          mt: 1.15,
-                          color: "#495669",
-                          fontSize: "0.78rem",
-                          lineHeight: 1.65,
+                          mt: 0.8,
+                          color: "#D32F2F",
+                          fontSize: "0.72rem",
                         }}
                       >
-                        Most RCC slab roofs in India can easily support solar
-                        panel weight. If you have an asbestos or tin shed, we
-                        might need a custom mounting structure.
+                        {errors["roof.condition"]}
                       </Typography>
-                    </Box>
-                  </Grid>
+                    ) : null}
+                  </Box>
 
-                  <Grid size={{ xs: 12, md: 6.7 }}>
-                    <Box
+                  <Divider sx={{ borderColor: "#EDF1F6" }} />
+
+                  <Stack
+                    direction={{ xs: "column", sm: "row" }}
+                    justifyContent="space-between"
+                    alignItems={{ xs: "stretch", sm: "center" }}
+                    spacing={1.5}
+                  >
+                    <Button
+                      component={RouterLink}
+                      to="/booking/property"
+                      startIcon={<ArrowBackRoundedIcon />}
                       sx={{
-                        minHeight: { xs: 124, md: 138 },
-                        borderRadius: "1rem",
-                        overflow: "hidden",
-                        backgroundImage: `linear-gradient(180deg, rgba(7,18,31,0.06) 0%, rgba(8,17,28,0.62) 88%), url(${roofTipPlaceholder})`,
-                        backgroundSize: "cover",
-                        backgroundPosition: "center",
-                        display: "flex",
-                        alignItems: "flex-end",
-                        p: 1.4,
+                        color: "#4A5668",
+                        fontWeight: 700,
+                        fontSize: "0.9rem",
+                        textTransform: "none",
+                        px: 0,
+                        "&:hover": { bgcolor: "transparent" },
                       }}
                     >
-                      <Typography
-                        sx={{
-                          color: "white",
-                          fontSize: "0.72rem",
-                          lineHeight: 1.45,
-                        }}
-                      >
-                        Typical 3kW installation requires ~300 sq ft
-                      </Typography>
-                    </Box>
-                  </Grid>
-                </Grid>
+                      Back
+                    </Button>
+                    <Button
+                      onClick={handleContinue}
+                      variant="contained"
+                      sx={{
+                        minWidth: 140,
+                        minHeight: 48,
+                        borderRadius: "0.85rem",
+                        fontWeight: 700,
+                        fontSize: "0.92rem",
+                        textTransform: "none",
+                        background:
+                          "linear-gradient(180deg, #0E56C8 0%, #0D49B0 100%)",
+                        boxShadow: "0 14px 28px rgba(14,86,200,0.22)",
+                      }}
+                    >
+                      Continue
+                    </Button>
+                  </Stack>
+                </Stack>
+              </Box>
 
-                <Stack
-                  direction={{ xs: "column", sm: "row" }}
-                  justifyContent="center"
-                  alignItems={{ xs: "stretch", sm: "center" }}
-                  sx={{ width: "100%" }}
-                >
-                  <Button
-                    component={RouterLink}
-                    to="/booking/property"
-                    startIcon={<ArrowBackRoundedIcon />}
+              <Grid
+                container
+                spacing={{ xs: 1.5, md: 1.8 }}
+                sx={{ width: "100%", maxWidth: 760, mx: "auto" }}
+              >
+                <Grid size={{ xs: 12, md: 5.3 }}>
+                  <Box
                     sx={{
-                      alignSelf: "flex-start",
-                      width: { xs: "100%", sm: "auto" },
-                      color: "#4A5668",
-                      fontWeight: 700,
-                      fontSize: "0.9rem",
-                      textTransform: "none",
-                      px: 0,
-                      "&:hover": { bgcolor: "transparent" },
+                      minHeight: { xs: 124, md: 138 },
+                      borderRadius: "1rem",
+                      bgcolor: "#F0F6B4",
+                      borderLeft: "4px solid #78800B",
+                      px: 2,
+                      py: 1.9,
                     }}
                   >
-                    Back
-                  </Button>
-                </Stack>
-              </Stack>
+                    <Stack direction="row" spacing={0.8} alignItems="center">
+                      <LightbulbRoundedIcon
+                        sx={{ fontSize: "1rem", color: "#5F6500" }}
+                      />
+                      <Typography
+                        sx={{
+                          color: "#283240",
+                          fontWeight: 700,
+                          fontSize: "0.9rem",
+                        }}
+                      >
+                        Solar Pro Tip
+                      </Typography>
+                    </Stack>
+                    <Typography
+                      sx={{
+                        mt: 1.15,
+                        color: "#495669",
+                        fontSize: "0.78rem",
+                        lineHeight: 1.65,
+                      }}
+                    >
+                      Most RCC slab roofs in India can easily support solar
+                      panel weight. If you have an asbestos or tin shed, we
+                      might need a custom mounting structure.
+                    </Typography>
+                  </Box>
+                </Grid>
+
+                <Grid size={{ xs: 12, md: 6.7 }}>
+                  <Box
+                    sx={{
+                      minHeight: { xs: 124, md: 138 },
+                      borderRadius: "1rem",
+                      overflow: "hidden",
+                      backgroundImage: `linear-gradient(180deg, rgba(7,18,31,0.06) 0%, rgba(8,17,28,0.62) 88%), url(${roofTipPlaceholder})`,
+                      backgroundSize: "cover",
+                      backgroundPosition: "center",
+                      display: "flex",
+                      alignItems: "flex-end",
+                      p: 1.4,
+                    }}
+                  >
+                    <Typography
+                      sx={{
+                        color: "white",
+                        fontSize: "0.72rem",
+                        lineHeight: 1.45,
+                      }}
+                    >
+                      Typical 3kW installation requires ~300 sq ft
+                    </Typography>
+                  </Box>
+                </Grid>
+              </Grid>
             </Stack>
           </Stack>
         </Container>

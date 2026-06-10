@@ -12,6 +12,7 @@ import { publicRoutes } from "@/features/public/routes";
 import VendorApprovalGate from "@/features/vendor/VendorApprovalGate";
 import { vendorRoutes } from "@/features/vendor/routes";
 import { LazyRoute } from "@/shared/ui/placeholder/LazyRoute";
+import { NavigationProgress } from "@/shared/ui/progress/NavigationProgress";
 
 const VendorLoginPage = lazy(
   () => import("@/features/auth/pages/VendorLoginPage"),
@@ -29,7 +30,12 @@ const VendorOnboardingPage = lazy(
   () => import("@/features/vendor/pages/VendorOnboardingPage"),
 );
 
-const RootOutlet = () => <Outlet />;
+const RootOutlet = () => (
+  <>
+    <NavigationProgress />
+    <Outlet />
+  </>
+);
 
 export const appRouter = createBrowserRouter([
   {
@@ -49,17 +55,23 @@ export const appRouter = createBrowserRouter([
       {
         path: "/vendor/login",
         element: <AuthLayout />,
-        children: [{ index: true, element: <LazyRoute component={VendorLoginPage} /> }],
+        children: [
+          { index: true, element: <LazyRoute component={VendorLoginPage} /> },
+        ],
       },
       {
         path: "/vendor/signup",
         element: <AuthLayout />,
-        children: [{ index: true, element: <LazyRoute component={VendorSignupPage} /> }],
+        children: [
+          { index: true, element: <LazyRoute component={VendorSignupPage} /> },
+        ],
       },
       {
         path: "/admin/login",
         element: <AuthLayout />,
-        children: [{ index: true, element: <LazyRoute component={AdminLoginPage} /> }],
+        children: [
+          { index: true, element: <LazyRoute component={AdminLoginPage} /> },
+        ],
       },
       {
         path: "/admin",

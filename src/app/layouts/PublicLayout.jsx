@@ -18,6 +18,7 @@ import logoPlaceholder from "@/shared/assets/logo-placeholder.png";
 import styles from "@/app/layouts/PublicLayout.module.css";
 import { AppFooter } from "@/shared/components/AppFooter";
 import { useAuth } from "@/features/auth/AuthProvider";
+import { PageTransition } from "@/shared/ui/transition/PageTransition";
 
 export function PublicLayout() {
   const { pathname } = useLocation();
@@ -79,8 +80,10 @@ export function PublicLayout() {
               className={styles.navLinks}
               sx={{ display: { xs: "none", md: "flex" } }}
             >
-            {publicPrimaryNav.map((item) => {
-                const isActive = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
+              {publicPrimaryNav.map((item) => {
+                const isActive =
+                  pathname === item.href ||
+                  (item.href !== "/" && pathname.startsWith(item.href));
                 return (
                   <Typography
                     key={item.label}
@@ -328,7 +331,9 @@ export function PublicLayout() {
         </Stack>
       </Drawer>
 
-      <Outlet />
+      <PageTransition>
+        <Outlet />
+      </PageTransition>
       <AppFooter />
     </Box>
   );

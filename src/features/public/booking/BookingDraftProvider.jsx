@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useAuth } from "@/features/auth/AuthProvider";
 
-const STORAGE_KEY = "sparkin.bookingDraft";
+const STORAGE_KEY_PREFIX = "sparkin.bookingDraft";
 
 const initialDraft = {
   contact: {
@@ -45,13 +45,68 @@ const initialDraft = {
   specialInstructions: "",
 };
 
+// ─── helpers ────────────────────────────────────────────────────────────────
+
+function storageKey(userId) {
+  return userId ? `${STORAGE_KEY_PREFIX}:${userId}` : null;
+}
+
+function readDraft(userId) {
+  const key = storageKey(userId);
+  if (!key) return structuredClone(initialDraft);
+  try {
+    const raw = window.localStorage.getItem(key);
+    if (!raw) return structuredClone(initialDraft);
+    const parsed = JSON.parse(raw);
+    // Deep-merge so new fields added to initialDraft are always present
+    return {
+      ...structuredClone(initialDraft),
+      ...parsed,
+      contact: { ...structuredClone(initialDraft.contact), ...parsed.contact },
+      installationAddress: {
+        ...structuredClone(initialDraft.installationAddress),
+        ...parsed.installationAddress,
+      },
+      inspection: {
+        ...structuredClone(initialDraft.inspection),
+        ...parsed.inspection,
+      },
+      property: {
+        ...structuredClone(initialDraft.property),
+        ...parsed.property,
+      },
+      roof: { ...structuredClone(initialDraft.roof), ...parsed.roof },
+      attachments: {
+        ...structuredClone(initialDraft.attachments),
+        ...parsed.attachments,
+      },
+    };
+  } catch {
+    window.localStorage.removeItem(storageKey(userId));
+    return structuredClone(initialDraft);
+  }
+}
+
+function writeDraft(userId, draft) {
+  const key = storageKey(userId);
+  if (!key) return;
+  window.localStorage.setItem(key, JSON.stringify(draft));
+}
+
+function clearDraft(userId) {
+  const key = storageKey(userId);
+  if (key) window.localStorage.removeItem(key);
+}
+
+// ─── estimate helpers ────────────────────────────────────────────────────────
+
 function stateLabelFromEstimate(estimate) {
-  return (
-    estimate?.serviceability?.stateName ||
-    String(estimate?.input?.state || "")
-      .replaceAll("_", " ")
-      .replace(/\b\w/g, (letter) => letter.toUpperCase())
-  );
+  // Return state as a key (e.g. "andhra_pradesh") to match platform settings
+  const rawState = estimate?.input?.state || "";
+  if (rawState) return rawState; // already a key from calculator
+  const stateName = estimate?.serviceability?.stateName || "";
+  // Convert display name to key: "Andhra Pradesh" → "andhra_pradesh"
+  return stateName.trim().toLowerCase().replaceAll(" ", "_") || "";
 }
 
 function roofSizeRangeFromArea(area) {
@@ -69,7 +124,11 @@ function propertyTypeFromEstimate(estimate) {
 
 function connectionTypeFromEstimate(estimate) {
   const connectionType = estimate?.input?.connectionType;
-  if (connectionType === "three_phase" || connectionType === "ht" || connectionType === "lt") {
+  if (
+    connectionType === "three_phase" ||
+    connectionType === "ht" ||
+    connectionType === "lt"
+  ) {
     return "three_phase";
   }
   return "single_phase";
@@ -88,48 +147,30 @@ function calculatorSystemSizeFromEstimate(estimate) {
   );
 }
 
-function defaultRoofTypeFromEstimate(estimate) {
-  return estimate?.input?.propertyType === "commercial" ? "flat" : "flat";
-}
-
-function defaultOwnershipFromEstimate() {
-  return "owned";
-}
-
-function defaultShadowFromEstimate() {
-  return "partial";
-}
-
-function defaultRoofConditionFromEstimate() {
-  return "average";
-}
+// ─── context ─────────────────────────────────────────────────────────────────
 
 const BookingDraftContext = React.createContext(null);
 
-function readDraft() {
-  const value = window.localStorage.getItem(STORAGE_KEY);
-
-  if (!value) {
-    return initialDraft;
-  }
-
-  try {
-    return { ...initialDraft, ...JSON.parse(value) };
-  } catch {
-    window.localStorage.removeItem(STORAGE_KEY);
-    return initialDraft;
-  }
-}
-
 export function BookingDraftProvider({ children }) {
   const { user } = useAuth();
-  const [draft, setDraft] = React.useState(readDraft);
+  const userId = user?.userId || user?.id || null;
 
+  // When userId changes (login / logout / switch account) reload the draft
+  // for the new user from storage, or start fresh.
+  const [draft, setDraft] = React.useState(() => readDraft(userId));
+
+  // Re-load from storage whenever the logged-in user changes
+  const prevUserIdRef = React.useRef(userId);
   React.useEffect(() => {
-    if (!user) {
-      return;
-    }
+    if (prevUserIdRef.current === userId) return;
+    prevUserIdRef.current = userId;
+    setDraft(readDraft(userId));
+  }, [userId]);
 
+  // Prefill name + email from auth profile (only fill empty fields so manual
+  // edits are never overwritten)
+  React.useEffect(() => {
+    if (!user) return;
     setDraft((current) => ({
       ...current,
       contact: {
@@ -140,25 +181,22 @@ export function BookingDraftProvider({ children }) {
     }));
   }, [user]);
 
+  // Persist every draft change to the user-scoped storage key
   React.useEffect(() => {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(draft));
-  }, [draft]);
+    writeDraft(userId, draft);
+  }, [userId, draft]);
+
+  // ─── updaters ──────────────────────────────────────────────────────────────
 
   const updateDraft = React.useCallback((section, values) => {
     setDraft((current) => ({
       ...current,
-      [section]: {
-        ...current[section],
-        ...values,
-      },
+      [section]: { ...current[section], ...values },
     }));
   }, []);
 
   const updateField = React.useCallback((field, value) => {
-    setDraft((current) => ({
-      ...current,
-      [field]: value,
-    }));
+    setDraft((current) => ({ ...current, [field]: value }));
   }, []);
 
   const applyCalculatorEstimate = React.useCallback((estimate) => {
@@ -168,19 +206,22 @@ export function BookingDraftProvider({ children }) {
         estimate?.system?.requiredRoofAreaSqFt ||
         null;
 
+      const stateLabel = stateLabelFromEstimate(estimate);
+
       return {
         ...current,
         installationAddress: {
           ...current.installationAddress,
           city: estimate?.input?.city || current.installationAddress.city,
-          state: stateLabelFromEstimate(estimate) || current.installationAddress.state,
-          pincode: estimate?.input?.pincode || current.installationAddress.pincode,
+          state: stateLabel || current.installationAddress.state || "",
+          pincode:
+            estimate?.input?.pincode || current.installationAddress.pincode,
         },
         property: {
           ...current.property,
           type: propertyTypeFromEstimate(estimate),
-          roofType: current.property.roofType || defaultRoofTypeFromEstimate(estimate),
-          ownership: current.property.ownership || defaultOwnershipFromEstimate(estimate),
+          roofType: current.property.roofType || "flat",
+          ownership: current.property.ownership || "owned",
           connectionType: connectionTypeFromEstimate(estimate),
           distributionCompany:
             distributionCompanyFromEstimate(estimate) ||
@@ -190,8 +231,8 @@ export function BookingDraftProvider({ children }) {
         roof: {
           ...current.roof,
           sizeRange: roofSizeRangeFromArea(roofArea),
-          shadow: current.roof.shadow || defaultShadowFromEstimate(estimate),
-          condition: current.roof.condition || defaultRoofConditionFromEstimate(estimate),
+          shadow: current.roof.shadow || "partial",
+          condition: current.roof.condition || "average",
         },
         calculatorEstimate: estimate,
       };
@@ -199,9 +240,9 @@ export function BookingDraftProvider({ children }) {
   }, []);
 
   const resetDraft = React.useCallback(() => {
-    window.localStorage.removeItem(STORAGE_KEY);
-    setDraft(initialDraft);
-  }, []);
+    clearDraft(userId);
+    setDraft(structuredClone(initialDraft));
+  }, [userId]);
 
   const value = React.useMemo(
     () => ({
@@ -214,15 +255,17 @@ export function BookingDraftProvider({ children }) {
     [applyCalculatorEstimate, draft, resetDraft, updateDraft, updateField],
   );
 
-  return <BookingDraftContext.Provider value={value}>{children}</BookingDraftContext.Provider>;
+  return (
+    <BookingDraftContext.Provider value={value}>
+      {children}
+    </BookingDraftContext.Provider>
+  );
 }
 
 export function useBookingDraft() {
   const context = React.useContext(BookingDraftContext);
-
   if (!context) {
     throw new Error("useBookingDraft must be used inside BookingDraftProvider");
   }
-
   return context;
 }

@@ -138,7 +138,7 @@ This creates:
    - Name: Test Customer
    - Phone: 9876543210
    - Email: customer@test.com
-   - Address: 123 Test Street, Hyderabad, Telangana, 500001
+   - Address: 123 Test Street, Vijayawada, Andhra Pradesh, 520001
    - System Size: 5 kW
 4. Click "Create Lead"
 
@@ -514,9 +514,9 @@ sudo systemctl start mongod            # Linux
   },
   "installationAddress": {
     "street": "123 Main St",
-    "city": "Hyderabad",
-    "state": "Telangana",
-    "pincode": "500001"
+    "city": "Vijayawada",
+    "state": "Andhra Pradesh",
+    "pincode": "520001"
   },
   "property": {
     "type": "independent_house",

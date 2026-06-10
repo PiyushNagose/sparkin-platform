@@ -403,7 +403,7 @@ export default function ContactPage() {
                       fontWeight: 800,
                     }}
                   >
-                    Visit our Innovation Lab in Hyderabad
+                    Visit our Innovation Lab in Vijayawada
                   </Typography>
                 </Box>
               </Box>
