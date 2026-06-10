@@ -32,6 +32,15 @@ export const vendorsRepository = {
     return profiles.map((profile) => normalizeVendorProfile(profile));
   },
 
+  async listAllApproved() {
+    const profiles = await VendorProfileModel.find({ verificationStatus: "verified" })
+      .sort({ updatedAt: -1, createdAt: -1 })
+      .maxTimeMS(LIST_QUERY_MAX_TIME_MS)
+      .lean({ virtuals: true });
+
+    return profiles.map((profile) => normalizeVendorProfile(profile));
+  },
+
   async findAll() {
     const profiles = await VendorProfileModel.find({})
       .sort({ updatedAt: -1, createdAt: -1 })

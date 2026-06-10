@@ -15,6 +15,11 @@ export const publicVendorsApi = {
     return data.vendors;
   },
 
+  async listAllVendors(options = {}) {
+    const { data } = await cachedGet(businessClient, "/vendors/public/approved", options);
+    return data.vendors;
+  },
+
   async getVendorProfile(vendorId, options = {}) {
     const { data } = await cachedGet(
       businessClient,
