@@ -206,8 +206,8 @@ function ServiceCard({ item }) {
   return (
     <Box
       sx={{
-        p: 1.45,
-        borderRadius: "1.3rem",
+        p: 1.2,
+        borderRadius: "1.2rem",
         bgcolor: "#FFFFFF",
         border: "1px solid rgba(225,232,241,0.96)",
         boxShadow: "0 14px 28px rgba(16,29,51,0.04)",
@@ -224,9 +224,9 @@ function ServiceCard({ item }) {
       >
         <Box
           sx={{
-            width: 38,
-            height: 38,
-            borderRadius: "0.92rem",
+            width: 36,
+            height: 36,
+            borderRadius: "0.85rem",
             bgcolor: item.iconBg,
             color: item.iconTone,
             display: "grid",
@@ -234,18 +234,18 @@ function ServiceCard({ item }) {
             flexShrink: 0,
           }}
         >
-          <Icon sx={{ fontSize: "1rem" }} />
+          <Icon sx={{ fontSize: "0.95rem" }} />
         </Box>
 
         <Box
           sx={{
             display: "inline-flex",
-            px: 0.82,
-            py: 0.34,
+            px: 0.75,
+            py: 0.3,
             borderRadius: "999px",
             bgcolor: item.statusBg,
             color: item.statusTone,
-            fontSize: "0.56rem",
+            fontSize: "0.52rem",
             fontWeight: 800,
             lineHeight: 1,
             textTransform: "uppercase",
@@ -256,18 +256,18 @@ function ServiceCard({ item }) {
       </Stack>
 
       <Typography
-        sx={{ mt: 1.1, color: "#B0B8C5", fontSize: "0.72rem", fontWeight: 500 }}
+        sx={{ mt: 0.9, color: "#B0B8C5", fontSize: "0.68rem", fontWeight: 500 }}
       >
         Ticket {item.ticket}
       </Typography>
 
       <Typography
         sx={{
-          mt: 0.35,
+          mt: 0.3,
           color: "#223146",
-          fontSize: "1rem",
+          fontSize: "1.15rem",
           fontWeight: 800,
-          lineHeight: 1.25,
+          lineHeight: 1.2,
         }}
       >
         {item.title}
@@ -275,11 +275,11 @@ function ServiceCard({ item }) {
 
       <Typography
         sx={{
-          mt: 0.45,
+          mt: 0.4,
           color: "#647387",
-          fontSize: "0.78rem",
-          lineHeight: 1.6,
-          minHeight: 56,
+          fontSize: "0.75rem",
+          lineHeight: 1.55,
+          minHeight: 48,
           display: "-webkit-box",
           WebkitLineClamp: 3,
           WebkitBoxOrient: "vertical",
@@ -290,14 +290,14 @@ function ServiceCard({ item }) {
       </Typography>
 
       <Box
-        sx={{ mt: 1.15, p: 0.92, borderRadius: "0.95rem", bgcolor: "#F3F6FB" }}
+        sx={{ mt: 1, p: 0.85, borderRadius: "0.9rem", bgcolor: "#F3F6FB" }}
       >
-        <Stack direction="row" spacing={0.6} alignItems="center">
+        <Stack direction="row" spacing={0.55} alignItems="center">
           <Box sx={{ color: "#0E56C8", display: "grid", placeItems: "center" }}>
             {item.progressIcon}
           </Box>
           <Typography
-            sx={{ color: "#223146", fontSize: "0.72rem", fontWeight: 500 }}
+            sx={{ color: "#223146", fontSize: "0.68rem", fontWeight: 500 }}
           >
             {item.progressLabel}
           </Typography>
@@ -308,22 +308,22 @@ function ServiceCard({ item }) {
         direction="row"
         justifyContent="space-between"
         alignItems="center"
-        sx={{ mt: 1.2 }}
+        sx={{ mt: 1.1 }}
       >
         <Typography
-          sx={{ color: "#B0B8C5", fontSize: "0.68rem", fontWeight: 500 }}
+          sx={{ color: "#B0B8C5", fontSize: "0.65rem", fontWeight: 500 }}
         >
           {item.date}
         </Typography>
         <Button
           component={RouterLink}
           to={item.to}
-          endIcon={<ArrowForwardRoundedIcon sx={{ fontSize: "0.95rem" }} />}
+          endIcon={<ArrowForwardRoundedIcon sx={{ fontSize: "0.9rem" }} />}
           sx={{
-            minHeight: 28,
+            minHeight: 26,
             px: 0,
             color: "#0E56C8",
-            fontSize: "0.78rem",
+            fontSize: "0.75rem",
             fontWeight: 700,
             textTransform: "none",
             "&:hover": { bgcolor: "transparent" },

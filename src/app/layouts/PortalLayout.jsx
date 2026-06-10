@@ -833,6 +833,7 @@ export function PortalLayout({ portal }) {
         </Box>
 
         <Box
+          id="portal-scroll-container"
           sx={{
             flex: 1,
             minWidth: 0,
