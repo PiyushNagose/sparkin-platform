@@ -72,7 +72,11 @@ export default function CalculatorPage() {
   const [form, setForm] = useState(initialForm);
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { stateOptions, getCities } = usePlatformStates();
+  const {
+    stateOptions,
+    getCities,
+    loading: statesLoading,
+  } = usePlatformStates();
   const isCommercial = form.propertyType === "commercial";
 
   // Auto-select the first state when states load and form.state is still empty
@@ -426,54 +430,84 @@ export default function CalculatorPage() {
                   label="State"
                   value={form.state}
                   onChange={(event) => updateForm("state", event.target.value)}
+                  disabled={statesLoading}
                   sx={{
                     "& .MuiOutlinedInput-root": {
                       borderRadius: "0.75rem",
                       boxShadow: "0 4px 12px rgba(16,25,47,0.07)",
                     },
                   }}
-                  SelectProps={{
-                    displayEmpty: true,
-                  }}
+                  SelectProps={{ displayEmpty: true }}
                 >
-                  <MenuItem value="" disabled>
-                    Select state
-                  </MenuItem>
-                  {stateOptions.map((s) => (
-                    <MenuItem key={s.key} value={s.key}>
-                      {s.name}
+                  {statesLoading ? (
+                    <MenuItem value="" disabled>
+                      Loading states…
                     </MenuItem>
-                  ))}
-                </TextField>
-                <TextField
-                  select
-                  label="City"
-                  value={form.city}
-                  onChange={(event) => updateForm("city", event.target.value)}
-                  sx={{
-                    "& .MuiOutlinedInput-root": {
-                      borderRadius: "0.75rem",
-                      boxShadow: "0 4px 12px rgba(16,25,47,0.07)",
-                    },
-                  }}
-                  SelectProps={{
-                    displayEmpty: true,
-                    MenuProps: {
-                      PaperProps: {
-                        sx: { maxHeight: 260 },
-                      },
-                    },
-                  }}
-                >
-                  <MenuItem value="" disabled>
-                    Select city
-                  </MenuItem>
-                  {getCities(form.state).map((city) => (
-                    <MenuItem key={city} value={city}>
-                      {city}
+                  ) : stateOptions.length === 0 ? (
+                    <MenuItem value="" disabled>
+                      No states configured — contact admin
                     </MenuItem>
-                  ))}
+                  ) : (
+                    stateOptions.map((s) => (
+                      <MenuItem key={s.key} value={s.key}>
+                        {s.name}
+                      </MenuItem>
+                    ))
+                  )}
                 </TextField>
+
+                {/* City dropdown */}
+                {(() => {
+                  const cities = getCities(form.state);
+                  const noCitiesConfigured =
+                    !statesLoading && form.state && cities.length === 0;
+                  return (
+                    <TextField
+                      select={!noCitiesConfigured}
+                      label="City"
+                      value={noCitiesConfigured ? "" : form.city}
+                      onChange={(event) =>
+                        updateForm("city", event.target.value)
+                      }
+                      disabled={statesLoading || !form.state}
+                      placeholder={
+                        noCitiesConfigured
+                          ? "No cities configured — contact admin"
+                          : "Select city"
+                      }
+                      helperText={
+                        noCitiesConfigured
+                          ? "Admin hasn't added cities for this state yet"
+                          : undefined
+                      }
+                      FormHelperTextProps={{
+                        sx: { color: "#E07B00", fontSize: "0.68rem", mx: 0.5 },
+                      }}
+                      sx={{
+                        "& .MuiOutlinedInput-root": {
+                          borderRadius: "0.75rem",
+                          boxShadow: "0 4px 12px rgba(16,25,47,0.07)",
+                          bgcolor: noCitiesConfigured ? "#FFFBF5" : undefined,
+                        },
+                      }}
+                      SelectProps={{
+                        displayEmpty: true,
+                        MenuProps: {
+                          PaperProps: { sx: { maxHeight: 260 } },
+                        },
+                      }}
+                    >
+                      <MenuItem value="" disabled>
+                        {!form.state ? "Select state first" : "Select city"}
+                      </MenuItem>
+                      {cities.map((city) => (
+                        <MenuItem key={city} value={city}>
+                          {city}
+                        </MenuItem>
+                      ))}
+                    </TextField>
+                  );
+                })()}
                 <TextField
                   label="Pincode"
                   value={form.pincode}

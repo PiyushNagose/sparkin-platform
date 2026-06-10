@@ -118,7 +118,11 @@ export default function BookingStepOnePage() {
   const { draft, updateDraft, updateField } = useBookingDraft();
   const navigate = useNavigate();
   const [errors, setErrors] = useState({});
-  const { stateOptions, getCities } = usePlatformStates();
+  const {
+    stateOptions,
+    getCities,
+    loading: statesLoading,
+  } = usePlatformStates();
 
   // Auto-select the first state if none chosen yet
   useEffect(() => {
@@ -363,6 +367,7 @@ export default function BookingStepOnePage() {
                           <TextField
                             select
                             fullWidth
+                            disabled={statesLoading}
                             value={draft.installationAddress.state || ""}
                             error={!!errors["installationAddress.state"]}
                             helperText={errors["installationAddress.state"]}
@@ -398,61 +403,122 @@ export default function BookingStepOnePage() {
                               sx: { fontSize: "0.68rem", mx: 0.5 },
                             }}
                           >
-                            <MenuItem value="" disabled>
-                              Select state
-                            </MenuItem>
-                            {stateOptions.map((s) => (
-                              <MenuItem key={s.key} value={s.key}>
-                                {s.name}
+                            {statesLoading ? (
+                              <MenuItem value="" disabled>
+                                Loading states…
                               </MenuItem>
-                            ))}
+                            ) : stateOptions.length === 0 ? (
+                              <MenuItem value="" disabled>
+                                No states configured — contact admin
+                              </MenuItem>
+                            ) : (
+                              stateOptions.map((s) => (
+                                <MenuItem key={s.key} value={s.key}>
+                                  {s.name}
+                                </MenuItem>
+                              ))
+                            )}
                           </TextField>
                         </Box>
                       </Grid>
+
                       <Grid size={{ xs: 12, sm: 6 }}>
                         <Box data-field="installationAddress.city">
                           <FieldLabel>City</FieldLabel>
-                          <TextField
-                            select
-                            fullWidth
-                            value={draft.installationAddress.city}
-                            error={!!errors["installationAddress.city"]}
-                            helperText={errors["installationAddress.city"]}
-                            onChange={(e) => {
-                              updateAddress({ city: e.target.value });
-                              clearError(setErrors, "installationAddress.city");
-                            }}
-                            SelectProps={{
-                              displayEmpty: true,
-                              IconComponent: KeyboardArrowDownRoundedIcon,
-                              MenuProps: {
-                                PaperProps: {
-                                  sx: {
-                                    maxHeight: 260,
-                                    borderRadius: "0.85rem",
-                                    boxShadow:
-                                      "0 16px 40px rgba(14,34,64,0.12)",
-                                    mt: 0.5,
+                          {(() => {
+                            const selectedState =
+                              draft.installationAddress.state;
+                            const cities = getCities(selectedState || "");
+                            const noCities =
+                              !statesLoading &&
+                              selectedState &&
+                              cities.length === 0;
+                            return noCities ? (
+                              <Box
+                                sx={{
+                                  minHeight: 48,
+                                  borderRadius: "0.85rem",
+                                  bgcolor: "#FFFBF5",
+                                  border: "1px solid #FFE0B2",
+                                  px: 1.5,
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: 0.8,
+                                }}
+                              >
+                                <Typography
+                                  sx={{ fontSize: "0.95rem", lineHeight: 1 }}
+                                >
+                                  ⚠️
+                                </Typography>
+                                <Box>
+                                  <Typography
+                                    sx={{
+                                      color: "#E65100",
+                                      fontSize: "0.74rem",
+                                      fontWeight: 700,
+                                    }}
+                                  >
+                                    No cities for this state
+                                  </Typography>
+                                  <Typography
+                                    sx={{
+                                      color: "#BF360C",
+                                      fontSize: "0.62rem",
+                                    }}
+                                  >
+                                    Contact admin to add cities
+                                  </Typography>
+                                </Box>
+                              </Box>
+                            ) : (
+                              <TextField
+                                select
+                                fullWidth
+                                disabled={statesLoading || !selectedState}
+                                value={draft.installationAddress.city || ""}
+                                error={!!errors["installationAddress.city"]}
+                                helperText={errors["installationAddress.city"]}
+                                onChange={(e) => {
+                                  updateAddress({ city: e.target.value });
+                                  clearError(
+                                    setErrors,
+                                    "installationAddress.city",
+                                  );
+                                }}
+                                SelectProps={{
+                                  displayEmpty: true,
+                                  IconComponent: KeyboardArrowDownRoundedIcon,
+                                  MenuProps: {
+                                    PaperProps: {
+                                      sx: {
+                                        maxHeight: 260,
+                                        borderRadius: "0.85rem",
+                                        boxShadow:
+                                          "0 16px 40px rgba(14,34,64,0.12)",
+                                        mt: 0.5,
+                                      },
+                                    },
                                   },
-                                },
-                              },
-                            }}
-                            sx={FIELD_SX}
-                            FormHelperTextProps={{
-                              sx: { fontSize: "0.68rem", mx: 0.5 },
-                            }}
-                          >
-                            <MenuItem value="" disabled>
-                              Select city
-                            </MenuItem>
-                            {getCities(
-                              draft.installationAddress.state || "",
-                            ).map((city) => (
-                              <MenuItem key={city} value={city}>
-                                {city}
-                              </MenuItem>
-                            ))}
-                          </TextField>
+                                }}
+                                sx={FIELD_SX}
+                                FormHelperTextProps={{
+                                  sx: { fontSize: "0.68rem", mx: 0.5 },
+                                }}
+                              >
+                                <MenuItem value="" disabled>
+                                  {!selectedState
+                                    ? "Select state first"
+                                    : "Select city"}
+                                </MenuItem>
+                                {cities.map((city) => (
+                                  <MenuItem key={city} value={city}>
+                                    {city}
+                                  </MenuItem>
+                                ))}
+                              </TextField>
+                            );
+                          })()}
                         </Box>
                       </Grid>
                     </Grid>

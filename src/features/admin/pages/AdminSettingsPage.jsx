@@ -373,6 +373,15 @@ export default function AdminSettingsPage() {
     severity: "success",
   });
   const [stateErrors, setStateErrors] = useState({});
+  // Raw string buffer for cities textarea — keyed by state id
+  // This lets users type freely (including trailing commas/spaces) without
+  // the array→string join fighting them on every keystroke.
+  const [citiesRaw, setCitiesRaw] = useState(() => {
+    const initial = loadSettings();
+    return Object.fromEntries(
+      (initial.states || []).map((s) => [s.id, (s.cities || []).join(", ")]),
+    );
+  });
   const [, forceRender] = useState(0);
 
   useEffect(() => {
@@ -384,6 +393,15 @@ export default function AdminSettingsPage() {
         const normalized = normalizeSettingsForUi(remote);
         setSettings(normalized);
         saveSettings(normalized);
+        // Seed citiesRaw from remote data
+        setCitiesRaw(
+          Object.fromEntries(
+            (normalized.states || []).map((s) => [
+              s.id,
+              (s.cities || []).join(", "),
+            ]),
+          ),
+        );
       } catch {
         // Keep local settings if the business service is offline.
       }
@@ -451,24 +469,35 @@ export default function AdminSettingsPage() {
   }, []);
 
   const addState = useCallback(() => {
+    const newId = uid();
     setSettings((s) => ({
       ...s,
-      states: [...s.states, { id: uid(), name: "", rate: "", cities: [] }],
+      states: [...s.states, { id: newId, name: "", rate: "", cities: [] }],
     }));
+    setCitiesRaw((prev) => ({ ...prev, [newId]: "" }));
     setIsDirty(true);
   }, []);
 
-  const updateStateCities = useCallback((id, rawValue) => {
-    // Parse comma-separated string into a trimmed array of non-empty city names
-    const cities = rawValue
-      .split(",")
-      .map((c) => c.trim())
-      .filter(Boolean);
-    setSettings((s) => ({
-      ...s,
-      states: s.states.map((st) => (st.id === id ? { ...st, cities } : st)),
-    }));
+  // Called on every keystroke — only updates the raw display string
+  const handleCitiesRawChange = useCallback((id, value) => {
+    setCitiesRaw((prev) => ({ ...prev, [id]: value }));
     setIsDirty(true);
+  }, []);
+
+  // Called on blur — parse raw string into the cities array in settings
+  const commitCities = useCallback((id) => {
+    setCitiesRaw((prev) => {
+      const raw = prev[id] ?? "";
+      const cities = raw
+        .split(",")
+        .map((c) => c.trim())
+        .filter(Boolean);
+      setSettings((s) => ({
+        ...s,
+        states: s.states.map((st) => (st.id === id ? { ...st, cities } : st)),
+      }));
+      return prev;
+    });
   }, []);
 
   const removeState = useCallback((id) => {
@@ -478,6 +507,11 @@ export default function AdminSettingsPage() {
     }));
     setStateErrors((e) => {
       const next = { ...e };
+      delete next[id];
+      return next;
+    });
+    setCitiesRaw((prev) => {
+      const next = { ...prev };
       delete next[id];
       return next;
     });
@@ -594,6 +628,20 @@ export default function AdminSettingsPage() {
   // â”€â”€ save â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   async function handleSave() {
+    // Flush any in-progress cities text before validating / saving
+    setSettings((s) => ({
+      ...s,
+      states: s.states.map((st) => {
+        const raw = citiesRaw[st.id];
+        if (raw === undefined) return st;
+        const cities = raw
+          .split(",")
+          .map((c) => c.trim())
+          .filter(Boolean);
+        return { ...st, cities };
+      }),
+    }));
+
     const errors = validate();
     if (errors.length) {
       setToast({
@@ -611,6 +659,15 @@ export default function AdminSettingsPage() {
       const normalized = normalizeSettingsForUi(saved);
       setSettings(normalized);
       saveSettings(normalized);
+      // Reseed citiesRaw from saved data
+      setCitiesRaw(
+        Object.fromEntries(
+          (normalized.states || []).map((s) => [
+            s.id,
+            (s.cities || []).join(", "),
+          ]),
+        ),
+      );
       setSavedAt(Date.now());
       setIsDirty(false);
       setToast({
@@ -646,6 +703,11 @@ export default function AdminSettingsPage() {
     setSavedAt(Date.now());
     setIsDirty(false);
     setStateErrors({});
+    setCitiesRaw(
+      Object.fromEntries(
+        (defaults.states || []).map((s) => [s.id, (s.cities || []).join(", ")]),
+      ),
+    );
     setToast({
       open: true,
       message: "Settings reset to defaults.",
@@ -1082,7 +1144,7 @@ export default function AdminSettingsPage() {
 
               {/* Cities */}
               <Box>
-                <FieldLabel tooltip="Comma-separated list of cities in this state. Customers will see these in the city dropdown.">
+                <FieldLabel tooltip="Type city names separated by commas. Changes are applied when you click outside the field.">
                   Cities (comma-separated)
                 </FieldLabel>
                 <TextField
@@ -1090,10 +1152,17 @@ export default function AdminSettingsPage() {
                   size="small"
                   multiline
                   minRows={2}
-                  value={(row.cities || []).join(", ")}
-                  onChange={(e) => updateStateCities(row.id, e.target.value)}
-                  placeholder="Visakhapatnam, Vijayawada, Guntur, Tirupati, Nellore"
-                  helperText={`${(row.cities || []).length} cities configured`}
+                  value={citiesRaw[row.id] ?? (row.cities || []).join(", ")}
+                  onChange={(e) =>
+                    handleCitiesRawChange(row.id, e.target.value)
+                  }
+                  onBlur={() => commitCities(row.id)}
+                  placeholder="e.g. Visakhapatnam, Vijayawada, Guntur, Tirupati, Nellore"
+                  helperText={
+                    (row.cities || []).length > 0
+                      ? `${row.cities.length} ${row.cities.length === 1 ? "city" : "cities"} saved — type more separated by commas`
+                      : "No cities added yet — type names separated by commas"
+                  }
                   sx={{
                     ...inputSx,
                     "& .MuiOutlinedInput-root": {
