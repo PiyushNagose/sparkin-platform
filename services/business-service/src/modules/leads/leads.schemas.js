@@ -117,7 +117,13 @@ export const analyzeRoofSchema = z.object({
 });
 
 export const updateLeadStatusSchema = z.object({
-  status: z.enum(["reviewing", "verified", "open_for_quotes", "closed"]),
+  status: z.enum([
+    "reviewing",
+    "verified",
+    "open_for_quotes",
+    "rejected",
+    "closed",
+  ]),
 });
 
 export const updateLeadDetailsSchema = z.object({
@@ -138,4 +144,14 @@ export const markCommitmentPaidSchema = z.object({
 export const assignLeadVendorsSchema = z.object({
   vendorIds: z.array(z.string().trim().min(1)).min(1).max(25),
   selectAll: z.boolean().optional().default(false),
+});
+
+export const rejectLeadSchema = z.object({
+  reason: z.string().trim().max(500).nullable().optional(),
+});
+
+export const reassignLeadSchema = z.object({
+  vendorIds: z.array(z.string().trim().min(1)).min(1).max(25).optional(),
+  selectAll: z.boolean().optional().default(false),
+  reason: z.string().trim().max(500).nullable().optional(),
 });

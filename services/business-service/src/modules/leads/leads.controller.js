@@ -1,8 +1,20 @@
 import { leadsService } from "./leads.service.js";
 
+function emitLeadUpdate(io, lead, eventType = "lead:updated") {
+  if (!io) return;
+  // Emit to all connected users
+  io.emit(eventType, { lead, timestamp: new Date().toISOString() });
+  // Also emit to specific lead (if subscribed)
+  io.to(`lead:${lead.id}`).emit(eventType, {
+    lead,
+    timestamp: new Date().toISOString(),
+  });
+}
+
 export const leadsController = {
   async create(req, res) {
     const lead = await leadsService.createLead(req.auth, req.body);
+    emitLeadUpdate(req.io, lead, "lead:created");
     res.status(201).json({ lead });
   },
 
@@ -40,6 +52,7 @@ export const leadsController = {
       req.params.leadId,
       req.body,
     );
+    emitLeadUpdate(req.io, lead, "lead:statusChanged");
     res.status(200).json({ lead });
   },
 
@@ -49,6 +62,7 @@ export const leadsController = {
       req.params.leadId,
       req.body,
     );
+    emitLeadUpdate(req.io, lead, "lead:detailsUpdated");
     res.status(200).json({ lead });
   },
 
@@ -57,6 +71,7 @@ export const leadsController = {
       req.auth,
       req.params.leadId,
     );
+    emitLeadUpdate(req.io, lead, "lead:commitmentPaid");
     res.status(200).json({ lead });
   },
 
@@ -66,6 +81,27 @@ export const leadsController = {
       req.params.leadId,
       req.body,
     );
+    emitLeadUpdate(req.io, lead, "lead:vendorsAssigned");
+    res.status(200).json({ lead });
+  },
+
+  async rejectLead(req, res) {
+    const lead = await leadsService.rejectLead(
+      req.auth,
+      req.params.leadId,
+      req.body,
+    );
+    emitLeadUpdate(req.io, lead, "lead:rejected");
+    res.status(200).json({ lead });
+  },
+
+  async reassignLead(req, res) {
+    const lead = await leadsService.reassignLeadToVendors(
+      req.auth,
+      req.params.leadId,
+      req.body,
+    );
+    emitLeadUpdate(req.io, lead, "lead:reassigned");
     res.status(200).json({ lead });
   },
 };

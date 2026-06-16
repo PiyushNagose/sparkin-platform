@@ -5,7 +5,7 @@ import proxy from "express-http-proxy";
 const agentCache = new Map();
 const RETRYABLE_ERROR_CODES = new Set(["ECONNRESET", "EPIPE"]);
 const RETRYABLE_ERROR_MESSAGES = ["socket hang up"];
-const SOCKET_TIMEOUT_MS = 50_000;
+const SOCKET_TIMEOUT_MS = 120_000;
 
 function isRetryableProxyError(error) {
   if (!error) {
@@ -78,6 +78,7 @@ function logProxyError(targetUrl, req, error, extra = {}) {
 
 function createProxyMiddleware(targetUrl, { useKeepAlive }) {
   return proxy(targetUrl, {
+    parseReqBody: false,
     proxyReqPathResolver(req) {
       return req.originalUrl || req.url || "/";
     },
@@ -92,9 +93,7 @@ function createProxyMiddleware(targetUrl, { useKeepAlive }) {
       // chance of reusing a stale downstream socket.
       delete proxyReqOpts.headers.connection;
 
-      proxyReqOpts.agent = useKeepAlive
-        ? getKeepAliveAgent(targetUrl)
-        : false;
+      proxyReqOpts.agent = useKeepAlive ? getKeepAliveAgent(targetUrl) : false;
 
       return proxyReqOpts;
     },
@@ -103,7 +102,7 @@ function createProxyMiddleware(targetUrl, { useKeepAlive }) {
       next(err);
     },
 
-    timeout: 30_000,
+    timeout: 120_000,
     preserveHostHdr: false,
   });
 }
