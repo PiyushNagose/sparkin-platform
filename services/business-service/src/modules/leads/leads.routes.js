@@ -8,6 +8,8 @@ import {
   analyzeRoofSchema,
   createLeadSchema,
   markCommitmentPaidSchema,
+  rejectLeadSchema,
+  reassignLeadSchema,
   updateLeadDetailsSchema,
   updateLeadStatusSchema,
 } from "./leads.schemas.js";
@@ -46,4 +48,14 @@ leadsRouter.patch(
   "/:leadId/vendors",
   validate(assignLeadVendorsSchema),
   asyncHandler(leadsController.assignVendors),
+);
+leadsRouter.patch(
+  "/:leadId/reject",
+  validate(rejectLeadSchema),
+  asyncHandler(leadsController.rejectLead),
+);
+leadsRouter.patch(
+  "/:leadId/reassign",
+  validate(reassignLeadSchema),
+  asyncHandler(leadsController.reassignLead),
 );

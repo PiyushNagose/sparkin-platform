@@ -178,7 +178,8 @@ async function buildCommercialRange(lead, input = {}) {
 
 function isBiddingExpired(lead) {
   if (!lead?.biddingEndsAt) return false;
-  if (!["vendors_assigned", "open_for_quotes"].includes(lead.status)) return false;
+  if (!["vendors_assigned", "open_for_quotes"].includes(lead.status))
+    return false;
 
   return new Date(lead.biddingEndsAt).getTime() <= Date.now();
 }
@@ -311,11 +312,19 @@ export const leadsService = {
 
     const lead = await this.getLead(user, leadId);
 
+    if (lead.status === "rejected") {
+      throw new AppError(409, "Rejected leads cannot be updated");
+    }
+
     if (lead.status === "quote_selected" && input.status !== "closed") {
       throw new AppError(
         409,
         "Selected leads cannot be moved back into review",
       );
+    }
+
+    if (input.status === "rejected") {
+      return leadsRepository.updateStatus(leadId, "rejected");
     }
 
     if (input.status === "verified") {
@@ -346,8 +355,8 @@ export const leadsService = {
 
     const lead = await this.getLead(user, leadId);
 
-    if (lead.status === "closed") {
-      throw new AppError(409, "Closed leads cannot be assigned to vendors");
+    if (lead.status === "closed" || lead.status === "rejected") {
+      throw new AppError(409, "This lead cannot be assigned to vendors");
     }
     if (
       !lead.verifiedAt &&
@@ -425,5 +434,105 @@ export const leadsService = {
     }
 
     return leadsRepository.markCommitmentPaid(leadId);
+  },
+
+  async rejectLead(user, leadId, input) {
+    if (user.role !== "admin") {
+      throw new AppError(403, "Only admins can reject leads");
+    }
+
+    const lead = await this.getLead(user, leadId);
+
+    if (lead.status === "rejected") {
+      throw new AppError(409, "Lead is already rejected");
+    }
+
+    if (lead.status === "quote_selected" || lead.status === "closed") {
+      throw new AppError(409, "Cannot reject leads in this status");
+    }
+
+    return leadsRepository.rejectLead(leadId, {
+      rejectedBy: user.userId,
+      reason: input.reason || null,
+      rejectedByRole: "admin",
+    });
+  },
+
+  async reassignLeadToVendors(user, leadId, input) {
+    if (user.role !== "admin") {
+      throw new AppError(403, "Only admins can reassign leads");
+    }
+
+    const lead = await this.getLead(user, leadId);
+
+    // Allow reassignment from rejected or open_for_quotes status
+    if (
+      ![
+        "rejected",
+        "open_for_quotes",
+        "vendors_assigned",
+        "quote_selected",
+      ].includes(lead.status)
+    ) {
+      throw new AppError(
+        409,
+        "Lead must be in rejected, open_for_quotes, or vendors_assigned status to reassign",
+      );
+    }
+
+    if (!lead.verifiedAt) {
+      throw new AppError(409, "Verify this lead before reassigning vendors");
+    }
+
+    let vendorIds = input.vendorIds || [];
+
+    if (input.selectAll) {
+      const allVendors = await vendorsRepository.findAll();
+      vendorIds = allVendors
+        .filter((vendor) => vendor.verificationStatus === "verified")
+        .map((vendor) => vendor.vendorId);
+
+      if (!vendorIds.length) {
+        throw new AppError(400, "No verified vendors available to reassign");
+      }
+    } else {
+      vendorIds = [...new Set(vendorIds)];
+      if (!vendorIds.length) {
+        throw new AppError(400, "At least one vendor must be specified");
+      }
+    }
+
+    const vendorProfiles = await Promise.all(
+      vendorIds.map((vendorId) => vendorsRepository.findByVendorId(vendorId)),
+    );
+    const unapprovedVendor = vendorProfiles.find(
+      (profile) => !profile || profile.verificationStatus !== "verified",
+    );
+
+    if (unapprovedVendor) {
+      throw new AppError(
+        400,
+        "Only approved partners can be assigned to leads",
+      );
+    }
+
+    const bidDetails = await buildCommercialRange(lead);
+    const biddingMeta = await buildBiddingMeta(lead);
+
+    return leadsRepository.reassignLeadToVendor(leadId, vendorIds, {
+      reassignedBy: user.userId,
+      reassignmentReason: input.reason || "Manual reassignment by admin",
+      ...bidDetails,
+      ...biddingMeta,
+    });
+  },
+
+  async updateLeadStatusWithContext(user, leadId, input) {
+    // Enhanced status update that handles rejection and reassignment context
+    if (input.status === "rejected") {
+      return this.rejectLead(user, leadId, input);
+    }
+
+    return this.updateLeadStatus(user, leadId, input);
   },
 };

@@ -83,6 +83,28 @@ export const leadsApi = {
     );
     return data.lead;
   },
+
+  async rejectLead(leadId, payload) {
+    const { data } = await businessClient.patch(
+      `/leads/${requireId(leadId, "Lead id")}/reject`,
+      payload,
+    );
+    invalidateRequestCache(
+      (key) => key.includes("/leads") || key.includes("/quotes"),
+    );
+    return data.lead;
+  },
+
+  async reassignLeadToVendors(leadId, payload) {
+    const { data } = await businessClient.patch(
+      `/leads/${requireId(leadId, "Lead id")}/reassign`,
+      payload,
+    );
+    invalidateRequestCache(
+      (key) => key.includes("/leads") || key.includes("/quotes"),
+    );
+    return data.lead;
+  },
 };
 
 export const quotesApi = {

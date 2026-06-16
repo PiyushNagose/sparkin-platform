@@ -18,7 +18,14 @@ export function createApiRouter(io) {
   apiRouter.use("/broadcasts", broadcastsRouter);
   apiRouter.use("/calculator", calculatorRouter);
   apiRouter.use("/chat", createChatRouter(io));
-  apiRouter.use("/leads", leadsRouter);
+  apiRouter.use(
+    "/leads",
+    (req, res, next) => {
+      req.io = io;
+      next();
+    },
+    leadsRouter,
+  );
   apiRouter.use("/offers", offersRouter);
   apiRouter.use("/platform-settings", platformSettingsRouter);
   apiRouter.use("/quotes", quotesRouter);

@@ -90,7 +90,9 @@ export const leadsRepository = {
     // Show leads where this vendor is explicitly assigned
     // Include vendors_assigned status so vendors can see leads even before payment
     const leads = await LeadModel.find({
-      status: { $in: ["vendors_assigned", "open_for_quotes", "quote_selected"] },
+      status: {
+        $in: ["vendors_assigned", "open_for_quotes", "quote_selected"],
+      },
       assignedVendorIds: vendorId,
     })
       .select(LEAD_LIST_PROJECTION)
@@ -200,6 +202,58 @@ export const leadsRepository = {
         $set: {
           status: "open_for_quotes",
           selection: { quoteId: null, vendorId: null, selectedAt: null },
+        },
+      },
+      { new: true },
+    ).lean({ virtuals: true });
+
+    return normalizeLead(lead);
+  },
+
+  async rejectLead(id, rejectionData = {}) {
+    const { rejectedBy, reason, rejectedByRole = "admin" } = rejectionData;
+
+    const lead = await LeadModel.findByIdAndUpdate(
+      id,
+      {
+        $set: {
+          status: "rejected",
+        },
+        $push: {
+          rejectionHistory: {
+            rejectedAt: new Date(),
+            rejectedBy,
+            reason: reason || null,
+            rejectedByRole,
+          },
+        },
+      },
+      { new: true },
+    ).lean({ virtuals: true });
+
+    return normalizeLead(lead);
+  },
+
+  async reassignLeadToVendor(id, vendorIds, reassignmentData = {}) {
+    const { reassignedBy, reassignmentReason = null } = reassignmentData;
+
+    const lead = await LeadModel.findByIdAndUpdate(
+      id,
+      {
+        $set: {
+          status: "vendors_assigned",
+          assignedVendorIds: vendorIds,
+          vendorsAssignedAt: new Date(),
+          // Reset selection when reassigning
+          selection: { quoteId: null, vendorId: null, selectedAt: null },
+        },
+        $push: {
+          rejectionHistory: {
+            rejectedAt: new Date(),
+            rejectedBy: reassignedBy,
+            reason: reassignmentReason,
+            rejectedByRole: "admin",
+          },
         },
       },
       { new: true },

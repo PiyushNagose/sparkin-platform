@@ -113,14 +113,51 @@ function Stop-BackendServices {
   Write-Host "[runner] backend services stopped."
 }
 
+function Wait-ForHealth($serviceName, $port, $timeoutSeconds = 30) {
+  $url = "http://localhost:$port/health"
+  $deadline = (Get-Date).AddSeconds($timeoutSeconds)
+  Write-Host "[runner] waiting for $serviceName on port $port..."
+
+  while ((Get-Date) -lt $deadline) {
+    try {
+      $response = Invoke-WebRequest -Uri $url -UseBasicParsing -TimeoutSec 2 -ErrorAction Stop
+      if ($response.StatusCode -lt 500) {
+        Write-Host "[runner] $serviceName is ready."
+        return $true
+      }
+    } catch {
+      # not ready yet
+    }
+    Start-Sleep -Milliseconds 500
+  }
+
+  Write-Host "[runner] $serviceName did not become ready in time."
+  return $false
+}
+
 try {
   Invoke-FreeBackendPorts
   Write-Host "[runner] checking backend ports 4000-4003..."
 
-  foreach ($service in $services) {
+  # Start downstream services first (all except api-gateway)
+  foreach ($service in $services | Where-Object { $_.Name -ne "api-gateway" }) {
     Start-BackendService $service
-    Start-Sleep -Seconds 1
+    Start-Sleep -Milliseconds 500
   }
+
+  # Wait for each downstream to be healthy before starting api-gateway
+  foreach ($service in $services | Where-Object { $_.Name -ne "api-gateway" }) {
+    $ready = Wait-ForHealth $service.Name $service.Port 30
+    if (-not $ready) {
+      Write-Host "[runner] $($service.Name) failed to become ready. Aborting."
+      Stop-BackendServices
+      exit 1
+    }
+  }
+
+  # Now start api-gateway — all downstreams are confirmed healthy
+  $gw = $services | Where-Object { $_.Name -eq "api-gateway" } | Select-Object -First 1
+  Start-BackendService $gw
 
   Write-Host "[runner] all backend services started."
 

@@ -54,7 +54,6 @@ const verificationSteps = [
   { key: "bidding", label: "Bidding", icon: GavelOutlinedIcon },
   { key: "payment", label: "Payment", icon: PaymentsOutlinedIcon },
 ];
-
 function formatMoney(value) {
   const amount = Number(value || 0);
   if (!amount) return "Pending";
@@ -113,9 +112,11 @@ function getDefaultCommercialRange(lead, settings) {
 }
 
 function getActiveStep(lead, quoteCount) {
-  if (lead.commitmentFeePaid || lead.status === "quote_selected") return "payment";
-  if (quoteCount > 0)
-    return "bidding";
+  // Rejected leads stay at submitted — stepper is irrelevant
+  if (lead.status === "rejected") return "submitted";
+  if (lead.commitmentFeePaid || lead.status === "quote_selected")
+    return "payment";
+  if (quoteCount > 0) return "bidding";
   if (
     lead.assignedVendorIds?.length > 0 ||
     ["vendors_assigned", "open_for_quotes"].includes(lead.status)
@@ -123,9 +124,12 @@ function getActiveStep(lead, quoteCount) {
     return "assigned";
   if (
     lead.verifiedAt ||
-    ["verified", "vendors_assigned", "open_for_quotes", "quote_selected"].includes(
-      lead.status,
-    )
+    [
+      "verified",
+      "vendors_assigned",
+      "open_for_quotes",
+      "quote_selected",
+    ].includes(lead.status)
   )
     return "verified";
   return "submitted";
@@ -344,6 +348,11 @@ export default function AdminLeadDetailPage() {
   const [platformSettings, setPlatformSettings] = useState(null);
   const [isSavingDetails, setIsSavingDetails] = useState(false);
   const [detailsSaved, setDetailsSaved] = useState(false);
+  const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState("");
+  const [reassignDialogOpen, setReassignDialogOpen] = useState(false);
+  const [reassignmentReason, setReassignmentReason] = useState("");
+  const [reassignmentVendors, setReassignmentVendors] = useState([]);
 
   async function loadDetail() {
     setState((current) => ({ ...current, loading: true, error: "" }));
@@ -389,9 +398,14 @@ export default function AdminLeadDetailPage() {
     const activeStep = getActiveStep(lead, quotes.length);
     const isVerified =
       Boolean(lead.verifiedAt) ||
-      ["verified", "vendors_assigned", "open_for_quotes", "quote_selected"].includes(
-        lead.status,
-      );
+      [
+        "verified",
+        "vendors_assigned",
+        "open_for_quotes",
+        "quote_selected",
+      ].includes(lead.status);
+
+    const isRejected = lead.status === "rejected";
 
     return {
       lead,
@@ -399,8 +413,10 @@ export default function AdminLeadDetailPage() {
       projects,
       activeStep,
       isVerified,
+      isRejected,
       canAssignVendor:
-        isVerified && !["quote_selected", "closed"].includes(lead.status),
+        isVerified &&
+        !["quote_selected", "closed", "rejected"].includes(lead.status),
     };
   }, [state.data]);
 
@@ -493,6 +509,49 @@ export default function AdminLeadDetailPage() {
     }
   }
 
+  async function handleRejectLead() {
+    setIsUpdating(true);
+    setActionError("");
+    try {
+      await leadsApi.rejectLead(leadId, { reason: rejectionReason || null });
+      setRejectDialogOpen(false);
+      setRejectionReason("");
+      await loadDetail();
+    } catch (error) {
+      setActionError(
+        error?.response?.data?.message ||
+          error.message ||
+          "Unable to reject lead",
+      );
+    } finally {
+      setIsUpdating(false);
+    }
+  }
+
+  async function handleReassignVendors() {
+    setIsUpdating(true);
+    setActionError("");
+    try {
+      const payload = {
+        vendorIds: reassignmentVendors,
+        reason: reassignmentReason || null,
+      };
+      await leadsApi.reassignLeadToVendors(leadId, payload);
+      setReassignDialogOpen(false);
+      setReassignmentReason("");
+      setReassignmentVendors([]);
+      await loadDetail();
+    } catch (error) {
+      setActionError(
+        error?.response?.data?.message ||
+          error.message ||
+          "Unable to reassign vendors",
+      );
+    } finally {
+      setIsUpdating(false);
+    }
+  }
+
   if (state.loading) return <AdminLoadingState />;
 
   if (state.error || !detail) {
@@ -503,13 +562,23 @@ export default function AdminLeadDetailPage() {
     );
   }
 
-  const { lead, quotes, projects, activeStep, canAssignVendor, isVerified } =
-    detail;
+  const {
+    lead,
+    quotes,
+    projects,
+    activeStep,
+    canAssignVendor,
+    isVerified,
+    isRejected,
+  } = detail;
   const hasAssignedVendors =
     lead.assignedVendorIds?.length > 0 ||
-    ["vendors_assigned", "open_for_quotes", "quote_selected"].includes(lead.status);
+    ["vendors_assigned", "open_for_quotes", "quote_selected"].includes(
+      lead.status,
+    );
   const canConfirmPayment =
-    hasAssignedVendors && (quotes.length > 0 || lead.status === "quote_selected");
+    hasAssignedVendors &&
+    (quotes.length > 0 || lead.status === "quote_selected");
 
   return (
     <AdminPageShell>
@@ -943,7 +1012,80 @@ export default function AdminLeadDetailPage() {
           >
             Step 1 — Lead Verification
           </Typography>
-          {isVerified ? (
+
+          {/* REJECTED — terminal state, no further actions */}
+          {isRejected ? (
+            <Stack spacing={1.2} sx={{ mb: 2 }}>
+              <Box
+                sx={{
+                  p: 1.8,
+                  borderRadius: "0.95rem",
+                  bgcolor: "#FFF2F2",
+                  border: "1.5px solid #FFCDD2",
+                }}
+              >
+                <Stack
+                  direction="row"
+                  spacing={1}
+                  alignItems="center"
+                  sx={{ mb: 0.6 }}
+                >
+                  <Box
+                    sx={{
+                      width: 22,
+                      height: 22,
+                      borderRadius: "50%",
+                      bgcolor: "#E32626",
+                      display: "grid",
+                      placeItems: "center",
+                      flexShrink: 0,
+                    }}
+                  >
+                    <CloseRoundedIcon
+                      sx={{ fontSize: "0.75rem", color: "#fff" }}
+                    />
+                  </Box>
+                  <Typography
+                    sx={{
+                      color: "#B71C1C",
+                      fontSize: "0.84rem",
+                      fontWeight: 900,
+                    }}
+                  >
+                    Lead Rejected
+                  </Typography>
+                </Stack>
+                <Typography
+                  sx={{
+                    color: "#C62828",
+                    fontSize: "0.72rem",
+                    lineHeight: 1.55,
+                  }}
+                >
+                  This lead has been rejected. You can reassign it to other
+                  vendors or create a new opportunity.
+                </Typography>
+              </Box>
+              <Button
+                fullWidth
+                startIcon={<GroupAddOutlinedIcon />}
+                onClick={() => setReassignDialogOpen(true)}
+                sx={{
+                  minHeight: 46,
+                  borderRadius: "999px",
+                  border: "1.5px solid #FFC9C9",
+                  bgcolor: "#FFFBFB",
+                  color: "#E32626",
+                  fontSize: "0.84rem",
+                  fontWeight: 850,
+                  textTransform: "none",
+                  "&:hover": { bgcolor: "#FFF5F5" },
+                }}
+              >
+                Reassign to Vendors
+              </Button>
+            </Stack>
+          ) : isVerified ? (
             <Box
               sx={{
                 p: 1.4,
@@ -969,15 +1111,19 @@ export default function AdminLeadDetailPage() {
                 startIcon={<SettingsSuggestOutlinedIcon />}
                 disabled={isUpdating}
                 onClick={verifyLead}
-                sx={{ minHeight: 50, borderRadius: "999px", fontSize: "0.88rem" }}
+                sx={{
+                  minHeight: 50,
+                  borderRadius: "999px",
+                  fontSize: "0.88rem",
+                }}
               >
                 {isUpdating ? "Verifying..." : "Mark as Verified"}
               </AdminPrimaryButton>
               <Button
                 fullWidth
                 startIcon={<CloseRoundedIcon />}
-                disabled={isUpdating || lead.status === "closed"}
-                onClick={() => updateStatus("closed")}
+                disabled={isUpdating}
+                onClick={() => setRejectDialogOpen(true)}
                 sx={{
                   minHeight: 46,
                   borderRadius: "999px",
@@ -990,7 +1136,7 @@ export default function AdminLeadDetailPage() {
                   "&:hover": { bgcolor: "#FFECEC" },
                 }}
               >
-                Reject Lead
+                {isUpdating ? "Rejecting..." : "Reject Lead"}
               </Button>
             </Stack>
           )}
@@ -1008,11 +1154,12 @@ export default function AdminLeadDetailPage() {
               mb: 1,
             }}
           >
-            Step 2 — Assign Vendors {canAssignVendor ? "" : "(Locked)"}
+            Step 2 — Assign Vendors{" "}
+            {isRejected ? "(N/A)" : canAssignVendor ? "" : "(Locked)"}
           </Typography>
           <Button
             fullWidth
-            disabled={!canAssignVendor}
+            disabled={!canAssignVendor || isRejected}
             onClick={() =>
               navigate("/admin/vendor-assignment", {
                 state: { leadId: lead.id },
@@ -1022,13 +1169,15 @@ export default function AdminLeadDetailPage() {
             sx={{
               minHeight: 50,
               borderRadius: "999px",
-              bgcolor: canAssignVendor ? "#EAF1FF" : "#EDF1F6",
-              color: canAssignVendor ? "#0E56C8" : "#A3AFBF",
+              bgcolor: canAssignVendor && !isRejected ? "#EAF1FF" : "#EDF1F6",
+              color: canAssignVendor && !isRejected ? "#0E56C8" : "#A3AFBF",
               fontSize: "0.88rem",
               fontWeight: 850,
               textTransform: "none",
-              border: `1px solid ${canAssignVendor ? "#C5D8FF" : "#D9E2EF"}`,
-              "&:hover": { bgcolor: canAssignVendor ? "#DCE9FF" : "#EDF1F6" },
+              border: `1px solid ${canAssignVendor && !isRejected ? "#C5D8FF" : "#D9E2EF"}`,
+              "&:hover": {
+                bgcolor: canAssignVendor && !isRejected ? "#DCE9FF" : "#EDF1F6",
+              },
             }}
           >
             {hasAssignedVendors ? "Manage Assigned Vendors" : "Assign Vendor"}
@@ -1099,13 +1248,14 @@ export default function AdminLeadDetailPage() {
                     mt: 0.3,
                   }}
                 >
-                  Confirm this after the customer selects a quote and completes payment.
+                  Confirm this after the customer selects a quote and completes
+                  payment.
                 </Typography>
               </Box>
               <Button
                 fullWidth
                 startIcon={<PaymentsOutlinedIcon />}
-                disabled={isUpdating || !canConfirmPayment}
+                disabled={isUpdating || !canConfirmPayment || isRejected}
                 onClick={markPaymentReceived}
                 sx={{
                   minHeight: 46,
@@ -1135,6 +1285,134 @@ export default function AdminLeadDetailPage() {
         quotes={quotes}
         projects={projects}
       />
+
+      {/* Rejection Dialog */}
+      <Dialog
+        open={rejectDialogOpen}
+        onClose={() => !isUpdating && setRejectDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle sx={{ color: adminUi.colors.text, fontWeight: 900 }}>
+          Reject Lead
+        </DialogTitle>
+        <DialogContent dividers>
+          <Stack spacing={2}>
+            <Typography sx={{ color: "#667386", fontSize: "0.88rem" }}>
+              Confirm you want to reject this lead. The customer and assigned
+              vendors will be notified.
+            </Typography>
+            <TextField
+              fullWidth
+              multiline
+              rows={3}
+              label="Rejection Reason (Optional)"
+              value={rejectionReason}
+              onChange={(e) => setRejectionReason(e.target.value)}
+              placeholder="e.g., Insufficient roof space, customer requested cancellation, etc."
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  borderRadius: "0.75rem",
+                },
+              }}
+            />
+          </Stack>
+        </DialogContent>
+        <Box sx={{ p: 2, display: "flex", gap: 1, justifyContent: "flex-end" }}>
+          <Button
+            onClick={() => !isUpdating && setRejectDialogOpen(false)}
+            disabled={isUpdating}
+            sx={{
+              borderRadius: "0.75rem",
+              textTransform: "none",
+              fontWeight: 850,
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleRejectLead}
+            disabled={isUpdating}
+            variant="contained"
+            sx={{
+              borderRadius: "0.75rem",
+              bgcolor: "#E32626",
+              color: "#fff",
+              textTransform: "none",
+              fontWeight: 850,
+              "&:hover": { bgcolor: "#B71C1C" },
+            }}
+          >
+            {isUpdating ? "Rejecting..." : "Reject Lead"}
+          </Button>
+        </Box>
+      </Dialog>
+
+      {/* Reassignment Dialog */}
+      <Dialog
+        open={reassignDialogOpen}
+        onClose={() => !isUpdating && setReassignDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle sx={{ color: adminUi.colors.text, fontWeight: 900 }}>
+          Reassign Lead to Vendors
+        </DialogTitle>
+        <DialogContent dividers>
+          <Stack spacing={2}>
+            <Typography sx={{ color: "#667386", fontSize: "0.88rem" }}>
+              Select vendors to reassign this lead to. A new bidding round will
+              be initiated.
+            </Typography>
+            <TextField
+              fullWidth
+              multiline
+              rows={2}
+              label="Reassignment Reason (Optional)"
+              value={reassignmentReason}
+              onChange={(e) => setReassignmentReason(e.target.value)}
+              placeholder="e.g., Original vendor unresponsive, lead requalified, etc."
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  borderRadius: "0.75rem",
+                },
+              }}
+            />
+          </Stack>
+        </DialogContent>
+        <Box sx={{ p: 2, display: "flex", gap: 1, justifyContent: "flex-end" }}>
+          <Button
+            onClick={() => !isUpdating && setReassignDialogOpen(false)}
+            disabled={isUpdating}
+            sx={{
+              borderRadius: "0.75rem",
+              textTransform: "none",
+              fontWeight: 850,
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={() =>
+              navigate("/admin/vendor-assignment", {
+                state: { leadId: lead.id, mode: "reassign" },
+              })
+            }
+            disabled={isUpdating}
+            variant="contained"
+            sx={{
+              borderRadius: "0.75rem",
+              bgcolor: "#0E56C8",
+              color: "#fff",
+              textTransform: "none",
+              fontWeight: 850,
+              "&:hover": { bgcolor: "#0B49AD" },
+            }}
+          >
+            Select Vendors
+          </Button>
+        </Box>
+      </Dialog>
     </AdminPageShell>
   );
 }

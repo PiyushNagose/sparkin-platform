@@ -73,6 +73,7 @@ const leadSchema = new mongoose.Schema(
         "vendors_assigned",
         "open_for_quotes",
         "quote_selected",
+        "rejected",
         "closed",
       ],
       default: "submitted",
@@ -158,6 +159,18 @@ const leadSchema = new mongoose.Schema(
       vendorId: { type: String, default: null },
       selectedAt: { type: Date, default: null },
     },
+    rejectionHistory: [
+      {
+        rejectedAt: { type: Date, default: Date.now },
+        rejectedBy: { type: String, required: true },
+        reason: { type: String, trim: true, default: null },
+        rejectedByRole: {
+          type: String,
+          enum: ["admin", "vendor"],
+          default: "admin",
+        },
+      },
+    ],
     submittedAt: { type: Date, default: Date.now },
   },
   {
