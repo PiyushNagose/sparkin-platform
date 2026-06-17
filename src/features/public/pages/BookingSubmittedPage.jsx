@@ -76,6 +76,7 @@ function NextStepItem({ icon, title, description }) {
 export default function BookingSubmittedPage() {
   const { state } = useLocation();
   const leadId = state?.leadId;
+  const appliedCoupon = state?.appliedCoupon || null;
   if (!leadId) {
     return (
       <Box className={styles.pageShell}>
@@ -255,6 +256,52 @@ export default function BookingSubmittedPage() {
                       Booking Reference: #
                       {String(leadId).slice(-8).toUpperCase()}
                     </Typography>
+                  </Box>
+                ) : null}
+
+                {appliedCoupon ? (
+                  <Box
+                    sx={{
+                      width: "100%",
+                      px: 1.6,
+                      py: 1.2,
+                      borderRadius: "0.9rem",
+                      bgcolor: "#E7F8EF",
+                      border: "1.5px solid #B8EAC8",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 1.2,
+                    }}
+                  >
+                    <LocalOfferOutlinedIcon
+                      sx={{
+                        color: "#10985E",
+                        fontSize: "1.1rem",
+                        flexShrink: 0,
+                      }}
+                    />
+                    <Box>
+                      <Typography
+                        sx={{
+                          color: "#10985E",
+                          fontSize: "0.76rem",
+                          fontWeight: 900,
+                        }}
+                      >
+                        Coupon applied: {appliedCoupon.couponCode}
+                      </Typography>
+                      <Typography
+                        sx={{ color: "#2E7A52", fontSize: "0.68rem", mt: 0.2 }}
+                      >
+                        {appliedCoupon.discountType === "percentage"
+                          ? `${appliedCoupon.discountValue}% discount`
+                          : `₹${Number(appliedCoupon.discountedAmount).toLocaleString("en-IN")} off`}
+                        {" · "}You save ₹
+                        {Number(appliedCoupon.discountedAmount).toLocaleString(
+                          "en-IN",
+                        )}
+                      </Typography>
+                    </Box>
                   </Box>
                 ) : null}
 

@@ -48,6 +48,7 @@ import {
 } from "@/features/admin/components/AdminPortalUI";
 import { getAdminDashboardData } from "@/features/admin/api/adminApi";
 import { paymentsApi } from "@/features/public/api/paymentsApi";
+import { useSocket } from "@/shared/websocket/SocketProvider";
 import {
   downloadInvoicePdf,
   printInvoiceHtml,
@@ -342,6 +343,7 @@ function InvoiceDialog({ open, onClose, projects, onSubmit, saving, error }) {
 }
 
 export default function AdminPaymentsPage() {
+  const { refreshKey } = useSocket();
   const [state, setState] = useState({ loading: true, error: "", data: null });
   const [filters, setFilters] = useState({
     status: "all",
@@ -380,7 +382,7 @@ export default function AdminPaymentsPage() {
 
   useEffect(() => {
     loadPayments();
-  }, []);
+  }, [refreshKey]);
 
   const payments = state.data?.payments || [];
   const projects = state.data?.projects || [];
@@ -901,7 +903,9 @@ export default function AdminPaymentsPage() {
                                   "&:hover": { bgcolor: "#DCE9FF" },
                                 }}
                               >
-                                <DownloadRoundedIcon sx={{ fontSize: "1rem" }} />
+                                <DownloadRoundedIcon
+                                  sx={{ fontSize: "1rem" }}
+                                />
                               </IconButton>
                             </Tooltip>
                             <Tooltip title="Print Invoice">

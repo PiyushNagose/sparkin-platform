@@ -19,7 +19,7 @@ import RequestQuoteOutlinedIcon from "@mui/icons-material/RequestQuoteOutlined";
 import SaveOutlinedIcon from "@mui/icons-material/SaveOutlined";
 import SettingsSuggestOutlinedIcon from "@mui/icons-material/SettingsSuggestOutlined";
 import VerifiedOutlinedIcon from "@mui/icons-material/VerifiedOutlined";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   AdminErrorState,
@@ -35,6 +35,8 @@ import {
   platformSettingsApi,
 } from "@/features/admin/api/adminApi";
 import { leadsApi } from "@/features/public/api/leadsApi";
+import { useScrollToError } from "@/shared/hooks/useScrollToError";
+import { useSocket } from "@/shared/websocket/SocketProvider";
 
 const rupeeFormatter = new Intl.NumberFormat("en-IN", {
   style: "currency",
@@ -337,8 +339,10 @@ function HistoryDialog({ open, onClose, lead, quotes, projects }) {
 export default function AdminLeadDetailPage() {
   const { leadId } = useParams();
   const navigate = useNavigate();
+  const { refreshKey } = useSocket();
   const [state, setState] = useState({ loading: true, error: "", data: null });
   const [actionError, setActionError] = useState("");
+  const errorRef = useScrollToError(actionError);
   const [isUpdating, setIsUpdating] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [editSystemSize, setEditSystemSize] = useState("");
@@ -383,7 +387,7 @@ export default function AdminLeadDetailPage() {
 
   useEffect(() => {
     loadDetail();
-  }, [leadId]);
+  }, [leadId, refreshKey]);
 
   const detail = useMemo(() => {
     const lead = state.data?.lead;
@@ -620,7 +624,9 @@ export default function AdminLeadDetailPage() {
 
       <VerificationStepper activeStep={activeStep} />
 
-      {actionError ? <AdminErrorState>{actionError}</AdminErrorState> : null}
+      {actionError ? (
+        <AdminErrorState ref={errorRef}>{actionError}</AdminErrorState>
+      ) : null}
 
       <Box
         sx={{
@@ -982,6 +988,58 @@ export default function AdminLeadDetailPage() {
               }
             />
           </Box>
+
+          {lead.appliedCoupon?.couponCode ? (
+            <Box
+              sx={{
+                mt: 2,
+                p: 1.6,
+                borderRadius: "0.95rem",
+                bgcolor: "#E7F8EF",
+                border: "1.5px solid #B8EAC8",
+                display: "flex",
+                alignItems: "center",
+                gap: 1.2,
+              }}
+            >
+              <Box
+                sx={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: "50%",
+                  bgcolor: "#10985E",
+                  display: "grid",
+                  placeItems: "center",
+                  flexShrink: 0,
+                }}
+              >
+                <VerifiedOutlinedIcon
+                  sx={{ fontSize: "0.95rem", color: "#fff" }}
+                />
+              </Box>
+              <Box>
+                <Typography
+                  sx={{
+                    color: "#10985E",
+                    fontSize: "0.78rem",
+                    fontWeight: 900,
+                  }}
+                >
+                  Coupon Applied: {lead.appliedCoupon.couponCode}
+                </Typography>
+                <Typography
+                  sx={{ color: "#2E7A52", fontSize: "0.7rem", mt: 0.2 }}
+                >
+                  {lead.appliedCoupon.discountType === "percentage"
+                    ? `${lead.appliedCoupon.discountValue}% off`
+                    : `₹${Number(lead.appliedCoupon.discountedAmount).toLocaleString("en-IN")} off`}
+                  {lead.appliedCoupon.discountedAmount
+                    ? ` · Customer saves ₹${Number(lead.appliedCoupon.discountedAmount).toLocaleString("en-IN")}`
+                    : ""}
+                </Typography>
+              </Box>
+            </Box>
+          ) : null}
         </AdminPanel>
 
         {/* ── Verification Actions ── */}

@@ -1,10 +1,13 @@
 import { Box, Button, CircularProgress, Typography } from "@mui/material";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { vendorsApi } from "@/features/vendor/api/vendorsApi";
+import { useSocket } from "@/shared/websocket/SocketProvider";
 
 export default function VendorApprovalGate() {
   const location = useLocation();
+  const { refreshKey } = useSocket();
+  const initialLoadDone = useRef(false);
   const [state, setState] = useState({
     loading: true,
     status: null,
@@ -12,12 +15,29 @@ export default function VendorApprovalGate() {
   });
 
   function loadProfile(active = true) {
+    // Don't show full-screen loading spinner on socket-triggered re-checks
+    // after the first load — only update status silently.
+    if (initialLoadDone.current) {
+      vendorsApi
+        .getMyProfile({ force: true })
+        .then((profile) => {
+          if (!active) return;
+          setState((prev) => ({
+            ...prev,
+            status: profile?.verificationStatus || prev.status || "draft",
+          }));
+        })
+        .catch(() => {});
+      return;
+    }
+
     setState({ loading: true, status: null, error: "" });
 
     vendorsApi
       .getMyProfile({ force: true })
       .then((profile) => {
         if (!active) return;
+        initialLoadDone.current = true;
         setState({
           loading: false,
           status: profile?.verificationStatus || "draft",
@@ -36,13 +56,27 @@ export default function VendorApprovalGate() {
       });
   }
 
+  // Initial load
   useEffect(() => {
     let active = true;
     loadProfile(active);
     return () => {
       active = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Re-check status whenever the socket signals a vendor-related change
+  // (e.g. admin approves the vendor → refresh:page fires → refreshKey bumps)
+  useEffect(() => {
+    if (refreshKey === 0) return; // skip the initial mount value
+    let active = true;
+    loadProfile(active);
+    return () => {
+      active = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refreshKey]);
 
   if (state.loading) {
     return (

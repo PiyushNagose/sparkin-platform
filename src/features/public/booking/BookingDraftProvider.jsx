@@ -43,6 +43,8 @@ const initialDraft = {
   calculatorEstimate: null,
   notes: "",
   specialInstructions: "",
+  couponCode: "",
+  appliedCoupon: null,
 };
 
 // ─── helpers ────────────────────────────────────────────────────────────────

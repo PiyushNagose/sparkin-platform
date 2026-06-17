@@ -72,11 +72,20 @@ function formatMoney(v) {
 
 function formatDate(v) {
   if (!v) return "—";
-  return new Intl.DateTimeFormat("en-IN", { day: "2-digit", month: "short", year: "numeric" }).format(new Date(v));
+  return new Intl.DateTimeFormat("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(v));
 }
 
 function getInitials(name = "") {
-  return name.split(" ").map((p) => p[0]).join("").slice(0, 2).toUpperCase();
+  return name
+    .split(" ")
+    .map((p) => p[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
 }
 
 const AVATAR_COLORS = [
@@ -118,7 +127,8 @@ function buildChartData(referrals) {
     const d = new Date(r.createdAt);
     const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
     const label = d.toLocaleString("en-IN", { month: "short" });
-    if (!map.has(key)) map.set(key, { key, label, referrals: 0, conversions: 0 });
+    if (!map.has(key))
+      map.set(key, { key, label, referrals: 0, conversions: 0 });
     const entry = map.get(key);
     entry.referrals += 1;
     if (["installed", "rewarded"].includes(r.status)) entry.conversions += 1;
@@ -131,16 +141,30 @@ function buildChartData(referrals) {
 
 // ─── sub-components ──────────────────────────────────────────────────────────
 
-function KpiCard({ icon: Icon, label, value, delta, accent = "#0E56C8", positive = true }) {
+function KpiCard({
+  icon: Icon,
+  label,
+  value,
+  delta,
+  accent = "#0E56C8",
+  positive = true,
+}) {
   return (
     <AdminPanel
       sx={{
         p: { xs: 2, md: 2.2 },
         transition: "transform 0.18s, box-shadow 0.18s",
-        "&:hover": { transform: "translateY(-2px)", boxShadow: "0 18px 38px rgba(16,29,51,0.1)" },
+        "&:hover": {
+          transform: "translateY(-2px)",
+          boxShadow: "0 18px 38px rgba(16,29,51,0.1)",
+        },
       }}
     >
-      <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
+      <Stack
+        direction="row"
+        justifyContent="space-between"
+        alignItems="flex-start"
+      >
         <Box
           sx={{
             width: 38,
@@ -171,11 +195,26 @@ function KpiCard({ icon: Icon, label, value, delta, accent = "#0E56C8", positive
         ) : null}
       </Stack>
       <Typography
-        sx={{ mt: 1.3, color: "#596579", fontSize: "0.68rem", fontWeight: 800, letterSpacing: "0.05em", textTransform: "uppercase" }}
+        sx={{
+          mt: 1.3,
+          color: "#596579",
+          fontSize: "0.68rem",
+          fontWeight: 800,
+          letterSpacing: "0.05em",
+          textTransform: "uppercase",
+        }}
       >
         {label}
       </Typography>
-      <Typography sx={{ mt: 0.45, color: adminUi.colors.text, fontSize: "1.8rem", fontWeight: 950, lineHeight: 1 }}>
+      <Typography
+        sx={{
+          mt: 0.45,
+          color: adminUi.colors.text,
+          fontSize: "1.8rem",
+          fontWeight: 950,
+          lineHeight: 1,
+        }}
+      >
         {value}
       </Typography>
     </AdminPanel>
@@ -186,11 +225,33 @@ function ChannelBar({ label, value, max, color }) {
   const pct = max ? Math.round((value / max) * 100) : 0;
   return (
     <Box>
-      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 0.5 }}>
-        <Typography sx={{ color: adminUi.colors.text, fontSize: "0.82rem", fontWeight: 700 }}>{label}</Typography>
-        <Typography sx={{ color, fontSize: "0.82rem", fontWeight: 900 }}>{value}</Typography>
+      <Stack
+        direction="row"
+        justifyContent="space-between"
+        alignItems="center"
+        sx={{ mb: 0.5 }}
+      >
+        <Typography
+          sx={{
+            color: adminUi.colors.text,
+            fontSize: "0.82rem",
+            fontWeight: 700,
+          }}
+        >
+          {label}
+        </Typography>
+        <Typography sx={{ color, fontSize: "0.82rem", fontWeight: 900 }}>
+          {value}
+        </Typography>
       </Stack>
-      <Box sx={{ height: 7, borderRadius: "999px", bgcolor: "#EEF2F7", overflow: "hidden" }}>
+      <Box
+        sx={{
+          height: 7,
+          borderRadius: "999px",
+          bgcolor: "#EEF2F7",
+          overflow: "hidden",
+        }}
+      >
         <Box
           sx={{
             width: `${pct}%`,
@@ -207,10 +268,10 @@ function ChannelBar({ label, value, max, color }) {
 
 function StatusChip({ status }) {
   const map = {
-    invited:   { label: "Invited",   bg: "#F0F4F8", color: "#596579" },
+    invited: { label: "Invited", bg: "#F0F4F8", color: "#596579" },
     signed_up: { label: "Signed Up", bg: "#FFF8D6", color: "#7A6B00" },
-    installed: { label: "Success",   bg: "#D7F600", color: "#3C4700" },
-    rewarded:  { label: "Rewarded",  bg: "#DFF7E8", color: "#0F6A38" },
+    installed: { label: "Success", bg: "#D7F600", color: "#3C4700" },
+    rewarded: { label: "Rewarded", bg: "#DFF7E8", color: "#0F6A38" },
   };
   const s = map[status] || map.invited;
   return (
@@ -235,54 +296,93 @@ function StatusChip({ status }) {
   );
 }
 
-function PayoutChip({ rewardStatus, referralId, onUpdate }) {
-  const isPaid = rewardStatus === "paid";
-  const [loading, setLoading] = useState(false);
+// Maps rewardStatus → display config for the three possible states
+const PAYOUT_STATES = {
+  pending: {
+    label: "PENDING",
+    bg: "#F2F5F8",
+    color: "#596579",
+    dot: "#8B97A8",
+    next: "earned",
+    tooltip: "Mark as Earned",
+  },
+  earned: {
+    label: "EARNED",
+    bg: "#FFF8D6",
+    color: "#7A6B00",
+    dot: "#C4A800",
+    next: "paid",
+    tooltip: "Mark as Paid",
+  },
+  paid: {
+    label: "PAID",
+    bg: "#DFF7E8",
+    color: "#0F6A38",
+    dot: "#0F6A38",
+    next: "pending",
+    tooltip: "Revert to Pending",
+  },
+};
 
-  async function handleToggle() {
+function PayoutChip({ rewardStatus, referralId, onUpdate }) {
+  const [loading, setLoading] = useState(false);
+  const state = PAYOUT_STATES[rewardStatus] ?? PAYOUT_STATES.pending;
+
+  async function handleClick() {
     if (loading) return;
     setLoading(true);
     try {
-      await onUpdate(referralId, isPaid ? "earned" : "paid");
+      await onUpdate(referralId, state.next);
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <Box
-      onClick={handleToggle}
-      sx={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 0.5,
-        px: 1.1,
-        py: 0.35,
-        borderRadius: "0.5rem",
-        bgcolor: isPaid ? "#DFF7E8" : "#FFE4E4",
-        color: isPaid ? "#0F6A38" : "#B91C1C",
-        fontSize: "0.7rem",
-        fontWeight: 900,
-        cursor: "pointer",
-        userSelect: "none",
-        transition: "opacity 0.15s",
-        "&:hover": { opacity: 0.8 },
-      }}
-    >
-      {loading ? (
-        <CircularProgress size={10} sx={{ color: "inherit" }} />
-      ) : (
-        <Box
-          sx={{
-            width: 6,
-            height: 6,
-            borderRadius: "50%",
-            bgcolor: isPaid ? "#0F6A38" : "#B91C1C",
-          }}
-        />
-      )}
-      {isPaid ? "PAID" : "UNPAID"}
-    </Box>
+    <Tooltip title={state.tooltip} placement="top" arrow>
+      <Box
+        role="button"
+        tabIndex={0}
+        onClick={handleClick}
+        onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && handleClick()}
+        aria-label={`Payout status: ${state.label}. Click to ${state.tooltip}`}
+        sx={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 0.5,
+          px: 1.1,
+          py: 0.35,
+          borderRadius: "0.5rem",
+          bgcolor: state.bg,
+          color: state.color,
+          fontSize: "0.7rem",
+          fontWeight: 900,
+          cursor: "pointer",
+          userSelect: "none",
+          transition: "opacity 0.15s",
+          "&:hover": { opacity: 0.75 },
+          "&:focus-visible": {
+            outline: `2px solid ${state.dot}`,
+            outlineOffset: 2,
+          },
+        }}
+      >
+        {loading ? (
+          <CircularProgress size={10} sx={{ color: "inherit" }} />
+        ) : (
+          <Box
+            sx={{
+              width: 6,
+              height: 6,
+              borderRadius: "50%",
+              bgcolor: state.dot,
+              flexShrink: 0,
+            }}
+          />
+        )}
+        {state.label}
+      </Box>
+    </Tooltip>
   );
 }
 
@@ -299,13 +399,24 @@ function ChartTooltip({ active, payload, label }) {
         boxShadow: "0 8px 24px rgba(0,0,0,0.25)",
       }}
     >
-      <Typography sx={{ color: "rgba(255,255,255,0.6)", fontSize: "0.68rem", fontWeight: 700, mb: 0.6 }}>
+      <Typography
+        sx={{
+          color: "rgba(255,255,255,0.6)",
+          fontSize: "0.68rem",
+          fontWeight: 700,
+          mb: 0.6,
+        }}
+      >
         {label}
       </Typography>
       {payload.map((p) => (
         <Stack key={p.dataKey} direction="row" spacing={1} alignItems="center">
-          <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: p.color }} />
-          <Typography sx={{ color: "#fff", fontSize: "0.76rem", fontWeight: 700 }}>
+          <Box
+            sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: p.color }}
+          />
+          <Typography
+            sx={{ color: "#fff", fontSize: "0.76rem", fontWeight: 700 }}
+          >
             {p.name}: {p.value}
           </Typography>
         </Stack>
@@ -320,7 +431,9 @@ function OverviewTab({ referrals }) {
   const chartData = useMemo(() => buildChartData(referrals), [referrals]);
 
   const totalReferrals = referrals.length;
-  const successful = referrals.filter((r) => ["installed", "rewarded"].includes(r.status)).length;
+  const successful = referrals.filter((r) =>
+    ["installed", "rewarded"].includes(r.status),
+  ).length;
   const rewardsPaid = referrals
     .filter((r) => r.rewardStatus === "paid")
     .reduce((s, r) => s + r.rewardAmount, 0);
@@ -328,9 +441,15 @@ function OverviewTab({ referrals }) {
     .filter((r) => r.rewardStatus === "earned")
     .reduce((s, r) => s + r.rewardAmount, 0);
 
-  const directCount = referrals.filter((r) => r.channel === "direct_invite").length;
-  const socialCount = referrals.filter((r) => r.channel === "social_share").length;
-  const emailCount = referrals.filter((r) => r.channel === "email_campaign").length;
+  const directCount = referrals.filter(
+    (r) => r.channel === "direct_invite",
+  ).length;
+  const socialCount = referrals.filter(
+    (r) => r.channel === "social_share",
+  ).length;
+  const emailCount = referrals.filter(
+    (r) => r.channel === "email_campaign",
+  ).length;
   const maxChannel = Math.max(directCount, socialCount, emailCount, 1);
 
   // Recent high-value referrals (top 3 by reward)
@@ -379,15 +498,38 @@ function OverviewTab({ referrals }) {
       </Box>
 
       {/* Chart + Top Channels */}
-      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: "1fr 320px" }, gap: 2.5 }}>
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: { xs: "1fr", lg: "1fr 320px" },
+          gap: 2.5,
+        }}
+      >
         {/* Referral Growth Chart */}
         <AdminPanel sx={{ p: { xs: 2, md: 2.6 } }}>
-          <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 0.5 }}>
+          <Stack
+            direction="row"
+            justifyContent="space-between"
+            alignItems="flex-start"
+            sx={{ mb: 0.5 }}
+          >
             <Box>
-              <Typography sx={{ color: adminUi.colors.text, fontSize: "1.1rem", fontWeight: 900 }}>
+              <Typography
+                sx={{
+                  color: adminUi.colors.text,
+                  fontSize: "1.1rem",
+                  fontWeight: 900,
+                }}
+              >
                 Referral Growth
               </Typography>
-              <Typography sx={{ mt: 0.3, color: adminUi.colors.muted, fontSize: "0.76rem" }}>
+              <Typography
+                sx={{
+                  mt: 0.3,
+                  color: adminUi.colors.muted,
+                  fontSize: "0.76rem",
+                }}
+              >
                 Tracking monthly referral acquisition vs conversion performance
               </Typography>
             </Box>
@@ -430,18 +572,33 @@ function OverviewTab({ referrals }) {
           <Box sx={{ mt: 2.5, height: 280 }}>
             {chartData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={chartData} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
+                <AreaChart
+                  data={chartData}
+                  margin={{ top: 8, right: 8, left: -20, bottom: 0 }}
+                >
                   <defs>
                     <linearGradient id="refGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#0E56C8" stopOpacity={0.18} />
+                      <stop
+                        offset="5%"
+                        stopColor="#0E56C8"
+                        stopOpacity={0.18}
+                      />
                       <stop offset="95%" stopColor="#0E56C8" stopOpacity={0} />
                     </linearGradient>
                     <linearGradient id="convGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#1B7A4A" stopOpacity={0.15} />
+                      <stop
+                        offset="5%"
+                        stopColor="#1B7A4A"
+                        stopOpacity={0.15}
+                      />
                       <stop offset="95%" stopColor="#1B7A4A" stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#EEF2F7" vertical={false} />
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke="#EEF2F7"
+                    vertical={false}
+                  />
                   <XAxis
                     dataKey="label"
                     tick={{ fontSize: 11, fill: "#8B97A8", fontWeight: 600 }}
@@ -457,7 +614,11 @@ function OverviewTab({ referrals }) {
                   <Legend
                     iconType="circle"
                     iconSize={8}
-                    wrapperStyle={{ fontSize: "0.76rem", fontWeight: 700, paddingTop: 12 }}
+                    wrapperStyle={{
+                      fontSize: "0.76rem",
+                      fontWeight: 700,
+                      paddingTop: 12,
+                    }}
                   />
                   <Area
                     type="monotone"
@@ -482,8 +643,12 @@ function OverviewTab({ referrals }) {
                 </AreaChart>
               </ResponsiveContainer>
             ) : (
-              <Box sx={{ height: "100%", display: "grid", placeItems: "center" }}>
-                <Typography sx={{ color: adminUi.colors.muted, fontSize: "0.84rem" }}>
+              <Box
+                sx={{ height: "100%", display: "grid", placeItems: "center" }}
+              >
+                <Typography
+                  sx={{ color: adminUi.colors.muted, fontSize: "0.84rem" }}
+                >
                   No referral data yet
                 </Typography>
               </Box>
@@ -493,24 +658,64 @@ function OverviewTab({ referrals }) {
 
         {/* Top Channels */}
         <AdminPanel sx={{ p: { xs: 2, md: 2.4 } }}>
-          <Typography sx={{ color: adminUi.colors.text, fontSize: "1rem", fontWeight: 900, mb: 2 }}>
+          <Typography
+            sx={{
+              color: adminUi.colors.text,
+              fontSize: "1rem",
+              fontWeight: 900,
+              mb: 2,
+            }}
+          >
             Top Channels
           </Typography>
           <Stack spacing={2.2}>
-            <ChannelBar label="Direct Referral" value={directCount} max={maxChannel} color="#0E56C8" />
-            <ChannelBar label="Social Sharing" value={socialCount} max={maxChannel} color="#D4B800" />
-            <ChannelBar label="Email Campaigns" value={emailCount} max={maxChannel} color="#239654" />
+            <ChannelBar
+              label="Direct Referral"
+              value={directCount}
+              max={maxChannel}
+              color="#0E56C8"
+            />
+            <ChannelBar
+              label="Social Sharing"
+              value={socialCount}
+              max={maxChannel}
+              color="#D4B800"
+            />
+            <ChannelBar
+              label="Email Campaigns"
+              value={emailCount}
+              max={maxChannel}
+              color="#239654"
+            />
           </Stack>
         </AdminPanel>
       </Box>
 
       {/* Recent High-Value Referrals */}
       <AdminPanel sx={{ p: { xs: 2, md: 2.6 } }}>
-        <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2.2 }}>
-          <Typography sx={{ color: adminUi.colors.text, fontSize: "1rem", fontWeight: 900 }}>
+        <Stack
+          direction="row"
+          justifyContent="space-between"
+          alignItems="center"
+          sx={{ mb: 2.2 }}
+        >
+          <Typography
+            sx={{
+              color: adminUi.colors.text,
+              fontSize: "1rem",
+              fontWeight: 900,
+            }}
+          >
             Recent High-Value Referrals
           </Typography>
-          <Typography sx={{ color: "#0E56C8", fontSize: "0.78rem", fontWeight: 800, cursor: "pointer" }}>
+          <Typography
+            sx={{
+              color: "#0E56C8",
+              fontSize: "0.78rem",
+              fontWeight: 800,
+              cursor: "pointer",
+            }}
+          >
             View All Referrals →
           </Typography>
         </Stack>
@@ -519,7 +724,13 @@ function OverviewTab({ referrals }) {
           <Table size="small">
             <TableHead>
               <TableRow>
-                {["Referrer", "Referral Entity", "Status", "Reward", "Date"].map((h) => (
+                {[
+                  "Referrer",
+                  "Referral Entity",
+                  "Status",
+                  "Reward",
+                  "Date",
+                ].map((h) => (
                   <TableCell
                     key={h}
                     sx={{
@@ -541,7 +752,10 @@ function OverviewTab({ referrals }) {
               {highValue.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={5}>
-                    <AdminEmptyState title="No referrals yet" subtitle="Referrals will appear here once customers start inviting friends." />
+                    <AdminEmptyState
+                      title="No referrals yet"
+                      subtitle="Referrals will appear here once customers start inviting friends."
+                    />
                   </TableCell>
                 </TableRow>
               ) : (
@@ -550,10 +764,17 @@ function OverviewTab({ referrals }) {
                   return (
                     <TableRow
                       key={r.id}
-                      sx={{ "&:hover": { bgcolor: "#F8FAFC" }, "& td": { borderBottom: "1px solid #F0F4F8" } }}
+                      sx={{
+                        "&:hover": { bgcolor: "#F8FAFC" },
+                        "& td": { borderBottom: "1px solid #F0F4F8" },
+                      }}
                     >
                       <TableCell sx={{ py: 1.6 }}>
-                        <Stack direction="row" spacing={1.2} alignItems="center">
+                        <Stack
+                          direction="row"
+                          spacing={1.2}
+                          alignItems="center"
+                        >
                           <Box
                             sx={{
                               width: 34,
@@ -571,20 +792,42 @@ function OverviewTab({ referrals }) {
                             {getInitials(r.referrerEmail || "U")}
                           </Box>
                           <Box>
-                            <Typography sx={{ color: adminUi.colors.text, fontSize: "0.84rem", fontWeight: 700 }}>
+                            <Typography
+                              sx={{
+                                color: adminUi.colors.text,
+                                fontSize: "0.84rem",
+                                fontWeight: 700,
+                              }}
+                            >
                               {r.referrerEmail?.split("@")[0] || "—"}
                             </Typography>
-                            <Typography sx={{ color: adminUi.colors.muted, fontSize: "0.68rem" }}>
+                            <Typography
+                              sx={{
+                                color: adminUi.colors.muted,
+                                fontSize: "0.68rem",
+                              }}
+                            >
                               {r.referrerEmail || "—"}
                             </Typography>
                           </Box>
                         </Stack>
                       </TableCell>
                       <TableCell sx={{ py: 1.6 }}>
-                        <Typography sx={{ color: adminUi.colors.text, fontSize: "0.82rem", fontWeight: 600 }}>
+                        <Typography
+                          sx={{
+                            color: adminUi.colors.text,
+                            fontSize: "0.82rem",
+                            fontWeight: 600,
+                          }}
+                        >
                           {r.friend?.fullName || "—"}
                         </Typography>
-                        <Typography sx={{ color: adminUi.colors.muted, fontSize: "0.68rem" }}>
+                        <Typography
+                          sx={{
+                            color: adminUi.colors.muted,
+                            fontSize: "0.68rem",
+                          }}
+                        >
                           {r.friend?.email || "—"}
                         </Typography>
                       </TableCell>
@@ -592,12 +835,23 @@ function OverviewTab({ referrals }) {
                         <StatusChip status={r.status} />
                       </TableCell>
                       <TableCell sx={{ py: 1.6 }}>
-                        <Typography sx={{ color: adminUi.colors.text, fontSize: "0.84rem", fontWeight: 800 }}>
+                        <Typography
+                          sx={{
+                            color: adminUi.colors.text,
+                            fontSize: "0.84rem",
+                            fontWeight: 800,
+                          }}
+                        >
                           {formatMoney(r.rewardAmount)}
                         </Typography>
                       </TableCell>
                       <TableCell sx={{ py: 1.6 }}>
-                        <Typography sx={{ color: adminUi.colors.muted, fontSize: "0.8rem" }}>
+                        <Typography
+                          sx={{
+                            color: adminUi.colors.muted,
+                            fontSize: "0.8rem",
+                          }}
+                        >
                           {formatDate(r.createdAt)}
                         </Typography>
                       </TableCell>
@@ -666,15 +920,27 @@ function ReferralsListTab({ referrals, onUpdateRewardStatus }) {
   return (
     <Stack spacing={2.5}>
       {/* Filters */}
-      <Stack direction={{ xs: "column", sm: "row" }} spacing={1.2} alignItems={{ sm: "center" }} flexWrap="wrap">
+      <Stack
+        direction={{ xs: "column", sm: "row" }}
+        spacing={1.2}
+        alignItems={{ sm: "center" }}
+        flexWrap="wrap"
+      >
         <TextField
           select
           size="small"
           value={dateFilter}
-          onChange={(e) => { setDateFilter(e.target.value); setPage(1); }}
+          onChange={(e) => {
+            setDateFilter(e.target.value);
+            setPage(1);
+          }}
           sx={filterSx}
           InputProps={{
-            startAdornment: <FilterAltOutlinedIcon sx={{ fontSize: "0.9rem", color: "#8B97A8", mr: 0.6 }} />,
+            startAdornment: (
+              <FilterAltOutlinedIcon
+                sx={{ fontSize: "0.9rem", color: "#8B97A8", mr: 0.6 }}
+              />
+            ),
           }}
         >
           <MenuItem value="7d">Last 7 Days</MenuItem>
@@ -687,10 +953,17 @@ function ReferralsListTab({ referrals, onUpdateRewardStatus }) {
           select
           size="small"
           value={statusFilter}
-          onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
+          onChange={(e) => {
+            setStatusFilter(e.target.value);
+            setPage(1);
+          }}
           sx={filterSx}
           InputProps={{
-            startAdornment: <FilterAltOutlinedIcon sx={{ fontSize: "0.9rem", color: "#8B97A8", mr: 0.6 }} />,
+            startAdornment: (
+              <FilterAltOutlinedIcon
+                sx={{ fontSize: "0.9rem", color: "#8B97A8", mr: 0.6 }}
+              />
+            ),
           }}
         >
           <MenuItem value="all">All Statuses</MenuItem>
@@ -704,10 +977,17 @@ function ReferralsListTab({ referrals, onUpdateRewardStatus }) {
           select
           size="small"
           value={payoutFilter}
-          onChange={(e) => { setPayoutFilter(e.target.value); setPage(1); }}
+          onChange={(e) => {
+            setPayoutFilter(e.target.value);
+            setPage(1);
+          }}
           sx={filterSx}
           InputProps={{
-            startAdornment: <AccountBalanceWalletOutlinedIcon sx={{ fontSize: "0.9rem", color: "#8B97A8", mr: 0.6 }} />,
+            startAdornment: (
+              <AccountBalanceWalletOutlinedIcon
+                sx={{ fontSize: "0.9rem", color: "#8B97A8", mr: 0.6 }}
+              />
+            ),
           }}
         >
           <MenuItem value="all">Payout Status</MenuItem>
@@ -740,7 +1020,14 @@ function ReferralsListTab({ referrals, onUpdateRewardStatus }) {
           <Table>
             <TableHead>
               <TableRow sx={{ bgcolor: "#F8FAFC" }}>
-                {["Referrer", "Referred User", "Signup Date", "Status", "Reward", "Payout"].map((h) => (
+                {[
+                  "Referrer",
+                  "Referred User",
+                  "Signup Date",
+                  "Status",
+                  "Reward",
+                  "Payout",
+                ].map((h) => (
                   <TableCell
                     key={h}
                     sx={{
@@ -762,7 +1049,10 @@ function ReferralsListTab({ referrals, onUpdateRewardStatus }) {
               {pageItems.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6}>
-                    <AdminEmptyState title="No referrals found" subtitle="Try adjusting your filters." />
+                    <AdminEmptyState
+                      title="No referrals found"
+                      subtitle="Try adjusting your filters."
+                    />
                   </TableCell>
                 </TableRow>
               ) : (
@@ -771,10 +1061,17 @@ function ReferralsListTab({ referrals, onUpdateRewardStatus }) {
                   return (
                     <TableRow
                       key={r.id}
-                      sx={{ "&:hover": { bgcolor: "#F8FAFC" }, "& td": { borderBottom: "1px solid #F0F4F8" } }}
+                      sx={{
+                        "&:hover": { bgcolor: "#F8FAFC" },
+                        "& td": { borderBottom: "1px solid #F0F4F8" },
+                      }}
                     >
                       <TableCell sx={{ py: 1.6 }}>
-                        <Stack direction="row" spacing={1.2} alignItems="center">
+                        <Stack
+                          direction="row"
+                          spacing={1.2}
+                          alignItems="center"
+                        >
                           <Box
                             sx={{
                               width: 36,
@@ -792,25 +1089,52 @@ function ReferralsListTab({ referrals, onUpdateRewardStatus }) {
                             {getInitials(r.referrerEmail || "U")}
                           </Box>
                           <Box>
-                            <Typography sx={{ color: adminUi.colors.text, fontSize: "0.84rem", fontWeight: 700 }}>
+                            <Typography
+                              sx={{
+                                color: adminUi.colors.text,
+                                fontSize: "0.84rem",
+                                fontWeight: 700,
+                              }}
+                            >
                               {r.referrerEmail?.split("@")[0] || "—"}
                             </Typography>
-                            <Typography sx={{ color: adminUi.colors.muted, fontSize: "0.68rem" }}>
+                            <Typography
+                              sx={{
+                                color: adminUi.colors.muted,
+                                fontSize: "0.68rem",
+                              }}
+                            >
                               {r.referrerEmail || "—"}
                             </Typography>
                           </Box>
                         </Stack>
                       </TableCell>
                       <TableCell sx={{ py: 1.6 }}>
-                        <Typography sx={{ color: adminUi.colors.text, fontSize: "0.84rem", fontWeight: 600 }}>
+                        <Typography
+                          sx={{
+                            color: adminUi.colors.text,
+                            fontSize: "0.84rem",
+                            fontWeight: 600,
+                          }}
+                        >
                           {r.friend?.fullName || "—"}
                         </Typography>
-                        <Typography sx={{ color: adminUi.colors.muted, fontSize: "0.68rem" }}>
+                        <Typography
+                          sx={{
+                            color: adminUi.colors.muted,
+                            fontSize: "0.68rem",
+                          }}
+                        >
                           {r.friend?.email || "—"}
                         </Typography>
                       </TableCell>
                       <TableCell sx={{ py: 1.6 }}>
-                        <Typography sx={{ color: adminUi.colors.muted, fontSize: "0.8rem" }}>
+                        <Typography
+                          sx={{
+                            color: adminUi.colors.muted,
+                            fontSize: "0.8rem",
+                          }}
+                        >
                           {formatDate(r.createdAt)}
                         </Typography>
                       </TableCell>
@@ -818,7 +1142,13 @@ function ReferralsListTab({ referrals, onUpdateRewardStatus }) {
                         <StatusChip status={r.status} />
                       </TableCell>
                       <TableCell sx={{ py: 1.6 }}>
-                        <Typography sx={{ color: adminUi.colors.text, fontSize: "0.84rem", fontWeight: 800 }}>
+                        <Typography
+                          sx={{
+                            color: adminUi.colors.text,
+                            fontSize: "0.84rem",
+                            fontWeight: 800,
+                          }}
+                        >
                           {formatMoney(r.rewardAmount)}
                         </Typography>
                       </TableCell>
@@ -845,7 +1175,9 @@ function ReferralsListTab({ referrals, onUpdateRewardStatus }) {
           sx={{ px: 2.5, py: 1.8, borderTop: "1px solid #EEF2F7" }}
         >
           <Typography sx={{ color: adminUi.colors.muted, fontSize: "0.78rem" }}>
-            Showing {filtered.length === 0 ? 0 : (page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} of {filtered.length} referrals
+            Showing {filtered.length === 0 ? 0 : (page - 1) * PAGE_SIZE + 1}–
+            {Math.min(page * PAGE_SIZE, filtered.length)} of {filtered.length}{" "}
+            referrals
           </Typography>
           <Pagination
             count={totalPages}
@@ -934,7 +1266,14 @@ function SettingsTab({ settings, onSave }) {
   }
 
   return (
-    <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: "1fr 320px" }, gap: 2.5, alignItems: "flex-start" }}>
+    <Box
+      sx={{
+        display: "grid",
+        gridTemplateColumns: { xs: "1fr", lg: "1fr 320px" },
+        gap: 2.5,
+        alignItems: "flex-start",
+      }}
+    >
       {/* Config Form */}
       <AdminPanel sx={{ p: { xs: 2.2, md: 3 } }}>
         <Stack direction="row" spacing={1.2} alignItems="center" sx={{ mb: 3 }}>
@@ -951,7 +1290,13 @@ function SettingsTab({ settings, onSave }) {
           >
             <TuneRoundedIcon sx={{ fontSize: "1.1rem" }} />
           </Box>
-          <Typography sx={{ color: adminUi.colors.text, fontSize: "1.05rem", fontWeight: 900 }}>
+          <Typography
+            sx={{
+              color: adminUi.colors.text,
+              fontSize: "1.05rem",
+              fontWeight: 900,
+            }}
+          >
             Reward Configuration
           </Typography>
         </Stack>
@@ -960,14 +1305,23 @@ function SettingsTab({ settings, onSave }) {
           {/* Row 1 */}
           <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
             <Box>
-              <Typography sx={{ color: adminUi.colors.muted, fontSize: "0.76rem", fontWeight: 700, mb: 0.8 }}>
+              <Typography
+                sx={{
+                  color: adminUi.colors.muted,
+                  fontSize: "0.76rem",
+                  fontWeight: 700,
+                  mb: 0.8,
+                }}
+              >
                 Reward Type
               </Typography>
               <TextField
                 fullWidth
                 size="small"
                 value={config.rewardType}
-                onChange={(e) => setConfig((c) => ({ ...c, rewardType: e.target.value }))}
+                onChange={(e) =>
+                  setConfig((c) => ({ ...c, rewardType: e.target.value }))
+                }
                 sx={{
                   "& .MuiOutlinedInput-root": {
                     borderRadius: "0.85rem",
@@ -979,7 +1333,14 @@ function SettingsTab({ settings, onSave }) {
               />
             </Box>
             <Box>
-              <Typography sx={{ color: adminUi.colors.muted, fontSize: "0.76rem", fontWeight: 700, mb: 0.8 }}>
+              <Typography
+                sx={{
+                  color: adminUi.colors.muted,
+                  fontSize: "0.76rem",
+                  fontWeight: 700,
+                  mb: 0.8,
+                }}
+              >
                 Reward Amount (₹)
               </Typography>
               <TextField
@@ -987,7 +1348,12 @@ function SettingsTab({ settings, onSave }) {
                 size="small"
                 type="number"
                 value={config.rewardAmount}
-                onChange={(e) => setConfig((c) => ({ ...c, rewardAmount: Number(e.target.value) }))}
+                onChange={(e) =>
+                  setConfig((c) => ({
+                    ...c,
+                    rewardAmount: Number(e.target.value),
+                  }))
+                }
                 sx={{
                   "& .MuiOutlinedInput-root": {
                     borderRadius: "0.85rem",
@@ -1002,14 +1368,23 @@ function SettingsTab({ settings, onSave }) {
 
           {/* Minimum Purchase */}
           <Box>
-            <Typography sx={{ color: adminUi.colors.muted, fontSize: "0.76rem", fontWeight: 700, mb: 0.8 }}>
+            <Typography
+              sx={{
+                color: adminUi.colors.muted,
+                fontSize: "0.76rem",
+                fontWeight: 700,
+                mb: 0.8,
+              }}
+            >
               Minimum Purchase Condition
             </Typography>
             <TextField
               fullWidth
               size="small"
               value={config.minPurchase}
-              onChange={(e) => setConfig((c) => ({ ...c, minPurchase: e.target.value }))}
+              onChange={(e) =>
+                setConfig((c) => ({ ...c, minPurchase: e.target.value }))
+              }
               sx={{
                 "& .MuiOutlinedInput-root": {
                   borderRadius: "0.85rem",
@@ -1020,14 +1395,22 @@ function SettingsTab({ settings, onSave }) {
               }}
             />
             <Typography sx={{ mt: 0.7, color: "#8B97A8", fontSize: "0.68rem" }}>
-              The reward will only trigger when the referred customer completes this specific purchase.
+              The reward will only trigger when the referred customer completes
+              this specific purchase.
             </Typography>
           </Box>
 
           {/* Row 3 */}
           <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
             <Box>
-              <Typography sx={{ color: adminUi.colors.muted, fontSize: "0.76rem", fontWeight: 700, mb: 0.8 }}>
+              <Typography
+                sx={{
+                  color: adminUi.colors.muted,
+                  fontSize: "0.76rem",
+                  fontWeight: 700,
+                  mb: 0.8,
+                }}
+              >
                 Referral Expiry
               </Typography>
               <TextField
@@ -1035,7 +1418,9 @@ function SettingsTab({ settings, onSave }) {
                 fullWidth
                 size="small"
                 value={config.expiryDays}
-                onChange={(e) => setConfig((c) => ({ ...c, expiryDays: e.target.value }))}
+                onChange={(e) =>
+                  setConfig((c) => ({ ...c, expiryDays: e.target.value }))
+                }
                 sx={{
                   "& .MuiOutlinedInput-root": {
                     borderRadius: "0.85rem",
@@ -1052,7 +1437,14 @@ function SettingsTab({ settings, onSave }) {
               </TextField>
             </Box>
             <Box>
-              <Typography sx={{ color: adminUi.colors.muted, fontSize: "0.76rem", fontWeight: 700, mb: 0.8 }}>
+              <Typography
+                sx={{
+                  color: adminUi.colors.muted,
+                  fontSize: "0.76rem",
+                  fontWeight: 700,
+                  mb: 0.8,
+                }}
+              >
                 Program Status
               </Typography>
               <Stack
@@ -1069,14 +1461,27 @@ function SettingsTab({ settings, onSave }) {
               >
                 <Switch
                   checked={config.programActive}
-                  onChange={(e) => setConfig((c) => ({ ...c, programActive: e.target.checked }))}
+                  onChange={(e) =>
+                    setConfig((c) => ({
+                      ...c,
+                      programActive: e.target.checked,
+                    }))
+                  }
                   size="small"
                   sx={{
                     "& .MuiSwitch-switchBase.Mui-checked": { color: "#0E56C8" },
-                    "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": { bgcolor: "#0E56C8" },
+                    "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": {
+                      bgcolor: "#0E56C8",
+                    },
                   }}
                 />
-                <Typography sx={{ color: adminUi.colors.text, fontSize: "0.82rem", fontWeight: 700 }}>
+                <Typography
+                  sx={{
+                    color: adminUi.colors.text,
+                    fontSize: "0.82rem",
+                    fontWeight: 700,
+                  }}
+                >
                   {config.programActive ? "Active & Public" : "Inactive"}
                 </Typography>
               </Stack>
@@ -1084,7 +1489,10 @@ function SettingsTab({ settings, onSave }) {
           </Box>
 
           {saved ? (
-            <Alert severity="success" sx={{ borderRadius: "0.85rem", fontSize: "0.8rem" }}>
+            <Alert
+              severity="success"
+              sx={{ borderRadius: "0.85rem", fontSize: "0.8rem" }}
+            >
               Configuration saved successfully.
             </Alert>
           ) : null}
@@ -1092,7 +1500,13 @@ function SettingsTab({ settings, onSave }) {
           <Button
             fullWidth
             variant="contained"
-            startIcon={saving ? <CircularProgress size={16} sx={{ color: "white" }} /> : <SaveOutlinedIcon />}
+            startIcon={
+              saving ? (
+                <CircularProgress size={16} sx={{ color: "white" }} />
+              ) : (
+                <SaveOutlinedIcon />
+              )
+            }
             onClick={handleSave}
             disabled={saving}
             sx={{
@@ -1103,7 +1517,9 @@ function SettingsTab({ settings, onSave }) {
               textTransform: "none",
               background: "linear-gradient(180deg, #0E56C8 0%, #0D49B0 100%)",
               boxShadow: "0 12px 28px rgba(14,86,200,0.28)",
-              "&:hover": { background: "linear-gradient(180deg, #0B49AD 0%, #0A3E9A 100%)" },
+              "&:hover": {
+                background: "linear-gradient(180deg, #0B49AD 0%, #0A3E9A 100%)",
+              },
             }}
           >
             {saving ? "Saving…" : "Save Configuration"}
@@ -1148,7 +1564,12 @@ function SettingsTab({ settings, onSave }) {
           </Box>
 
           <Box sx={{ p: 2.2 }}>
-            <Stack direction="row" spacing={1.2} alignItems="center" sx={{ mb: 1.8 }}>
+            <Stack
+              direction="row"
+              spacing={1.2}
+              alignItems="center"
+              sx={{ mb: 1.8 }}
+            >
               <Box
                 sx={{
                   width: 32,
@@ -1163,10 +1584,18 @@ function SettingsTab({ settings, onSave }) {
                 <WbSunnyOutlinedIcon sx={{ fontSize: "1rem" }} />
               </Box>
               <Box>
-                <Typography sx={{ color: adminUi.colors.text, fontSize: "0.9rem", fontWeight: 800 }}>
+                <Typography
+                  sx={{
+                    color: adminUi.colors.text,
+                    fontSize: "0.9rem",
+                    fontWeight: 800,
+                  }}
+                >
                   Share the Sun
                 </Typography>
-                <Typography sx={{ color: adminUi.colors.muted, fontSize: "0.7rem" }}>
+                <Typography
+                  sx={{ color: adminUi.colors.muted, fontSize: "0.7rem" }}
+                >
                   Help friends switch and get rewarded.
                 </Typography>
               </Box>
@@ -1174,13 +1603,31 @@ function SettingsTab({ settings, onSave }) {
 
             <Divider sx={{ mb: 1.8, borderColor: "#EEF2F7" }} />
 
-            <Typography sx={{ color: "#8B97A8", fontSize: "0.62rem", fontWeight: 800, letterSpacing: "0.06em", textTransform: "uppercase", mb: 0.5 }}>
+            <Typography
+              sx={{
+                color: "#8B97A8",
+                fontSize: "0.62rem",
+                fontWeight: 800,
+                letterSpacing: "0.06em",
+                textTransform: "uppercase",
+                mb: 0.5,
+              }}
+            >
               Your Friend Gets
             </Typography>
-            <Typography sx={{ color: "#0E56C8", fontSize: "1.6rem", fontWeight: 950, lineHeight: 1 }}>
+            <Typography
+              sx={{
+                color: "#0E56C8",
+                fontSize: "1.6rem",
+                fontWeight: 950,
+                lineHeight: 1,
+              }}
+            >
               ₹{config.rewardAmount.toLocaleString("en-IN")} Credit
             </Typography>
-            <Typography sx={{ mt: 0.6, color: adminUi.colors.muted, fontSize: "0.68rem" }}>
+            <Typography
+              sx={{ mt: 0.6, color: adminUi.colors.muted, fontSize: "0.68rem" }}
+            >
               Valid for {config.expiryDays} days · {config.minPurchase}
             </Typography>
           </Box>
@@ -1222,7 +1669,10 @@ export default function AdminReferralManagementPage() {
       if (active)
         setState({
           loading: false,
-          error: err?.response?.data?.message || err.message || "Unable to load referrals",
+          error:
+            err?.response?.data?.message ||
+            err.message ||
+            "Unable to load referrals",
           referrals: [],
           settings: null,
         });
@@ -1232,14 +1682,21 @@ export default function AdminReferralManagementPage() {
   useEffect(() => {
     let active = true;
     load(active);
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, [load]);
 
   async function handleUpdateRewardStatus(referralId, rewardStatus) {
-    const updated = await adminReferralsApi.updateRewardStatus(referralId, rewardStatus);
+    const updated = await adminReferralsApi.updateRewardStatus(
+      referralId,
+      rewardStatus,
+    );
     setState((s) => ({
       ...s,
-      referrals: s.referrals.map((r) => (r.id === referralId ? { ...r, rewardStatus: updated.rewardStatus } : r)),
+      referrals: s.referrals.map((r) =>
+        r.id === referralId ? { ...r, rewardStatus: updated.rewardStatus } : r,
+      ),
     }));
   }
 
@@ -1251,7 +1708,15 @@ export default function AdminReferralManagementPage() {
 
   function handleExport() {
     const rows = [
-      ["Referrer Email", "Friend Name", "Friend Email", "Status", "Reward Status", "Reward Amount", "Date"],
+      [
+        "Referrer Email",
+        "Friend Name",
+        "Friend Email",
+        "Status",
+        "Reward Status",
+        "Reward Amount",
+        "Date",
+      ],
       ...state.referrals.map((r) => [
         r.referrerEmail || "",
         r.friend?.fullName || "",
@@ -1262,7 +1727,10 @@ export default function AdminReferralManagementPage() {
         formatDate(r.createdAt),
       ]),
     ];
-    downloadCsv(rows, `sparkin-referrals-${new Date().toISOString().slice(0, 10)}.csv`);
+    downloadCsv(
+      rows,
+      `sparkin-referrals-${new Date().toISOString().slice(0, 10)}.csv`,
+    );
   }
 
   return (
@@ -1281,7 +1749,11 @@ export default function AdminReferralManagementPage() {
       />
 
       {/* Tabs */}
-      <Stack direction="row" spacing={0} sx={{ mb: 3, borderBottom: "2px solid #EEF2F7" }}>
+      <Stack
+        direction="row"
+        spacing={0}
+        sx={{ mb: 3, borderBottom: "2px solid #EEF2F7" }}
+      >
         {TABS.map((tab, i) => (
           <Box
             key={tab}
@@ -1290,7 +1762,10 @@ export default function AdminReferralManagementPage() {
               px: 2,
               pb: 1.2,
               cursor: "pointer",
-              borderBottom: activeTab === i ? "2.5px solid #0E56C8" : "2.5px solid transparent",
+              borderBottom:
+                activeTab === i
+                  ? "2.5px solid #0E56C8"
+                  : "2.5px solid transparent",
               mb: "-2px",
               transition: "all 0.15s",
             }}
@@ -1310,7 +1785,9 @@ export default function AdminReferralManagementPage() {
       </Stack>
 
       {state.loading ? <AdminLoadingState /> : null}
-      {!state.loading && state.error ? <AdminErrorState>{state.error}</AdminErrorState> : null}
+      {!state.loading && state.error ? (
+        <AdminErrorState>{state.error}</AdminErrorState>
+      ) : null}
 
       {!state.loading && !state.error ? (
         <>
@@ -1322,7 +1799,10 @@ export default function AdminReferralManagementPage() {
             />
           )}
           {activeTab === 2 && (
-            <SettingsTab settings={state.settings} onSave={handleSaveSettings} />
+            <SettingsTab
+              settings={state.settings}
+              onSave={handleSaveSettings}
+            />
           )}
         </>
       ) : null}

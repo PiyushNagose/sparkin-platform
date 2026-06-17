@@ -33,6 +33,7 @@ import TrendingUpRoundedIcon from "@mui/icons-material/TrendingUpRounded";
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import { useEffect, useMemo, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
+import { useSocket } from "@/shared/websocket/SocketProvider";
 import {
   AdminEmptyState,
   AdminErrorState,
@@ -93,7 +94,11 @@ const leadStatusMeta = {
   submitted: { label: "New", color: "#0E56C8", bg: "#EAF1FF" },
   reviewing: { label: "Reviewing", color: "#9A6B00", bg: "#FFF5D6" },
   verified: { label: "Verified", color: "#10985E", bg: "#E7F8EF" },
-  vendors_assigned: { label: "Vendors Assigned", color: "#7B3FE4", bg: "#F1E9FF" },
+  vendors_assigned: {
+    label: "Vendors Assigned",
+    color: "#7B3FE4",
+    bg: "#F1E9FF",
+  },
   open_for_quotes: { label: "Bidding", color: "#0E56C8", bg: "#EAF1FF" },
   quote_selected: { label: "Selected", color: "#7B3FE4", bg: "#F1E9FF" },
   closed: { label: "Closed", color: "#657386", bg: "#EEF2F6" },
@@ -457,6 +462,7 @@ function LeadFormDialog({ open, onClose, onSubmit, saving, error }) {
 
 export default function AdminLeadsPage() {
   const navigate = useNavigate();
+  const { refreshKey } = useSocket();
   const [state, setState] = useState({ loading: true, error: "", data: null });
   const [filters, setFilters] = useState({
     status: "all",
@@ -490,7 +496,7 @@ export default function AdminLeadsPage() {
 
   useEffect(() => {
     loadLeads();
-  }, []);
+  }, [refreshKey]);
 
   const rows = useMemo(() => {
     const data = state.data || {};

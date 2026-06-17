@@ -20,6 +20,7 @@ import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import { Link as RouterLink, useLocation } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import { paymentsApi } from "@/features/vendor/api/paymentsApi";
+import { useSocket } from "@/shared/websocket/SocketProvider";
 import { downloadInvoicePdf } from "@/shared/invoice/InvoiceTemplate";
 import {
   VendorEmptyState,
@@ -124,6 +125,7 @@ const pageSize = 8;
 
 export default function VendorTransactionsPage() {
   const location = useLocation();
+  const { refreshKey } = useSocket();
   const [payments, setPayments] = useState([]);
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -157,7 +159,7 @@ export default function VendorTransactionsPage() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [refreshKey]);
 
   useEffect(() => {
     const incomingSearch = location.state?.portalSearch || "";

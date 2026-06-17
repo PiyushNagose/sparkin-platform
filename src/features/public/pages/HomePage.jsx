@@ -906,13 +906,14 @@ function HomePage() {
   const displayOffers =
     liveOffers.length > 0
       ? liveOffers.map((offer) => ({
-          badge:
-            offer.tags?.includes("subsidy")
-              ? "Govt Scheme"
-              : offer.discountType === "percentage" || offer.discountType === "flat"
-                ? "Limited Time"
-                : "Financing",
+          badge: offer.tags?.includes("subsidy")
+            ? "Govt Scheme"
+            : offer.discountType === "percentage" ||
+                offer.discountType === "flat"
+              ? "Limited Time"
+              : "Financing",
           title: offer.name,
+          couponCode: offer.couponCode,
           text:
             offer.description ||
             `${offer.couponCode} gives ${
@@ -920,7 +921,7 @@ function HomePage() {
                 ? `${offer.discountValue}% off`
                 : `₹${Number(offer.discountValue).toLocaleString("en-IN")} benefit`
             } on eligible solar bookings.`,
-          action: "View Details",
+          action: "Copy Code & Book",
           href: "/booking",
         }))
       : offers;
@@ -968,7 +969,9 @@ function HomePage() {
 
   const prevOffer = () => {
     if (displayOffers.length > 0) {
-      setCurrentOfferIndex((prev) => (prev - 1 + displayOffers.length) % displayOffers.length);
+      setCurrentOfferIndex(
+        (prev) => (prev - 1 + displayOffers.length) % displayOffers.length,
+      );
     }
   };
 
@@ -987,7 +990,7 @@ function HomePage() {
   // Auto-scroll carousel
   useEffect(() => {
     if (displayOffers.length <= 1) return;
-    
+
     const interval = setInterval(() => {
       nextOffer();
     }, 5000); // Change slide every 5 seconds
@@ -1008,15 +1011,15 @@ function HomePage() {
   // Calculate visible offers for carousel
   const getVisibleOffers = () => {
     if (displayOffers.length === 0) return [];
-    
+
     const itemsToShow = Math.min(3, displayOffers.length);
     const visibleOffers = [];
-    
+
     for (let i = 0; i < itemsToShow; i++) {
       const index = (currentOfferIndex + i) % displayOffers.length;
       visibleOffers.push(displayOffers[index]);
     }
-    
+
     return visibleOffers;
   };
 
@@ -1239,7 +1242,11 @@ function HomePage() {
                             boxShadow: "0 18px 40px rgba(0,0,0,0.10)",
                           }}
                         >
-                          <Stack direction="row" spacing={1.75} alignItems="center">
+                          <Stack
+                            direction="row"
+                            spacing={1.75}
+                            alignItems="center"
+                          >
                             <Box
                               sx={{
                                 width: 44,
@@ -1265,7 +1272,10 @@ function HomePage() {
                               </Typography>
                               <Typography
                                 variant="body2"
-                                sx={{ color: "rgba(255,255,255,0.76)", fontWeight: 600 }}
+                                sx={{
+                                  color: "rgba(255,255,255,0.76)",
+                                  fontWeight: 600,
+                                }}
                               >
                                 {stat.label}
                               </Typography>
@@ -1953,8 +1963,7 @@ function HomePage() {
             sx={{ py: { xs: 7, md: 8.5 } }}
           >
             <Grid size={{ xs: 12, md: 6 }}>
-
-              <Box sx={{ maxWidth: { xs: '100%', md: 620 } }}>
+              <Box sx={{ maxWidth: { xs: "100%", md: 620 } }}>
                 <Chip
                   label="Limited Time Offer"
                   sx={{
@@ -1990,7 +1999,7 @@ function HomePage() {
                   sx={{
                     mt: 3,
                     fontSize: { xs: "1.02rem", md: "1.08rem" },
-                    maxWidth: { xs: '100%', md: 500 },
+                    maxWidth: { xs: "100%", md: 500 },
                     color: "rgba(255,255,255,0.84)",
                     lineHeight: 1.45,
                     fontWeight: 600,
@@ -2016,7 +2025,7 @@ function HomePage() {
                   spacing={2}
                   sx={{
                     mt: 4.25,
-                    maxWidth: { xs: '100%', md: 520 },
+                    maxWidth: { xs: "100%", md: 520 },
                     flexWrap: "wrap",
                     alignItems: { xs: "stretch", sm: "center" },
                   }}
@@ -2034,7 +2043,7 @@ function HomePage() {
                       fontWeight: 700,
                       background: primaryBlueGradient,
                       boxShadow: "0 14px 30px rgba(21,104,230,0.28)",
-                      width: { xs: '100%', sm: 'auto' },
+                      width: { xs: "100%", sm: "auto" },
                     }}
                   >
                     Claim Your Discount
@@ -2050,7 +2059,7 @@ function HomePage() {
                       color: "white",
                       border: "1px solid rgba(255,255,255,0.08)",
                       boxShadow: "none",
-                      width: { xs: '100%', sm: 'auto' },
+                      width: { xs: "100%", sm: "auto" },
                     }}
                   >
                     Share This Sale
@@ -2780,7 +2789,9 @@ function HomePage() {
                 <Grid
                   container
                   spacing={{ xs: 2.25, md: 3 }}
-                  justifyContent={displayOffers.length === 1 ? "center" : undefined}
+                  justifyContent={
+                    displayOffers.length === 1 ? "center" : undefined
+                  }
                 >
                   {getVisibleOffers().map((offer, index) => (
                     <Grid
@@ -2801,7 +2812,8 @@ function HomePage() {
                           bgcolor: "white",
                           border: "1px solid #E7EDF4",
                           boxShadow: "0 8px 24px rgba(16,25,47,0.03)",
-                          transition: "transform 0.3s ease, box-shadow 0.3s ease",
+                          transition:
+                            "transform 0.3s ease, box-shadow 0.3s ease",
                           "&:hover": {
                             transform: "translateY(-4px)",
                             boxShadow: "0 12px 32px rgba(16,25,47,0.08)",
@@ -2885,9 +2897,43 @@ function HomePage() {
                           {offer.text}
                         </Typography>
                         <Divider sx={{ mt: 3.4, borderColor: "#E8EDF4" }} />
+                        {offer.couponCode && (
+                          <Box
+                            sx={{
+                              mt: 2,
+                              px: 1.2,
+                              py: 0.7,
+                              borderRadius: "0.65rem",
+                              bgcolor: "#F4F7FB",
+                              border: "1px solid #E2E8F0",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: 0.8,
+                            }}
+                          >
+                            <Typography
+                              sx={{
+                                color: "#0E56C8",
+                                fontSize: "0.76rem",
+                                fontWeight: 900,
+                                fontFamily: "monospace",
+                                letterSpacing: "0.08em",
+                              }}
+                            >
+                              {offer.couponCode}
+                            </Typography>
+                          </Box>
+                        )}
                         <Button
                           component={RouterLink}
                           to={offer.href}
+                          onClick={() => {
+                            if (offer.couponCode) {
+                              navigator.clipboard
+                                ?.writeText(offer.couponCode)
+                                .catch(() => {});
+                            }
+                          }}
                           endIcon={<ArrowForwardRoundedIcon />}
                           sx={{
                             mt: 2.2,
@@ -2913,7 +2959,9 @@ function HomePage() {
                   spacing={1}
                   sx={{ mt: 3 }}
                 >
-                  {Array.from({ length: Math.ceil(displayOffers.length / 3) }).map((_, index) => (
+                  {Array.from({
+                    length: Math.ceil(displayOffers.length / 3),
+                  }).map((_, index) => (
                     <Box
                       key={index}
                       onClick={() => goToOffer(index * 3)}
@@ -2921,11 +2969,17 @@ function HomePage() {
                         width: 8,
                         height: 8,
                         borderRadius: "50%",
-                        bgcolor: Math.floor(currentOfferIndex / 3) === index ? "#0E56C8" : "#E7EDF4",
+                        bgcolor:
+                          Math.floor(currentOfferIndex / 3) === index
+                            ? "#0E56C8"
+                            : "#E7EDF4",
                         cursor: "pointer",
                         transition: "background-color 0.3s ease",
                         "&:hover": {
-                          bgcolor: Math.floor(currentOfferIndex / 3) === index ? "#0E56C8" : "#C8D4E4",
+                          bgcolor:
+                            Math.floor(currentOfferIndex / 3) === index
+                              ? "#0E56C8"
+                              : "#C8D4E4",
                         },
                       }}
                     />
@@ -3007,7 +3061,8 @@ function HomePage() {
                     sx={{
                       position: "absolute",
                       inset: 0,
-                      background: "linear-gradient(180deg, rgba(0,0,0,0) 20%, rgba(16,25,47,0.1) 48%, rgba(16,25,47,0.65) 100%)",
+                      background:
+                        "linear-gradient(180deg, rgba(0,0,0,0) 20%, rgba(16,25,47,0.1) 48%, rgba(16,25,47,0.65) 100%)",
                     }}
                   />
                   <Box

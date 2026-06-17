@@ -8,6 +8,8 @@ import {
   Typography,
 } from "@mui/material";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useScrollToError } from "@/shared/hooks/useScrollToError";
+import { useSocket } from "@/shared/websocket/SocketProvider";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
 import PlaceOutlinedIcon from "@mui/icons-material/PlaceOutlined";
@@ -341,6 +343,7 @@ function MilestoneNode({ milestone, isFirst, isLast }) {
 
 export default function VendorProjectDetailPage() {
   const { projectId } = useParams();
+  const { refreshKey } = useSocket();
   const documentInputRef = useRef(null);
   const [activeTab, setActiveTab] = useState("Installation Details");
   const [project, setProject] = useState(null);
@@ -348,6 +351,7 @@ export default function VendorProjectDetailPage() {
   const [isUpdating, setIsUpdating] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState("");
+  const errorRef = useScrollToError(error);
   const [success, setSuccess] = useState("");
   const projectView = useMemo(() => getProjectView(project), [project]);
   const displayTitle = projectView?.title ?? "Project Details";
@@ -396,7 +400,7 @@ export default function VendorProjectDetailPage() {
     return () => {
       active = false;
     };
-  }, [projectId]);
+  }, [projectId, refreshKey]);
 
   async function handleCompleteActiveStep() {
     if (!projectView?.activeMilestone) {
@@ -549,7 +553,11 @@ export default function VendorProjectDetailPage() {
       ) : null}
 
       {error ? (
-        <Alert severity="error" sx={{ mb: 2, borderRadius: "0.9rem" }}>
+        <Alert
+          ref={errorRef}
+          severity="error"
+          sx={{ mb: 2, borderRadius: "0.9rem" }}
+        >
           {error}
         </Alert>
       ) : null}
@@ -666,7 +674,7 @@ export default function VendorProjectDetailPage() {
                         ? "Action Required - Vendor Reassignment"
                         : finalReminderSent
                           ? "Final Site Visit Reminder"
-                        : `Site Visit Reminder ${siteVisitReminders.length > 1 ? `(${siteVisitReminders.length}/3)` : ""}`}
+                          : `Site Visit Reminder ${siteVisitReminders.length > 1 ? `(${siteVisitReminders.length}/3)` : ""}`}
                     </Typography>
                     <Box
                       sx={{
@@ -708,7 +716,7 @@ export default function VendorProjectDetailPage() {
                       ? "Final site visit reminder was missed. This project has been flagged for admin reassignment. Please contact Sparkin support immediately."
                       : finalReminderSent
                         ? "Admin has sent the third and final site visit reminder. Complete the visit immediately to avoid vendor rejection and reassignment."
-                      : `Admin has sent ${siteVisitReminders.length} of 3 site visit reminder${siteVisitReminders.length === 1 ? "" : "s"}. Complete the site visit to keep this assignment active.`}
+                        : `Admin has sent ${siteVisitReminders.length} of 3 site visit reminder${siteVisitReminders.length === 1 ? "" : "s"}. Complete the site visit to keep this assignment active.`}
                   </Typography>
 
                   {/* Reminder history pills */}

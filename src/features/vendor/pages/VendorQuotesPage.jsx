@@ -19,6 +19,7 @@ import RequestQuoteOutlinedIcon from "@mui/icons-material/RequestQuoteOutlined";
 import HourglassEmptyRoundedIcon from "@mui/icons-material/HourglassEmptyRounded";
 import { Link as RouterLink, useLocation } from "react-router-dom";
 import { leadsApi, quotesApi } from "@/features/public/api/leadsApi";
+import { useSocket } from "@/shared/websocket/SocketProvider";
 import {
   VendorEmptyState,
   VendorErrorState,
@@ -184,6 +185,7 @@ function KpiIcon({ type, tone, bg }) {
 
 export default function VendorQuotesPage() {
   const location = useLocation();
+  const { refreshKey } = useSocket();
   const [quotes, setQuotes] = useState([]);
   const [leads, setLeads] = useState([]);
   const [activeTab, setActiveTab] = useState("All");
@@ -226,7 +228,7 @@ export default function VendorQuotesPage() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [refreshKey]);
 
   useEffect(() => {
     const incomingSearch = location.state?.portalSearch || "";
@@ -444,7 +446,11 @@ export default function VendorQuotesPage() {
               <KpiIcon type={card.icon} tone={card.tone} bg={card.bg} />
               {card.delta ? (
                 <Typography
-                  sx={{ color: "#778597", fontSize: "0.58rem", fontWeight: 800 }}
+                  sx={{
+                    color: "#778597",
+                    fontSize: "0.58rem",
+                    fontWeight: 800,
+                  }}
                 >
                   {card.delta}
                 </Typography>
@@ -891,22 +897,22 @@ export default function VendorQuotesPage() {
               }
               disabled={page === 1}
               sx={{
-                minWidth: '32px',
-                width: '32px',
-                height: '32px',
-                minHeight: 'auto',
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxSizing: 'border-box',
+                minWidth: "32px",
+                width: "32px",
+                height: "32px",
+                minHeight: "auto",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                boxSizing: "border-box",
                 lineHeight: 1,
-                borderRadius: '50%',
-                color: '#647387',
+                borderRadius: "50%",
+                color: "#647387",
                 p: 0,
-                border: '1px solid rgba(225,232,241,0.96)',
+                border: "1px solid rgba(225,232,241,0.96)",
               }}
             >
-              <KeyboardArrowLeftRoundedIcon sx={{ fontSize: '1rem' }} />
+              <KeyboardArrowLeftRoundedIcon sx={{ fontSize: "1rem" }} />
             </Button>
             {pageNumbers.map((pageNumber, idx) => {
               const prev = pageNumbers[idx - 1];
@@ -926,21 +932,24 @@ export default function VendorQuotesPage() {
                   <Button
                     onClick={() => setPage(pageNumber)}
                     sx={{
-                      minWidth: '32px',
-                      width: '32px',
-                      height: '32px',
-                      minHeight: 'auto',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      boxSizing: 'border-box',
+                      minWidth: "32px",
+                      width: "32px",
+                      height: "32px",
+                      minHeight: "auto",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      boxSizing: "border-box",
                       lineHeight: 1,
-                      borderRadius: '50%',
+                      borderRadius: "50%",
                       p: 0,
-                      color: pageNumber === page ? '#FFFFFF' : '#223146',
-                      bgcolor: pageNumber === page ? '#0E56C8' : '#FFFFFF',
-                      border: pageNumber === page ? 'none' : '1px solid rgba(225,232,241,0.96)',
-                      fontSize: '0.7rem',
+                      color: pageNumber === page ? "#FFFFFF" : "#223146",
+                      bgcolor: pageNumber === page ? "#0E56C8" : "#FFFFFF",
+                      border:
+                        pageNumber === page
+                          ? "none"
+                          : "1px solid rgba(225,232,241,0.96)",
+                      fontSize: "0.7rem",
                       fontWeight: 700,
                     }}
                   >
@@ -955,22 +964,22 @@ export default function VendorQuotesPage() {
               }
               disabled={page === totalPages}
               sx={{
-                minWidth: '32px',
-                width: '32px',
-                height: '32px',
-                minHeight: 'auto',
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxSizing: 'border-box',
+                minWidth: "32px",
+                width: "32px",
+                height: "32px",
+                minHeight: "auto",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                boxSizing: "border-box",
                 lineHeight: 1,
-                borderRadius: '50%',
-                color: '#647387',
+                borderRadius: "50%",
+                color: "#647387",
                 p: 0,
-                border: '1px solid rgba(225,232,241,0.96)',
+                border: "1px solid rgba(225,232,241,0.96)",
               }}
             >
-              <KeyboardArrowRightRoundedIcon sx={{ fontSize: '1rem' }} />
+              <KeyboardArrowRightRoundedIcon sx={{ fontSize: "1rem" }} />
             </Button>
           </Stack>
         </Stack>
@@ -1004,8 +1013,11 @@ export default function VendorQuotesPage() {
             sx={{ mt: 1.2 }}
           >
             <Box sx={{ maxWidth: 280 }}>
-              <Typography sx={{ color: "#5E6A7D", fontSize: "0.84rem", lineHeight: 1.7 }}>
-                Your current quote acceptance rate is {acceptanceRate}% across {quoteRows.length} submitted quotes.
+              <Typography
+                sx={{ color: "#5E6A7D", fontSize: "0.84rem", lineHeight: 1.7 }}
+              >
+                Your current quote acceptance rate is {acceptanceRate}% across{" "}
+                {quoteRows.length} submitted quotes.
                 {topLocation
                   ? ` ${topLocation} is your most active quote location.`
                   : " Submit more quotes to build reliable regional insights."}

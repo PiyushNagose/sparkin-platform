@@ -4,12 +4,20 @@ import { referralSettingsRepository } from "./referral-settings.repository.js";
 import { referralsRepository } from "./referrals.repository.js";
 
 function canUseReferrals(user) {
-  return user.role === "customer" || user.role === "admin";
+  return user.role === "customer";
 }
 
 function makeReferralCode(user) {
-  const base = (user.email || user.userId || "SPARKIN").split("@")[0].replace(/[^a-z0-9]/gi, "").toUpperCase();
-  const suffix = crypto.createHash("sha1").update(user.userId).digest("hex").slice(0, 5).toUpperCase();
+  const base = (user.email || user.userId || "SPARKIN")
+    .split("@")[0]
+    .replace(/[^a-z0-9]/gi, "")
+    .toUpperCase();
+  const suffix = crypto
+    .createHash("sha1")
+    .update(user.userId)
+    .digest("hex")
+    .slice(0, 5)
+    .toUpperCase();
   return `SPK-${base.slice(0, 8) || "SOLAR"}-${suffix}`;
 }
 
@@ -18,8 +26,12 @@ function buildReferralLink(code) {
 }
 
 function buildSummary(user, referrals, settings) {
-  const successfulReferrals = referrals.filter((referral) => ["installed", "rewarded"].includes(referral.status)).length;
-  const pendingReferrals = referrals.filter((referral) => !["installed", "rewarded"].includes(referral.status)).length;
+  const successfulReferrals = referrals.filter((referral) =>
+    ["installed", "rewarded"].includes(referral.status),
+  ).length;
+  const pendingReferrals = referrals.filter(
+    (referral) => !["installed", "rewarded"].includes(referral.status),
+  ).length;
   const totalEarnings = referrals
     .filter((referral) => ["earned", "paid"].includes(referral.rewardStatus))
     .reduce((sum, referral) => sum + referral.rewardAmount, 0);
@@ -48,7 +60,10 @@ function buildSummary(user, referrals, settings) {
 export const referralsService = {
   async getReferralDashboard(user) {
     if (!canUseReferrals(user)) {
-      throw new AppError(403, "Only customers can use referrals");
+      throw new AppError(
+        403,
+        "Only customers can access the referral dashboard",
+      );
     }
 
     const settings = await referralSettingsRepository.getSettings();
@@ -95,7 +110,13 @@ export const referralsService = {
     if (user.role !== "admin") {
       throw new AppError(403, "Admin access required");
     }
-    const referral = await referralsRepository.updateRewardStatus(referralId, rewardStatus);
+    if (!/^[a-f\d]{24}$/i.test(referralId)) {
+      throw new AppError(400, "Invalid referral ID");
+    }
+    const referral = await referralsRepository.updateRewardStatus(
+      referralId,
+      rewardStatus,
+    );
     if (!referral) throw new AppError(404, "Referral not found");
     return referral;
   },
@@ -109,7 +130,10 @@ export const referralsService = {
       throw new AppError(400, "You cannot refer your own email address");
     }
 
-    const existing = await referralsRepository.findByFriendEmail(user.userId, input.email);
+    const existing = await referralsRepository.findByFriendEmail(
+      user.userId,
+      input.email,
+    );
 
     if (existing) {
       throw new AppError(409, "This friend has already been referred");
@@ -167,7 +191,9 @@ export const referralsService = {
       throw new AppError(409, "Referral program is currently inactive");
     }
 
-    const codeRecord = await referralsRepository.findReferralCode(input.referralCode);
+    const codeRecord = await referralsRepository.findReferralCode(
+      input.referralCode,
+    );
     if (!codeRecord) {
       throw new AppError(404, "Referral code not found");
     }
@@ -176,7 +202,9 @@ export const referralsService = {
       throw new AppError(400, "You cannot use your own referral code");
     }
 
-    const existing = await referralsRepository.findByReferredUserId(user.userId);
+    const existing = await referralsRepository.findByReferredUserId(
+      user.userId,
+    );
     if (
       ["installed", "rewarded"].includes(existing?.status) ||
       ["earned", "paid"].includes(existing?.rewardStatus)
@@ -205,13 +233,27 @@ export const referralsService = {
       throw new AppError(409, "Referral program is currently inactive");
     }
 
-    const codeRecord = await referralsRepository.findReferralCode(input.referralCode);
+    const codeRecord = await referralsRepository.findReferralCode(
+      input.referralCode,
+    );
     if (!codeRecord) {
       throw new AppError(404, "Referral code not found");
     }
 
     if (codeRecord.referrerId === user.userId) {
       throw new AppError(400, "You cannot use your own referral code");
+    }
+
+    // Idempotency: if this user's referral is already rewarded or paid, return
+    // the existing record without re-writing it (prevents duplicate activity entries).
+    const existing = await referralsRepository.findByReferredUserId(
+      user.userId,
+    );
+    if (
+      ["rewarded"].includes(existing?.status) ||
+      ["earned", "paid"].includes(existing?.rewardStatus)
+    ) {
+      return { referral: existing };
     }
 
     const referral = await referralsRepository.upsertTrackedReferral({

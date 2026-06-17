@@ -189,4 +189,94 @@ export const offersService = {
       throw new AppError(403, "Only admins can view stats");
     return offersRepository.getStats();
   },
+
+  // Validate a coupon code and return discount details.
+  // userRole is used to check applicableUsers eligibility.
+  async validateCoupon(
+    couponCode,
+    { estimatedCost = 0, userRole = "customer" } = {},
+  ) {
+    if (!couponCode?.trim()) {
+      throw new AppError(400, "Coupon code is required");
+    }
+
+    const offer = await offersRepository.findByCouponCode(couponCode.trim());
+
+    if (!offer) {
+      throw new AppError(404, "Invalid coupon code");
+    }
+
+    const now = new Date();
+
+    if (offer.status !== "active") {
+      throw new AppError(400, "This coupon is not currently active");
+    }
+
+    if (new Date(offer.validFrom) > now) {
+      throw new AppError(400, "This coupon is not yet valid");
+    }
+
+    if (new Date(offer.validTo) < now) {
+      throw new AppError(400, "This coupon has expired");
+    }
+
+    // Check user eligibility
+    const { applicableUsers } = offer;
+    const isEligible =
+      applicableUsers.allUsers ||
+      (userRole === "customer" && applicableUsers.customers) ||
+      (userRole === "vendor" && applicableUsers.vendors) ||
+      applicableUsers.leads;
+
+    if (!isEligible) {
+      throw new AppError(
+        403,
+        "This coupon is not applicable for your account type",
+      );
+    }
+
+    // Check total usage limit
+    if (
+      offer.totalUsageLimit !== null &&
+      offer.usedCount >= offer.totalUsageLimit
+    ) {
+      throw new AppError(400, "This coupon has reached its usage limit");
+    }
+
+    // Check minimum order value
+    const cost = Number(estimatedCost || 0);
+    if (offer.minOrderValue > 0 && cost < offer.minOrderValue) {
+      throw new AppError(
+        400,
+        `Minimum order value of ₹${offer.minOrderValue.toLocaleString("en-IN")} required for this coupon`,
+      );
+    }
+
+    // Calculate discount amount
+    let discountedAmount = 0;
+    if (offer.discountType === "percentage") {
+      discountedAmount = (cost * offer.discountValue) / 100;
+      if (offer.maxDiscountCap) {
+        discountedAmount = Math.min(discountedAmount, offer.maxDiscountCap);
+      }
+    } else {
+      // flat or credit
+      discountedAmount = offer.discountValue;
+    }
+    discountedAmount = Math.round(discountedAmount);
+
+    return {
+      valid: true,
+      offerId: offer.offerId,
+      couponCode: offer.couponCode,
+      name: offer.name,
+      description: offer.description,
+      discountType: offer.discountType,
+      discountValue: offer.discountValue,
+      discountedAmount,
+      finalCost: Math.max(0, cost - discountedAmount),
+      maxDiscountCap: offer.maxDiscountCap,
+      validTo: offer.validTo,
+    };
+  },
 };

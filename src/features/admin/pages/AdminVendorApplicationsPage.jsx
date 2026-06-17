@@ -33,6 +33,7 @@ import {
   adminUi,
 } from "@/features/admin/components/AdminPortalUI";
 import { vendorApplicationsApi } from "@/features/admin/api/vendorApplicationsApi";
+import { useSocket } from "@/shared/websocket/SocketProvider";
 
 // ─── constants ────────────────────────────────────────────────────────────────
 
@@ -154,6 +155,7 @@ function downloadCsv(vendors) {
 
 export default function AdminVendorApplicationsPage() {
   const navigate = useNavigate();
+  const { refreshKey } = useSocket();
 
   const [allVendors, setAllVendors] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -192,7 +194,7 @@ export default function AdminVendorApplicationsPage() {
 
   useEffect(() => {
     load();
-  }, [load]);
+  }, [load, refreshKey]);
 
   // ── derived ───────────────────────────────────────────────────────────────
 

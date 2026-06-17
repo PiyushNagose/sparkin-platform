@@ -86,12 +86,12 @@ export function SocketProvider({ children }) {
 
     const socket = io(socketUrl, {
       path: "/socket.io",
-      transports: ["websocket"],
+      transports: ["websocket", "polling"],
       auth: token ? { token } : undefined,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1500,
-      reconnectionDelayMax: 10000,
-      timeout: 8000,
+      reconnectionAttempts: 10,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 8000,
+      timeout: 10000,
     });
 
     socket.on("connect", () => setConnected(true));

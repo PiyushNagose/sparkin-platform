@@ -75,6 +75,13 @@ export function createRouter() {
   // Public offers shown on the home page (no auth required)
   router.get("/api/v1/offers/public", standardRateLimit, businessProxy);
 
+  // Public coupon validation — used during booking before/after login
+  router.post(
+    "/api/v1/offers/validate-coupon",
+    standardRateLimit,
+    businessProxy,
+  );
+
   // All other business routes require auth
   router.use("/api/v1/leads", standardRateLimit, requireAuth, businessProxy);
 

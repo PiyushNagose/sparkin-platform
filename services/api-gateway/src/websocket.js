@@ -24,7 +24,7 @@ export function createGatewaySocketServer(server) {
       credentials: true,
     },
     path: "/socket.io",
-    transports: ["websocket"],
+    transports: ["websocket", "polling"],
     pingInterval: 25_000,
     pingTimeout: 20_000,
   });

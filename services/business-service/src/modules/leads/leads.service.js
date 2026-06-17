@@ -3,6 +3,8 @@ import { leadsRepository } from "./leads.repository.js";
 import { platformSettingsService } from "../platform-settings/platform-settings.service.js";
 import { vendorsRepository } from "../vendors/vendors.repository.js";
 import { quotesRepository } from "../quotes/quotes.repository.js";
+import { offersService } from "../offers/offers.service.js";
+import { offersRepository } from "../offers/offers.repository.js";
 import mongoose from "mongoose";
 
 function roundToNearest(value, step = 1000) {
@@ -235,11 +237,41 @@ export const leadsService = {
       submittedAt: new Date(),
     });
 
+    // Apply coupon if provided — validate and increment usage
+    if (input.couponCode) {
+      try {
+        const couponResult = await offersService.validateCoupon(
+          input.couponCode,
+          {
+            estimatedCost: input.calculatorEstimate?.investment?.grossCost || 0,
+            userRole: user.role,
+          },
+        );
+        // Store coupon on lead
+        await leadsRepository.updateDetails(lead.id, {
+          appliedCoupon: {
+            couponCode: couponResult.couponCode,
+            offerId: couponResult.offerId,
+            discountType: couponResult.discountType,
+            discountValue: couponResult.discountValue,
+            discountedAmount: couponResult.discountedAmount,
+          },
+        });
+        // Increment usage count on the offer
+        const offerDoc = await offersRepository.findByCouponCode(
+          input.couponCode,
+        );
+        if (offerDoc) await offersRepository.incrementUsage(offerDoc.id);
+      } catch {
+        // Coupon errors should not block lead creation — silently skip
+      }
+    }
+
     if (isManualLead) {
       return leadsRepository.updateStatus(lead.id, "reviewing");
     }
 
-    return lead;
+    return leadsRepository.findLeadById(lead.id);
   },
 
   async analyzeRoof(user, input) {

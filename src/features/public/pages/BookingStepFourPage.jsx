@@ -7,6 +7,7 @@ import {
   Chip,
   CircularProgress,
   IconButton,
+  InputAdornment,
   Stack,
   TextField,
   Typography,
@@ -14,8 +15,10 @@ import {
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
 import CameraAltOutlinedIcon from "@mui/icons-material/CameraAltOutlined";
+import CheckCircleOutlinedIcon from "@mui/icons-material/CheckCircleOutlined";
 import CloudUploadOutlinedIcon from "@mui/icons-material/CloudUploadOutlined";
 import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
+import LocalOfferOutlinedIcon from "@mui/icons-material/LocalOfferOutlined";
 import ShieldRoundedIcon from "@mui/icons-material/ShieldRounded";
 import FlashOnRoundedIcon from "@mui/icons-material/FlashOnRounded";
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
@@ -36,6 +39,7 @@ import {
 } from "@/features/public/pages/publicPageStyles";
 import { useBookingDraft } from "@/features/public/booking/BookingDraftProvider";
 import { leadsApi } from "@/features/public/api/leadsApi";
+import { publicOffersApi } from "@/features/public/api/offersApi";
 import { referralsApi } from "@/features/customer/api/referralsApi";
 import {
   clearReferralAttribution,
@@ -47,6 +51,7 @@ import {
   isStep3Complete,
 } from "@/features/public/booking/bookingValidation";
 import BookingStepper from "@/features/public/booking/BookingStepper";
+import { useScrollToError } from "@/shared/hooks/useScrollToError";
 
 const whyUploadItems = [
   {
@@ -416,10 +421,14 @@ export default function BookingStepFourPage() {
   const mediaStreamRef = useRef(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const errorRef = useScrollToError(error);
   const [uploadError, setUploadError] = useState("");
   const [cameraError, setCameraError] = useState("");
   const [cameraActive, setCameraActive] = useState(false);
   const [isAnalyzingRoof, setIsAnalyzingRoof] = useState(false);
+  const [couponInput, setCouponInput] = useState(draft.couponCode || "");
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [couponError, setCouponError] = useState("");
 
   useEffect(() => {
     if (
@@ -581,6 +590,37 @@ export default function BookingStepFourPage() {
     await analyzeRoofAttachment(capturedAttachment);
   }
 
+  async function handleApplyCoupon() {
+    if (!couponInput.trim()) return;
+    setCouponError("");
+    setCouponLoading(true);
+    try {
+      const estimatedCost =
+        draft.calculatorEstimate?.investment?.grossCost || 0;
+      const result = await publicOffersApi.validateCoupon(
+        couponInput.trim().toUpperCase(),
+        estimatedCost,
+      );
+      updateField("couponCode", result.couponCode);
+      updateField("appliedCoupon", result);
+      setCouponInput(result.couponCode);
+    } catch (err) {
+      setCouponError(
+        err?.response?.data?.message || "Invalid or expired coupon code",
+      );
+      updateField("appliedCoupon", null);
+    } finally {
+      setCouponLoading(false);
+    }
+  }
+
+  function handleRemoveCoupon() {
+    setCouponInput("");
+    setCouponError("");
+    updateField("couponCode", "");
+    updateField("appliedCoupon", null);
+  }
+
   function buildLeadPayload() {
     return {
       ...draft,
@@ -609,6 +649,7 @@ export default function BookingStepFourPage() {
       attachments: draft.attachments,
       roofAnalysis: draft.roofAnalysis,
       calculatorEstimate: draft.calculatorEstimate,
+      couponCode: draft.couponCode || null,
     };
   }
 
@@ -671,7 +712,7 @@ export default function BookingStepFourPage() {
       resetDraft();
       navigate("/booking/submitted", {
         replace: true,
-        state: { leadId: lead.id },
+        state: { leadId: lead.id, appliedCoupon: draft.appliedCoupon || null },
       });
     } catch (apiError) {
       setError(getErrorMessage(apiError));
@@ -741,6 +782,7 @@ export default function BookingStepFourPage() {
               <Stack spacing={{ xs: 3.2, md: 3.8 }}>
                 {error ? (
                   <Alert
+                    ref={errorRef}
                     severity="error"
                     sx={{ borderRadius: "0.9rem", fontSize: "0.82rem" }}
                   >
@@ -1455,6 +1497,161 @@ export default function BookingStepFourPage() {
                       instant, accurate quotes.
                     </Typography>
                   </Stack>
+
+                  {/* ── Coupon Code ── */}
+                  <Box
+                    sx={{
+                      width: "100%",
+                      p: 2,
+                      borderRadius: "1rem",
+                      border: draft.appliedCoupon
+                        ? "1.5px solid #B8EAC8"
+                        : "1.5px solid #E5EAF1",
+                      bgcolor: draft.appliedCoupon ? "#E7F8EF" : "#F9FBFD",
+                    }}
+                  >
+                    <Stack
+                      direction="row"
+                      spacing={1}
+                      alignItems="center"
+                      sx={{ mb: 1 }}
+                    >
+                      <LocalOfferOutlinedIcon
+                        sx={{
+                          fontSize: "1rem",
+                          color: draft.appliedCoupon ? "#10985E" : "#0E56C8",
+                        }}
+                      />
+                      <Typography
+                        sx={{
+                          color: draft.appliedCoupon ? "#10985E" : "#3A4A5E",
+                          fontSize: "0.78rem",
+                          fontWeight: 850,
+                        }}
+                      >
+                        {draft.appliedCoupon
+                          ? "Coupon Applied!"
+                          : "Have a coupon code?"}
+                      </Typography>
+                    </Stack>
+
+                    {draft.appliedCoupon ? (
+                      <Stack
+                        direction="row"
+                        justifyContent="space-between"
+                        alignItems="center"
+                      >
+                        <Box>
+                          <Typography
+                            sx={{
+                              color: "#10985E",
+                              fontSize: "0.88rem",
+                              fontWeight: 900,
+                              fontFamily: "monospace",
+                            }}
+                          >
+                            {draft.appliedCoupon.couponCode}
+                          </Typography>
+                          <Typography
+                            sx={{
+                              color: "#2E7A52",
+                              fontSize: "0.72rem",
+                              mt: 0.3,
+                            }}
+                          >
+                            {draft.appliedCoupon.discountType === "percentage"
+                              ? `${draft.appliedCoupon.discountValue}% off`
+                              : `₹${Number(draft.appliedCoupon.discountedAmount).toLocaleString("en-IN")} off`}
+                            {draft.appliedCoupon.discountedAmount > 0
+                              ? ` · You save ₹${Number(draft.appliedCoupon.discountedAmount).toLocaleString("en-IN")}`
+                              : ""}
+                          </Typography>
+                        </Box>
+                        <Button
+                          size="small"
+                          onClick={handleRemoveCoupon}
+                          sx={{
+                            color: "#D94444",
+                            fontSize: "0.72rem",
+                            fontWeight: 800,
+                            textTransform: "none",
+                            minWidth: 0,
+                          }}
+                        >
+                          Remove
+                        </Button>
+                      </Stack>
+                    ) : (
+                      <Stack direction="row" spacing={1}>
+                        <TextField
+                          size="small"
+                          fullWidth
+                          placeholder="Enter coupon code"
+                          value={couponInput}
+                          onChange={(e) => {
+                            setCouponInput(e.target.value.toUpperCase());
+                            setCouponError("");
+                          }}
+                          onKeyDown={(e) =>
+                            e.key === "Enter" && handleApplyCoupon()
+                          }
+                          error={Boolean(couponError)}
+                          helperText={couponError}
+                          inputProps={{
+                            style: {
+                              fontFamily: "monospace",
+                              fontWeight: 700,
+                              textTransform: "uppercase",
+                            },
+                          }}
+                          InputProps={{
+                            startAdornment: (
+                              <InputAdornment position="start">
+                                <LocalOfferOutlinedIcon
+                                  sx={{ fontSize: "0.9rem", color: "#A0ACBA" }}
+                                />
+                              </InputAdornment>
+                            ),
+                          }}
+                          sx={{
+                            "& .MuiOutlinedInput-root": {
+                              borderRadius: "0.75rem",
+                              bgcolor: "#FFFFFF",
+                              fontSize: "0.86rem",
+                            },
+                          }}
+                        />
+                        <Button
+                          onClick={handleApplyCoupon}
+                          disabled={couponLoading || !couponInput.trim()}
+                          sx={{
+                            minWidth: 80,
+                            borderRadius: "0.75rem",
+                            bgcolor: "#0E56C8",
+                            color: "#FFFFFF",
+                            fontSize: "0.78rem",
+                            fontWeight: 850,
+                            textTransform: "none",
+                            flexShrink: 0,
+                            "&:hover": { bgcolor: "#0B49AD" },
+                            "&.Mui-disabled": {
+                              bgcolor: "#C5D8FF",
+                              color: "#FFFFFF",
+                            },
+                          }}
+                        >
+                          {couponLoading ? (
+                            <CircularProgress
+                              size={14}
+                              sx={{ color: "#FFFFFF" }}
+                            />
+                          ) : (
+                            "Apply"
+                          )}
+                        </Button>
+                      </Stack>
+                    )}
+                  </Box>
 
                   <Stack
                     direction={{ xs: "column", sm: "row" }}

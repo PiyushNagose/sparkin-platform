@@ -7,11 +7,19 @@ import {
   createOfferSchema,
   toggleStatusSchema,
   updateOfferSchema,
+  validateCouponSchema,
 } from "./offers.schemas.js";
 
 export const offersRouter = Router();
 
 offersRouter.get("/public", asyncHandler(offersController.listPublic));
+
+// Public coupon validation — no auth required so booking page can validate before login
+offersRouter.post(
+  "/validate-coupon",
+  validate(validateCouponSchema),
+  asyncHandler(offersController.validateCoupon),
+);
 
 offersRouter.use(requireAuth);
 

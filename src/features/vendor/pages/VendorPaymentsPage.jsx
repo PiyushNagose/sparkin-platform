@@ -16,6 +16,7 @@ import ReceiptLongOutlinedIcon from "@mui/icons-material/ReceiptLongOutlined";
 import { Link as RouterLink, useLocation } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import { paymentsApi } from "@/features/vendor/api/paymentsApi";
+import { useSocket } from "@/shared/websocket/SocketProvider";
 import {
   VendorEmptyState,
   VendorPageHeader,
@@ -269,6 +270,7 @@ function KpiCard({ card }) {
 
 export default function VendorPaymentsPage() {
   const location = useLocation();
+  const { refreshKey } = useSocket();
   const [payments, setPayments] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [txFilter, setTxFilter] = useState("all");
@@ -301,7 +303,7 @@ export default function VendorPaymentsPage() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [refreshKey]);
 
   useEffect(() => {
     const incomingSearch = location.state?.portalSearch || "";

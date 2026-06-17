@@ -29,6 +29,7 @@ import {
   adminUi,
 } from "@/features/admin/components/AdminPortalUI";
 import { offersApi } from "@/features/admin/api/offersApi";
+import { useScrollToError } from "@/shared/hooks/useScrollToError";
 
 // ─── constants ────────────────────────────────────────────────────────────────
 
@@ -151,6 +152,7 @@ export default function AdminCreateOfferPage() {
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [formError, setFormError] = useState("");
+  const errorRef = useScrollToError(formError);
   const [toast, setToast] = useState({
     open: false,
     message: "",
@@ -782,6 +784,7 @@ export default function AdminCreateOfferPage() {
 
             {formError ? (
               <Alert
+                ref={errorRef}
                 severity="error"
                 sx={{ mt: 2, borderRadius: "0.75rem" }}
                 icon={<WarningAmberRoundedIcon />}

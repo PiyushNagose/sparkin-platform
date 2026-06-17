@@ -159,6 +159,17 @@ const leadSchema = new mongoose.Schema(
       vendorId: { type: String, default: null },
       selectedAt: { type: Date, default: null },
     },
+    appliedCoupon: {
+      couponCode: { type: String, trim: true, uppercase: true, default: null },
+      offerId: { type: String, default: null },
+      discountType: {
+        type: String,
+        enum: ["percentage", "flat", "credit"],
+        default: null,
+      },
+      discountValue: { type: Number, min: 0, default: null },
+      discountedAmount: { type: Number, min: 0, default: null },
+    },
     rejectionHistory: [
       {
         rejectedAt: { type: Date, default: Date.now },
