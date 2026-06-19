@@ -5,13 +5,19 @@
  *
  * Returns:
  *   stateOptions  — [{ id, key, name, rate, cities }]
- *   getCities(key) — string[]   (cities for a given state key)
+ *   getCities(key) — string[]   (city names for a given state key)
+ *   getCityOptions(key) — [{ name, pincode }]
+ *   getDefaultPincode(key, cityName) — string
  *   loading       — boolean     (true while the first fetch is in flight)
  *   error         — string | null
  */
 import { useCallback, useEffect, useState } from "react";
 import { publicPlatformSettingsApi } from "@/features/public/api/platformSettingsApi";
-import { getCitiesForState as getStaticCities } from "@/shared/data/stateCities";
+import {
+  getCitiesForState as getStaticCities,
+  getCityOptionsForState,
+  getDefaultPincodeForCity,
+} from "@/shared/data/stateCities";
 
 export function usePlatformStates() {
   const [stateOptions, setStateOptions] = useState([]);
@@ -52,12 +58,40 @@ export function usePlatformStates() {
     (stateKey) => {
       if (!stateKey) return [];
       const match = stateOptions.find((s) => s.key === stateKey);
-      if (match) return match.cities?.length ? match.cities : [];
+      if (match) {
+        const cityOptions = getCityOptionsForState(stateKey, match.cities || []);
+        return cityOptions.map((city) => city.name).filter(Boolean);
+      }
       // Fallback for states not yet in the API response
       return getStaticCities(stateKey);
     },
     [stateOptions],
   );
 
-  return { stateOptions, getCities, loading, error };
+  const getCityOptions = useCallback(
+    (stateKey) => {
+      if (!stateKey) return [];
+      const match = stateOptions.find((s) => s.key === stateKey);
+      if (match) {
+        return getCityOptionsForState(stateKey, match.cities || []).filter(
+          (city) => city.name,
+        );
+      }
+      return getCityOptionsForState(stateKey, getStaticCities(stateKey));
+    },
+    [stateOptions],
+  );
+
+  const getDefaultPincode = useCallback((stateKey, cityName) => {
+    return getDefaultPincodeForCity(stateKey, cityName);
+  }, []);
+
+  return {
+    stateOptions,
+    getCities,
+    getCityOptions,
+    getDefaultPincode,
+    loading,
+    error,
+  };
 }

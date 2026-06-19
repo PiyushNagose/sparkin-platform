@@ -45,7 +45,7 @@ import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import StorefrontOutlinedIcon from "@mui/icons-material/StorefrontOutlined";
 import { useEffect, useMemo, useState, useCallback } from "react";
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { portalNavigation } from "@/shared/config/navigation";
 import { useSocket } from "@/shared/websocket/SocketProvider";
 import logoPlaceholder from "@/shared/assets/logo-placeholder.png";
@@ -242,6 +242,7 @@ function getAvatarSrc(user) {
 // ─── component ────────────────────────────────────────────────────────────────
 
 export function PortalLayout({ portal }) {
+  const { pathname } = useLocation();
   const navigate = useNavigate();
   const { refreshKey } = useSocket();
   const { user, logout } = useAuth();
@@ -1565,7 +1566,7 @@ export function PortalLayout({ portal }) {
               borderRadius: { lg: "0 0 1.35rem 1.35rem" },
             }}
           >
-            <PageTransition>
+            <PageTransition key={`${pathname}:${refreshKey}`}>
               <Outlet />
             </PageTransition>
           </Box>

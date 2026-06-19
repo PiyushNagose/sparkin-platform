@@ -6,8 +6,10 @@ import { requireAuth } from "./auth.middleware.js";
 import {
   loginSchema,
   logoutSchema,
+  requestPasswordResetSchema,
   refreshSchema,
   registerSchema,
+  resetPasswordSchema,
 } from "./auth.schemas.js";
 
 export const authRouter = Router();
@@ -27,5 +29,15 @@ authRouter.post(
   "/logout",
   validate(logoutSchema),
   asyncHandler(authController.logout),
+);
+authRouter.post(
+  "/request-password-reset",
+  validate(requestPasswordResetSchema),
+  asyncHandler(authController.requestPasswordReset),
+);
+authRouter.post(
+  "/reset-password",
+  validate(resetPasswordSchema),
+  asyncHandler(authController.resetPassword),
 );
 authRouter.get("/me", requireAuth, asyncHandler(authController.me));

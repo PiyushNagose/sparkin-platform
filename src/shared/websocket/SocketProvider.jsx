@@ -3,7 +3,6 @@ import {
   useContext,
   useEffect,
   useMemo,
-  useRef,
   useState,
 } from "react";
 import { io } from "socket.io-client";
@@ -71,13 +70,11 @@ const SocketContext = createContext({
 export function SocketProvider({ children }) {
   const [connected, setConnected] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
-  const refreshTimerRef = useRef(null);
-  const pendingRefreshPayloadsRef = useRef([]);
-  const { isAuthenticated, isBootstrapping } = useAuth();
+  const { isBootstrapping } = useAuth();
   const token = authStorage.getAccessToken();
 
   useEffect(() => {
-    if (isBootstrapping || !isAuthenticated || !token) {
+    if (isBootstrapping) {
       setConnected(false);
       return undefined;
     }
@@ -97,23 +94,8 @@ export function SocketProvider({ children }) {
     socket.on("connect", () => setConnected(true));
     socket.on("disconnect", () => setConnected(false));
     socket.on("refresh:page", (payload) => {
-      pendingRefreshPayloadsRef.current.push(payload);
-
-      if (refreshTimerRef.current) {
-        return;
-      }
-
-      refreshTimerRef.current = window.setTimeout(() => {
-        const payloads = pendingRefreshPayloadsRef.current;
-        pendingRefreshPayloadsRef.current = [];
-
-        for (const pendingPayload of payloads) {
-          invalidateFromRefreshEvent(pendingPayload);
-        }
-
-        refreshTimerRef.current = null;
-        setRefreshKey((current) => current + 1);
-      }, 750);
+      invalidateFromRefreshEvent(payload);
+      setRefreshKey((current) => current + 1);
     });
     socket.on("connect_error", () => {
       setConnected(false);
@@ -125,15 +107,8 @@ export function SocketProvider({ children }) {
       socket.off("refresh:page");
       socket.off("connect_error");
       socket.disconnect();
-
-      if (refreshTimerRef.current) {
-        window.clearTimeout(refreshTimerRef.current);
-        refreshTimerRef.current = null;
-      }
-
-      pendingRefreshPayloadsRef.current = [];
     };
-  }, [isAuthenticated, isBootstrapping, token]);
+  }, [isBootstrapping, token]);
 
   const value = useMemo(
     () => ({ connected, refreshKey }),

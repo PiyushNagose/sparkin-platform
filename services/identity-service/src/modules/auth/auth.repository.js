@@ -30,6 +30,36 @@ export const authRepository = {
     return normalizeUser(user);
   },
 
+  async storePasswordResetToken(userId, token, expiresAt) {
+    const updated = await UserModel.findByIdAndUpdate(
+      userId,
+      {
+        passwordResetTokenHash: hashToken(token),
+        passwordResetExpiresAt: expiresAt,
+      },
+      { new: true },
+    );
+
+    return normalizeUser(updated);
+  },
+
+  async findUserByPasswordResetToken(token) {
+    const now = new Date();
+    const user = await UserModel.findOne({
+      passwordResetTokenHash: hashToken(token),
+      passwordResetExpiresAt: { $gt: now },
+    });
+
+    return normalizeUser(user);
+  },
+
+  async clearPasswordResetToken(userId) {
+    await UserModel.findByIdAndUpdate(userId, {
+      passwordResetTokenHash: null,
+      passwordResetExpiresAt: null,
+    });
+  },
+
   async storeRefreshToken(userId, token) {
     await RefreshTokenModel.create({
       userId,
@@ -44,6 +74,10 @@ export const authRepository = {
 
   async deleteRefreshToken(token) {
     await RefreshTokenModel.deleteOne({ tokenHash: hashToken(token) });
+  },
+
+  async deleteRefreshTokensForUser(userId) {
+    await RefreshTokenModel.deleteMany({ userId });
   },
 
   async replaceUser(userId, updater) {
@@ -61,6 +95,8 @@ export const authRepository = {
       role: nextUser.role,
       phoneNumber: nextUser.phoneNumber ?? null,
       avatarUrl: nextUser.avatarUrl ?? null,
+      passwordResetTokenHash: nextUser.passwordResetTokenHash ?? null,
+      passwordResetExpiresAt: nextUser.passwordResetExpiresAt ?? null,
     });
 
     const saved = await user.save();

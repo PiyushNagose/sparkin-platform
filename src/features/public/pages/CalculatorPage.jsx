@@ -26,6 +26,7 @@ import {
   publicTypography,
 } from "@/features/public/pages/publicPageStyles";
 import { usePlatformStates } from "@/shared/hooks/usePlatformStates";
+import { scrollToFieldError } from "@/shared/lib/forms/scrollToFieldError";
 
 const insightCards = [
   {
@@ -74,7 +75,7 @@ export default function CalculatorPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const {
     stateOptions,
-    getCities,
+    getCityOptions,
     loading: statesLoading,
   } = usePlatformStates();
   const isCommercial = form.propertyType === "commercial";
@@ -83,10 +84,12 @@ export default function CalculatorPage() {
   useEffect(() => {
     if (stateOptions.length && !form.state) {
       const first = stateOptions[0];
+      const firstCity = getCityOptions(first.key)[0];
       setForm((prev) => ({
         ...prev,
         state: first.key,
-        city: getCities(first.key)[0] ?? "",
+        city: firstCity?.name ?? "",
+        pincode: firstCity?.pincode ?? "",
       }));
     }
   }, [stateOptions]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -130,8 +133,9 @@ export default function CalculatorPage() {
 
       // Reset city when state changes — auto-select first available city
       if (field === "state") {
-        const cities = getCities(value);
-        next.city = cities[0] ?? "";
+        const cityOptions = getCityOptions(value);
+        next.city = cityOptions[0]?.name ?? "";
+        next.pincode = cityOptions[0]?.pincode ?? "";
       }
 
       return next;
@@ -140,17 +144,31 @@ export default function CalculatorPage() {
 
   function validateForm() {
     if (!form.systemSizeKw.trim() || !Number(form.systemSizeKw))
-      return { error: "Please enter your preferred system size." };
+      return {
+        field: "systemSizeKw",
+        error: "Please enter your preferred system size.",
+      };
     if (Number(form.systemSizeKw) < 3)
-      return { error: "Preferred system size must be at least 3 kW." };
+      return {
+        field: "systemSizeKw",
+        error: "Preferred system size must be at least 3 kW.",
+      };
     if (!/^\d{6}$/.test(form.pincode.trim()))
-      return { error: "Please enter a valid 6-digit pincode." };
-    if (!form.city.trim()) return { error: "Please select a city." };
+      return { field: "pincode", error: "Please enter a valid 6-digit pincode." };
+    if (!form.city.trim()) {
+      return { field: "city", error: "Please select a city." };
+    }
 
     if (!Number(form.monthlyBill) || Number(form.monthlyBill) < 500)
-      return { error: "Monthly bill should be at least Rs 500." };
+      return {
+        field: "monthlyBill",
+        error: "Monthly bill should be at least Rs 500.",
+      };
     if (form.roofAreaSqFt && Number(form.roofAreaSqFt) < 100)
-      return { error: "Roof area should be at least 100 sq. ft." };
+      return {
+        field: "roofAreaSqFt",
+        error: "Roof area should be at least 100 sq. ft.",
+      };
     return {};
   }
 
@@ -178,6 +196,7 @@ export default function CalculatorPage() {
 
     if (validation.error) {
       setError(validation.error);
+      scrollToFieldError(validation.field);
       return;
     }
 
@@ -190,6 +209,7 @@ export default function CalculatorPage() {
       desiredOffset < 70 ||
       desiredOffset > 90
     ) {
+      scrollToFieldError("desiredOffsetPercent");
       toast.custom(
         (t) => (
           <Box
@@ -425,6 +445,7 @@ export default function CalculatorPage() {
                   gap: 1.45,
                 }}
               >
+                <Box data-field="state">
                 <TextField
                   select
                   label="State"
@@ -455,20 +476,31 @@ export default function CalculatorPage() {
                     ))
                   )}
                 </TextField>
+                </Box>
 
                 {/* City dropdown */}
                 {(() => {
-                  const cities = getCities(form.state);
+                  const cityOptions = getCityOptions(form.state);
+                  const cities = cityOptions.map((city) => city.name);
                   const noCitiesConfigured =
                     !statesLoading && form.state && cities.length === 0;
                   return (
+                    <Box data-field="city">
                     <TextField
                       select={!noCitiesConfigured}
                       label="City"
                       value={noCitiesConfigured ? "" : form.city}
-                      onChange={(event) =>
-                        updateForm("city", event.target.value)
-                      }
+                      onChange={(event) => {
+                        const selectedCity = event.target.value;
+                        const matchedCity = cityOptions.find(
+                          (city) => city.name === selectedCity,
+                        );
+                        setForm((current) => ({
+                          ...current,
+                          city: selectedCity,
+                          pincode: matchedCity?.pincode || current.pincode,
+                        }));
+                      }}
                       disabled={statesLoading || !form.state}
                       placeholder={
                         noCitiesConfigured
@@ -506,8 +538,10 @@ export default function CalculatorPage() {
                         </MenuItem>
                       ))}
                     </TextField>
+                    </Box>
                   );
                 })()}
+                <Box data-field="pincode">
                 <TextField
                   label="Pincode"
                   value={form.pincode}
@@ -533,6 +567,8 @@ export default function CalculatorPage() {
                     },
                   }}
                 />
+                </Box>
+                <Box data-field="monthlyBill">
                 <TextField
                   label="Average Monthly Bill"
                   type="number"
@@ -548,6 +584,7 @@ export default function CalculatorPage() {
                     },
                   }}
                 />
+                </Box>
                 <TextField
                   label="Monthly Units (optional)"
                   type="number"
@@ -563,6 +600,7 @@ export default function CalculatorPage() {
                     },
                   }}
                 />
+                <Box data-field="roofAreaSqFt">
                 <TextField
                   label="Available Roof Area sq. ft. (optional)"
                   type="number"
@@ -578,6 +616,8 @@ export default function CalculatorPage() {
                     },
                   }}
                 />
+                </Box>
+                <Box data-field="systemSizeKw">
                 <TextField
                   label="Preferred System Size kW"
                   type="number"
@@ -602,6 +642,7 @@ export default function CalculatorPage() {
                     },
                   }}
                 />
+                </Box>
                 <TextField
                   label="Sanctioned Load kW"
                   type="number"
@@ -662,6 +703,7 @@ export default function CalculatorPage() {
                     }}
                   />
                 ) : null}
+                <Box data-field="desiredOffsetPercent">
                 <TextField
                   label="Target Solar Offset %"
                   type="number"
@@ -678,6 +720,7 @@ export default function CalculatorPage() {
                     },
                   }}
                 />
+                </Box>
               </Box>
 
               <Button

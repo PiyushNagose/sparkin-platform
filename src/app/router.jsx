@@ -20,8 +20,20 @@ const VendorLoginPage = lazy(
 const VendorSignupPage = lazy(
   () => import("@/features/auth/pages/VendorSignupPage"),
 );
+const VendorForgotPasswordPage = lazy(
+  () => import("@/features/auth/pages/VendorForgotPasswordPage"),
+);
+const VendorResetPasswordPage = lazy(
+  () => import("@/features/auth/pages/VendorResetPasswordPage"),
+);
 const AdminLoginPage = lazy(
   () => import("@/features/auth/pages/AdminLoginPage"),
+);
+const AdminForgotPasswordPage = lazy(
+  () => import("@/features/auth/pages/AdminForgotPasswordPage"),
+);
+const AdminResetPasswordPage = lazy(
+  () => import("@/features/auth/pages/AdminResetPasswordPage"),
 );
 const VendorPendingApprovalPage = lazy(
   () => import("@/features/vendor/pages/VendorPendingApprovalPage"),
@@ -60,6 +72,26 @@ export const appRouter = createBrowserRouter([
         ],
       },
       {
+        path: "/vendor/forgot-password",
+        element: <AuthLayout />,
+        children: [
+          {
+            index: true,
+            element: <LazyRoute component={VendorForgotPasswordPage} />,
+          },
+        ],
+      },
+      {
+        path: "/vendor/reset-password",
+        element: <AuthLayout />,
+        children: [
+          {
+            index: true,
+            element: <LazyRoute component={VendorResetPasswordPage} />,
+          },
+        ],
+      },
+      {
         path: "/vendor/signup",
         element: <AuthLayout />,
         children: [
@@ -71,6 +103,26 @@ export const appRouter = createBrowserRouter([
         element: <AuthLayout />,
         children: [
           { index: true, element: <LazyRoute component={AdminLoginPage} /> },
+        ],
+      },
+      {
+        path: "/admin/forgot-password",
+        element: <AuthLayout />,
+        children: [
+          {
+            index: true,
+            element: <LazyRoute component={AdminForgotPasswordPage} />,
+          },
+        ],
+      },
+      {
+        path: "/admin/reset-password",
+        element: <AuthLayout />,
+        children: [
+          {
+            index: true,
+            element: <LazyRoute component={AdminResetPasswordPage} />,
+          },
         ],
       },
       {

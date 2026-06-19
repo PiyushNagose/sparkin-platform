@@ -20,3 +20,14 @@ export const refreshSchema = z.object({
 export const logoutSchema = z.object({
   refreshToken: z.string().min(10),
 });
+
+export const requestPasswordResetSchema = z.object({
+  email: z.string().trim().email(),
+  role: z.enum(["customer", "vendor", "admin"]).optional(),
+});
+
+export const resetPasswordSchema = z.object({
+  token: z.string().min(32).max(512),
+  password: z.string().min(8).max(72),
+  role: z.enum(["customer", "vendor", "admin"]).optional(),
+});

@@ -32,7 +32,7 @@ function Start-BackendService($service) {
 
   $process = Start-Process `
     -FilePath "powershell.exe" `
-    -ArgumentList @("-NoProfile", "-Command", "npm run start") `
+    -ArgumentList @("-NoProfile", "-Command", "npm run dev") `
     -WorkingDirectory $servicePath `
     -RedirectStandardOutput $logPath `
     -RedirectStandardError $errPath `

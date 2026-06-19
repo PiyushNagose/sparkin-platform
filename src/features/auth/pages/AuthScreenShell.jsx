@@ -24,6 +24,7 @@ import {
   clearReferralAttribution,
   getReferralAttribution,
 } from "@/features/customer/referrals/referralTracking";
+import { scrollToFieldError } from "@/shared/lib/forms/scrollToFieldError";
 
 const accountTypes = ["customer", "vendor"];
 
@@ -230,21 +231,25 @@ export function AuthScreenShell({
 
     if (isSignup && fullName.trim().length < 2) {
       setError("Please enter your full name.");
+      scrollToFieldError("fullName");
       return;
     }
 
     if (!validateEmail(normalizedEmail)) {
       setError("Please enter a valid email address.");
+      scrollToFieldError("email");
       return;
     }
 
     if (isSignup && !validatePhone(normalizedPhone)) {
       setError("Please enter a valid phone number.");
+      scrollToFieldError("phoneNumber");
       return;
     }
 
     if (passwordError) {
       setError(passwordError);
+      scrollToFieldError("password");
       return;
     }
 
@@ -306,9 +311,19 @@ export function AuthScreenShell({
 
   function handleForgotPassword() {
     setError("");
-    setNotice(
-      "Password reset is not connected yet. Please contact support to recover your account.",
-    );
+    setNotice("");
+
+    if (fixedRole === "vendor") {
+      navigate("/vendor/forgot-password");
+      return;
+    }
+
+    if (fixedRole === "admin") {
+      navigate("/admin/forgot-password");
+      return;
+    }
+
+    navigate("/auth/forgot-password");
   }
 
   function handleUnavailableProvider(provider) {
@@ -528,7 +543,7 @@ export function AuthScreenShell({
             ) : null}
 
             {isSignup && (
-              <Box>
+              <Box data-field="fullName">
                 <Typography
                   sx={{
                     mb: 0.45,
@@ -558,7 +573,7 @@ export function AuthScreenShell({
             )}
 
             {isSignup && (
-              <Box>
+              <Box data-field="phoneNumber">
                 <Typography
                   sx={{
                     mb: 0.45,
@@ -586,7 +601,7 @@ export function AuthScreenShell({
               </Box>
             )}
 
-            <Box>
+            <Box data-field="email">
               <Typography
                 sx={{
                   mb: 0.45,
@@ -622,7 +637,7 @@ export function AuthScreenShell({
               />
             </Box>
 
-            <Box>
+            <Box data-field="password">
               <Stack
                 direction="row"
                 justifyContent="space-between"

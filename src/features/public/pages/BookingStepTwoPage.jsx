@@ -29,6 +29,7 @@ import {
 } from "@/features/public/booking/bookingValidation";
 import { publicPlatformSettingsApi } from "@/features/public/api/platformSettingsApi";
 import BookingStepper from "@/features/public/booking/BookingStepper";
+import { scrollToFirstFieldError } from "@/shared/lib/forms/scrollToFieldError";
 
 // ─── data ────────────────────────────────────────────────────────────────────
 
@@ -290,6 +291,7 @@ export default function BookingStepTwoPage() {
     const { valid, errors: ve } = validateStep2(draft);
     if (!valid) {
       setErrors(ve);
+      scrollToFirstFieldError(ve);
       return;
     }
     navigate("/booking/roof");
@@ -354,7 +356,7 @@ export default function BookingStepTwoPage() {
               }}
             >
               {/* ── Property Type — full width ── */}
-              <Box>
+              <Box data-field="property.type">
                 <FieldLabel>Property Type</FieldLabel>
                 <Grid container spacing={1.4} sx={{ mt: 0.2 }}>
                   {propertyTypes.map((item) => (
@@ -392,6 +394,7 @@ export default function BookingStepTwoPage() {
                 {/* Ownership */}
                 <Grid size={{ xs: 12, sm: 4 }}>
                   <Box
+                    data-field="property.ownership"
                     sx={{
                       height: "100%",
                       p: 1.6,
@@ -427,6 +430,7 @@ export default function BookingStepTwoPage() {
                 {/* Distribution Company */}
                 <Grid size={{ xs: 12, sm: 4 }}>
                   <Box
+                    data-field="property.distributionCompany"
                     sx={{
                       height: "100%",
                       p: 1.6,
@@ -544,6 +548,7 @@ export default function BookingStepTwoPage() {
                 {/* Connection Type */}
                 <Grid size={{ xs: 12, sm: 4 }}>
                   <Box
+                    data-field="property.connectionType"
                     sx={{
                       height: "100%",
                       p: 1.6,

@@ -83,7 +83,7 @@ const documents = [
   {
     title: "Electricity Bill",
     meta: "Upload your latest electricity bill for usage analysis.",
-    hint: "JPG, PNG or PDF · Max 2 MB per file",
+    hint: "JPG, PNG or PDF · Max 5 MB per file",
     icon: <DescriptionOutlinedIcon sx={{ fontSize: "1rem" }} />,
     tone: "#2E7D4F",
     bg: "#E8F6EC",
@@ -92,7 +92,7 @@ const documents = [
   {
     title: "Govt Photo ID",
     meta: "Aadhaar or PAN for KYC verification.",
-    hint: "JPG, PNG or PDF · Max 2 MB per file",
+    hint: "JPG, PNG or PDF · Max 5 MB per file",
     icon: <ShieldRoundedIcon sx={{ fontSize: "1rem" }} />,
     tone: "#3566DA",
     bg: "#ECF2FF",
@@ -328,7 +328,7 @@ function UploadZone({
   );
 }
 
-const maxUploadSize = 2 * 1024 * 1024;
+const maxUploadSize = 5 * 1024 * 1024;
 
 function readFileAsDataUrl(file) {
   return new Promise((resolve, reject) => {
@@ -341,7 +341,7 @@ function readFileAsDataUrl(file) {
 
 async function fileToAttachment(file, category) {
   if (file.size > maxUploadSize) {
-    throw new Error(`${file.name} is larger than 2 MB.`);
+    throw new Error(`${file.name} is larger than 5 MB.`);
   }
 
   return {
@@ -852,7 +852,7 @@ export default function BookingStepFourPage() {
                       title="Upload roof photos (required)"
                       description="Provide at least one roof image so vendors can prepare accurate proposals"
                       buttonLabel="Browse Files"
-                      helper="JPG, PNG or PDF · Max 2 MB per file"
+                      helper="JPG, PNG or PDF · Max 5 MB per file"
                       files={draft.attachments?.roofPhotos || []}
                       onClick={() => roofInputRef.current?.click()}
                       onRemove={(index) =>
@@ -1779,3 +1779,4 @@ export default function BookingStepFourPage() {
     </Box>
   );
 }
+
