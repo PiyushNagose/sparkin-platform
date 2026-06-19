@@ -445,8 +445,9 @@ export default function CalculatorPage() {
                   gap: 1.45,
                 }}
               >
-                <Box data-field="state">
+                <Box data-field="state" sx={{ width: "100%" }}>
                 <TextField
+                  fullWidth
                   select
                   label="State"
                   value={form.state}
@@ -485,8 +486,9 @@ export default function CalculatorPage() {
                   const noCitiesConfigured =
                     !statesLoading && form.state && cities.length === 0;
                   return (
-                    <Box data-field="city">
+                    <Box data-field="city" sx={{ width: "100%" }}>
                     <TextField
+                      fullWidth
                       select={!noCitiesConfigured}
                       label="City"
                       value={noCitiesConfigured ? "" : form.city}
@@ -541,8 +543,9 @@ export default function CalculatorPage() {
                     </Box>
                   );
                 })()}
-                <Box data-field="pincode">
+                <Box data-field="pincode" sx={{ width: "100%" }}>
                 <TextField
+                  fullWidth
                   label="Pincode"
                   value={form.pincode}
                   onChange={(event) =>
@@ -568,8 +571,9 @@ export default function CalculatorPage() {
                   }}
                 />
                 </Box>
-                <Box data-field="monthlyBill">
+                <Box data-field="monthlyBill" sx={{ width: "100%" }}>
                 <TextField
+                  fullWidth
                   label="Average Monthly Bill"
                   type="number"
                   value={form.monthlyBill}
@@ -600,8 +604,9 @@ export default function CalculatorPage() {
                     },
                   }}
                 />
-                <Box data-field="roofAreaSqFt">
+                <Box data-field="roofAreaSqFt" sx={{ width: "100%" }}>
                 <TextField
+                  fullWidth
                   label="Available Roof Area sq. ft. (optional)"
                   type="number"
                   value={form.roofAreaSqFt}
@@ -617,8 +622,9 @@ export default function CalculatorPage() {
                   }}
                 />
                 </Box>
-                <Box data-field="systemSizeKw">
+                <Box data-field="systemSizeKw" sx={{ width: "100%" }}>
                 <TextField
+                  fullWidth
                   label="Preferred System Size kW"
                   type="number"
                   value={form.systemSizeKw}
@@ -703,8 +709,9 @@ export default function CalculatorPage() {
                     }}
                   />
                 ) : null}
-                <Box data-field="desiredOffsetPercent">
+                <Box data-field="desiredOffsetPercent" sx={{ width: "100%" }}>
                 <TextField
+                  fullWidth
                   label="Target Solar Offset %"
                   type="number"
                   value={form.desiredOffsetPercent}
