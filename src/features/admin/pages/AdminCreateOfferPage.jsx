@@ -29,6 +29,8 @@ import {
   adminUi,
 } from "@/features/admin/components/AdminPortalUI";
 import { offersApi } from "@/features/admin/api/offersApi";
+import { useScrollToError } from "@/shared/hooks/useScrollToError";
+import { scrollToFieldError } from "@/shared/lib/forms/scrollToFieldError";
 
 // ─── constants ────────────────────────────────────────────────────────────────
 
@@ -142,6 +144,18 @@ const inputSx = {
   },
 };
 
+const OFFER_ERROR_FIELD_MAP = {
+  "Offer name must be at least 2 characters": "name",
+  "Coupon code must be at least 3 characters": "couponCode",
+  "Coupon code can only contain letters and numbers": "couponCode",
+  "Discount value must be positive": "discountValue",
+  "Percentage cannot exceed 100": "discountValue",
+  "Valid from date is required": "validFrom",
+  "Valid to date is required": "validTo",
+  "Valid from must be before valid to": "validFrom",
+  "Select at least one applicable user group": "applicableUsers",
+};
+
 // ─── main page ────────────────────────────────────────────────────────────────
 
 export default function AdminCreateOfferPage() {
@@ -151,6 +165,7 @@ export default function AdminCreateOfferPage() {
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [formError, setFormError] = useState("");
+  const errorRef = useScrollToError(formError);
   const [toast, setToast] = useState({
     open: false,
     message: "",
@@ -200,6 +215,7 @@ export default function AdminCreateOfferPage() {
       const errors = validateForm(form);
       if (errors.length) {
         setFormError(errors[0]);
+        scrollToFieldError(OFFER_ERROR_FIELD_MAP[errors[0]]);
         return;
       }
     }
@@ -381,7 +397,7 @@ export default function AdminCreateOfferPage() {
                 gap: 2,
               }}
             >
-              <Box>
+              <Box data-field="name">
                 <FieldLabel required>Offer Name</FieldLabel>
                 <TextField
                   fullWidth
@@ -392,7 +408,7 @@ export default function AdminCreateOfferPage() {
                   sx={inputSx}
                 />
               </Box>
-              <Box>
+              <Box data-field="couponCode">
                 <FieldLabel required>Coupon Code</FieldLabel>
                 <Stack direction="row" spacing={1}>
                   <TextField
@@ -522,7 +538,7 @@ export default function AdminCreateOfferPage() {
                 gap: 2,
               }}
             >
-              <Box>
+              <Box data-field="discountValue">
                 <FieldLabel required>Discount Value</FieldLabel>
                 <TextField
                   fullWidth
@@ -657,7 +673,7 @@ export default function AdminCreateOfferPage() {
                   sx={inputSx}
                 />
 
-                <Box sx={{ mt: 2 }}>
+                <Box sx={{ mt: 2 }} data-field="applicableUsers">
                   <FieldLabel>Applicable Users</FieldLabel>
                   <Stack
                     direction="row"
@@ -702,6 +718,7 @@ export default function AdminCreateOfferPage() {
               </Box>
 
               <Box>
+                <Box data-field="validFrom">
                 <FieldLabel required>Valid From</FieldLabel>
                 <TextField
                   fullWidth
@@ -712,8 +729,9 @@ export default function AdminCreateOfferPage() {
                   InputLabelProps={{ shrink: true }}
                   sx={inputSx}
                 />
+                </Box>
 
-                <Box sx={{ mt: 2 }}>
+                <Box sx={{ mt: 2 }} data-field="validTo">
                   <FieldLabel required>Valid To</FieldLabel>
                   <TextField
                     fullWidth
@@ -782,6 +800,7 @@ export default function AdminCreateOfferPage() {
 
             {formError ? (
               <Alert
+                ref={errorRef}
                 severity="error"
                 sx={{ mt: 2, borderRadius: "0.75rem" }}
                 icon={<WarningAmberRoundedIcon />}

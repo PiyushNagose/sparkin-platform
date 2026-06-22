@@ -27,6 +27,7 @@ import {
   isStep2Complete,
 } from "@/features/public/booking/bookingValidation";
 import BookingStepper from "@/features/public/booking/BookingStepper";
+import { scrollToFirstFieldError } from "@/shared/lib/forms/scrollToFieldError";
 
 const roofTypes = [
   { title: "Flat", value: "flat" },
@@ -216,6 +217,7 @@ export default function BookingStepThreePage() {
     const { valid, errors: validationErrors } = validateStep3(draft);
     if (!valid) {
       setErrors(validationErrors);
+      scrollToFirstFieldError(validationErrors);
       return;
     }
     navigate("/booking/upload");
@@ -298,7 +300,7 @@ export default function BookingStepThreePage() {
                 }}
               >
                 <Stack spacing={{ xs: 3.2, md: 3.8 }}>
-                  <Box>
+                  <Box data-field="property.roofType">
                     <Typography
                       sx={{
                         mb: 1.2,
@@ -336,7 +338,7 @@ export default function BookingStepThreePage() {
                     ) : null}
                   </Box>
 
-                  <Box>
+                  <Box data-field="roof.sizeRange">
                     <Typography
                       sx={{
                         mb: 1.2,
@@ -380,7 +382,7 @@ export default function BookingStepThreePage() {
                     ) : null}
                   </Box>
 
-                  <Box>
+                  <Box data-field="roof.shadow">
                     <Typography
                       sx={{
                         mb: 1.2,
@@ -424,7 +426,7 @@ export default function BookingStepThreePage() {
                     ) : null}
                   </Box>
 
-                  <Box>
+                  <Box data-field="roof.condition">
                     <Typography
                       sx={{
                         mb: 1.2,

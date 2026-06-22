@@ -41,3 +41,8 @@ export const updateOfferSchema = createOfferSchema
 export const toggleStatusSchema = z.object({
   status: z.enum(["active", "disabled", "draft"]),
 });
+
+export const validateCouponSchema = z.object({
+  couponCode: z.string().trim().min(3).max(30),
+  estimatedCost: z.coerce.number().min(0).optional().default(0),
+});

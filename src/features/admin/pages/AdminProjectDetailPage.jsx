@@ -29,6 +29,8 @@ import PlaceOutlinedIcon from "@mui/icons-material/PlaceOutlined";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import UploadFileOutlinedIcon from "@mui/icons-material/UploadFileOutlined";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useScrollToError } from "@/shared/hooks/useScrollToError";
+import { useSocket } from "@/shared/websocket/SocketProvider";
 import { Link as RouterLink, useNavigate, useParams } from "react-router-dom";
 import {
   AdminErrorState,
@@ -297,6 +299,7 @@ function MilestoneNode({ milestone, isFirst, isLast }) {
 export default function AdminProjectDetailPage() {
   const { projectId } = useParams();
   const navigate = useNavigate();
+  const { refreshKey } = useSocket();
   const documentInputRef = useRef(null);
   const [activeTab, setActiveTab] = useState("Installation Details");
   const [project, setProject] = useState(null);
@@ -305,6 +308,7 @@ export default function AdminProjectDetailPage() {
   const [isSendingReminder, setIsSendingReminder] = useState(false);
   const [isRejectingVendor, setIsRejectingVendor] = useState(false);
   const [error, setError] = useState("");
+  const errorRef = useScrollToError(error);
   const [success, setSuccess] = useState("");
   const [reassignModal, setReassignModal] = useState(false);
   const [vendors, setVendors] = useState([]);
@@ -473,7 +477,7 @@ export default function AdminProjectDetailPage() {
     return () => {
       active = false;
     };
-  }, [projectId]);
+  }, [projectId, refreshKey]);
 
   async function handleDocumentSelected(event) {
     const file = event.target.files?.[0];
@@ -541,7 +545,7 @@ export default function AdminProjectDetailPage() {
         Back to Projects
       </Button>
 
-      {error ? <AdminErrorState>{error}</AdminErrorState> : null}
+      {error ? <AdminErrorState ref={errorRef}>{error}</AdminErrorState> : null}
       {success ? (
         <Alert severity="success" sx={{ mb: 2, borderRadius: "0.9rem" }}>
           {success}
@@ -1159,10 +1163,7 @@ export default function AdminProjectDetailPage() {
               </Alert>
             ) : null}
             {readyForVendorRejection ? (
-              <Alert
-                severity="error"
-                sx={{ mt: 1.2, borderRadius: "0.9rem" }}
-              >
+              <Alert severity="error" sx={{ mt: 1.2, borderRadius: "0.9rem" }}>
                 Final reminder has already been sent. Reject the vendor now if
                 the site visit is still incomplete.
               </Alert>

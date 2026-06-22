@@ -120,7 +120,7 @@ export default function BookingStepOnePage() {
   const [errors, setErrors] = useState({});
   const {
     stateOptions,
-    getCities,
+    getCityOptions,
     loading: statesLoading,
   } = usePlatformStates();
 
@@ -128,9 +128,11 @@ export default function BookingStepOnePage() {
   useEffect(() => {
     if (stateOptions.length && !draft.installationAddress.state) {
       const first = stateOptions[0];
+      const firstCity = getCityOptions(first.key)[0];
       updateDraft("installationAddress", {
         state: first.key,
-        city: getCities(first.key)[0] ?? "",
+        city: firstCity?.name ?? "",
+        pincode: firstCity?.pincode ?? "",
       });
     }
   }, [stateOptions]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -373,10 +375,11 @@ export default function BookingStepOnePage() {
                             helperText={errors["installationAddress.state"]}
                             onChange={(e) => {
                               const newState = e.target.value;
-                              const cities = getCities(newState);
+                              const cityOptions = getCityOptions(newState);
                               updateAddress({
                                 state: newState,
-                                city: cities[0] ?? "",
+                                city: cityOptions[0]?.name ?? "",
+                                pincode: cityOptions[0]?.pincode ?? "",
                               });
                               clearError(
                                 setErrors,
@@ -428,7 +431,10 @@ export default function BookingStepOnePage() {
                           {(() => {
                             const selectedState =
                               draft.installationAddress.state;
-                            const cities = getCities(selectedState || "");
+                            const cityOptions = getCityOptions(
+                              selectedState || "",
+                            );
+                            const cities = cityOptions.map((city) => city.name);
                             const noCities =
                               !statesLoading &&
                               selectedState &&
@@ -480,7 +486,16 @@ export default function BookingStepOnePage() {
                                 error={!!errors["installationAddress.city"]}
                                 helperText={errors["installationAddress.city"]}
                                 onChange={(e) => {
-                                  updateAddress({ city: e.target.value });
+                                  const selectedCity = e.target.value;
+                                  const matchedCity = cityOptions.find(
+                                    (city) => city.name === selectedCity,
+                                  );
+                                  updateAddress({
+                                    city: selectedCity,
+                                    pincode:
+                                      matchedCity?.pincode ||
+                                      draft.installationAddress.pincode,
+                                  });
                                   clearError(
                                     setErrors,
                                     "installationAddress.city",

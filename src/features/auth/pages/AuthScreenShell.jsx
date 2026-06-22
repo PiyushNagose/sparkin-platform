@@ -1,5 +1,15 @@
 import * as React from "react";
-import { Alert, Box, Button, Checkbox, Divider, IconButton, Stack, TextField, Typography } from "@mui/material";
+import {
+  Alert,
+  Box,
+  Button,
+  Checkbox,
+  Divider,
+  IconButton,
+  Stack,
+  TextField,
+  Typography,
+} from "@mui/material";
 import { Link as RouterLink, useLocation, useNavigate } from "react-router-dom";
 import AlternateEmailRoundedIcon from "@mui/icons-material/AlternateEmailRounded";
 import BoltRoundedIcon from "@mui/icons-material/BoltRounded";
@@ -11,8 +21,10 @@ import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { referralsApi } from "@/features/customer/api/referralsApi";
 import {
+  clearReferralAttribution,
   getReferralAttribution,
 } from "@/features/customer/referrals/referralTracking";
+import { scrollToFieldError } from "@/shared/lib/forms/scrollToFieldError";
 
 const accountTypes = ["customer", "vendor"];
 
@@ -113,7 +125,8 @@ function validatePhone(value) {
 
 function getPasswordError(value) {
   if (value.length < 8) return "Password must be at least 8 characters.";
-  if (!/[A-Za-z]/.test(value) || !/[0-9]/.test(value)) return "Password must include letters and numbers.";
+  if (!/[A-Za-z]/.test(value) || !/[0-9]/.test(value))
+    return "Password must include letters and numbers.";
   return "";
 }
 
@@ -195,7 +208,11 @@ export function AuthScreenShell({
   }
 
   function getErrorMessage(apiError) {
-    return apiError?.response?.data?.message || apiError?.message || "Something went wrong. Please try again.";
+    return (
+      apiError?.response?.data?.message ||
+      apiError?.message ||
+      "Something went wrong. Please try again."
+    );
   }
 
   async function handleSubmit(event) {
@@ -214,21 +231,25 @@ export function AuthScreenShell({
 
     if (isSignup && fullName.trim().length < 2) {
       setError("Please enter your full name.");
+      scrollToFieldError("fullName");
       return;
     }
 
     if (!validateEmail(normalizedEmail)) {
       setError("Please enter a valid email address.");
+      scrollToFieldError("email");
       return;
     }
 
     if (isSignup && !validatePhone(normalizedPhone)) {
       setError("Please enter a valid phone number.");
+      scrollToFieldError("phoneNumber");
       return;
     }
 
     if (passwordError) {
       setError(passwordError);
+      scrollToFieldError("password");
       return;
     }
 
@@ -243,12 +264,15 @@ export function AuthScreenShell({
             role: accountType,
             phoneNumber: normalizedPhone || undefined,
           })
-        : await login({
-            email: normalizedEmail,
-            password,
-          }, {
-            persist: keepLoggedIn,
-          });
+        : await login(
+            {
+              email: normalizedEmail,
+              password,
+            },
+            {
+              persist: keepLoggedIn,
+            },
+          );
 
       if (isFixedRole && user.role !== fixedRole) {
         await logout();
@@ -256,15 +280,25 @@ export function AuthScreenShell({
         return;
       }
 
-      if (!isSignup && !isFixedRole && user.role !== accountType && user.role !== "admin") {
+      if (
+        !isSignup &&
+        !isFixedRole &&
+        user.role !== accountType &&
+        user.role !== "admin"
+      ) {
         await logout();
-        setError(`This account is registered as ${user.role === "vendor" ? "a vendor" : "a user"}. Please choose the matching account type.`);
+        setError(
+          `This account is registered as ${user.role === "vendor" ? "a vendor" : "a user"}. Please choose the matching account type.`,
+        );
         return;
       }
 
       const referralAttribution = getReferralAttribution();
       if (user.role === "customer" && referralAttribution?.referralCode) {
         referralsApi.trackSignup(referralAttribution).catch(() => {});
+        // Clear attribution after tracking signup so the booking step
+        // does not double-fire trackBooking for the same referral.
+        clearReferralAttribution();
       }
 
       navigate(getRedirectPath(user), { replace: true });
@@ -277,12 +311,26 @@ export function AuthScreenShell({
 
   function handleForgotPassword() {
     setError("");
-    setNotice("Password reset is not connected yet. Please contact support to recover your account.");
+    setNotice("");
+
+    if (fixedRole === "vendor") {
+      navigate("/vendor/forgot-password");
+      return;
+    }
+
+    if (fixedRole === "admin") {
+      navigate("/admin/forgot-password");
+      return;
+    }
+
+    navigate("/auth/forgot-password");
   }
 
   function handleUnavailableProvider(provider) {
     setError("");
-    setNotice(`${provider} sign up is not connected yet. Please continue with email and password.`);
+    setNotice(
+      `${provider} sign up is not connected yet. Please continue with email and password.`,
+    );
   }
 
   return (
@@ -291,7 +339,10 @@ export function AuthScreenShell({
         minHeight: "100vh",
         overflow: "auto",
         display: "grid",
-        gridTemplateColumns: { xs: "1fr", lg: "minmax(0, 1.05fr) minmax(430px, 0.95fr)" },
+        gridTemplateColumns: {
+          xs: "1fr",
+          lg: "minmax(0, 1.05fr) minmax(430px, 0.95fr)",
+        },
       }}
     >
       <Box
@@ -390,10 +441,18 @@ export function AuthScreenShell({
               </Box>
 
               <Box>
-                <Typography sx={{ fontSize: "1.5rem", fontWeight: 800, lineHeight: 1.1 }}>
+                <Typography
+                  sx={{ fontSize: "1.5rem", fontWeight: 800, lineHeight: 1.1 }}
+                >
                   {heroStatTitle}
                 </Typography>
-                <Typography sx={{ mt: 0.15, color: "rgba(232,240,248,0.82)", fontSize: "0.82rem" }}>
+                <Typography
+                  sx={{
+                    mt: 0.15,
+                    color: "rgba(232,240,248,0.82)",
+                    fontSize: "0.82rem",
+                  }}
+                >
                   {heroStatBody}
                 </Typography>
               </Box>
@@ -412,7 +471,15 @@ export function AuthScreenShell({
           minHeight: "100vh",
         }}
       >
-        <Box component="form" onSubmit={handleSubmit} sx={{ width: "100%", maxWidth: 430, py: { xs: 0.8, lg: isSignup ? 0.6 : 0 } }}>
+        <Box
+          component="form"
+          onSubmit={handleSubmit}
+          sx={{
+            width: "100%",
+            maxWidth: 430,
+            py: { xs: 0.8, lg: isSignup ? 0.6 : 0 },
+          }}
+        >
           <Typography
             variant="h1"
             sx={{
@@ -425,25 +492,50 @@ export function AuthScreenShell({
             {title}
           </Typography>
 
-          <Typography sx={{ mt: 0.65, color: "#667084", fontSize: "0.96rem", lineHeight: 1.48, maxWidth: 330 }}>
+          <Typography
+            sx={{
+              mt: 0.65,
+              color: "#667084",
+              fontSize: "0.96rem",
+              lineHeight: 1.48,
+              maxWidth: 330,
+            }}
+          >
             {subtitle}
           </Typography>
 
-          <Stack spacing={isSignup ? 0.92 : 1.55} sx={{ mt: isSignup ? 1.55 : 3.1 }}>
+          <Stack
+            spacing={isSignup ? 0.92 : 1.55}
+            sx={{ mt: isSignup ? 1.55 : 3.1 }}
+          >
             {error ? (
-              <Alert severity="error" sx={{ borderRadius: "0.9rem", fontSize: "0.82rem" }}>
+              <Alert
+                severity="error"
+                sx={{ borderRadius: "0.9rem", fontSize: "0.82rem" }}
+              >
                 {error}
               </Alert>
             ) : null}
             {notice ? (
-              <Alert severity="info" sx={{ borderRadius: "0.9rem", fontSize: "0.82rem" }} onClose={() => setNotice("")}>
+              <Alert
+                severity="info"
+                sx={{ borderRadius: "0.9rem", fontSize: "0.82rem" }}
+                onClose={() => setNotice("")}
+              >
                 {notice}
               </Alert>
             ) : null}
 
             {!isFixedRole ? (
               <Box>
-                <Typography sx={{ mb: 0.5, color: "#344054", fontSize: "0.8rem", fontWeight: 700 }}>
+                <Typography
+                  sx={{
+                    mb: 0.5,
+                    color: "#344054",
+                    fontSize: "0.8rem",
+                    fontWeight: 700,
+                  }}
+                >
                   Account Type
                 </Typography>
                 <AccountToggle value={accountType} onChange={setAccountType} />
@@ -451,8 +543,15 @@ export function AuthScreenShell({
             ) : null}
 
             {isSignup && (
-              <Box>
-                <Typography sx={{ mb: 0.45, color: "#344054", fontSize: "0.8rem", fontWeight: 700 }}>
+              <Box data-field="fullName">
+                <Typography
+                  sx={{
+                    mb: 0.45,
+                    color: "#344054",
+                    fontSize: "0.8rem",
+                    fontWeight: 700,
+                  }}
+                >
                   Full Name
                 </Typography>
                 <TextField
@@ -463,15 +562,26 @@ export function AuthScreenShell({
                   placeholder="John Doe"
                   sx={fieldSx}
                   InputProps={{
-                    endAdornment: <PersonOutlineRoundedIcon sx={{ color: "#8E98A9", fontSize: "1rem" }} />,
+                    endAdornment: (
+                      <PersonOutlineRoundedIcon
+                        sx={{ color: "#8E98A9", fontSize: "1rem" }}
+                      />
+                    ),
                   }}
                 />
               </Box>
             )}
 
             {isSignup && (
-              <Box>
-                <Typography sx={{ mb: 0.45, color: "#344054", fontSize: "0.8rem", fontWeight: 700 }}>
+              <Box data-field="phoneNumber">
+                <Typography
+                  sx={{
+                    mb: 0.45,
+                    color: "#344054",
+                    fontSize: "0.8rem",
+                    fontWeight: 700,
+                  }}
+                >
                   Phone Number
                 </Typography>
                 <TextField
@@ -481,14 +591,25 @@ export function AuthScreenShell({
                   placeholder="+91 98765 43210"
                   sx={fieldSx}
                   InputProps={{
-                    endAdornment: <PhoneOutlinedIcon sx={{ color: "#8E98A9", fontSize: "1rem" }} />,
+                    endAdornment: (
+                      <PhoneOutlinedIcon
+                        sx={{ color: "#8E98A9", fontSize: "1rem" }}
+                      />
+                    ),
                   }}
                 />
               </Box>
             )}
 
-            <Box>
-              <Typography sx={{ mb: 0.45, color: "#344054", fontSize: "0.8rem", fontWeight: 700 }}>
+            <Box data-field="email">
+              <Typography
+                sx={{
+                  mb: 0.45,
+                  color: "#344054",
+                  fontSize: "0.8rem",
+                  fontWeight: 700,
+                }}
+              >
                 Email Address
               </Typography>
               <TextField
@@ -497,22 +618,35 @@ export function AuthScreenShell({
                 type="email"
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
-                placeholder={isSignup ? "hello@example.com" : "name@company.com"}
+                placeholder={
+                  isSignup ? "hello@example.com" : "name@company.com"
+                }
                 sx={fieldSx}
                 InputProps={{
                   startAdornment: !isSignup ? (
-                    <PersonOutlineRoundedIcon sx={{ color: "#8E98A9", mr: 1, fontSize: "1rem" }} />
+                    <PersonOutlineRoundedIcon
+                      sx={{ color: "#8E98A9", mr: 1, fontSize: "1rem" }}
+                    />
                   ) : undefined,
                   endAdornment: isSignup ? (
-                    <AlternateEmailRoundedIcon sx={{ color: "#8E98A9", fontSize: "1rem" }} />
+                    <AlternateEmailRoundedIcon
+                      sx={{ color: "#8E98A9", fontSize: "1rem" }}
+                    />
                   ) : undefined,
                 }}
               />
             </Box>
 
-            <Box>
-              <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 0.45 }}>
-                <Typography sx={{ color: "#344054", fontSize: "0.8rem", fontWeight: 700 }}>
+            <Box data-field="password">
+              <Stack
+                direction="row"
+                justifyContent="space-between"
+                alignItems="center"
+                sx={{ mb: 0.45 }}
+              >
+                <Typography
+                  sx={{ color: "#344054", fontSize: "0.8rem", fontWeight: 700 }}
+                >
                   Password
                 </Typography>
                 {!isSignup && (
@@ -546,14 +680,20 @@ export function AuthScreenShell({
                 sx={fieldSx}
                 InputProps={{
                   startAdornment: !isSignup ? (
-                    <LockOutlinedIcon sx={{ color: "#8E98A9", mr: 1, fontSize: "1rem" }} />
+                    <LockOutlinedIcon
+                      sx={{ color: "#8E98A9", mr: 1, fontSize: "1rem" }}
+                    />
                   ) : undefined,
                   endAdornment: (
                     <IconButton
                       type="button"
                       edge="end"
-                      aria-label={showPassword ? "Hide password" : "Show password"}
-                      onClick={() => setShowPassword((currentValue) => !currentValue)}
+                      aria-label={
+                        showPassword ? "Hide password" : "Show password"
+                      }
+                      onClick={() =>
+                        setShowPassword((currentValue) => !currentValue)
+                      }
                       sx={{ color: "#8E98A9" }}
                     >
                       {showPassword ? (
@@ -567,21 +707,35 @@ export function AuthScreenShell({
               />
 
               {isSignup && (
-                <Typography sx={{ mt: 0.3, color: "#8B94A5", fontSize: "0.68rem", lineHeight: 1.3 }}>
+                <Typography
+                  sx={{
+                    mt: 0.3,
+                    color: "#8B94A5",
+                    fontSize: "0.68rem",
+                    lineHeight: 1.3,
+                  }}
+                >
                   Must be at least 8 characters and include letters and numbers.
                 </Typography>
               )}
             </Box>
 
             {!isSignup && (
-              <Stack direction="row" spacing={0.8} alignItems="center" sx={{ mt: -0.2 }}>
+              <Stack
+                direction="row"
+                spacing={0.8}
+                alignItems="center"
+                sx={{ mt: -0.2 }}
+              >
                 <Checkbox
                   size="small"
                   checked={keepLoggedIn}
                   onChange={(event) => setKeepLoggedIn(event.target.checked)}
                   sx={{ p: 0 }}
                 />
-                <Typography sx={{ color: "#667084", fontSize: "0.82rem" }}>Keep me logged in</Typography>
+                <Typography sx={{ color: "#667084", fontSize: "0.82rem" }}>
+                  Keep me logged in
+                </Typography>
               </Stack>
             )}
 
@@ -601,16 +755,32 @@ export function AuthScreenShell({
                 boxShadow: "0 18px 28px rgba(14,86,200,0.18)",
                 "&.Mui-disabled": {
                   color: "#FFFFFF",
-                  background: "linear-gradient(180deg, #0E56C8 0%, #0D49B0 100%)",
+                  background:
+                    "linear-gradient(180deg, #0E56C8 0%, #0D49B0 100%)",
                   opacity: 0.75,
                 },
               }}
             >
-              {isSubmitting ? "Please wait..." : isSignup ? "Create Account ->" : keepLoggedIn ? "Login" : "Login for this session"}
+              {isSubmitting
+                ? "Please wait..."
+                : isSignup
+                  ? "Create Account ->"
+                  : keepLoggedIn
+                    ? "Login"
+                    : "Login for this session"}
             </Button>
 
-            <Typography sx={{ textAlign: "center", color: "#667084", fontSize: "0.9rem", pt: isSignup ? 0.25 : 0.5 }}>
-              {isSignup ? "Already have an account? " : "Don't have an account? "}
+            <Typography
+              sx={{
+                textAlign: "center",
+                color: "#667084",
+                fontSize: "0.9rem",
+                pt: isSignup ? 0.25 : 0.5,
+              }}
+            >
+              {isSignup
+                ? "Already have an account? "
+                : "Don't have an account? "}
               <Typography
                 component={RouterLink}
                 to={isSignup ? loginLink : signupLink}
@@ -626,13 +796,36 @@ export function AuthScreenShell({
             </Typography>
 
             {isSignup && (
-              <Typography sx={{ color: "#98A2B3", fontSize: "0.7rem", lineHeight: 1.45, textAlign: "center" }}>
+              <Typography
+                sx={{
+                  color: "#98A2B3",
+                  fontSize: "0.7rem",
+                  lineHeight: 1.45,
+                  textAlign: "center",
+                }}
+              >
                 By signing up, you agree to Sparkin Solar&apos;s{" "}
-                <Box component={RouterLink} to="/terms" sx={{ color: "#0E56C8", textDecoration: "none", fontWeight: 700 }}>
+                <Box
+                  component={RouterLink}
+                  to="/terms"
+                  sx={{
+                    color: "#0E56C8",
+                    textDecoration: "none",
+                    fontWeight: 700,
+                  }}
+                >
                   Terms of Service
                 </Box>{" "}
                 and{" "}
-                <Box component={RouterLink} to="/privacy" sx={{ color: "#0E56C8", textDecoration: "none", fontWeight: 700 }}>
+                <Box
+                  component={RouterLink}
+                  to="/privacy"
+                  sx={{
+                    color: "#0E56C8",
+                    textDecoration: "none",
+                    fontWeight: 700,
+                  }}
+                >
                   Privacy Policy
                 </Box>
                 .
@@ -640,10 +833,23 @@ export function AuthScreenShell({
             )}
 
             {!isSignup && (
-              <Divider sx={{ pt: 1.5, "&::before, &::after": { borderColor: "#E5EAF2" } }} />
+              <Divider
+                sx={{
+                  pt: 1.5,
+                  "&::before, &::after": { borderColor: "#E5EAF2" },
+                }}
+              />
             )}
 
-            <Stack direction="row" justifyContent="space-between" sx={{ color: "#98A2B3", fontSize: "0.74rem", pt: isSignup ? 0 : 0.2 }}>
+            <Stack
+              direction="row"
+              justifyContent="space-between"
+              sx={{
+                color: "#98A2B3",
+                fontSize: "0.74rem",
+                pt: isSignup ? 0 : 0.2,
+              }}
+            >
               <Typography sx={{ fontSize: "0.74rem", color: "#98A2B3" }}>
                 © {new Date().getFullYear()} Sparkin Solar.
                 <Box component="span" sx={{ display: "block" }}>
@@ -652,10 +858,26 @@ export function AuthScreenShell({
               </Typography>
 
               <Stack direction="row" spacing={1.5}>
-                <Typography component={RouterLink} to="/privacy" sx={{ fontSize: "0.74rem", color: "#667084", textDecoration: "none" }}>
+                <Typography
+                  component={RouterLink}
+                  to="/privacy"
+                  sx={{
+                    fontSize: "0.74rem",
+                    color: "#667084",
+                    textDecoration: "none",
+                  }}
+                >
                   Privacy Policy
                 </Typography>
-                <Typography component={RouterLink} to="/contact" sx={{ fontSize: "0.74rem", color: "#667084", textDecoration: "none" }}>
+                <Typography
+                  component={RouterLink}
+                  to="/contact"
+                  sx={{
+                    fontSize: "0.74rem",
+                    color: "#667084",
+                    textDecoration: "none",
+                  }}
+                >
                   Help Center
                 </Typography>
               </Stack>

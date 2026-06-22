@@ -35,6 +35,7 @@ import TuneRoundedIcon from "@mui/icons-material/TuneRounded";
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import { useEffect, useMemo, useState } from "react";
 import { NavLink } from "react-router-dom";
+import { useSocket } from "@/shared/websocket/SocketProvider";
 import {
   AdminEmptyState,
   AdminErrorState,
@@ -312,6 +313,7 @@ function FormSelect({ label, value, onChange, options }) {
 
 export default function AdminProjectsPage() {
   // data
+  const { refreshKey } = useSocket();
   const [state, setState] = useState({ loading: true, error: "", data: null });
   // ui
   const [activeTab, setActiveTab] = useState("All");
@@ -350,7 +352,7 @@ export default function AdminProjectsPage() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [refreshKey]);
 
   // ── derived data ──────────────────────────────────────────────────────────
 

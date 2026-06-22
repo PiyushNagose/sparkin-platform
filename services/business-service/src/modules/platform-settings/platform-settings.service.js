@@ -2,8 +2,41 @@ import { AppError } from "../../common/errors/app-error.js";
 import { defaultPlatformSettings } from "./platform-settings.defaults.js";
 import { platformSettingsRepository } from "./platform-settings.repository.js";
 
+function uniqueValues(values = []) {
+  return [...new Set(values.filter(Boolean))];
+}
+
+function mergeStateWithDefaults(state, defaultState) {
+  if (!defaultState) {
+    return state;
+  }
+
+  return {
+    ...defaultState,
+    ...state,
+    cities: uniqueValues([
+      ...(defaultState.cities || []),
+      ...(state.cities || []),
+    ]),
+    pincodePrefixes: uniqueValues([
+      ...(defaultState.pincodePrefixes || []),
+      ...(state.pincodePrefixes || []),
+    ]),
+  };
+}
+
 function mergeWithDefaults(settings) {
   if (!settings) return defaultPlatformSettings;
+
+  const defaultStatesByKey = new Map(
+    (defaultPlatformSettings.states || []).map((state) => [state.key, state]),
+  );
+
+  const mergedStates = settings.states?.length
+    ? settings.states.map((state) =>
+        mergeStateWithDefaults(state, defaultStatesByKey.get(state.key)),
+      )
+    : defaultPlatformSettings.states;
 
   return {
     ...defaultPlatformSettings,
@@ -11,9 +44,7 @@ function mergeWithDefaults(settings) {
     pricing: { ...defaultPlatformSettings.pricing, ...settings.pricing },
     bidding: { ...defaultPlatformSettings.bidding, ...settings.bidding },
     subsidy: { ...defaultPlatformSettings.subsidy, ...settings.subsidy },
-    states: settings.states?.length
-      ? settings.states
-      : defaultPlatformSettings.states,
+    states: mergedStates,
     discoms: settings.discoms?.length
       ? settings.discoms
       : defaultPlatformSettings.discoms,

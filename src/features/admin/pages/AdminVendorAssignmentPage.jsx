@@ -27,8 +27,10 @@ import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
 import SecurityOutlinedIcon from "@mui/icons-material/SecurityOutlined";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import StarRoundedIcon from "@mui/icons-material/StarRounded";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useScrollToError } from "@/shared/hooks/useScrollToError";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useSocket } from "@/shared/websocket/SocketProvider";
 import {
   AdminEmptyState,
   AdminErrorState,
@@ -308,6 +310,7 @@ function InfoTile({ icon: Icon, title, value }) {
 export default function AdminVendorAssignmentPage() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { refreshKey } = useSocket();
   const [state, setState] = useState({ loading: true, error: "", data: null });
   const [filters, setFilters] = useState({
     region: "all",
@@ -318,6 +321,7 @@ export default function AdminVendorAssignmentPage() {
   });
   const [selectedVendorIds, setSelectedVendorIds] = useState([]);
   const [actionError, setActionError] = useState("");
+  const errorRef = useScrollToError(actionError);
   const [isAssigning, setIsAssigning] = useState(false);
   const [selectAllMode, setSelectAllMode] = useState(false);
 
@@ -362,7 +366,7 @@ export default function AdminVendorAssignmentPage() {
     return () => {
       active = false;
     };
-  }, [location.state?.leadId]);
+  }, [location.state?.leadId, refreshKey]);
 
   const vendors = useMemo(() => {
     const lead = state.data?.lead;
@@ -488,7 +492,9 @@ export default function AdminVendorAssignmentPage() {
 
       <LeadSummary lead={lead} quotes={state.data.quotes || []} />
 
-      {actionError ? <AdminErrorState>{actionError}</AdminErrorState> : null}
+      {actionError ? (
+        <AdminErrorState ref={errorRef}>{actionError}</AdminErrorState>
+      ) : null}
 
       <AdminPanel sx={{ p: { xs: 1.5, md: 1.8 }, mb: 2.2, bgcolor: "#F6F8FB" }}>
         <Grid container spacing={1.3} alignItems="center">

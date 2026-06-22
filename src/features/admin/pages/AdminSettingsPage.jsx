@@ -39,6 +39,93 @@ import pricingBannerImg from "@/shared/assets/images/admin/settings/admin-settin
 
 const STORAGE_KEY = "sparkin_admin_platform_settings";
 
+const ANDHRA_PRADESH_CITIES = [
+  "Visakhapatnam",
+  "Vijayawada",
+  "Guntur",
+  "Nellore",
+  "Kurnool",
+  "Rajamahendravaram",
+  "Kakinada",
+  "Tirupati",
+  "Kadapa",
+  "Eluru",
+  "Ongole",
+  "Nandyal",
+  "Vizianagaram",
+  "Anantapur",
+  "Proddatur",
+  "Srikakulam",
+  "Adoni",
+  "Tenali",
+  "Chittoor",
+  "Hindupur",
+  "Bhimavaram",
+  "Machilipatnam",
+  "Madanapalle",
+  "Guntakal",
+  "Dharmavaram",
+  "Tadepalligudem",
+  "Chilakaluripet",
+  "Gudivada",
+  "Narasaraopet",
+  "Tadipatri",
+  "Mangalagiri",
+  "Amaravati",
+  "Pithapuram",
+  "Palasa",
+  "Bobbili",
+  "Kavali",
+  "Bapatla",
+  "Markapur",
+  "Narsapur",
+  "Repalle",
+  "Amalapuram",
+  "Tuni",
+  "Samalkot",
+  "Rayachoti",
+  "Pulivendula",
+  "Naidupet",
+  "Attili",
+  "Tanuku",
+  "Palakollu",
+  "Nidadavole",
+  "Kovvur",
+  "Yemmiganur",
+  "Rayadurg",
+  "Jammalamadugu",
+  "Punganur",
+  "Puttur",
+  "Venkatagiri",
+  "Gudur",
+  "Parvathipuram",
+  "Salur",
+  "Sattenapalle",
+  "Ponnur",
+  "Piduguralla",
+  "Chirala",
+  "Ichchapuram",
+  "Allagadda",
+  "Kadiri",
+  "Uravakonda",
+  "Kalyandurg",
+  "Nagari",
+];
+
+const DEFAULT_STATE_METADATA = {
+  andhra_pradesh: {
+    solarYieldPerKwYear: 1550,
+    costPerKwResidential: 62000,
+    costPerKwCommercial: 52000,
+    pincodePrefixes: ["51", "52", "53"],
+    cities: ANDHRA_PRADESH_CITIES,
+  },
+};
+
+function uniqueValues(values = []) {
+  return [...new Set(values.filter(Boolean))];
+}
+
 // â”€â”€â”€ defaults â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const DEFAULT_SETTINGS = {
@@ -64,28 +151,11 @@ const DEFAULT_SETTINGS = {
       key: "andhra_pradesh",
       name: "Andhra Pradesh",
       rate: "7.50",
-      cities: [
-        "Visakhapatnam",
-        "Vijayawada",
-        "Guntur",
-        "Nellore",
-        "Kurnool",
-        "Rajamahendravaram",
-        "Kakinada",
-        "Tirupati",
-        "Kadapa",
-        "Eluru",
-        "Ongole",
-        "Nandyal",
-        "Vizianagaram",
-        "Anantapur",
-        "Proddatur",
-        "Srikakulam",
-        "Adoni",
-        "Tenali",
-        "Chittoor",
-        "Hindupur",
-      ],
+      solarYieldPerKwYear: 1550,
+      costPerKwResidential: 62000,
+      costPerKwCommercial: 52000,
+      pincodePrefixes: ["51", "52", "53"],
+      cities: ANDHRA_PRADESH_CITIES,
     },
   ],
   discoms: [
@@ -134,7 +204,9 @@ function loadSettings() {
       },
       // Restore states and discoms from localStorage if present
       states: parsed.states?.length
-        ? parsed.states.map((s) => ({ cities: [], ...s }))
+        ? parsed.states.map((s) =>
+            withDefaultStateMetadata({ cities: [], ...s }),
+          )
         : structuredClone(DEFAULT_SETTINGS.states),
       discoms: parsed.discoms?.length
         ? parsed.discoms
@@ -154,18 +226,54 @@ function toStateKey(name = "") {
   return name.trim().toLowerCase().replaceAll(/\s+/g, "_");
 }
 
+function withDefaultStateMetadata(state) {
+  const key = state.key || toStateKey(state.name);
+  const defaults = DEFAULT_STATE_METADATA[key];
+
+  if (!defaults) {
+    return {
+      ...state,
+      key,
+      cities: Array.isArray(state.cities) ? state.cities : [],
+      pincodePrefixes: Array.isArray(state.pincodePrefixes)
+        ? state.pincodePrefixes
+        : [],
+    };
+  }
+
+  return {
+    ...defaults,
+    ...state,
+    key,
+    cities: uniqueValues([...(defaults.cities || []), ...(state.cities || [])]),
+    pincodePrefixes: uniqueValues([
+      ...(defaults.pincodePrefixes || []),
+      ...(state.pincodePrefixes || []),
+    ]),
+    solarYieldPerKwYear:
+      state.solarYieldPerKwYear ?? defaults.solarYieldPerKwYear,
+    costPerKwResidential:
+      state.costPerKwResidential ?? defaults.costPerKwResidential,
+    costPerKwCommercial:
+      state.costPerKwCommercial ?? defaults.costPerKwCommercial,
+  };
+}
+
 function normalizeSettingsForUi(settings) {
   // Preserve all states as-is — just ensure numeric fields are strings for inputs
   const states = (
     settings.states?.length ? settings.states : DEFAULT_SETTINGS.states
-  ).map((state) => ({
-    ...state,
+  ).map((state) => {
+    const mergedState = withDefaultStateMetadata(state);
+    return {
+      ...mergedState,
     // Generate key from name if key is missing
-    key: state.key || toStateKey(state.name),
-    id: state.id || toStateKey(state.name),
-    rate: String(state.rate),
-    cities: Array.isArray(state.cities) ? state.cities : [],
-  }));
+      key: mergedState.key || toStateKey(mergedState.name),
+      id: mergedState.id || toStateKey(mergedState.name),
+      rate: String(mergedState.rate),
+      cities: Array.isArray(mergedState.cities) ? mergedState.cities : [],
+    };
+  });
 
   return {
     ...settings,

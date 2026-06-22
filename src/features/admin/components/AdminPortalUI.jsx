@@ -1,5 +1,13 @@
-import { Alert, Box, Button, CircularProgress, Stack, Typography } from "@mui/material";
+import {
+  Alert,
+  Box,
+  Button,
+  CircularProgress,
+  Stack,
+  Typography,
+} from "@mui/material";
 import InboxOutlinedIcon from "@mui/icons-material/InboxOutlined";
+import { forwardRef } from "react";
 
 export const adminUi = {
   colors: {
@@ -43,30 +51,34 @@ export function AdminPageHeader({ title, subtitle, subtitleSx, actions }) {
           {title}
         </Typography>
         {subtitle ? (
-       <Typography
-  sx={{
-    mt: 0.8,
+          <Typography
+            sx={{
+              mt: 0.8,
 
-    color: "#647387",
-    fontSize: "0.92rem",
-    fontWeight: 500,
+              color: "#647387",
+              fontSize: "0.92rem",
+              fontWeight: 500,
 
-    whiteSpace: "nowrap",
+              whiteSpace: "nowrap",
 
-    overflow: "hidden",
+              overflow: "hidden",
 
-    textOverflow: "ellipsis",
+              textOverflow: "ellipsis",
 
-    width: "100%",
-    maxWidth: "100%",
-  }}
->
-  {subtitle}
-</Typography>
+              width: "100%",
+              maxWidth: "100%",
+            }}
+          >
+            {subtitle}
+          </Typography>
         ) : null}
       </Box>
 
-      {actions ? <Stack direction="row" spacing={1}>{actions}</Stack> : null}
+      {actions ? (
+        <Stack direction="row" spacing={1}>
+          {actions}
+        </Stack>
+      ) : null}
     </Stack>
   );
 }
@@ -116,21 +128,32 @@ export function AdminLoadingState({ minHeight = 420 }) {
   );
 }
 
-export function AdminErrorState({ children }) {
+export const AdminErrorState = forwardRef(function AdminErrorState(
+  { children },
+  ref,
+) {
   return (
-    <Alert severity="error" sx={{ mb: 2, borderRadius: "0.9rem" }}>
+    <Alert ref={ref} severity="error" sx={{ mb: 2, borderRadius: "0.9rem" }}>
       {children}
     </Alert>
   );
-}
+});
 
 export function AdminEmptyState({ title, subtitle }) {
   return (
     <Box sx={{ py: 4.5, px: 2, textAlign: "center" }}>
       <InboxOutlinedIcon sx={{ color: "#CAD3DF", fontSize: "2.1rem", mb: 1 }} />
-      <Typography sx={{ color: adminUi.colors.text, fontSize: "1rem", fontWeight: 850 }}>{title}</Typography>
+      <Typography
+        sx={{ color: adminUi.colors.text, fontSize: "1rem", fontWeight: 850 }}
+      >
+        {title}
+      </Typography>
       {subtitle ? (
-        <Typography sx={{ mt: 0.45, color: adminUi.colors.muted, fontSize: "0.84rem" }}>{subtitle}</Typography>
+        <Typography
+          sx={{ mt: 0.45, color: adminUi.colors.muted, fontSize: "0.84rem" }}
+        >
+          {subtitle}
+        </Typography>
       ) : null}
     </Box>
   );

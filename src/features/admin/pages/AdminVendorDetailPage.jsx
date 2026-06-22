@@ -43,6 +43,7 @@ import {
   adminUi,
 } from "@/features/admin/components/AdminPortalUI";
 import { vendorApplicationsApi } from "@/features/admin/api/vendorApplicationsApi";
+import { useSocket } from "@/shared/websocket/SocketProvider";
 
 // ─── constants ────────────────────────────────────────────────────────────────
 
@@ -254,6 +255,7 @@ function DocumentCard({ doc }) {
 export default function AdminVendorDetailPage() {
   const { vendorId } = useParams();
   const navigate = useNavigate();
+  const { refreshKey } = useSocket();
 
   const [vendor, setVendor] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -284,7 +286,7 @@ export default function AdminVendorDetailPage() {
 
   useEffect(() => {
     load();
-  }, [vendorId]);
+  }, [vendorId, refreshKey]);
 
   async function handleApprove() {
     setIsActioning(true);

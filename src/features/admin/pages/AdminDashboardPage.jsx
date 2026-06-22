@@ -18,6 +18,7 @@ import RequestQuoteOutlinedIcon from "@mui/icons-material/RequestQuoteOutlined";
 import StorefrontOutlinedIcon from "@mui/icons-material/StorefrontOutlined";
 import { useEffect, useMemo, useState } from "react";
 import { NavLink } from "react-router-dom";
+import { useSocket } from "@/shared/websocket/SocketProvider";
 import {
   AdminEmptyState,
   AdminErrorState,
@@ -328,6 +329,7 @@ export function makeAdminPlaceholder(title) {
 }
 
 export default function AdminDashboardPage() {
+  const { refreshKey } = useSocket();
   const [state, setState] = useState({
     loading: true,
     error: "",
@@ -359,7 +361,7 @@ export default function AdminDashboardPage() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [refreshKey]);
 
   const metrics = useMemo(() => {
     const data = state.data || {};

@@ -19,11 +19,13 @@ import styles from "@/app/layouts/PublicLayout.module.css";
 import { AppFooter } from "@/shared/components/AppFooter";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { PageTransition } from "@/shared/ui/transition/PageTransition";
+import { useSocket } from "@/shared/websocket/SocketProvider";
 
 export function PublicLayout() {
   const { pathname } = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { user } = useAuth();
+  const { refreshKey } = useSocket();
 
   // Derive dashboard path based on role
   const dashboardPath =
@@ -331,7 +333,7 @@ export function PublicLayout() {
         </Stack>
       </Drawer>
 
-      <PageTransition>
+      <PageTransition key={`${pathname}:${refreshKey}`}>
         <Outlet />
       </PageTransition>
       <AppFooter />

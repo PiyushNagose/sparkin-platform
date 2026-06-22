@@ -14,6 +14,7 @@ import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
 import RadioButtonUncheckedRoundedIcon from "@mui/icons-material/RadioButtonUncheckedRounded";
 import { Link as RouterLink, useNavigate, useParams } from "react-router-dom";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useScrollToError } from "@/shared/hooks/useScrollToError";
 import { leadsApi, quotesApi } from "@/features/public/api/leadsApi";
 
 const timelineOptions = [
@@ -138,6 +139,7 @@ export default function VendorQuoteProposalPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const errorRef = useScrollToError(error);
   const [success, setSuccess] = useState("");
   const [existingQuote, setExistingQuote] = useState(null);
   const [attachedFile, setAttachedFile] = useState(null);
@@ -407,7 +409,11 @@ export default function VendorQuoteProposalPage() {
       </Stack>
 
       {error ? (
-        <Alert severity="error" sx={{ borderRadius: "0.9rem", mb: 2 }}>
+        <Alert
+          ref={errorRef}
+          severity="error"
+          sx={{ borderRadius: "0.9rem", mb: 2 }}
+        >
           {error}
         </Alert>
       ) : null}

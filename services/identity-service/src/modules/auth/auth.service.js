@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import bcrypt from "bcryptjs";
 import { AppError } from "../../common/errors/app-error.js";
+import { env } from "../../config/env.js";
 import { authRepository } from "./auth.repository.js";
 import { tokenService } from "./token.service.js";
 
@@ -28,6 +29,18 @@ function buildSession(user) {
     accessToken: tokenService.createAccessToken(payload),
     refreshToken: tokenService.createRefreshToken(payload),
   };
+}
+
+function buildPasswordResetPath(role) {
+  if (role === "vendor") {
+    return "/vendor/reset-password";
+  }
+
+  if (role === "admin") {
+    return "/admin/reset-password";
+  }
+
+  return "/auth/reset-password";
 }
 
 export const authService = {
@@ -119,6 +132,67 @@ export const authService = {
   async logout(refreshToken) {
     await authRepository.deleteRefreshToken(refreshToken);
     return { success: true };
+  },
+
+  async requestPasswordReset(input) {
+    const user = await authRepository.findUserByEmail(input.email.toLowerCase());
+
+    if (!user || (input.role && user.role !== input.role)) {
+      return {
+        success: true,
+        message:
+          "If an account matches that email, password reset instructions have been prepared.",
+      };
+    }
+
+    const token = crypto.randomBytes(32).toString("hex");
+    const expiresAt = new Date(
+      Date.now() + env.passwordResetTtlMinutes * 60 * 1000,
+    );
+
+    await authRepository.storePasswordResetToken(user.id, token, expiresAt);
+
+    const response = {
+      success: true,
+      message:
+        "If an account matches that email, password reset instructions have been prepared.",
+    };
+
+    if (env.nodeEnv !== "production") {
+      const resetUrl = new URL(buildPasswordResetPath(user.role), env.clientUrl);
+      resetUrl.searchParams.set("token", token);
+      response.resetToken = token;
+      response.resetUrl = resetUrl.toString();
+      response.expiresAt = expiresAt.toISOString();
+    }
+
+    return response;
+  },
+
+  async resetPassword(input) {
+    const user = await authRepository.findUserByPasswordResetToken(input.token);
+
+    if (!user || (input.role && user.role !== input.role)) {
+      throw new AppError(400, "Reset token is invalid or expired");
+    }
+
+    const passwordHash = await bcrypt.hash(input.password, 12);
+
+    await authRepository.replaceUser(user.id, (currentUser) => ({
+      ...currentUser,
+      passwordHash,
+      passwordResetTokenHash: null,
+      passwordResetExpiresAt: null,
+      updatedAt: new Date().toISOString(),
+    }));
+
+    await authRepository.clearPasswordResetToken(user.id);
+    await authRepository.deleteRefreshTokensForUser(user.id);
+
+    return {
+      success: true,
+      message: "Password has been reset successfully.",
+    };
   },
 
   async getCurrentUser(userId) {

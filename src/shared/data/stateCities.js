@@ -47,6 +47,36 @@ export const STATE_CITIES = {
     "Markapur",
     "Narsapur",
     "Repalle",
+    "Amalapuram",
+    "Tuni",
+    "Samalkot",
+    "Rayachoti",
+    "Pulivendula",
+    "Naidupet",
+    "Attili",
+    "Tanuku",
+    "Palakollu",
+    "Nidadavole",
+    "Kovvur",
+    "Yemmiganur",
+    "Rayadurg",
+    "Jammalamadugu",
+    "Punganur",
+    "Puttur",
+    "Venkatagiri",
+    "Gudur",
+    "Parvathipuram",
+    "Salur",
+    "Sattenapalle",
+    "Ponnur",
+    "Piduguralla",
+    "Chirala",
+    "Ichchapuram",
+    "Allagadda",
+    "Kadiri",
+    "Uravakonda",
+    "Kalyandurg",
+    "Nagari",
   ],
   karnataka: [
     "Bangalore",
@@ -162,6 +192,81 @@ export const STATE_CITIES = {
   ],
 };
 
+export const STATE_CITY_PINCODES = {
+  andhra_pradesh: {
+    Visakhapatnam: "530001",
+    Vijayawada: "520001",
+    Guntur: "522001",
+    Nellore: "524001",
+    Kurnool: "518001",
+    Rajamahendravaram: "533101",
+    Kakinada: "533001",
+    Tirupati: "517501",
+    Kadapa: "516001",
+    Eluru: "534001",
+    Ongole: "523001",
+    Nandyal: "518501",
+    Vizianagaram: "535001",
+    Anantapur: "515001",
+    Proddatur: "516360",
+    Srikakulam: "532001",
+    Adoni: "518301",
+    Tenali: "522201",
+    Chittoor: "517001",
+    Hindupur: "515201",
+    Bhimavaram: "534201",
+    Machilipatnam: "521001",
+    Madanapalle: "517325",
+    Guntakal: "515801",
+    Dharmavaram: "515671",
+    Tadepalligudem: "534101",
+    Chilakaluripet: "522616",
+    Gudivada: "521301",
+    Narasaraopet: "522601",
+    Tadipatri: "515411",
+    Mangalagiri: "522503",
+    Amaravati: "522020",
+    Pithapuram: "533450",
+    Palasa: "532221",
+    Bobbili: "535558",
+    Kavali: "524201",
+    Bapatla: "522101",
+    Markapur: "523316",
+    Narsapur: "534275",
+    Repalle: "522265",
+    Amalapuram: "533201",
+    Tuni: "533401",
+    Samalkot: "533440",
+    Rayachoti: "516269",
+    Pulivendula: "516390",
+    Naidupet: "524126",
+    Attili: "534134",
+    Tanuku: "534211",
+    Palakollu: "534260",
+    Nidadavole: "534301",
+    Kovvur: "534350",
+    Yemmiganur: "518360",
+    Rayadurg: "515865",
+    Jammalamadugu: "516434",
+    Punganur: "517247",
+    Puttur: "517583",
+    Venkatagiri: "524132",
+    Gudur: "524101",
+    Parvathipuram: "535501",
+    Salur: "535591",
+    Sattenapalle: "522403",
+    Ponnur: "522124",
+    Piduguralla: "522413",
+    Chirala: "523155",
+    Ichchapuram: "532312",
+    Allagadda: "518543",
+    Kadiri: "515591",
+    Uravakonda: "515812",
+    Kalyandurg: "515761",
+    Nagari: "517590",
+  },
+};
+
 /**
  * Returns the static fallback city list for a given state key.
  * Prefer using publicPlatformSettingsApi.getCitiesForState() for live data.
@@ -169,4 +274,27 @@ export const STATE_CITIES = {
 export function getCitiesForState(stateKey) {
   if (!stateKey) return [];
   return STATE_CITIES[stateKey] ?? [];
+}
+
+export function getDefaultPincodeForCity(stateKey, cityName) {
+  if (!stateKey || !cityName) return "";
+  return STATE_CITY_PINCODES[stateKey]?.[cityName] ?? "";
+}
+
+export function getCityOptionsForState(stateKey, cityNames = []) {
+  if (!stateKey) return [];
+
+  return cityNames.map((city) =>
+    typeof city === "string"
+      ? {
+          name: city,
+          pincode: getDefaultPincodeForCity(stateKey, city),
+        }
+      : {
+          name: city?.name || "",
+          pincode:
+            city?.pincode ||
+            getDefaultPincodeForCity(stateKey, city?.name || ""),
+        },
+  );
 }

@@ -39,6 +39,7 @@ import {
   adminUi,
 } from "@/features/admin/components/AdminPortalUI";
 import { broadcastsApi } from "@/features/admin/api/broadcastsApi";
+import { scrollToFieldError } from "@/shared/lib/forms/scrollToFieldError";
 
 // ─── constants ────────────────────────────────────────────────────────────────
 
@@ -138,6 +139,15 @@ function validateForm(form) {
   return errors;
 }
 
+const BROADCAST_ERROR_FIELD_MAP = {
+  "Title must be at least 3 characters": "title",
+  "Description must be at least 10 characters": "description",
+  "Select at least one audience group": "audience",
+  "Select at least one delivery channel": "channels",
+  "Select a scheduled date and time": "scheduledAt",
+  "Scheduled time must be in the future": "scheduledAt",
+};
+
 // ─── sub-components ──────────────────────────────────────────────────────────
 
 function SectionLabel({ children }) {
@@ -198,6 +208,7 @@ function CreateBroadcastTab({ onSent }) {
     const errors = validateForm(form);
     if (errors.length) {
       setFormError(errors[0]);
+      scrollToFieldError(BROADCAST_ERROR_FIELD_MAP[errors[0]]);
       return;
     }
     setFormError("");
@@ -278,7 +289,7 @@ function CreateBroadcastTab({ onSent }) {
         {/* Left column */}
         <Stack spacing={2.5}>
           {/* Audience Selection */}
-          <AdminPanel sx={{ p: 2.8 }}>
+          <AdminPanel sx={{ p: 2.8 }} data-field="audience">
             <Stack
               direction="row"
               spacing={1.2}
@@ -472,61 +483,65 @@ function CreateBroadcastTab({ onSent }) {
               ))}
             </Stack>
 
-            <Typography
-              sx={{
-                color: adminUi.colors.text,
-                fontSize: "0.82rem",
-                fontWeight: 800,
-                mb: 0.6,
-              }}
-            >
-              Broadcast Title *
-            </Typography>
-            <TextField
-              fullWidth
-              size="small"
-              placeholder="e.g., System Maintenance Update"
-              value={form.title}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, title: e.target.value }))
-              }
-              sx={{
-                mb: 2,
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: "0.75rem",
-                  bgcolor: "#F7F9FC",
-                  fontSize: "0.88rem",
-                },
-              }}
-            />
+            <Box data-field="title">
+              <Typography
+                sx={{
+                  color: adminUi.colors.text,
+                  fontSize: "0.82rem",
+                  fontWeight: 800,
+                  mb: 0.6,
+                }}
+              >
+                Broadcast Title *
+              </Typography>
+              <TextField
+                fullWidth
+                size="small"
+                placeholder="e.g., System Maintenance Update"
+                value={form.title}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, title: e.target.value }))
+                }
+                sx={{
+                  mb: 2,
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: "0.75rem",
+                    bgcolor: "#F7F9FC",
+                    fontSize: "0.88rem",
+                  },
+                }}
+              />
+            </Box>
 
-            <Typography
-              sx={{
-                color: adminUi.colors.text,
-                fontSize: "0.82rem",
-                fontWeight: 800,
-                mb: 0.6,
-              }}
-            >
-              Message Description *
-            </Typography>
-            <TextField
-              fullWidth
-              multiline
-              minRows={4}
-              placeholder="Draft your detailed message here..."
-              value={form.description}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, description: e.target.value }))
-              }
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: "0.75rem",
-                  bgcolor: "#F7F9FC",
-                  fontSize: "0.88rem",
-                },
-              }}
-            />
+            <Box data-field="description">
+              <Typography
+                sx={{
+                  color: adminUi.colors.text,
+                  fontSize: "0.82rem",
+                  fontWeight: 800,
+                  mb: 0.6,
+                }}
+              >
+                Message Description *
+              </Typography>
+              <TextField
+                fullWidth
+                multiline
+                minRows={4}
+                placeholder="Draft your detailed message here..."
+                value={form.description}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, description: e.target.value }))
+                }
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: "0.75rem",
+                    bgcolor: "#F7F9FC",
+                    fontSize: "0.88rem",
+                  },
+                }}
+              />
+            </Box>
             <Typography
               sx={{
                 mt: 0.5,
@@ -551,7 +566,7 @@ function CreateBroadcastTab({ onSent }) {
 
         {/* Right column — Delivery & Schedule */}
         <Stack spacing={2.5}>
-          <AdminPanel sx={{ p: 2.8 }}>
+          <AdminPanel sx={{ p: 2.8 }} data-field="channels">
             <Stack
               direction="row"
               spacing={1.2}
@@ -710,6 +725,7 @@ function CreateBroadcastTab({ onSent }) {
 
                 {form.timing === "scheduled" && (
                   <TextField
+                    data-field="scheduledAt"
                     fullWidth
                     size="small"
                     type="datetime-local"

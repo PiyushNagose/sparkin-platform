@@ -3,7 +3,6 @@ import {
   useContext,
   useEffect,
   useMemo,
-  useRef,
   useState,
 } from "react";
 import { io } from "socket.io-client";
@@ -71,13 +70,11 @@ const SocketContext = createContext({
 export function SocketProvider({ children }) {
   const [connected, setConnected] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
-  const refreshTimerRef = useRef(null);
-  const pendingRefreshPayloadsRef = useRef([]);
-  const { isAuthenticated, isBootstrapping } = useAuth();
+  const { isBootstrapping } = useAuth();
   const token = authStorage.getAccessToken();
 
   useEffect(() => {
-    if (isBootstrapping || !isAuthenticated || !token) {
+    if (isBootstrapping) {
       setConnected(false);
       return undefined;
     }
@@ -86,34 +83,19 @@ export function SocketProvider({ children }) {
 
     const socket = io(socketUrl, {
       path: "/socket.io",
-      transports: ["websocket"],
+      transports: ["websocket", "polling"],
       auth: token ? { token } : undefined,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1500,
-      reconnectionDelayMax: 10000,
-      timeout: 8000,
+      reconnectionAttempts: 10,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 8000,
+      timeout: 10000,
     });
 
     socket.on("connect", () => setConnected(true));
     socket.on("disconnect", () => setConnected(false));
     socket.on("refresh:page", (payload) => {
-      pendingRefreshPayloadsRef.current.push(payload);
-
-      if (refreshTimerRef.current) {
-        return;
-      }
-
-      refreshTimerRef.current = window.setTimeout(() => {
-        const payloads = pendingRefreshPayloadsRef.current;
-        pendingRefreshPayloadsRef.current = [];
-
-        for (const pendingPayload of payloads) {
-          invalidateFromRefreshEvent(pendingPayload);
-        }
-
-        refreshTimerRef.current = null;
-        setRefreshKey((current) => current + 1);
-      }, 750);
+      invalidateFromRefreshEvent(payload);
+      setRefreshKey((current) => current + 1);
     });
     socket.on("connect_error", () => {
       setConnected(false);
@@ -125,15 +107,8 @@ export function SocketProvider({ children }) {
       socket.off("refresh:page");
       socket.off("connect_error");
       socket.disconnect();
-
-      if (refreshTimerRef.current) {
-        window.clearTimeout(refreshTimerRef.current);
-        refreshTimerRef.current = null;
-      }
-
-      pendingRefreshPayloadsRef.current = [];
     };
-  }, [isAuthenticated, isBootstrapping, token]);
+  }, [isBootstrapping, token]);
 
   const value = useMemo(
     () => ({ connected, refreshKey }),

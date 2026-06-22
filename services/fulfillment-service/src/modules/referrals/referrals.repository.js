@@ -53,7 +53,10 @@ export const referralsRepository = {
   },
 
   async findByFriendEmail(customerId, email) {
-    const referral = await ReferralModel.findOne({ referrerId: customerId, "friend.email": email.toLowerCase() }).lean({ virtuals: true });
+    const referral = await ReferralModel.findOne({
+      referrerId: customerId,
+      "friend.email": email.toLowerCase(),
+    }).lean({ virtuals: true });
     return normalizeReferral(referral);
   },
 
@@ -72,9 +75,28 @@ export const referralsRepository = {
     return normalizeReferral(referral);
   },
 
-  async upsertTrackedReferral({ codeRecord, user, channel = "direct_invite", status = "signed_up", leadId = null, rewardAmount }) {
+  async upsertTrackedReferral({
+    codeRecord,
+    user,
+    channel = "direct_invite",
+    status = "signed_up",
+    leadId = null,
+    rewardAmount,
+  }) {
     const now = new Date();
     const email = user.email?.toLowerCase();
+
+    // First try to update an existing record only when the status is being
+    // upgraded (signed_up → installed). If nothing matches, fall through to upsert.
+    const statusTransitionFilter = {
+      referralCode: codeRecord.referralCode,
+      "friend.email": email,
+      // Only upgrade if the current status is "lower" in the funnel
+      ...(status === "installed"
+        ? { status: { $in: ["invited", "signed_up"] } }
+        : {}),
+    };
+
     const update = {
       $set: {
         referredUserId: user.userId,
@@ -99,18 +121,20 @@ export const referralsRepository = {
       },
       $push: {
         activity: {
-          title: status === "installed" ? "Referred customer completed booking" : "Referred customer signed up",
-          note: leadId ? `Booking linked to lead ${leadId}.` : `Referral code ${codeRecord.referralCode} was used.`,
+          title:
+            status === "installed"
+              ? "Referred customer completed booking"
+              : "Referred customer signed up",
+          note: leadId
+            ? `Booking linked to lead ${leadId}.`
+            : `Referral code ${codeRecord.referralCode} was used.`,
           createdAt: now,
         },
       },
     };
 
     const referral = await ReferralModel.findOneAndUpdate(
-      {
-        referralCode: codeRecord.referralCode,
-        "friend.email": email,
-      },
+      statusTransitionFilter,
       update,
       { upsert: true, new: true },
     ).lean({ virtuals: true });

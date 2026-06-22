@@ -17,6 +17,7 @@ import Groups2RoundedIcon from "@mui/icons-material/Groups2Rounded";
 import { Link as RouterLink, useLocation } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import { leadsApi, quotesApi } from "@/features/public/api/leadsApi";
+import { useSocket } from "@/shared/websocket/SocketProvider";
 import {
   VendorEmptyState,
   VendorErrorState,
@@ -226,6 +227,7 @@ function toLeadRow(lead, quote) {
 
 export default function VendorLeadsPage() {
   const location = useLocation();
+  const { refreshKey } = useSocket();
   const [leads, setLeads] = useState([]);
   const [quotes, setQuotes] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -270,7 +272,7 @@ export default function VendorLeadsPage() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [refreshKey]);
 
   useEffect(() => {
     const incomingSearch = location.state?.portalSearch || "";
@@ -867,14 +869,14 @@ export default function VendorLeadsPage() {
                 minWidth: 32,
                 width: 32,
                 height: 32,
-                minHeight: 'auto',
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxSizing: 'border-box',
+                minHeight: "auto",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                boxSizing: "border-box",
                 lineHeight: 1,
-                borderRadius: '50%',
-                color: '#647387',
+                borderRadius: "50%",
+                color: "#647387",
                 p: 0,
               }}
             >
@@ -901,18 +903,21 @@ export default function VendorLeadsPage() {
                       minWidth: 32,
                       width: 32,
                       height: 32,
-                      minHeight: 'auto',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      boxSizing: 'border-box',
+                      minHeight: "auto",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      boxSizing: "border-box",
                       lineHeight: 1,
-                      borderRadius: '50%',
+                      borderRadius: "50%",
                       p: 0,
-                      color: pageNumber === page ? '#FFFFFF' : '#223146',
-                      bgcolor: pageNumber === page ? '#0E56C8' : 'transparent',
-                      border: pageNumber === page ? 'none' : '1px solid rgba(225,232,241,0.96)',
-                      fontSize: '0.72rem',
+                      color: pageNumber === page ? "#FFFFFF" : "#223146",
+                      bgcolor: pageNumber === page ? "#0E56C8" : "transparent",
+                      border:
+                        pageNumber === page
+                          ? "none"
+                          : "1px solid rgba(225,232,241,0.96)",
+                      fontSize: "0.72rem",
                       fontWeight: 700,
                     }}
                   >
@@ -930,14 +935,14 @@ export default function VendorLeadsPage() {
                 minWidth: 32,
                 width: 32,
                 height: 32,
-                minHeight: 'auto',
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxSizing: 'border-box',
+                minHeight: "auto",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                boxSizing: "border-box",
                 lineHeight: 1,
-                borderRadius: '50%',
-                color: '#647387',
+                borderRadius: "50%",
+                color: "#647387",
                 p: 0,
               }}
             >

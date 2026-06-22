@@ -1,5 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
-import { Alert, Avatar, Box, Button, CircularProgress, Stack, Typography } from "@mui/material";
+import {
+  Alert,
+  Avatar,
+  Box,
+  Button,
+  CircularProgress,
+  Stack,
+  Typography,
+} from "@mui/material";
 import { Link as RouterLink } from "react-router-dom";
 import Groups2RoundedIcon from "@mui/icons-material/Groups2Rounded";
 import RequestQuoteRoundedIcon from "@mui/icons-material/RequestQuoteRounded";
@@ -15,6 +23,7 @@ import vendorHeatmapPlaceholder from "@/shared/assets/images/vendor/dashboard/ve
 import { leadsApi, quotesApi } from "@/features/public/api/leadsApi";
 import { projectsApi } from "@/features/public/api/projectsApi";
 import { paymentsApi } from "@/features/public/api/paymentsApi";
+import { useSocket } from "@/shared/websocket/SocketProvider";
 import {
   VendorEmptyState,
   VendorErrorState,
@@ -35,17 +44,20 @@ function formatPrice(value) {
 
 function formatCompactPrice(value) {
   const amount = Number(value) || 0;
-  if (amount >= 100000) return `₹${(amount / 100000).toFixed(amount >= 1000000 ? 1 : 0)}L`;
+  if (amount >= 100000)
+    return `₹${(amount / 100000).toFixed(amount >= 1000000 ? 1 : 0)}L`;
   return formatPrice(amount);
 }
 
 function getInitials(name = "") {
-  return name
-    .split(" ")
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join("") || "SP";
+  return (
+    name
+      .split(" ")
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase())
+      .join("") || "SP"
+  );
 }
 
 function downloadFile(fileName, content, type = "text/csv;charset=utf-8") {
@@ -71,11 +83,16 @@ function toCsv(rows) {
 }
 
 function formatLocation(address) {
-  return [address?.city, address?.state].filter(Boolean).join(", ") || "Location pending";
+  return (
+    [address?.city, address?.state].filter(Boolean).join(", ") ||
+    "Location pending"
+  );
 }
 
 function getLeadSystem(lead) {
-  return lead.property?.sanctionedLoadKw ? `${lead.property.sanctionedLoadKw} kW` : "Assessment";
+  return lead.property?.sanctionedLoadKw
+    ? `${lead.property.sanctionedLoadKw} kW`
+    : "Assessment";
 }
 
 function getLeadBudget(lead) {
@@ -91,7 +108,13 @@ function getStatusMeta(status) {
     quote_selected: { label: "Closed", tone: "#596579", bg: "#EEF2F6" },
   };
 
-  return map[status] || { label: status?.replaceAll("_", " ") || "Lead", tone: "#596579", bg: "#EEF2F6" };
+  return (
+    map[status] || {
+      label: status?.replaceAll("_", " ") || "Lead",
+      tone: "#596579",
+      bg: "#EEF2F6",
+    }
+  );
 }
 
 function timeAgo(value) {
@@ -141,6 +164,7 @@ function buildActivity({ leads, quotes, projects, payments }) {
 }
 
 export default function VendorDashboardPage() {
+  const { refreshKey } = useSocket();
   const [leads, setLeads] = useState([]);
   const [quotes, setQuotes] = useState([]);
   const [projects, setProjects] = useState([]);
@@ -167,7 +191,9 @@ export default function VendorDashboardPage() {
         if (!active) return;
 
         setLeads(leadRows.status === "fulfilled" ? leadRows.value || [] : []);
-        setQuotes(quoteRows.status === "fulfilled" ? quoteRows.value || [] : []);
+        setQuotes(
+          quoteRows.status === "fulfilled" ? quoteRows.value || [] : [],
+        );
         setProjects(
           projectRows.status === "fulfilled" ? projectRows.value || [] : [],
         );
@@ -195,7 +221,7 @@ export default function VendorDashboardPage() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [refreshKey]);
 
   const paidRevenue = payments
     .filter((payment) => payment.status === "paid")
@@ -204,10 +230,22 @@ export default function VendorDashboardPage() {
     .filter((payment) => payment.status === "pending")
     .reduce((sum, payment) => sum + (Number(payment.amount) || 0), 0);
   const acceptedQuotes = quotes.filter((quote) => quote.status === "accepted");
-  const openLeads = leads.filter((lead) => ["submitted", "reviewing", "vendors_assigned", "open_for_quotes"].includes(lead.status));
-  const activeProjects = projects.filter((project) => !["completed", "cancelled"].includes(project.status));
-  const totalCapacity = projects.reduce((sum, project) => sum + (Number(project.system?.sizeKw) || 0), 0);
-  const activity = useMemo(() => buildActivity({ leads, quotes, projects, payments }), [leads, quotes, projects, payments]);
+  const openLeads = leads.filter((lead) =>
+    ["submitted", "reviewing", "vendors_assigned", "open_for_quotes"].includes(
+      lead.status,
+    ),
+  );
+  const activeProjects = projects.filter(
+    (project) => !["completed", "cancelled"].includes(project.status),
+  );
+  const totalCapacity = projects.reduce(
+    (sum, project) => sum + (Number(project.system?.sizeKw) || 0),
+    0,
+  );
+  const activity = useMemo(
+    () => buildActivity({ leads, quotes, projects, payments }),
+    [leads, quotes, projects, payments],
+  );
 
   const kpiCards = [
     {
@@ -281,7 +319,17 @@ export default function VendorDashboardPage() {
 
   function downloadLeads() {
     const rows = [
-      ["Lead ID", "Customer", "Phone", "Email", "Location", "System Size", "Budget", "Status", "Submitted At"],
+      [
+        "Lead ID",
+        "Customer",
+        "Phone",
+        "Email",
+        "Location",
+        "System Size",
+        "Budget",
+        "Status",
+        "Submitted At",
+      ],
       ...leads.map((lead) => [
         lead.id,
         lead.contact?.fullName,
@@ -295,7 +343,10 @@ export default function VendorDashboardPage() {
       ]),
     ];
 
-    downloadFile(`sparkin-vendor-leads-${new Date().toISOString().slice(0, 10)}.csv`, toCsv(rows));
+    downloadFile(
+      `sparkin-vendor-leads-${new Date().toISOString().slice(0, 10)}.csv`,
+      toCsv(rows),
+    );
   }
 
   return (
@@ -306,53 +357,94 @@ export default function VendorDashboardPage() {
         sx={{ mb: { xs: 2.8, md: 3.2 } }}
         actions={
           <>
-          <VendorSecondaryButton
-            onClick={exportReport}
-            startIcon={<FileDownloadOutlinedIcon />}
-            disabled={isLoading}
-            sx={{ minHeight: 36, px: 1.8, borderRadius: "999px" }}
-          >
-            Export Report
-          </VendorSecondaryButton>
-          <VendorPrimaryButton
-            onClick={downloadLeads}
-            startIcon={<FileDownloadOutlinedIcon />}
-            disabled={isLoading}
-            sx={{ minHeight: 36, px: 1.8, borderRadius: "999px", boxShadow: "none" }}
-          >
-            Download Leads
-          </VendorPrimaryButton>
+            <VendorSecondaryButton
+              onClick={exportReport}
+              startIcon={<FileDownloadOutlinedIcon />}
+              disabled={isLoading}
+              sx={{ minHeight: 36, px: 1.8, borderRadius: "999px" }}
+            >
+              Export Report
+            </VendorSecondaryButton>
+            <VendorPrimaryButton
+              onClick={downloadLeads}
+              startIcon={<FileDownloadOutlinedIcon />}
+              disabled={isLoading}
+              sx={{
+                minHeight: 36,
+                px: 1.8,
+                borderRadius: "999px",
+                boxShadow: "none",
+              }}
+            >
+              Download Leads
+            </VendorPrimaryButton>
           </>
         }
       />
 
       {error ? <VendorErrorState>{error}</VendorErrorState> : null}
 
-      {isLoading ? (
-        <VendorLoadingState />
-      ) : null}
+      {isLoading ? <VendorLoadingState /> : null}
 
       {!isLoading ? (
         <>
-          <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "repeat(5, 1fr)" }, gap: 1.6, mb: { xs: 2.4, md: 2.8 } }}>
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: { xs: "1fr", md: "repeat(5, 1fr)" },
+              gap: 1.6,
+              mb: { xs: 2.4, md: 2.8 },
+            }}
+          >
             {kpiCards.map((card) => (
               <KpiCard key={card.label} card={card} />
             ))}
           </Box>
 
-          <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", xl: "1.55fr 0.82fr" }, gap: 1.8, mb: { xs: 2.4, md: 2.8 } }}>
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: { xs: "1fr", xl: "1.55fr 0.82fr" },
+              gap: 1.8,
+              mb: { xs: 2.4, md: 2.8 },
+            }}
+          >
             <ActiveLeadsPanel leads={openLeads.slice(0, 5)} />
             <ActivityPanel activity={activity} />
           </Box>
 
-          <Box sx={{ p: 2.2, borderRadius: "1.45rem", bgcolor: "#FFFFFF", border: "1px solid rgba(225,232,241,0.96)", boxShadow: "0 14px 28px rgba(16,29,51,0.04)", mb: { xs: 2.4, md: 2.8 } }}>
-            <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1.6 }}>
-              <Typography sx={{ color: "#18253A", fontSize: "1.08rem", fontWeight: 800 }}>
+          <Box
+            sx={{
+              p: 2.2,
+              borderRadius: "1.45rem",
+              bgcolor: "#FFFFFF",
+              border: "1px solid rgba(225,232,241,0.96)",
+              boxShadow: "0 14px 28px rgba(16,29,51,0.04)",
+              mb: { xs: 2.4, md: 2.8 },
+            }}
+          >
+            <Stack
+              direction="row"
+              justifyContent="space-between"
+              alignItems="center"
+              sx={{ mb: 1.6 }}
+            >
+              <Typography
+                sx={{ color: "#18253A", fontSize: "1.08rem", fontWeight: 800 }}
+              >
                 Project Feedback
               </Typography>
               <Stack direction="row" spacing={0.35} alignItems="center">
-                <StarRoundedIcon sx={{ color: "#FFB648", fontSize: "0.98rem" }} />
-                <Typography sx={{ color: "#F39A20", fontSize: "0.76rem", fontWeight: 800 }}>
+                <StarRoundedIcon
+                  sx={{ color: "#FFB648", fontSize: "0.98rem" }}
+                />
+                <Typography
+                  sx={{
+                    color: "#F39A20",
+                    fontSize: "0.76rem",
+                    fontWeight: 800,
+                  }}
+                >
                   {projects.length ? "4.8" : "-"}
                 </Typography>
                 <Typography sx={{ color: "#8B97A8", fontSize: "0.71rem" }}>
@@ -362,27 +454,83 @@ export default function VendorDashboardPage() {
             </Stack>
 
             {projects.length ? (
-              <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" }, gap: 1.4 }}>
+              <Box
+                sx={{
+                  display: "grid",
+                  gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
+                  gap: 1.4,
+                }}
+              >
                 {projects.slice(0, 2).map((project) => (
-                  <Box key={project.id} sx={{ p: 1.6, minHeight: 126, borderRadius: "1.05rem", bgcolor: "#FBFCFE", border: "1px solid rgba(231,236,244,0.96)" }}>
-                    <Stack direction="row" justifyContent="space-between" alignItems="center">
+                  <Box
+                    key={project.id}
+                    sx={{
+                      p: 1.6,
+                      minHeight: 126,
+                      borderRadius: "1.05rem",
+                      bgcolor: "#FBFCFE",
+                      border: "1px solid rgba(231,236,244,0.96)",
+                    }}
+                  >
+                    <Stack
+                      direction="row"
+                      justifyContent="space-between"
+                      alignItems="center"
+                    >
                       <Box sx={{ display: "flex", gap: 0.18 }}>
                         {Array.from({ length: 5 }).map((_, index) => (
-                          <StarRoundedIcon key={index} sx={{ color: "#FFB648", fontSize: "0.82rem" }} />
+                          <StarRoundedIcon
+                            key={index}
+                            sx={{ color: "#FFB648", fontSize: "0.82rem" }}
+                          />
                         ))}
                       </Box>
-                      <Typography sx={{ color: "#A1ACBA", fontSize: "0.62rem", fontWeight: 700, textTransform: "uppercase" }}>
+                      <Typography
+                        sx={{
+                          color: "#A1ACBA",
+                          fontSize: "0.62rem",
+                          fontWeight: 700,
+                          textTransform: "uppercase",
+                        }}
+                      >
                         {project.status.replaceAll("_", " ")}
                       </Typography>
                     </Stack>
-                    <Typography sx={{ mt: 1.2, color: "#556478", fontSize: "0.8rem", lineHeight: 1.65, fontStyle: "italic" }}>
-                      "{project.customer.fullName}'s {project.system.sizeKw}kW installation is currently in your project pipeline."
+                    <Typography
+                      sx={{
+                        mt: 1.2,
+                        color: "#556478",
+                        fontSize: "0.8rem",
+                        lineHeight: 1.65,
+                        fontStyle: "italic",
+                      }}
+                    >
+                      "{project.customer.fullName}'s {project.system.sizeKw}kW
+                      installation is currently in your project pipeline."
                     </Typography>
-                    <Stack direction="row" spacing={0.8} alignItems="center" sx={{ mt: 1.6 }}>
-                      <Avatar sx={{ width: 22, height: 22, bgcolor: "#E4EAF4", fontSize: "0.62rem" }}>
+                    <Stack
+                      direction="row"
+                      spacing={0.8}
+                      alignItems="center"
+                      sx={{ mt: 1.6 }}
+                    >
+                      <Avatar
+                        sx={{
+                          width: 22,
+                          height: 22,
+                          bgcolor: "#E4EAF4",
+                          fontSize: "0.62rem",
+                        }}
+                      >
                         {getInitials(project.customer.fullName)}
                       </Avatar>
-                      <Typography sx={{ color: "#223146", fontSize: "0.75rem", fontWeight: 700 }}>
+                      <Typography
+                        sx={{
+                          color: "#223146",
+                          fontSize: "0.75rem",
+                          fontWeight: 700,
+                        }}
+                      >
                         {project.customer.fullName}
                       </Typography>
                     </Stack>
@@ -398,41 +546,140 @@ export default function VendorDashboardPage() {
             )}
           </Box>
 
-          <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", xl: "1.55fr 0.82fr" }, gap: 1.8 }}>
-            <Box sx={{ p: 2.2, borderRadius: "1.45rem", bgcolor: "#FFFFFF", border: "1px solid rgba(225,232,241,0.96)", boxShadow: "0 14px 28px rgba(16,29,51,0.04)" }}>
-              <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1.5 }}>
-                <Typography sx={{ color: "#18253A", fontSize: "1.08rem", fontWeight: 800 }}>
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: { xs: "1fr", xl: "1.55fr 0.82fr" },
+              gap: 1.8,
+            }}
+          >
+            <Box
+              sx={{
+                p: 2.2,
+                borderRadius: "1.45rem",
+                bgcolor: "#FFFFFF",
+                border: "1px solid rgba(225,232,241,0.96)",
+                boxShadow: "0 14px 28px rgba(16,29,51,0.04)",
+              }}
+            >
+              <Stack
+                direction="row"
+                justifyContent="space-between"
+                alignItems="center"
+                sx={{ mb: 1.5 }}
+              >
+                <Typography
+                  sx={{
+                    color: "#18253A",
+                    fontSize: "1.08rem",
+                    fontWeight: 800,
+                  }}
+                >
                   Installation Heatmap
                 </Typography>
                 <Stack direction="row" spacing={0.6}>
-                  {[...new Set(projects.map((project) => project.installationAddress?.state).filter(Boolean))]
+                  {[
+                    ...new Set(
+                      projects
+                        .map((project) => project.installationAddress?.state)
+                        .filter(Boolean),
+                    ),
+                  ]
                     .slice(0, 2)
                     .map((chip, index) => (
-                      <Box key={chip} sx={{ px: 0.8, py: 0.3, borderRadius: "999px", bgcolor: index === 0 ? "#EAF1FF" : "#F3F5F9", color: index === 0 ? "#0E56C8" : "#7D899A", fontSize: "0.58rem", fontWeight: 800, letterSpacing: "0.06em", textTransform: "uppercase" }}>
+                      <Box
+                        key={chip}
+                        sx={{
+                          px: 0.8,
+                          py: 0.3,
+                          borderRadius: "999px",
+                          bgcolor: index === 0 ? "#EAF1FF" : "#F3F5F9",
+                          color: index === 0 ? "#0E56C8" : "#7D899A",
+                          fontSize: "0.58rem",
+                          fontWeight: 800,
+                          letterSpacing: "0.06em",
+                          textTransform: "uppercase",
+                        }}
+                      >
                         {chip}
                       </Box>
                     ))}
                 </Stack>
               </Stack>
 
-              <Box sx={{ height: 168, borderRadius: "1rem", overflow: "hidden", border: "1px solid rgba(220,228,238,0.96)", backgroundImage: `url(${vendorHeatmapPlaceholder})`, backgroundSize: "cover", backgroundPosition: "center" }} />
+              <Box
+                sx={{
+                  height: 168,
+                  borderRadius: "1rem",
+                  overflow: "hidden",
+                  border: "1px solid rgba(220,228,238,0.96)",
+                  backgroundImage: `url(${vendorHeatmapPlaceholder})`,
+                  backgroundSize: "cover",
+                  backgroundPosition: "center",
+                }}
+              />
             </Box>
 
-            <Box sx={{ p: 2.35, borderRadius: "1.45rem", bgcolor: "#0E56C8", color: "#FFFFFF", boxShadow: "0 18px 34px rgba(14,86,200,0.18)", display: "flex", flexDirection: "column", justifyContent: "space-between", minHeight: 228 }}>
-              <Box sx={{ width: 32, height: 32, borderRadius: "0.85rem", bgcolor: "rgba(255,255,255,0.12)", display: "grid", placeItems: "center" }}>
+            <Box
+              sx={{
+                p: 2.35,
+                borderRadius: "1.45rem",
+                bgcolor: "#0E56C8",
+                color: "#FFFFFF",
+                boxShadow: "0 18px 34px rgba(14,86,200,0.18)",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "space-between",
+                minHeight: 228,
+              }}
+            >
+              <Box
+                sx={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: "0.85rem",
+                  bgcolor: "rgba(255,255,255,0.12)",
+                  display: "grid",
+                  placeItems: "center",
+                }}
+              >
                 <MapOutlinedIcon sx={{ fontSize: "1rem" }} />
               </Box>
               <Box sx={{ mt: 2.2 }}>
                 <Typography sx={{ fontSize: "1rem", fontWeight: 800 }}>
                   Total Power Yield
                 </Typography>
-                <Typography sx={{ mt: 0.7, maxWidth: 220, color: "rgba(255,255,255,0.78)", fontSize: "0.82rem", lineHeight: 1.62 }}>
-                  Capacity is calculated from your accepted installation projects.
+                <Typography
+                  sx={{
+                    mt: 0.7,
+                    maxWidth: 220,
+                    color: "rgba(255,255,255,0.78)",
+                    fontSize: "0.82rem",
+                    lineHeight: 1.62,
+                  }}
+                >
+                  Capacity is calculated from your accepted installation
+                  projects.
                 </Typography>
               </Box>
-              <Typography sx={{ mt: 3.2, fontSize: "3rem", fontWeight: 800, lineHeight: 1 }}>
+              <Typography
+                sx={{
+                  mt: 3.2,
+                  fontSize: "3rem",
+                  fontWeight: 800,
+                  lineHeight: 1,
+                }}
+              >
                 {Math.round(totalCapacity * 120)}
-                <Typography component="span" sx={{ ml: 0.6, fontSize: "1rem", fontWeight: 700, opacity: 0.82 }}>
+                <Typography
+                  component="span"
+                  sx={{
+                    ml: 0.6,
+                    fontSize: "1rem",
+                    fontWeight: 700,
+                    opacity: 0.82,
+                  }}
+                >
                   MWH
                 </Typography>
               </Typography>
@@ -463,7 +710,11 @@ function KpiCard({ card }) {
         },
       }}
     >
-      <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
+      <Stack
+        direction="row"
+        justifyContent="space-between"
+        alignItems="flex-start"
+      >
         <Box
           sx={{
             width: 32,
@@ -532,8 +783,17 @@ function ActiveLeadsPanel({ leads }) {
         boxShadow: "0 4px 16px rgba(16,29,51,0.06)",
       }}
     >
-      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
-        <Typography sx={{ color: "#18253A", fontSize: "1.12rem", fontWeight: 800 }}>Active Leads</Typography>
+      <Stack
+        direction="row"
+        justifyContent="space-between"
+        alignItems="center"
+        sx={{ mb: 2 }}
+      >
+        <Typography
+          sx={{ color: "#18253A", fontSize: "1.12rem", fontWeight: 800 }}
+        >
+          Active Leads
+        </Typography>
         <Button
           component={RouterLink}
           to="/vendor/leads"
@@ -560,7 +820,14 @@ function ActiveLeadsPanel({ leads }) {
           mb: 1.1,
         }}
       >
-        {["Customer Name", "Location", "System Size", "Budget", "Status", "Actions"].map((label) => (
+        {[
+          "Customer Name",
+          "Location",
+          "System Size",
+          "Budget",
+          "Status",
+          "Actions",
+        ].map((label) => (
           <Typography
             key={label}
             sx={{
@@ -586,7 +853,10 @@ function ActiveLeadsPanel({ leads }) {
                 key={lead.id}
                 sx={{
                   display: "grid",
-                  gridTemplateColumns: { xs: "1fr", md: "1.35fr 1fr 0.78fr 0.9fr 0.9fr 0.55fr" },
+                  gridTemplateColumns: {
+                    xs: "1fr",
+                    md: "1.35fr 1fr 0.78fr 0.9fr 0.9fr 0.55fr",
+                  },
                   gap: 1,
                   alignItems: "center",
                   px: 0.4,
@@ -609,7 +879,13 @@ function ActiveLeadsPanel({ leads }) {
                   >
                     {getInitials(lead.contact.fullName)}
                   </Avatar>
-                  <Typography sx={{ color: "#223146", fontSize: "0.79rem", fontWeight: 700 }}>
+                  <Typography
+                    sx={{
+                      color: "#223146",
+                      fontSize: "0.79rem",
+                      fontWeight: 700,
+                    }}
+                  >
                     {lead.contact.fullName}
                   </Typography>
                 </Stack>
@@ -707,13 +983,20 @@ function ActivityPanel({ activity }) {
         boxShadow: "0 4px 16px rgba(16,29,51,0.06)",
       }}
     >
-      <Typography sx={{ color: "#18253A", fontSize: "1.12rem", fontWeight: 800, mb: 1.8 }}>
+      <Typography
+        sx={{ color: "#18253A", fontSize: "1.12rem", fontWeight: 800, mb: 1.8 }}
+      >
         Recent Activity
       </Typography>
       {activity.length ? (
         <Stack spacing={1.4}>
           {activity.map((item) => (
-            <Stack key={`${item.title}-${item.at}`} direction="row" spacing={1} alignItems="flex-start">
+            <Stack
+              key={`${item.title}-${item.at}`}
+              direction="row"
+              spacing={1}
+              alignItems="flex-start"
+            >
               <Box
                 sx={{
                   width: 9,
@@ -726,10 +1009,18 @@ function ActivityPanel({ activity }) {
                 }}
               />
               <Box>
-                <Typography sx={{ color: "#223146", fontSize: "0.79rem", lineHeight: 1.45 }}>
+                <Typography
+                  sx={{
+                    color: "#223146",
+                    fontSize: "0.79rem",
+                    lineHeight: 1.45,
+                  }}
+                >
                   {item.title}
                 </Typography>
-                <Typography sx={{ mt: 0.25, color: "#8B97A8", fontSize: "0.71rem" }}>
+                <Typography
+                  sx={{ mt: 0.25, color: "#8B97A8", fontSize: "0.71rem" }}
+                >
                   {timeAgo(item.at)}
                 </Typography>
               </Box>
@@ -760,7 +1051,11 @@ function ActivityPanel({ activity }) {
           fontSize: "0.76rem",
           fontWeight: 700,
           transition: "all 0.15s",
-          "&:hover": { bgcolor: "#EEF4FF", borderColor: "#0E56C8", color: "#0E56C8" },
+          "&:hover": {
+            bgcolor: "#EEF4FF",
+            borderColor: "#0E56C8",
+            color: "#0E56C8",
+          },
         }}
       >
         View Projects
@@ -768,4 +1063,3 @@ function ActivityPanel({ activity }) {
     </Box>
   );
 }
-

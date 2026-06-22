@@ -30,6 +30,17 @@ export const authApi = {
     return data;
   },
 
+  async requestPasswordReset(payload) {
+    const { data } = await httpClient.post("/auth/request-password-reset", payload);
+    return data;
+  },
+
+  async resetPassword(payload) {
+    const { data } = await httpClient.post("/auth/reset-password", payload);
+    invalidateRequestCache();
+    return data;
+  },
+
   async getCurrentUser() {
     const { data } = await cachedGet(httpClient, "/auth/me", { ttlMs: 5000 });
     return data.user;

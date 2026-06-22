@@ -20,6 +20,7 @@ import {
   publicTypography,
 } from "@/features/public/pages/publicPageStyles";
 import layoutStyles from "@/app/layouts/PublicLayout.module.css";
+import { scrollToFirstFieldError } from "@/shared/lib/forms/scrollToFieldError";
 
 const contactCards = [
   {
@@ -71,6 +72,9 @@ export default function ContactPage() {
     }
     if (!form.message.trim()) nextErrors.message = "Message is required.";
     setErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) {
+      scrollToFirstFieldError(nextErrors);
+    }
     return Object.keys(nextErrors).length === 0;
   }
 
@@ -217,7 +221,7 @@ export default function ContactPage() {
               </Typography>
 
               <Stack component="form" onSubmit={handleSubmit} spacing={1.65} sx={{ mt: 2.35 }}>
-                <Box>
+                <Box data-field="fullName">
                   <Typography
                     sx={{
                       mb: 0.55,
@@ -247,6 +251,7 @@ export default function ContactPage() {
 
                 <Grid container spacing={1.45}>
                   <Grid size={{ xs: 12, sm: 6 }}>
+                    <Box data-field="email">
                     <Typography
                       sx={{
                         mb: 0.55,
@@ -272,6 +277,7 @@ export default function ContactPage() {
                         },
                       }}
                     />
+                    </Box>
                   </Grid>
                   <Grid size={{ xs: 12, sm: 6 }}>
                     <Typography
@@ -301,7 +307,7 @@ export default function ContactPage() {
                   </Grid>
                 </Grid>
 
-                <Box>
+                <Box data-field="message">
                   <Typography
                     sx={{
                       mb: 0.55,

@@ -15,6 +15,7 @@ const envSchema = z.object({
   JWT_REFRESH_SECRET: z.string().min(16),
   JWT_ACCESS_TTL: z.string().min(2).default("15m"),
   JWT_REFRESH_TTL: z.string().min(2).default("7d"),
+  PASSWORD_RESET_TTL_MINUTES: z.coerce.number().int().positive().default(60),
 });
 
 const parsed = envSchema.safeParse(process.env);
@@ -51,4 +52,5 @@ export const env = {
   jwtRefreshSecret: parsed.data.JWT_REFRESH_SECRET,
   jwtAccessTtl: parsed.data.JWT_ACCESS_TTL,
   jwtRefreshTtl: parsed.data.JWT_REFRESH_TTL,
+  passwordResetTtlMinutes: parsed.data.PASSWORD_RESET_TTL_MINUTES,
 };

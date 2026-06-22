@@ -2,7 +2,10 @@ import { useEffect } from "react";
 import { Navigate, useParams, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { referralsApi } from "@/features/customer/api/referralsApi";
-import { saveReferralAttribution } from "@/features/customer/referrals/referralTracking";
+import {
+  clearReferralAttribution,
+  saveReferralAttribution,
+} from "@/features/customer/referrals/referralTracking";
 
 export default function ReferralLandingPage() {
   const { referralCode } = useParams();
@@ -16,13 +19,26 @@ export default function ReferralLandingPage() {
       channel,
     });
     if (isAuthenticated && user?.role === "customer") {
-      referralsApi.trackSignup({ referralCode, channel }).catch(() => {});
+      referralsApi
+        .trackSignup({ referralCode, channel })
+        .then(() => {
+          // Attribution consumed by immediate signup tracking — clear it so the
+          // booking step does not double-fire trackBooking for the same code.
+          clearReferralAttribution();
+        })
+        .catch(() => {
+          // Tracking errors must never break the redirect.
+        });
     }
   }, [channel, isAuthenticated, referralCode, user?.role]);
 
   return (
     <Navigate
-      to={isAuthenticated && user?.role === "customer" ? "/booking" : "/auth/signup"}
+      to={
+        isAuthenticated && user?.role === "customer"
+          ? "/booking"
+          : "/auth/signup"
+      }
       replace
       state={{ from: { pathname: "/booking" } }}
     />

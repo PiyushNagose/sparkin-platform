@@ -9,4 +9,12 @@ export const publicOffersApi = {
     });
     return data;
   },
+
+  async validateCoupon(couponCode, estimatedCost = 0) {
+    const { data } = await businessClient.post("/offers/validate-coupon", {
+      couponCode,
+      estimatedCost,
+    });
+    return data;
+  },
 };

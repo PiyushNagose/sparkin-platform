@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useScrollToError } from "@/shared/hooks/useScrollToError";
 import {
   Alert,
   Box,
@@ -26,8 +27,15 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { authApi } from "@/features/auth/authApi";
 import { vendorsApi } from "@/features/vendor/api/vendorsApi";
-import { getVendorProfileCompletion, getVendorProfileRequirements, isVendorProfileComplete } from "@/features/vendor/VendorProfileCompletionGate";
-import { VendorPageHeader, VendorPrimaryButton } from "@/features/vendor/components/VendorPortalUI";
+import {
+  getVendorProfileCompletion,
+  getVendorProfileRequirements,
+  isVendorProfileComplete,
+} from "@/features/vendor/VendorProfileCompletionGate";
+import {
+  VendorPageHeader,
+  VendorPrimaryButton,
+} from "@/features/vendor/components/VendorPortalUI";
 import vendorProfileAvatar from "@/shared/assets/images/vendor/profile/vendor-profile-avatar-placeholder.svg";
 
 const tabs = ["Profile", "Business Details"];
@@ -98,17 +106,38 @@ function SectionIntro({ title, description }) {
       <Typography sx={{ color: "#223146", fontSize: "1rem", fontWeight: 800 }}>
         {title}
       </Typography>
-      <Typography sx={{ mt: 0.55, color: "#6F7D8F", fontSize: "0.76rem", lineHeight: 1.65 }}>
+      <Typography
+        sx={{
+          mt: 0.55,
+          color: "#6F7D8F",
+          fontSize: "0.76rem",
+          lineHeight: 1.65,
+        }}
+      >
         {description}
       </Typography>
     </Box>
   );
 }
 
-function FieldBlock({ label, value, onChange, fullWidth, readOnly = false, type = "text" }) {
+function FieldBlock({
+  label,
+  value,
+  onChange,
+  fullWidth,
+  readOnly = false,
+  type = "text",
+}) {
   return (
     <Box sx={{ gridColumn: fullWidth ? { xs: "auto", md: "1 / -1" } : "auto" }}>
-      <Typography sx={{ mb: 0.45, color: "#6F7D8F", fontSize: "0.72rem", fontWeight: 700 }}>
+      <Typography
+        sx={{
+          mb: 0.45,
+          color: "#6F7D8F",
+          fontSize: "0.72rem",
+          fontWeight: 700,
+        }}
+      >
         {label}
       </Typography>
       <Box
@@ -163,8 +192,8 @@ export default function VendorProfilePage() {
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [uploadingDocumentType, setUploadingDocumentType] = useState("");
   const [error, setError] = useState("");
+  const errorRef = useScrollToError(error);
   const [success, setSuccess] = useState("");
-
   useEffect(() => {
     let active = true;
 
@@ -178,7 +207,11 @@ export default function VendorProfilePage() {
         setVendorProfile(result);
         setForm(mergeProfileIntoForm(result, user));
       } catch (apiError) {
-        if (active) setError(apiError?.response?.data?.message || "Could not load vendor profile.");
+        if (active)
+          setError(
+            apiError?.response?.data?.message ||
+              "Could not load vendor profile.",
+          );
       } finally {
         if (active) setIsLoading(false);
       }
@@ -192,9 +225,15 @@ export default function VendorProfilePage() {
   }, [user]);
 
   const documents = vendorProfile?.documents || [];
-  const companyDocuments = documents.filter((document) => document.type === "company");
-  const certificationDocuments = documents.filter((document) => document.type === "certification");
-  const completedServices = serviceItems.filter((item) => form.services[item.key]).length;
+  const companyDocuments = documents.filter(
+    (document) => document.type === "company",
+  );
+  const certificationDocuments = documents.filter(
+    (document) => document.type === "certification",
+  );
+  const completedServices = serviceItems.filter(
+    (item) => form.services[item.key],
+  ).length;
   const draftProfile = useMemo(
     () => ({
       ...(vendorProfile || {}),
@@ -205,15 +244,26 @@ export default function VendorProfilePage() {
     }),
     [documents, form, vendorProfile],
   );
-  const completion = useMemo(() => getVendorProfileCompletion(draftProfile), [draftProfile]);
-  const missingRequirements = useMemo(
-    () => getVendorProfileRequirements(draftProfile).filter((item) => !item.complete),
+  const completion = useMemo(
+    () => getVendorProfileCompletion(draftProfile),
     [draftProfile],
   );
-  const isComplete = useMemo(() => isVendorProfileComplete(draftProfile), [draftProfile]);
+  const missingRequirements = useMemo(
+    () =>
+      getVendorProfileRequirements(draftProfile).filter(
+        (item) => !item.complete,
+      ),
+    [draftProfile],
+  );
+  const isComplete = useMemo(
+    () => isVendorProfileComplete(draftProfile),
+    [draftProfile],
+  );
 
   function publishProfileUpdate(profile) {
-    window.dispatchEvent(new CustomEvent("sparkin:vendor-profile-updated", { detail: profile }));
+    window.dispatchEvent(
+      new CustomEvent("sparkin:vendor-profile-updated", { detail: profile }),
+    );
   }
 
   function updateGroupField(group, field, value) {
@@ -260,10 +310,16 @@ export default function VendorProfilePage() {
 
     try {
       const data = await readFileAsDataUrl(file);
-      await updateUserAvatar({ fileName: file.name, contentType: file.type, data });
+      await updateUserAvatar({
+        fileName: file.name,
+        contentType: file.type,
+        data,
+      });
       setSuccess("Profile photo updated.");
     } catch (apiError) {
-      setError(apiError?.response?.data?.message || "Could not upload profile photo.");
+      setError(
+        apiError?.response?.data?.message || "Could not upload profile photo.",
+      );
     } finally {
       setIsUploadingAvatar(false);
     }
@@ -275,7 +331,11 @@ export default function VendorProfilePage() {
 
     if (!file) return;
 
-    if (!["application/pdf", "image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+    if (
+      !["application/pdf", "image/jpeg", "image/png", "image/webp"].includes(
+        file.type,
+      )
+    ) {
       setError("Please upload a PDF, JPG, PNG, or WEBP document.");
       return;
     }
@@ -302,7 +362,9 @@ export default function VendorProfilePage() {
       publishProfileUpdate(result);
       setSuccess("Document uploaded.");
     } catch (apiError) {
-      setError(apiError?.response?.data?.message || "Could not upload document.");
+      setError(
+        apiError?.response?.data?.message || "Could not upload document.",
+      );
     } finally {
       setUploadingDocumentType("");
     }
@@ -318,7 +380,9 @@ export default function VendorProfilePage() {
       publishProfileUpdate(result);
       setSuccess("Document removed.");
     } catch (apiError) {
-      setError(apiError?.response?.data?.message || "Could not remove document.");
+      setError(
+        apiError?.response?.data?.message || "Could not remove document.",
+      );
     }
   }
 
@@ -350,14 +414,17 @@ export default function VendorProfilePage() {
       publishProfileUpdate(profile);
       setSuccess("Vendor profile updated.");
     } catch (apiError) {
-      setError(apiError?.response?.data?.message || "Could not save vendor profile.");
+      setError(
+        apiError?.response?.data?.message || "Could not save vendor profile.",
+      );
     } finally {
       setIsSaving(false);
     }
   }
 
   function renderDocumentZone(type, title, subtitle, records) {
-    const inputRef = type === "company" ? companyDocumentRef : certificationDocumentRef;
+    const inputRef =
+      type === "company" ? companyDocumentRef : certificationDocumentRef;
     const isUploading = uploadingDocumentType === type;
 
     return (
@@ -398,10 +465,19 @@ export default function VendorProfilePage() {
             >
               <CloudUploadOutlinedIcon sx={{ fontSize: "1rem" }} />
             </Box>
-            <Typography sx={{ mt: 0.8, color: "#223146", fontSize: "0.8rem", fontWeight: 700 }}>
+            <Typography
+              sx={{
+                mt: 0.8,
+                color: "#223146",
+                fontSize: "0.8rem",
+                fontWeight: 700,
+              }}
+            >
               {isUploading ? "Uploading..." : title}
             </Typography>
-            <Typography sx={{ mt: 0.18, color: "#7A8799", fontSize: "0.68rem" }}>
+            <Typography
+              sx={{ mt: 0.18, color: "#7A8799", fontSize: "0.68rem" }}
+            >
               {subtitle}
             </Typography>
           </Box>
@@ -409,7 +485,11 @@ export default function VendorProfilePage() {
 
         <Stack spacing={0.8} sx={{ mt: 0.9 }}>
           {records.map((document) => (
-            <DocumentRow key={document.id} document={document} onDelete={deleteDocument} />
+            <DocumentRow
+              key={document.id}
+              document={document}
+              onDelete={deleteDocument}
+            />
           ))}
         </Stack>
       </Box>
@@ -418,14 +498,21 @@ export default function VendorProfilePage() {
 
   return (
     <Box sx={{ width: "100%" }}>
-      <Stack direction="row" spacing={2.2} sx={{ pb: 1.15, borderBottom: "1px solid #E7ECF2" }}>
+      <Stack
+        direction="row"
+        spacing={2.2}
+        sx={{ pb: 1.15, borderBottom: "1px solid #E7ECF2" }}
+      >
         {tabs.map((tab) => (
           <Box
             key={tab}
             onClick={() => setActiveTab(tab)}
             sx={{
               pb: 0.95,
-              borderBottom: activeTab === tab ? "2px solid #0E56C8" : "2px solid transparent",
+              borderBottom:
+                activeTab === tab
+                  ? "2px solid #0E56C8"
+                  : "2px solid transparent",
               cursor: "pointer",
             }}
           >
@@ -442,9 +529,21 @@ export default function VendorProfilePage() {
         ))}
       </Stack>
 
-      {error ? <Alert severity="error" sx={{ mt: 1.4, borderRadius: "0.9rem" }}>{error}</Alert> : null}
+      {error ? (
+        <Alert
+          ref={errorRef}
+          severity="error"
+          sx={{ mt: 1.4, borderRadius: "0.9rem" }}
+        >
+          {error}
+        </Alert>
+      ) : null}
       {success ? (
-        <Alert severity="success" sx={{ mt: 1.4, borderRadius: "0.9rem" }} onClose={() => setSuccess("")}>
+        <Alert
+          severity="success"
+          sx={{ mt: 1.4, borderRadius: "0.9rem" }}
+          onClose={() => setSuccess("")}
+        >
           {success}
         </Alert>
       ) : null}
@@ -459,47 +558,60 @@ export default function VendorProfilePage() {
         sx={{ mt: 2.3, mb: 2.4 }}
         actions={
           <>
-          <Button
-            variant="text"
-            onClick={resetForm}
-            sx={{ minHeight: 38, px: 1.2, color: "#556478", fontSize: "0.74rem", fontWeight: 700, textTransform: "none" }}
-          >
-            Cancel
-          </Button>
-          <VendorPrimaryButton
-            disabled={isSaving || isLoading || form.account.fullName.trim().length < 2}
-            onClick={saveChanges}
-            sx={{ px: 2 }}
-          >
-            {isSaving ? "Saving..." : "Save Changes"}
-          </VendorPrimaryButton>
-          {isComplete ? (
             <Button
-              variant="contained"
-              onClick={() => navigate("/vendor", { replace: true })}
+              variant="text"
+              onClick={resetForm}
               sx={{
                 minHeight: 38,
-                px: 2,
-                borderRadius: "0.95rem",
-                bgcolor: "#239654",
-                boxShadow: "0 12px 24px rgba(35,150,84,0.16)",
-                fontSize: "0.75rem",
+                px: 1.2,
+                color: "#556478",
+                fontSize: "0.74rem",
                 fontWeight: 700,
                 textTransform: "none",
               }}
             >
-              Continue to Dashboard
+              Cancel
             </Button>
-          ) : null}
+            <VendorPrimaryButton
+              disabled={
+                isSaving || isLoading || form.account.fullName.trim().length < 2
+              }
+              onClick={saveChanges}
+              sx={{ px: 2 }}
+            >
+              {isSaving ? "Saving..." : "Save Changes"}
+            </VendorPrimaryButton>
+            {isComplete ? (
+              <Button
+                variant="contained"
+                onClick={() => navigate("/vendor", { replace: true })}
+                sx={{
+                  minHeight: 38,
+                  px: 2,
+                  borderRadius: "0.95rem",
+                  bgcolor: "#239654",
+                  boxShadow: "0 12px 24px rgba(35,150,84,0.16)",
+                  fontSize: "0.75rem",
+                  fontWeight: 700,
+                  textTransform: "none",
+                }}
+              >
+                Continue to Dashboard
+              </Button>
+            ) : null}
           </>
         }
       />
 
       {!isComplete ? (
-        <CompletionChecklist completion={completion} missingRequirements={missingRequirements} />
+        <CompletionChecklist
+          completion={completion}
+          missingRequirements={missingRequirements}
+        />
       ) : (
         <Alert severity="success" sx={{ mt: 1.4, borderRadius: "0.9rem" }}>
-          Vendor profile is complete. You can access leads, quotes, projects, and payments.
+          Vendor profile is complete. You can access leads, quotes, projects,
+          and payments.
         </Alert>
       )}
 
@@ -513,12 +625,25 @@ export default function VendorProfilePage() {
           onAvatarSelected={handleAvatarSelected}
         />
       ) : (
-        <BusinessHeader form={form} completedServices={completedServices} completion={completion} />
+        <BusinessHeader
+          form={form}
+          completedServices={completedServices}
+          completion={completion}
+        />
       )}
 
-      <Box sx={{ mt: 1.8, display: "grid", gridTemplateColumns: { xs: "1fr", lg: "0.55fr 1fr" }, gap: 1.7 }}>
+      <Box
+        sx={{
+          mt: 1.8,
+          display: "grid",
+          gridTemplateColumns: { xs: "1fr", lg: "0.55fr 1fr" },
+          gap: 1.7,
+        }}
+      >
         <SectionIntro
-          title={activeTab === "Profile" ? "Account Details" : "Company Information"}
+          title={
+            activeTab === "Profile" ? "Account Details" : "Company Information"
+          }
           description={
             activeTab === "Profile"
               ? "Update your contact information. This information will be visible on official quotes."
@@ -526,32 +651,127 @@ export default function VendorProfilePage() {
           }
         />
 
-        <Box sx={{ p: 1.45, borderRadius: "1.15rem", bgcolor: "#F8FAFD", border: "1px solid rgba(230,235,242,0.95)" }}>
-          <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" }, gap: 1.2 }}>
+        <Box
+          sx={{
+            p: 1.45,
+            borderRadius: "1.15rem",
+            bgcolor: "#F8FAFD",
+            border: "1px solid rgba(230,235,242,0.95)",
+          }}
+        >
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
+              gap: 1.2,
+            }}
+          >
             {activeTab === "Profile" ? (
               <>
-                <FieldBlock label="Full Name" value={form.account.fullName} onChange={(value) => updateGroupField("account", "fullName", value)} />
-                <FieldBlock label="Email Address" value={form.account.email} readOnly />
-                <FieldBlock label="Phone Number" value={form.account.phoneNumber} onChange={(value) => updateGroupField("account", "phoneNumber", value)} fullWidth />
+                <FieldBlock
+                  label="Full Name"
+                  value={form.account.fullName}
+                  onChange={(value) =>
+                    updateGroupField("account", "fullName", value)
+                  }
+                />
+                <FieldBlock
+                  label="Email Address"
+                  value={form.account.email}
+                  readOnly
+                />
+                <FieldBlock
+                  label="Phone Number"
+                  value={form.account.phoneNumber}
+                  onChange={(value) =>
+                    updateGroupField("account", "phoneNumber", value)
+                  }
+                  fullWidth
+                />
               </>
             ) : (
               <>
-                <FieldBlock label="Company Name" value={form.company.name} onChange={(value) => updateGroupField("company", "name", value)} />
-                <FieldBlock label="GST Number" value={form.company.gstNumber} onChange={(value) => updateGroupField("company", "gstNumber", value)} />
-                <FieldBlock label="Full Business Address" value={form.company.address} onChange={(value) => updateGroupField("company", "address", value)} fullWidth />
-                <FieldBlock label="City" value={form.company.city} onChange={(value) => updateGroupField("company", "city", value)} />
-                <FieldBlock label="State" value={form.company.state} onChange={(value) => updateGroupField("company", "state", value)} />
-                <FieldBlock label="Coverage Area" value={form.company.coverageArea} onChange={(value) => updateGroupField("company", "coverageArea", value)} />
-                <FieldBlock label="Experience Years" value={form.company.experienceYears} type="number" onChange={(value) => updateGroupField("company", "experienceYears", value)} />
-                <FieldBlock label="Projects Completed" value={form.company.projectsCompleted} type="number" onChange={(value) => updateGroupField("company", "projectsCompleted", value)} />
-                <FieldBlock label="Total Capacity MW" value={form.company.totalCapacityMw} type="number" onChange={(value) => updateGroupField("company", "totalCapacityMw", value)} />
+                <FieldBlock
+                  label="Company Name"
+                  value={form.company.name}
+                  onChange={(value) =>
+                    updateGroupField("company", "name", value)
+                  }
+                />
+                <FieldBlock
+                  label="GST Number"
+                  value={form.company.gstNumber}
+                  onChange={(value) =>
+                    updateGroupField("company", "gstNumber", value)
+                  }
+                />
+                <FieldBlock
+                  label="Full Business Address"
+                  value={form.company.address}
+                  onChange={(value) =>
+                    updateGroupField("company", "address", value)
+                  }
+                  fullWidth
+                />
+                <FieldBlock
+                  label="City"
+                  value={form.company.city}
+                  onChange={(value) =>
+                    updateGroupField("company", "city", value)
+                  }
+                />
+                <FieldBlock
+                  label="State"
+                  value={form.company.state}
+                  onChange={(value) =>
+                    updateGroupField("company", "state", value)
+                  }
+                />
+                <FieldBlock
+                  label="Coverage Area"
+                  value={form.company.coverageArea}
+                  onChange={(value) =>
+                    updateGroupField("company", "coverageArea", value)
+                  }
+                />
+                <FieldBlock
+                  label="Experience Years"
+                  value={form.company.experienceYears}
+                  type="number"
+                  onChange={(value) =>
+                    updateGroupField("company", "experienceYears", value)
+                  }
+                />
+                <FieldBlock
+                  label="Projects Completed"
+                  value={form.company.projectsCompleted}
+                  type="number"
+                  onChange={(value) =>
+                    updateGroupField("company", "projectsCompleted", value)
+                  }
+                />
+                <FieldBlock
+                  label="Total Capacity MW"
+                  value={form.company.totalCapacityMw}
+                  type="number"
+                  onChange={(value) =>
+                    updateGroupField("company", "totalCapacityMw", value)
+                  }
+                />
               </>
             )}
           </Box>
         </Box>
       </Box>
 
-      <Box sx={{ mt: 1.9, display: "grid", gridTemplateColumns: { xs: "1fr", lg: "0.55fr 1fr" }, gap: 1.7 }}>
+      <Box
+        sx={{
+          mt: 1.9,
+          display: "grid",
+          gridTemplateColumns: { xs: "1fr", lg: "0.55fr 1fr" },
+          gap: 1.7,
+        }}
+      >
         <SectionIntro
           title={activeTab === "Profile" ? "Security" : "Compliance Documents"}
           description={
@@ -564,23 +784,60 @@ export default function VendorProfilePage() {
         {activeTab === "Profile" ? (
           <SecurityPanel />
         ) : (
-          <Box sx={{ p: 1.45, borderRadius: "1.15rem", bgcolor: "#F8FAFD", border: "1px solid rgba(230,235,242,0.95)" }}>
+          <Box
+            sx={{
+              p: 1.45,
+              borderRadius: "1.15rem",
+              bgcolor: "#F8FAFD",
+              border: "1px solid rgba(230,235,242,0.95)",
+            }}
+          >
             <Stack spacing={1.05}>
-              {renderDocumentZone("company", "Company Documents", "PDF, JPG, PNG, WEBP (Max 5MB)", companyDocuments)}
-              {renderDocumentZone("certification", "Certifications & Awards", "Verified ISO or local certificates", certificationDocuments)}
+              {renderDocumentZone(
+                "company",
+                "Company Documents",
+                "PDF, JPG, PNG, WEBP (Max 5MB)",
+                companyDocuments,
+              )}
+              {renderDocumentZone(
+                "certification",
+                "Certifications & Awards",
+                "Verified ISO or local certificates",
+                certificationDocuments,
+              )}
             </Stack>
           </Box>
         )}
       </Box>
 
       {activeTab === "Business Details" ? (
-        <Box sx={{ mt: 1.9, display: "grid", gridTemplateColumns: { xs: "1fr", lg: "0.55fr 1fr" }, gap: 1.7 }}>
+        <Box
+          sx={{
+            mt: 1.9,
+            display: "grid",
+            gridTemplateColumns: { xs: "1fr", lg: "0.55fr 1fr" },
+            gap: 1.7,
+          }}
+        >
           <SectionIntro
             title="Service Capability"
             description="Choose the work categories you can handle so leads and service tickets can be routed correctly."
           />
-          <Box sx={{ p: 1.45, borderRadius: "1.15rem", bgcolor: "#F8FAFD", border: "1px solid rgba(230,235,242,0.95)" }}>
-            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 0.75 }}>
+          <Box
+            sx={{
+              p: 1.45,
+              borderRadius: "1.15rem",
+              bgcolor: "#F8FAFD",
+              border: "1px solid rgba(230,235,242,0.95)",
+            }}
+          >
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+                gap: 0.75,
+              }}
+            >
               {serviceItems.map((item) => (
                 <Stack
                   key={item.key}
@@ -588,16 +845,41 @@ export default function VendorProfilePage() {
                   spacing={0.7}
                   alignItems="center"
                   justifyContent="space-between"
-                  sx={{ minHeight: 42, px: 0.9, borderRadius: "0.75rem", bgcolor: "#FFFFFF", border: "1px solid rgba(225,232,241,0.96)" }}
+                  sx={{
+                    minHeight: 42,
+                    px: 0.9,
+                    borderRadius: "0.75rem",
+                    bgcolor: "#FFFFFF",
+                    border: "1px solid rgba(225,232,241,0.96)",
+                  }}
                 >
                   <Stack direction="row" spacing={0.7} alignItems="center">
-                    <CheckBoxRoundedIcon sx={{ color: form.services[item.key] ? "#0E56C8" : "#B8C2D0", fontSize: "0.95rem" }} />
-                    <Typography sx={{ color: "#223146", fontSize: "0.74rem", fontWeight: 600 }}>{item.label}</Typography>
+                    <CheckBoxRoundedIcon
+                      sx={{
+                        color: form.services[item.key] ? "#0E56C8" : "#B8C2D0",
+                        fontSize: "0.95rem",
+                      }}
+                    />
+                    <Typography
+                      sx={{
+                        color: "#223146",
+                        fontSize: "0.74rem",
+                        fontWeight: 600,
+                      }}
+                    >
+                      {item.label}
+                    </Typography>
                   </Stack>
                   <Switch
                     size="small"
                     checked={Boolean(form.services[item.key])}
-                    onChange={(event) => updateGroupField("services", item.key, event.target.checked)}
+                    onChange={(event) =>
+                      updateGroupField(
+                        "services",
+                        item.key,
+                        event.target.checked,
+                      )
+                    }
                   />
                 </Stack>
               ))}
@@ -629,11 +911,21 @@ function CompletionChecklist({ completion, missingRequirements }) {
         alignItems={{ xs: "flex-start", md: "center" }}
       >
         <Box>
-          <Typography sx={{ color: "#6B4E00", fontSize: "0.88rem", fontWeight: 800 }}>
+          <Typography
+            sx={{ color: "#6B4E00", fontSize: "0.88rem", fontWeight: 800 }}
+          >
             Business profile is {completion}% complete
           </Typography>
-          <Typography sx={{ mt: 0.25, color: "#7A5B10", fontSize: "0.74rem", lineHeight: 1.55 }}>
-            Required before accessing vendor dashboard, leads, quotes, projects, and payments.
+          <Typography
+            sx={{
+              mt: 0.25,
+              color: "#7A5B10",
+              fontSize: "0.74rem",
+              lineHeight: 1.55,
+            }}
+          >
+            Required before accessing vendor dashboard, leads, quotes, projects,
+            and payments.
           </Typography>
         </Box>
         <Box
@@ -647,7 +939,8 @@ function CompletionChecklist({ completion, missingRequirements }) {
             fontWeight: 800,
           }}
         >
-          {missingRequirements.length} item{missingRequirements.length === 1 ? "" : "s"} remaining
+          {missingRequirements.length} item
+          {missingRequirements.length === 1 ? "" : "s"} remaining
         </Box>
       </Stack>
 
@@ -681,21 +974,81 @@ function CompletionChecklist({ completion, missingRequirements }) {
   );
 }
 
-function ProfileHeader({ form, user, avatarSource, isUploadingAvatar, avatarInputRef, onAvatarSelected }) {
+function ProfileHeader({
+  form,
+  user,
+  avatarSource,
+  isUploadingAvatar,
+  avatarInputRef,
+  onAvatarSelected,
+}) {
   return (
-    <Box sx={{ mt: 2.1, p: { xs: 1.35, md: 1.6 }, borderRadius: "1.25rem", bgcolor: "#FFFFFF", border: "1px solid rgba(225,232,241,0.96)", boxShadow: "0 14px 28px rgba(16,29,51,0.04)" }}>
-      <input ref={avatarInputRef} type="file" accept="image/png,image/jpeg,image/webp" hidden onChange={onAvatarSelected} />
-      <Stack direction={{ xs: "column", md: "row" }} justifyContent="space-between" alignItems={{ xs: "flex-start", md: "center" }} spacing={1.6}>
+    <Box
+      sx={{
+        mt: 2.1,
+        p: { xs: 1.35, md: 1.6 },
+        borderRadius: "1.25rem",
+        bgcolor: "#FFFFFF",
+        border: "1px solid rgba(225,232,241,0.96)",
+        boxShadow: "0 14px 28px rgba(16,29,51,0.04)",
+      }}
+    >
+      <input
+        ref={avatarInputRef}
+        type="file"
+        accept="image/png,image/jpeg,image/webp"
+        hidden
+        onChange={onAvatarSelected}
+      />
+      <Stack
+        direction={{ xs: "column", md: "row" }}
+        justifyContent="space-between"
+        alignItems={{ xs: "flex-start", md: "center" }}
+        spacing={1.6}
+      >
         <Stack direction="row" spacing={1.35} alignItems="center">
-          <Box component="img" src={avatarSource} alt="Vendor profile" sx={{ width: 112, height: 112, borderRadius: "50%", objectFit: "cover", boxShadow: "0 14px 28px rgba(16,29,51,0.1)" }} />
+          <Box
+            component="img"
+            src={avatarSource}
+            alt="Vendor profile"
+            sx={{
+              width: 112,
+              height: 112,
+              borderRadius: "50%",
+              objectFit: "cover",
+              boxShadow: "0 14px 28px rgba(16,29,51,0.1)",
+            }}
+          />
           <Box>
-            <Typography sx={{ color: "#223146", fontSize: "1.8rem", fontWeight: 800, lineHeight: 1.05 }}>
+            <Typography
+              sx={{
+                color: "#223146",
+                fontSize: "1.8rem",
+                fontWeight: 800,
+                lineHeight: 1.05,
+              }}
+            >
               {form.account.fullName || "Vendor"}
             </Typography>
-            <Typography sx={{ mt: 0.45, color: "#5F6C7E", fontSize: "0.88rem" }}>
+            <Typography
+              sx={{ mt: 0.45, color: "#5F6C7E", fontSize: "0.88rem" }}
+            >
               {form.account.email || user?.email || "Email not available"}
             </Typography>
-            <Box sx={{ mt: 1.05, display: "inline-flex", px: 1, py: 0.38, borderRadius: "999px", bgcolor: "#E7F318", color: "#6C7300", fontSize: "0.64rem", fontWeight: 800, lineHeight: 1 }}>
+            <Box
+              sx={{
+                mt: 1.05,
+                display: "inline-flex",
+                px: 1,
+                py: 0.38,
+                borderRadius: "999px",
+                bgcolor: "#E7F318",
+                color: "#6C7300",
+                fontSize: "0.64rem",
+                fontWeight: 800,
+                lineHeight: 1,
+              }}
+            >
               Vendor Account
             </Box>
           </Box>
@@ -706,7 +1059,17 @@ function ProfileHeader({ form, user, avatarSource, isUploadingAvatar, avatarInpu
           startIcon={<UploadOutlinedIcon />}
           disabled={isUploadingAvatar}
           onClick={() => avatarInputRef.current?.click()}
-          sx={{ minHeight: 38, px: 1.45, borderRadius: "0.95rem", borderColor: "rgba(208,216,226,0.95)", bgcolor: "#F5F7FB", color: "#223146", fontSize: "0.74rem", fontWeight: 700, textTransform: "none" }}
+          sx={{
+            minHeight: 38,
+            px: 1.45,
+            borderRadius: "0.95rem",
+            borderColor: "rgba(208,216,226,0.95)",
+            bgcolor: "#F5F7FB",
+            color: "#223146",
+            fontSize: "0.74rem",
+            fontWeight: 700,
+            textTransform: "none",
+          }}
         >
           {isUploadingAvatar ? "Uploading..." : "Change Photo"}
         </Button>
@@ -717,22 +1080,91 @@ function ProfileHeader({ form, user, avatarSource, isUploadingAvatar, avatarInpu
 
 function BusinessHeader({ form, completedServices, completion }) {
   return (
-    <Box sx={{ mt: 2.1, display: "grid", gridTemplateColumns: { xs: "1fr", xl: "1.18fr 0.82fr" }, gap: 1.6 }}>
-      <Box sx={{ p: { xs: 1.35, md: 1.5 }, borderRadius: "1.25rem", bgcolor: "#FFFFFF", border: "1px solid rgba(225,232,241,0.96)", boxShadow: "0 14px 28px rgba(16,29,51,0.04)" }}>
-        <Stack direction={{ xs: "column", md: "row" }} justifyContent="space-between" alignItems={{ xs: "flex-start", md: "center" }} spacing={1.2}>
+    <Box
+      sx={{
+        mt: 2.1,
+        display: "grid",
+        gridTemplateColumns: { xs: "1fr", xl: "1.18fr 0.82fr" },
+        gap: 1.6,
+      }}
+    >
+      <Box
+        sx={{
+          p: { xs: 1.35, md: 1.5 },
+          borderRadius: "1.25rem",
+          bgcolor: "#FFFFFF",
+          border: "1px solid rgba(225,232,241,0.96)",
+          boxShadow: "0 14px 28px rgba(16,29,51,0.04)",
+        }}
+      >
+        <Stack
+          direction={{ xs: "column", md: "row" }}
+          justifyContent="space-between"
+          alignItems={{ xs: "flex-start", md: "center" }}
+          spacing={1.2}
+        >
           <Stack direction="row" spacing={1.1} alignItems="center">
-            <Box component="img" src={vendorProfileAvatar} alt="Business profile" sx={{ width: 60, height: 60, borderRadius: "0.95rem", objectFit: "cover", boxShadow: "0 12px 24px rgba(16,29,51,0.08)" }} />
+            <Box
+              component="img"
+              src={vendorProfileAvatar}
+              alt="Business profile"
+              sx={{
+                width: 60,
+                height: 60,
+                borderRadius: "0.95rem",
+                objectFit: "cover",
+                boxShadow: "0 12px 24px rgba(16,29,51,0.08)",
+              }}
+            />
             <Box>
-              <Typography sx={{ color: "#223146", fontSize: "1.6rem", fontWeight: 800, lineHeight: 1.08 }}>
+              <Typography
+                sx={{
+                  color: "#223146",
+                  fontSize: "1.6rem",
+                  fontWeight: 800,
+                  lineHeight: 1.08,
+                }}
+              >
                 {form.company.name || "Company name pending"}
               </Typography>
-              <Stack direction="row" spacing={0.7} alignItems="center" flexWrap="wrap" sx={{ mt: 0.65 }}>
-                <Box sx={{ display: "inline-flex", px: 0.9, py: 0.34, borderRadius: "999px", bgcolor: "#E7F318", color: "#6C7300", fontSize: "0.62rem", fontWeight: 800, lineHeight: 1 }}>
+              <Stack
+                direction="row"
+                spacing={0.7}
+                alignItems="center"
+                flexWrap="wrap"
+                sx={{ mt: 0.65 }}
+              >
+                <Box
+                  sx={{
+                    display: "inline-flex",
+                    px: 0.9,
+                    py: 0.34,
+                    borderRadius: "999px",
+                    bgcolor: "#E7F318",
+                    color: "#6C7300",
+                    fontSize: "0.62rem",
+                    fontWeight: 800,
+                    lineHeight: 1,
+                  }}
+                >
                   {form.company.businessType || "EPC Contractor"}
                 </Box>
                 <Stack direction="row" spacing={0.45} alignItems="center">
-                  <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: completion >= 80 ? "#239654" : "#F4A51C" }} />
-                  <Typography sx={{ color: "#223146", fontSize: "0.74rem", fontWeight: 700 }}>
+                  <Box
+                    sx={{
+                      width: 8,
+                      height: 8,
+                      borderRadius: "50%",
+                      bgcolor: completion >= 80 ? "#239654" : "#F4A51C",
+                    }}
+                  />
+                  <Typography
+                    sx={{
+                      color: "#223146",
+                      fontSize: "0.74rem",
+                      fontWeight: 700,
+                    }}
+                  >
                     {completion}% Complete
                   </Typography>
                 </Stack>
@@ -740,26 +1172,79 @@ function BusinessHeader({ form, completedServices, completion }) {
             </Box>
           </Stack>
 
-          <Box sx={{ width: 88, height: 88, borderRadius: "1.1rem", bgcolor: "#F7F9FC", border: "1px solid rgba(232,237,244,0.96)", color: "#D7DEE8", display: "grid", placeItems: "center" }}>
+          <Box
+            sx={{
+              width: 88,
+              height: 88,
+              borderRadius: "1.1rem",
+              bgcolor: "#F7F9FC",
+              border: "1px solid rgba(232,237,244,0.96)",
+              color: "#D7DEE8",
+              display: "grid",
+              placeItems: "center",
+            }}
+          >
             <WorkspacePremiumOutlinedIcon sx={{ fontSize: "2.2rem" }} />
           </Box>
         </Stack>
       </Box>
 
-      <Box sx={{ p: 1.45, borderRadius: "1.15rem", bgcolor: "#F8FAFD", border: "1px solid rgba(230,235,242,0.95)" }}>
-        <Stack direction="row" spacing={0.9} alignItems="center" sx={{ mb: 1.35 }}>
-          <Box sx={{ width: 30, height: 30, borderRadius: "0.8rem", bgcolor: "#EEF4FF", color: "#0E56C8", display: "grid", placeItems: "center" }}>
+      <Box
+        sx={{
+          p: 1.45,
+          borderRadius: "1.15rem",
+          bgcolor: "#F8FAFD",
+          border: "1px solid rgba(230,235,242,0.95)",
+        }}
+      >
+        <Stack
+          direction="row"
+          spacing={0.9}
+          alignItems="center"
+          sx={{ mb: 1.35 }}
+        >
+          <Box
+            sx={{
+              width: 30,
+              height: 30,
+              borderRadius: "0.8rem",
+              bgcolor: "#EEF4FF",
+              color: "#0E56C8",
+              display: "grid",
+              placeItems: "center",
+            }}
+          >
             <BusinessOutlinedIcon sx={{ fontSize: "0.95rem" }} />
           </Box>
-          <Typography sx={{ color: "#223146", fontSize: "0.96rem", fontWeight: 800 }}>
+          <Typography
+            sx={{ color: "#223146", fontSize: "0.96rem", fontWeight: 800 }}
+          >
             Service Capability
           </Typography>
         </Stack>
-        <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 0.75 }}>
-          <Metric label="Services" value={String(completedServices)} tone="#0E56C8" />
-          <Metric label="Coverage Area" value={form.company.coverageArea || "Pending"} tone="#0E56C8" />
-          <Metric label="Experience" value={`${Number(form.company.experienceYears) || 0}+ years`} tone="#239654" />
-          <Metric label="Capacity" value={`${Number(form.company.totalCapacityMw) || 0} MW`} tone="#239654" />
+        <Box
+          sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 0.75 }}
+        >
+          <Metric
+            label="Services"
+            value={String(completedServices)}
+            tone="#0E56C8"
+          />
+          <Metric
+            label="Coverage Area"
+            value={form.company.coverageArea || "Pending"}
+            tone="#0E56C8"
+          />
+          <Metric
+            label="Experience"
+            value={`${Number(form.company.experienceYears) || 0}+ years`}
+            tone="#239654"
+          />
+          <Metric
+            label="Capacity"
+            value={`${Number(form.company.totalCapacityMw) || 0} MW`}
+            tone="#239654"
+          />
         </Box>
       </Box>
     </Box>
@@ -768,9 +1253,28 @@ function BusinessHeader({ form, completedServices, completion }) {
 
 function Metric({ label, value, tone }) {
   return (
-    <Box sx={{ minHeight: 38, px: 1, borderRadius: "0.8rem", bgcolor: "#FFFFFF", border: "1px solid rgba(225,232,241,0.96)", display: "flex", flexDirection: "column", justifyContent: "center" }}>
-      <Typography sx={{ color: "#7D8797", fontSize: "0.64rem", fontWeight: 700 }}>{label}</Typography>
-      <Typography sx={{ mt: 0.16, color: tone, fontSize: "0.76rem", fontWeight: 800 }}>{value}</Typography>
+    <Box
+      sx={{
+        minHeight: 38,
+        px: 1,
+        borderRadius: "0.8rem",
+        bgcolor: "#FFFFFF",
+        border: "1px solid rgba(225,232,241,0.96)",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
+      }}
+    >
+      <Typography
+        sx={{ color: "#7D8797", fontSize: "0.64rem", fontWeight: 700 }}
+      >
+        {label}
+      </Typography>
+      <Typography
+        sx={{ mt: 0.16, color: tone, fontSize: "0.76rem", fontWeight: 800 }}
+      >
+        {value}
+      </Typography>
     </Box>
   );
 }
@@ -778,10 +1282,15 @@ function Metric({ label, value, tone }) {
 function SecurityPanel() {
   const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
-  const [passwordForm, setPasswordForm] = useState({ currentPassword: "", newPassword: "" });
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: "",
+    newPassword: "",
+  });
   const [passwordError, setPasswordError] = useState("");
   const [passwordSuccess, setPasswordSuccess] = useState("");
-  const [mfaEnabled, setMfaEnabled] = useState(() => window.localStorage.getItem("sparkin.vendor.mfaEnabled") !== "false");
+  const [mfaEnabled, setMfaEnabled] = useState(
+    () => window.localStorage.getItem("sparkin.vendor.mfaEnabled") !== "false",
+  );
 
   function updatePasswordField(field, value) {
     setPasswordForm((current) => ({ ...current, [field]: value }));
@@ -803,7 +1312,9 @@ function SecurityPanel() {
       setPasswordForm({ currentPassword: "", newPassword: "" });
       setIsPasswordDialogOpen(false);
     } catch (apiError) {
-      setPasswordError(apiError?.response?.data?.message || "Could not update password.");
+      setPasswordError(
+        apiError?.response?.data?.message || "Could not update password.",
+      );
     } finally {
       setIsChangingPassword(false);
     }
@@ -811,18 +1322,58 @@ function SecurityPanel() {
 
   return (
     <>
-      <Box sx={{ p: 1.45, borderRadius: "1.15rem", bgcolor: "#F8FAFD", border: "1px solid rgba(230,235,242,0.95)" }}>
+      <Box
+        sx={{
+          p: 1.45,
+          borderRadius: "1.15rem",
+          bgcolor: "#F8FAFD",
+          border: "1px solid rgba(230,235,242,0.95)",
+        }}
+      >
         <Stack spacing={1.25}>
-          {passwordError ? <Alert severity="error" sx={{ borderRadius: "0.85rem" }}>{passwordError}</Alert> : null}
-          {passwordSuccess ? <Alert severity="success" sx={{ borderRadius: "0.85rem" }}>{passwordSuccess}</Alert> : null}
-          <Stack direction="row" justifyContent="space-between" spacing={1.2} alignItems="center">
+          {passwordError ? (
+            <Alert severity="error" sx={{ borderRadius: "0.85rem" }}>
+              {passwordError}
+            </Alert>
+          ) : null}
+          {passwordSuccess ? (
+            <Alert severity="success" sx={{ borderRadius: "0.85rem" }}>
+              {passwordSuccess}
+            </Alert>
+          ) : null}
+          <Stack
+            direction="row"
+            justifyContent="space-between"
+            spacing={1.2}
+            alignItems="center"
+          >
             <Stack direction="row" spacing={1} alignItems="center">
-              <Box sx={{ width: 30, height: 30, borderRadius: "0.8rem", bgcolor: "#EEF4FF", color: "#0E56C8", display: "grid", placeItems: "center" }}>
+              <Box
+                sx={{
+                  width: 30,
+                  height: 30,
+                  borderRadius: "0.8rem",
+                  bgcolor: "#EEF4FF",
+                  color: "#0E56C8",
+                  display: "grid",
+                  placeItems: "center",
+                }}
+              >
                 <LockResetOutlinedIcon sx={{ fontSize: "0.95rem" }} />
               </Box>
               <Box>
-                <Typography sx={{ color: "#223146", fontSize: "0.86rem", fontWeight: 800 }}>Password</Typography>
-                <Typography sx={{ mt: 0.12, color: "#7A8799", fontSize: "0.7rem" }}>
+                <Typography
+                  sx={{
+                    color: "#223146",
+                    fontSize: "0.86rem",
+                    fontWeight: 800,
+                  }}
+                >
+                  Password
+                </Typography>
+                <Typography
+                  sx={{ mt: 0.12, color: "#7A8799", fontSize: "0.7rem" }}
+                >
                   Update your login password through identity service.
                 </Typography>
               </Box>
@@ -833,25 +1384,60 @@ function SecurityPanel() {
                 setPasswordSuccess("");
                 setIsPasswordDialogOpen(true);
               }}
-              sx={{ px: 0, minHeight: 28, color: "#0E56C8", fontSize: "0.74rem", fontWeight: 700, textTransform: "none" }}
+              sx={{
+                px: 0,
+                minHeight: 28,
+                color: "#0E56C8",
+                fontSize: "0.74rem",
+                fontWeight: 700,
+                textTransform: "none",
+              }}
             >
               Change Password
             </Button>
           </Stack>
 
-          <Stack direction="row" justifyContent="space-between" spacing={1.2} alignItems="center">
+          <Stack
+            direction="row"
+            justifyContent="space-between"
+            spacing={1.2}
+            alignItems="center"
+          >
             <Stack direction="row" spacing={1} alignItems="center">
-              <Box sx={{ width: 30, height: 30, borderRadius: "0.8rem", bgcolor: "#EEF9F1", color: "#239654", display: "grid", placeItems: "center" }}>
+              <Box
+                sx={{
+                  width: 30,
+                  height: 30,
+                  borderRadius: "0.8rem",
+                  bgcolor: "#EEF9F1",
+                  color: "#239654",
+                  display: "grid",
+                  placeItems: "center",
+                }}
+              >
                 <SecurityOutlinedIcon sx={{ fontSize: "0.95rem" }} />
               </Box>
               <Box>
-                <Typography sx={{ color: "#223146", fontSize: "0.86rem", fontWeight: 800 }}>Two-Factor Authentication</Typography>
-                <Typography sx={{ mt: 0.12, color: "#7A8799", fontSize: "0.7rem" }}>
+                <Typography
+                  sx={{
+                    color: "#223146",
+                    fontSize: "0.86rem",
+                    fontWeight: 800,
+                  }}
+                >
+                  Two-Factor Authentication
+                </Typography>
+                <Typography
+                  sx={{ mt: 0.12, color: "#7A8799", fontSize: "0.7rem" }}
+                >
                   Preference saved for this browser until full MFA is added.
                 </Typography>
               </Box>
             </Stack>
-            <Switch checked={mfaEnabled} onChange={(event) => toggleMfa(event.target.checked)} />
+            <Switch
+              checked={mfaEnabled}
+              onChange={(event) => toggleMfa(event.target.checked)}
+            />
           </Stack>
         </Stack>
       </Box>
@@ -863,7 +1449,9 @@ function SecurityPanel() {
         maxWidth="xs"
         PaperProps={{ sx: { borderRadius: "1rem" } }}
       >
-        <DialogTitle sx={{ color: "#18253A", fontSize: "1.1rem", fontWeight: 800 }}>
+        <DialogTitle
+          sx={{ color: "#18253A", fontSize: "1.1rem", fontWeight: 800 }}
+        >
           Change Password
         </DialogTitle>
         <DialogContent>
@@ -872,7 +1460,9 @@ function SecurityPanel() {
               label="Current password"
               type="password"
               value={passwordForm.currentPassword}
-              onChange={(event) => updatePasswordField("currentPassword", event.target.value)}
+              onChange={(event) =>
+                updatePasswordField("currentPassword", event.target.value)
+              }
               fullWidth
               size="small"
             />
@@ -880,16 +1470,23 @@ function SecurityPanel() {
               label="New password"
               type="password"
               value={passwordForm.newPassword}
-              onChange={(event) => updatePasswordField("newPassword", event.target.value)}
+              onChange={(event) =>
+                updatePasswordField("newPassword", event.target.value)
+              }
               fullWidth
               size="small"
               helperText="Use at least 8 characters."
             />
-            {passwordError ? <Alert severity="error">{passwordError}</Alert> : null}
+            {passwordError ? (
+              <Alert severity="error">{passwordError}</Alert>
+            ) : null}
           </Stack>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2.2 }}>
-          <Button onClick={() => setIsPasswordDialogOpen(false)} sx={{ textTransform: "none" }}>
+          <Button
+            onClick={() => setIsPasswordDialogOpen(false)}
+            sx={{ textTransform: "none" }}
+          >
             Cancel
           </Button>
           <Button
@@ -911,13 +1508,49 @@ function SecurityPanel() {
 }
 function DocumentRow({ document, onDelete }) {
   return (
-    <Stack direction="row" justifyContent="space-between" spacing={1} alignItems="center" sx={{ p: 1.05, borderRadius: "0.95rem", bgcolor: "#FFFFFF", border: "1px solid rgba(225,232,241,0.96)" }}>
-      <Stack direction="row" spacing={0.9} alignItems="center" sx={{ minWidth: 0 }}>
-        <Box sx={{ width: 30, height: 30, borderRadius: "0.8rem", bgcolor: "#EEF9F1", color: "#239654", display: "grid", placeItems: "center", flex: "0 0 auto" }}>
+    <Stack
+      direction="row"
+      justifyContent="space-between"
+      spacing={1}
+      alignItems="center"
+      sx={{
+        p: 1.05,
+        borderRadius: "0.95rem",
+        bgcolor: "#FFFFFF",
+        border: "1px solid rgba(225,232,241,0.96)",
+      }}
+    >
+      <Stack
+        direction="row"
+        spacing={0.9}
+        alignItems="center"
+        sx={{ minWidth: 0 }}
+      >
+        <Box
+          sx={{
+            width: 30,
+            height: 30,
+            borderRadius: "0.8rem",
+            bgcolor: "#EEF9F1",
+            color: "#239654",
+            display: "grid",
+            placeItems: "center",
+            flex: "0 0 auto",
+          }}
+        >
           <BadgeOutlinedIcon sx={{ fontSize: "0.95rem" }} />
         </Box>
         <Box sx={{ minWidth: 0 }}>
-          <Typography sx={{ color: "#223146", fontSize: "0.78rem", fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          <Typography
+            sx={{
+              color: "#223146",
+              fontSize: "0.78rem",
+              fontWeight: 700,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
             {document.fileName}
           </Typography>
           <Typography sx={{ mt: 0.12, color: "#7A8799", fontSize: "0.68rem" }}>
@@ -926,7 +1559,17 @@ function DocumentRow({ document, onDelete }) {
         </Box>
       </Stack>
 
-      <Button onClick={() => onDelete(document.id)} sx={{ minWidth: 28, width: 28, height: 28, p: 0, borderRadius: "50%", color: "#E24D4D" }}>
+      <Button
+        onClick={() => onDelete(document.id)}
+        sx={{
+          minWidth: 28,
+          width: 28,
+          height: 28,
+          p: 0,
+          borderRadius: "50%",
+          color: "#E24D4D",
+        }}
+      >
         <DeleteOutlineRoundedIcon sx={{ fontSize: "1rem" }} />
       </Button>
     </Stack>

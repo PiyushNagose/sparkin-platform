@@ -28,6 +28,7 @@ import {
   publicPageSpacing,
   publicTypography,
 } from "@/features/public/pages/publicPageStyles";
+import { scrollToFieldError } from "@/shared/lib/forms/scrollToFieldError";
 
 const requestTypes = [
   {
@@ -199,16 +200,19 @@ export default function CreateServiceRequestPage() {
 
   function updateField(field, value) {
     setForm((current) => ({ ...current, [field]: value }));
+    setError("");
   }
 
   async function handleSubmit() {
     if (projects.length > 0 && !form.projectId) {
       setError("Please select the project that needs service.");
+      scrollToFieldError("projectId");
       return;
     }
 
     if (form.description.trim().length < 10) {
       setError("Please describe the issue in at least 10 characters.");
+      scrollToFieldError("description");
       return;
     }
 
@@ -301,7 +305,7 @@ export default function CreateServiceRequestPage() {
                       </Typography>
                     </Box>
 
-                    <Stack spacing={1.05}>
+                    <Stack spacing={1.05} data-field="projectId">
                       <SectionLabel>Section 1: Select Project</SectionLabel>
                       {isLoadingProjects ? (
                         <Box sx={{ py: 1.2, display: "flex", alignItems: "center", gap: 1 }}>
@@ -412,11 +416,19 @@ export default function CreateServiceRequestPage() {
                       </Grid>
                     </Stack>
 
-                    <Stack spacing={1.05}>
+                    <Stack spacing={1.05} data-field="description">
                       <SectionLabel>
                         Section 3: Problem Description
                       </SectionLabel>
                       <TextField
+                        error={Boolean(
+                          error === "Please describe the issue in at least 10 characters.",
+                        )}
+                        helperText={
+                          error === "Please describe the issue in at least 10 characters."
+                            ? error
+                            : " "
+                        }
                         value={form.description}
                         onChange={(event) => updateField("description", event.target.value)}
                         multiline

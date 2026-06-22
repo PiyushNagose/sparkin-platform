@@ -46,6 +46,12 @@ export function createRouter() {
   // Keep login/register protected from brute force without throttling refresh/logout traffic.
   router.post("/api/v1/auth/login", authRateLimit, identityProxy);
   router.post("/api/v1/auth/register", authRateLimit, identityProxy);
+  router.post(
+    "/api/v1/auth/request-password-reset",
+    authRateLimit,
+    identityProxy,
+  );
+  router.post("/api/v1/auth/reset-password", authRateLimit, identityProxy);
   router.post("/api/v1/auth/refresh", standardRateLimit, identityProxy);
   router.post("/api/v1/auth/logout", standardRateLimit, identityProxy);
 
@@ -74,6 +80,13 @@ export function createRouter() {
 
   // Public offers shown on the home page (no auth required)
   router.get("/api/v1/offers/public", standardRateLimit, businessProxy);
+
+  // Public coupon validation — used during booking before/after login
+  router.post(
+    "/api/v1/offers/validate-coupon",
+    standardRateLimit,
+    businessProxy,
+  );
 
   // All other business routes require auth
   router.use("/api/v1/leads", standardRateLimit, requireAuth, businessProxy);

@@ -35,6 +35,7 @@ import {
 } from "@/features/admin/components/AdminPortalUI";
 import { getAdminDashboardData } from "@/features/admin/api/adminApi";
 import { quotesApi } from "@/features/public/api/leadsApi";
+import { useSocket } from "@/shared/websocket/SocketProvider";
 
 const moneyFormatter = new Intl.NumberFormat("en-IN", {
   style: "currency",
@@ -202,6 +203,7 @@ function StatusPill({ status }) {
 
 export default function AdminBiddingPage() {
   const [searchParams] = useSearchParams();
+  const { refreshKey } = useSocket();
   const [state, setState] = useState({ loading: true, error: "", data: null });
   const [filters, setFilters] = useState({
     status: "all",
@@ -242,7 +244,7 @@ export default function AdminBiddingPage() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [refreshKey]);
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
@@ -267,9 +269,8 @@ export default function AdminBiddingPage() {
     return leads
       .filter(
         (lead) =>
-          ["quote_selected", "closed"].includes(
-            lead.status,
-          ) || quotesByLead.has(String(lead.id)),
+          ["quote_selected", "closed"].includes(lead.status) ||
+          quotesByLead.has(String(lead.id)),
       )
       .map((lead) => {
         const leadQuotes = (quotesByLead.get(String(lead.id)) || []).sort(

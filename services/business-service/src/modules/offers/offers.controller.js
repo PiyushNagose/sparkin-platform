@@ -53,4 +53,12 @@ export const offersController = {
     const stats = await offersService.getStats(req.auth);
     res.status(200).json(stats);
   },
+
+  async validateCoupon(req, res) {
+    const result = await offersService.validateCoupon(req.body.couponCode, {
+      estimatedCost: req.body.estimatedCost,
+      userRole: req.auth?.role || "customer",
+    });
+    res.status(200).json(result);
+  },
 };

@@ -17,8 +17,15 @@ export const appRoutes = {
   auth: {
     login: "/auth/login",
     signup: "/auth/signup",
+    forgotPassword: "/auth/forgot-password",
+    resetPassword: "/auth/reset-password",
+    adminLogin: "/admin/login",
+    adminForgotPassword: "/admin/forgot-password",
+    adminResetPassword: "/admin/reset-password",
     vendorLogin: "/vendor/login",
     vendorSignup: "/vendor/signup",
+    vendorForgotPassword: "/vendor/forgot-password",
+    vendorResetPassword: "/vendor/reset-password",
   },
   customer: {
     dashboard: "/customer",
