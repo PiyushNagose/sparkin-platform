@@ -48,6 +48,11 @@ import {
 } from "@/features/admin/components/AdminPortalUI";
 import { getAdminDashboardData } from "@/features/admin/api/adminApi";
 import { projectsApi } from "@/features/public/api/projectsApi";
+import {
+  limitEmailInput,
+  limitPhoneNumber,
+  PHONE_INPUT_PROPS,
+} from "@/shared/lib/forms/inputConstraints";
 
 // ─── constants ────────────────────────────────────────────────────────────────
 
@@ -264,6 +269,7 @@ function FormField({
   required = false,
   type = "text",
   wide = false,
+  inputProps,
 }) {
   return (
     <TextField
@@ -271,6 +277,7 @@ function FormField({
       value={value}
       type={type}
       onChange={(e) => onChange(e.target.value)}
+      inputProps={inputProps}
       sx={{
         gridColumn: wide ? { xs: "auto", md: "1 / -1" } : "auto",
         "& .MuiOutlinedInput-root": {
@@ -444,7 +451,15 @@ export default function AdminProjectsPage() {
   }
 
   function updateForm(field, value) {
-    setCreateForm((f) => ({ ...f, [field]: value }));
+    setCreateForm((f) => ({
+      ...f,
+      [field]:
+        field === "phoneNumber"
+          ? limitPhoneNumber(value)
+          : field === "email"
+            ? limitEmailInput(value)
+            : value,
+    }));
   }
 
   function closeCreate() {
@@ -1146,6 +1161,7 @@ export default function AdminProjectsPage() {
                 label="Phone Number"
                 value={createForm.phoneNumber}
                 onChange={(v) => updateForm("phoneNumber", v)}
+                inputProps={PHONE_INPUT_PROPS}
                 required
               />
               <FormField

@@ -126,7 +126,7 @@ export function createChatRouter(io) {
           participantNames: [adminName],
         },
       },
-      { upsert: true, new: true },
+      { upsert: true, returnDocument: "after" },
     );
 
     res.json({ ok: true, adminId, adminName });

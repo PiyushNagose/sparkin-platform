@@ -107,7 +107,7 @@ export const leadsRepository = {
     const lead = await LeadModel.findByIdAndUpdate(
       id,
       { $set: { status: "open_for_quotes", verifiedAt: new Date() } },
-      { new: true },
+      { returnDocument: "after" },
     ).lean({ virtuals: true });
 
     return normalizeLead(lead);
@@ -133,7 +133,7 @@ export const leadsRepository = {
       {
         $set: updates,
       },
-      { new: true },
+      { returnDocument: "after" },
     ).lean({ virtuals: true });
 
     return normalizeLead(lead);
@@ -147,7 +147,7 @@ export const leadsRepository = {
     const lead = await LeadModel.findByIdAndUpdate(
       id,
       { $set: { status, ...extra } },
-      { new: true },
+      { returnDocument: "after" },
     ).lean({ virtuals: true });
 
     return normalizeLead(lead);
@@ -162,7 +162,7 @@ export const leadsRepository = {
           selection,
         },
       },
-      { new: true },
+      { returnDocument: "after" },
     ).lean({ virtuals: true });
 
     return normalizeLead(lead);
@@ -172,7 +172,7 @@ export const leadsRepository = {
     const lead = await LeadModel.findByIdAndUpdate(
       id,
       { $set: updates },
-      { new: true },
+      { returnDocument: "after" },
     ).lean({ virtuals: true });
 
     return normalizeLead(lead);
@@ -187,7 +187,7 @@ export const leadsRepository = {
     const lead = await LeadModel.findByIdAndUpdate(
       id,
       { $set: update },
-      { new: true },
+      { returnDocument: "after" },
     ).lean({ virtuals: true });
 
     return normalizeLead(lead);
@@ -204,7 +204,7 @@ export const leadsRepository = {
           selection: { quoteId: null, vendorId: null, selectedAt: null },
         },
       },
-      { new: true },
+      { returnDocument: "after" },
     ).lean({ virtuals: true });
 
     return normalizeLead(lead);
@@ -228,7 +228,7 @@ export const leadsRepository = {
           },
         },
       },
-      { new: true },
+      { returnDocument: "after" },
     ).lean({ virtuals: true });
 
     return normalizeLead(lead);
@@ -256,7 +256,7 @@ export const leadsRepository = {
           },
         },
       },
-      { new: true },
+      { returnDocument: "after" },
     ).lean({ virtuals: true });
 
     return normalizeLead(lead);

@@ -46,7 +46,7 @@ export const broadcastsRepository = {
     const doc = await BroadcastModel.findByIdAndUpdate(
       id,
       { $set: { status, ...extra } },
-      { new: true },
+      { returnDocument: "after" },
     ).lean({ virtuals: true });
     return normalize(doc);
   },
@@ -55,7 +55,7 @@ export const broadcastsRepository = {
     const doc = await BroadcastModel.findByIdAndUpdate(
       id,
       { $set: data },
-      { new: true },
+      { returnDocument: "after" },
     ).lean({ virtuals: true });
     return normalize(doc);
   },

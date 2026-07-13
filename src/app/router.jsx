@@ -1,10 +1,10 @@
 import { lazy } from "react";
 import { createBrowserRouter, Outlet } from "react-router-dom";
-import { RouteErrorPage } from "@/app/errors/RouteErrorPage";
+import { NotFoundPage, RouteErrorPage } from "@/app/errors/RouteErrorPage";
 import { AuthLayout } from "@/app/layouts/AuthLayout";
 import { PortalLayout } from "@/app/layouts/PortalLayout";
 import { PublicLayout } from "@/app/layouts/PublicLayout";
-import { RequireAuth } from "@/features/auth/RequireAuth";
+import { GuestOnly, RequireAuth } from "@/features/auth/RequireAuth";
 import { adminRoutes } from "@/features/admin/routes";
 import { authRoutes } from "@/features/auth/routes";
 import { customerRoutes } from "@/features/customer/routes";
@@ -61,19 +61,31 @@ export const appRouter = createBrowserRouter([
       },
       {
         path: "/auth",
-        element: <AuthLayout />,
+        element: (
+          <GuestOnly>
+            <AuthLayout />
+          </GuestOnly>
+        ),
         children: authRoutes,
       },
       {
         path: "/vendor/login",
-        element: <AuthLayout />,
+        element: (
+          <GuestOnly>
+            <AuthLayout />
+          </GuestOnly>
+        ),
         children: [
           { index: true, element: <LazyRoute component={VendorLoginPage} /> },
         ],
       },
       {
         path: "/vendor/forgot-password",
-        element: <AuthLayout />,
+        element: (
+          <GuestOnly>
+            <AuthLayout />
+          </GuestOnly>
+        ),
         children: [
           {
             index: true,
@@ -83,7 +95,11 @@ export const appRouter = createBrowserRouter([
       },
       {
         path: "/vendor/reset-password",
-        element: <AuthLayout />,
+        element: (
+          <GuestOnly>
+            <AuthLayout />
+          </GuestOnly>
+        ),
         children: [
           {
             index: true,
@@ -93,21 +109,33 @@ export const appRouter = createBrowserRouter([
       },
       {
         path: "/vendor/signup",
-        element: <AuthLayout />,
+        element: (
+          <GuestOnly>
+            <AuthLayout />
+          </GuestOnly>
+        ),
         children: [
           { index: true, element: <LazyRoute component={VendorSignupPage} /> },
         ],
       },
       {
         path: "/admin/login",
-        element: <AuthLayout />,
+        element: (
+          <GuestOnly>
+            <AuthLayout />
+          </GuestOnly>
+        ),
         children: [
           { index: true, element: <LazyRoute component={AdminLoginPage} /> },
         ],
       },
       {
         path: "/admin/forgot-password",
-        element: <AuthLayout />,
+        element: (
+          <GuestOnly>
+            <AuthLayout />
+          </GuestOnly>
+        ),
         children: [
           {
             index: true,
@@ -117,7 +145,11 @@ export const appRouter = createBrowserRouter([
       },
       {
         path: "/admin/reset-password",
-        element: <AuthLayout />,
+        element: (
+          <GuestOnly>
+            <AuthLayout />
+          </GuestOnly>
+        ),
         children: [
           {
             index: true,
@@ -168,6 +200,7 @@ export const appRouter = createBrowserRouter([
           },
         ],
       },
+      { path: "*", element: <NotFoundPage /> },
     ],
   },
 ]);

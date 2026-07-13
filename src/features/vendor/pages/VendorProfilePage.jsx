@@ -37,6 +37,10 @@ import {
   VendorPrimaryButton,
 } from "@/features/vendor/components/VendorPortalUI";
 import vendorProfileAvatar from "@/shared/assets/images/vendor/profile/vendor-profile-avatar-placeholder.svg";
+import {
+  limitPhoneNumber,
+  PHONE_INPUT_PROPS,
+} from "@/shared/lib/forms/inputConstraints";
 
 const tabs = ["Profile", "Business Details"];
 const identityApiBaseUrl =
@@ -127,6 +131,7 @@ function FieldBlock({
   fullWidth,
   readOnly = false,
   type = "text",
+  inputProps,
 }) {
   return (
     <Box sx={{ gridColumn: fullWidth ? { xs: "auto", md: "1 / -1" } : "auto" }}>
@@ -155,6 +160,7 @@ function FieldBlock({
           value={value ?? ""}
           type={type}
           readOnly={readOnly}
+          inputProps={inputProps}
           onChange={(event) => onChange?.(event.target.value)}
           sx={{
             width: "100%",
@@ -271,7 +277,10 @@ export default function VendorProfilePage() {
       ...current,
       [group]: {
         ...current[group],
-        [field]: value,
+        [field]:
+          group === "account" && field === "phoneNumber"
+            ? limitPhoneNumber(value)
+            : value,
       },
     }));
   }
@@ -686,6 +695,7 @@ export default function VendorProfilePage() {
                   onChange={(value) =>
                     updateGroupField("account", "phoneNumber", value)
                   }
+                  inputProps={PHONE_INPUT_PROPS}
                   fullWidth
                 />
               </>

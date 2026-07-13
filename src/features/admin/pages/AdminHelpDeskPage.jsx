@@ -44,6 +44,7 @@ import {
   AdminPrimaryButton,
   adminUi,
 } from "@/features/admin/components/AdminPortalUI";
+import { limitEmailInput } from "@/shared/lib/forms/inputConstraints";
 
 // ─── constants ────────────────────────────────────────────────────────────────
 
@@ -288,7 +289,7 @@ function TicketsTab() {
             ].map(({ label, field, placeholder }) => (
               <Box key={field}>
                 <Typography sx={{ mb: 0.6, color: "#8B97A8", fontSize: "0.6rem", fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase" }}>{label}</Typography>
-                <TextField fullWidth size="small" placeholder={placeholder} value={createForm[field]} onChange={(e) => setCreateForm((f) => ({ ...f, [field]: e.target.value }))} sx={{ "& .MuiOutlinedInput-root": { borderRadius: "0.85rem", bgcolor: "#F7F9FC", fontSize: "0.88rem" } }} />
+                <TextField fullWidth size="small" placeholder={placeholder} value={createForm[field]} onChange={(e) => setCreateForm((f) => ({ ...f, [field]: field === "customerEmail" ? limitEmailInput(e.target.value) : e.target.value }))} sx={{ "& .MuiOutlinedInput-root": { borderRadius: "0.85rem", bgcolor: "#F7F9FC", fontSize: "0.88rem" } }} />
               </Box>
             ))}
             <Box>

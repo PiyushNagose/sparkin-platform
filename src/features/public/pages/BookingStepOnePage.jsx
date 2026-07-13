@@ -27,6 +27,11 @@ import { useBookingDraft } from "@/features/public/booking/BookingDraftProvider"
 import { validateStep1 } from "@/features/public/booking/bookingValidation";
 import BookingStepper from "@/features/public/booking/BookingStepper";
 import { usePlatformStates } from "@/shared/hooks/usePlatformStates";
+import {
+  limitEmailInput,
+  limitPhoneNumber,
+  PHONE_INPUT_PROPS,
+} from "@/shared/lib/forms/inputConstraints";
 
 const FIELD_SX = {
   "& .MuiOutlinedInput-root": {
@@ -260,11 +265,9 @@ export default function BookingStepOnePage() {
                         value={draft.contact.phoneNumber}
                         error={!!errors["contact.phoneNumber"]}
                         helperText={errors["contact.phoneNumber"]}
-                        inputProps={{ inputMode: "numeric", maxLength: 10 }}
+                        inputProps={PHONE_INPUT_PROPS}
                         onChange={(e) => {
-                          const cleaned = e.target.value
-                            .replace(/\D/g, "")
-                            .slice(0, 10);
+                          const cleaned = limitPhoneNumber(e.target.value);
                           updateContact({ phoneNumber: cleaned });
                           clearError(setErrors, "contact.phoneNumber");
                         }}
@@ -285,7 +288,7 @@ export default function BookingStepOnePage() {
                         error={!!errors["contact.email"]}
                         helperText={errors["contact.email"]}
                         onChange={(e) => {
-                          updateContact({ email: e.target.value });
+                          updateContact({ email: limitEmailInput(e.target.value) });
                           clearError(setErrors, "contact.email");
                         }}
                         sx={FIELD_SX}
@@ -369,10 +372,15 @@ export default function BookingStepOnePage() {
                           <TextField
                             select
                             fullWidth
-                            disabled={statesLoading}
+                            disabled={statesLoading || stateOptions.length === 0}
                             value={draft.installationAddress.state || ""}
                             error={!!errors["installationAddress.state"]}
-                            helperText={errors["installationAddress.state"]}
+                            helperText={
+                              errors["installationAddress.state"] ||
+                              (!statesLoading && stateOptions.length === 0
+                                ? "No states configured - contact admin"
+                                : undefined)
+                            }
                             onChange={(e) => {
                               const newState = e.target.value;
                               const cityOptions = getCityOptions(newState);
@@ -389,6 +397,18 @@ export default function BookingStepOnePage() {
                             SelectProps={{
                               displayEmpty: true,
                               IconComponent: KeyboardArrowDownRoundedIcon,
+                              renderValue: (selected) => {
+                                if (!selected) {
+                                  return statesLoading
+                                    ? "Loading states..."
+                                    : "Select state";
+                                }
+                                return (
+                                  stateOptions.find(
+                                    (state) => state.key === selected,
+                                  )?.name || "Select state"
+                                );
+                              },
                               MenuProps: {
                                 PaperProps: {
                                   sx: {

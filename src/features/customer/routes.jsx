@@ -1,4 +1,5 @@
 import { lazy } from "react";
+import { NotFoundPage } from "@/app/errors/RouteErrorPage";
 import { LazyRoute } from "@/shared/ui/placeholder/LazyRoute";
 
 const CustomerDashboardPage = lazy(
@@ -67,4 +68,5 @@ export const customerRoutes = [
   },
   { path: "profile", element: <LazyRoute component={CustomerProfilePage} /> },
   { path: "chat", element: <LazyRoute component={CustomerChatPage} /> },
+  { path: "*", element: <NotFoundPage /> },
 ];

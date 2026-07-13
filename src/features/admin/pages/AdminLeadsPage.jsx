@@ -46,6 +46,11 @@ import {
 } from "@/features/admin/components/AdminPortalUI";
 import { getAdminDashboardData } from "@/features/admin/api/adminApi";
 import { leadsApi } from "@/features/public/api/leadsApi";
+import {
+  limitEmailInput,
+  limitPhoneNumber,
+  PHONE_INPUT_PROPS,
+} from "@/shared/lib/forms/inputConstraints";
 
 const initialLeadForm = {
   fullName: "",
@@ -274,7 +279,15 @@ function LeadFormDialog({ open, onClose, onSubmit, saving, error }) {
   }, [open]);
 
   function updateField(field, value) {
-    setForm((current) => ({ ...current, [field]: value }));
+    setForm((current) => ({
+      ...current,
+      [field]:
+        field === "phoneNumber"
+          ? limitPhoneNumber(value)
+          : field === "email"
+            ? limitEmailInput(value)
+            : value,
+    }));
   }
 
   function handleSubmit(event) {
@@ -345,6 +358,7 @@ function LeadFormDialog({ open, onClose, onSubmit, saving, error }) {
                 label="Phone Number"
                 value={form.phoneNumber}
                 onChange={(e) => updateField("phoneNumber", e.target.value)}
+                inputProps={PHONE_INPUT_PROPS}
               />
             </Grid>
             <Grid size={{ xs: 12, md: 4 }}>

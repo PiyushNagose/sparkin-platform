@@ -24,6 +24,11 @@ import {
   clearReferralAttribution,
   getReferralAttribution,
 } from "@/features/customer/referrals/referralTracking";
+import {
+  limitEmailInput,
+  limitPhoneNumber,
+  PHONE_INPUT_PROPS,
+} from "@/shared/lib/forms/inputConstraints";
 import { scrollToFieldError } from "@/shared/lib/forms/scrollToFieldError";
 
 const accountTypes = ["customer", "vendor"];
@@ -120,7 +125,7 @@ function validateEmail(value) {
 }
 
 function validatePhone(value) {
-  return !value || /^[0-9+\-\s()]{8,20}$/.test(value);
+  return !value || /^\d{10}$/.test(value);
 }
 
 function getPasswordError(value) {
@@ -226,7 +231,7 @@ export function AuthScreenShell({
     setNotice("");
 
     const normalizedEmail = email.trim().toLowerCase();
-    const normalizedPhone = phoneNumber.trim();
+    const normalizedPhone = limitPhoneNumber(phoneNumber);
     const passwordError = getPasswordError(password);
 
     if (isSignup && fullName.trim().length < 2) {
@@ -587,9 +592,12 @@ export function AuthScreenShell({
                 <TextField
                   fullWidth
                   value={phoneNumber}
-                  onChange={(event) => setPhoneNumber(event.target.value)}
-                  placeholder="+91 98765 43210"
+                  onChange={(event) =>
+                    setPhoneNumber(limitPhoneNumber(event.target.value))
+                  }
+                  placeholder="10-digit mobile number"
                   sx={fieldSx}
+                  inputProps={PHONE_INPUT_PROPS}
                   InputProps={{
                     endAdornment: (
                       <PhoneOutlinedIcon
@@ -617,7 +625,7 @@ export function AuthScreenShell({
                 required
                 type="email"
                 value={email}
-                onChange={(event) => setEmail(event.target.value)}
+                onChange={(event) => setEmail(limitEmailInput(event.target.value))}
                 placeholder={
                   isSignup ? "hello@example.com" : "name@company.com"
                 }

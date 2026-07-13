@@ -51,7 +51,7 @@ export const quotesRepository = {
           submittedAt: new Date(),
         },
       },
-      { new: true },
+      { returnDocument: "after" },
     ).lean({ virtuals: true });
 
     return normalizeQuote(updated);
@@ -111,7 +111,7 @@ export const quotesRepository = {
     const quote = await QuoteModel.findByIdAndUpdate(
       quoteId,
       { $set: { status: "accepted" } },
-      { new: true },
+      { returnDocument: "after" },
     ).lean({ virtuals: true });
 
     return normalizeQuote(quote);

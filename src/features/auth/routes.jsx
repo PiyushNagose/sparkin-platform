@@ -1,4 +1,5 @@
 import { lazy } from "react";
+import { NotFoundPage } from "@/app/errors/RouteErrorPage";
 import { LazyRoute } from "@/shared/ui/placeholder/LazyRoute";
 
 const LoginPage = lazy(() => import("@/features/auth/pages/LoginPage"));
@@ -25,4 +26,5 @@ export const authRoutes = [
     path: "reset-password",
     element: <LazyRoute component={ResetPasswordPage} />,
   },
+  { path: "*", element: <NotFoundPage /> },
 ];

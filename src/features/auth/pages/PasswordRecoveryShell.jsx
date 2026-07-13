@@ -18,6 +18,7 @@ import {
   useSearchParams,
 } from "react-router-dom";
 import { authApi } from "@/features/auth/authApi";
+import { limitEmailInput } from "@/shared/lib/forms/inputConstraints";
 import { scrollToFieldError } from "@/shared/lib/forms/scrollToFieldError";
 
 const fieldSx = {
@@ -406,7 +407,7 @@ export function PasswordRecoveryShell({
                   required
                   type="email"
                   value={email}
-                  onChange={(event) => setEmail(event.target.value)}
+                  onChange={(event) => setEmail(limitEmailInput(event.target.value))}
                   placeholder="name@company.com"
                   sx={fieldSx}
                   InputProps={{

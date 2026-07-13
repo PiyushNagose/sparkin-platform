@@ -73,7 +73,7 @@ export const vendorsRepository = {
     const updated = await VendorProfileModel.findOneAndUpdate(
       { vendorId },
       { $set: patch },
-      { new: true, runValidators: true },
+      { returnDocument: "after", runValidators: true },
     ).lean({ virtuals: true });
 
     return normalizeVendorProfile(updated);
@@ -83,7 +83,7 @@ export const vendorsRepository = {
     const updated = await VendorProfileModel.findOneAndUpdate(
       { vendorId },
       { $push: { documents: document } },
-      { new: true, runValidators: true },
+      { returnDocument: "after", runValidators: true },
     ).lean({ virtuals: true });
 
     return normalizeVendorProfile(updated);
@@ -93,7 +93,7 @@ export const vendorsRepository = {
     const updated = await VendorProfileModel.findOneAndUpdate(
       { vendorId },
       { $pull: { documents: { _id: documentId } } },
-      { new: true, runValidators: true },
+      { returnDocument: "after", runValidators: true },
     ).lean({ virtuals: true });
 
     return normalizeVendorProfile(updated);

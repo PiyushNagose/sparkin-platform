@@ -20,6 +20,11 @@ import {
   publicTypography,
 } from "@/features/public/pages/publicPageStyles";
 import layoutStyles from "@/app/layouts/PublicLayout.module.css";
+import {
+  limitEmailInput,
+  limitPhoneNumber,
+  PHONE_INPUT_PROPS,
+} from "@/shared/lib/forms/inputConstraints";
 import { scrollToFirstFieldError } from "@/shared/lib/forms/scrollToFieldError";
 
 const contactCards = [
@@ -266,7 +271,9 @@ export default function ContactPage() {
                       fullWidth
                       placeholder="john@example.com"
                       value={form.email}
-                      onChange={(event) => updateField("email", event.target.value)}
+                      onChange={(event) =>
+                        updateField("email", limitEmailInput(event.target.value))
+                      }
                       error={Boolean(errors.email)}
                       helperText={errors.email || " "}
                       InputProps={{
@@ -292,10 +299,13 @@ export default function ContactPage() {
                     </Typography>
                     <TextField
                       fullWidth
-                      placeholder="+91 00000 00000"
+                      placeholder="10-digit mobile number"
                       value={form.phone}
-                      onChange={(event) => updateField("phone", event.target.value)}
+                      onChange={(event) =>
+                        updateField("phone", limitPhoneNumber(event.target.value))
+                      }
                       helperText=" "
+                      inputProps={PHONE_INPUT_PROPS}
                       InputProps={{
                         sx: {
                           height: 48,

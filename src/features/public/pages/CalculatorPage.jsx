@@ -452,14 +452,38 @@ export default function CalculatorPage() {
                   label="State"
                   value={form.state}
                   onChange={(event) => updateForm("state", event.target.value)}
-                  disabled={statesLoading}
+                  disabled={statesLoading || stateOptions.length === 0}
+                  helperText={
+                    !statesLoading && stateOptions.length === 0
+                      ? "No states configured - contact admin"
+                      : undefined
+                  }
+                  FormHelperTextProps={{
+                    sx: { color: "#E07B00", fontSize: "0.68rem", mx: 0.5 },
+                  }}
+                  InputLabelProps={{ shrink: true }}
                   sx={{
                     "& .MuiOutlinedInput-root": {
                       borderRadius: "0.75rem",
                       boxShadow: "0 4px 12px rgba(16,25,47,0.07)",
+                      bgcolor:
+                        !statesLoading && stateOptions.length === 0
+                          ? "#FFFBF5"
+                          : undefined,
                     },
                   }}
-                  SelectProps={{ displayEmpty: true }}
+                  SelectProps={{
+                    displayEmpty: true,
+                    renderValue: (selected) => {
+                      if (!selected) {
+                        return statesLoading ? "Loading states..." : "Select state";
+                      }
+                      return (
+                        stateOptions.find((state) => state.key === selected)
+                          ?.name || "Select state"
+                      );
+                    },
+                  }}
                 >
                   {statesLoading ? (
                     <MenuItem value="" disabled>
@@ -503,7 +527,7 @@ export default function CalculatorPage() {
                           pincode: matchedCity?.pincode || current.pincode,
                         }));
                       }}
-                      disabled={statesLoading || !form.state}
+                      disabled={statesLoading || !form.state || noCitiesConfigured}
                       placeholder={
                         noCitiesConfigured
                           ? "No cities configured — contact admin"
@@ -517,6 +541,7 @@ export default function CalculatorPage() {
                       FormHelperTextProps={{
                         sx: { color: "#E07B00", fontSize: "0.68rem", mx: 0.5 },
                       }}
+                      InputLabelProps={{ shrink: true }}
                       sx={{
                         "& .MuiOutlinedInput-root": {
                           borderRadius: "0.75rem",
@@ -526,6 +551,12 @@ export default function CalculatorPage() {
                       }}
                       SelectProps={{
                         displayEmpty: true,
+                        renderValue: (selected) => {
+                          if (!selected) {
+                            return !form.state ? "Select state first" : "Select city";
+                          }
+                          return selected;
+                        },
                         MenuProps: {
                           PaperProps: { sx: { maxHeight: 260 } },
                         },

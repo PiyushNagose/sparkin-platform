@@ -32,7 +32,7 @@ function mergeWithDefaults(settings) {
     (defaultPlatformSettings.states || []).map((state) => [state.key, state]),
   );
 
-  const mergedStates = settings.states?.length
+  const mergedStates = Array.isArray(settings.states)
     ? settings.states.map((state) =>
         mergeStateWithDefaults(state, defaultStatesByKey.get(state.key)),
       )
@@ -45,7 +45,7 @@ function mergeWithDefaults(settings) {
     bidding: { ...defaultPlatformSettings.bidding, ...settings.bidding },
     subsidy: { ...defaultPlatformSettings.subsidy, ...settings.subsidy },
     states: mergedStates,
-    discoms: settings.discoms?.length
+    discoms: Array.isArray(settings.discoms)
       ? settings.discoms
       : defaultPlatformSettings.discoms,
   };
@@ -71,13 +71,6 @@ async function updateSettings(user, input) {
   }
 
   // No longer restrict to a single required state — admin decides which states to configure
-  if (!input.states?.length) {
-    throw new AppError(
-      400,
-      "Platform settings must include at least one state rate",
-    );
-  }
-
   const settings = await platformSettingsRepository.upsertGlobal({
     ...input,
     updatedBy: user.userId,

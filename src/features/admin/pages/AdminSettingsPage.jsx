@@ -3,6 +3,10 @@ import {
   Box,
   Button,
   Chip,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Divider,
   IconButton,
   InputAdornment,
@@ -39,93 +43,6 @@ import pricingBannerImg from "@/shared/assets/images/admin/settings/admin-settin
 
 const STORAGE_KEY = "sparkin_admin_platform_settings";
 
-const ANDHRA_PRADESH_CITIES = [
-  "Visakhapatnam",
-  "Vijayawada",
-  "Guntur",
-  "Nellore",
-  "Kurnool",
-  "Rajamahendravaram",
-  "Kakinada",
-  "Tirupati",
-  "Kadapa",
-  "Eluru",
-  "Ongole",
-  "Nandyal",
-  "Vizianagaram",
-  "Anantapur",
-  "Proddatur",
-  "Srikakulam",
-  "Adoni",
-  "Tenali",
-  "Chittoor",
-  "Hindupur",
-  "Bhimavaram",
-  "Machilipatnam",
-  "Madanapalle",
-  "Guntakal",
-  "Dharmavaram",
-  "Tadepalligudem",
-  "Chilakaluripet",
-  "Gudivada",
-  "Narasaraopet",
-  "Tadipatri",
-  "Mangalagiri",
-  "Amaravati",
-  "Pithapuram",
-  "Palasa",
-  "Bobbili",
-  "Kavali",
-  "Bapatla",
-  "Markapur",
-  "Narsapur",
-  "Repalle",
-  "Amalapuram",
-  "Tuni",
-  "Samalkot",
-  "Rayachoti",
-  "Pulivendula",
-  "Naidupet",
-  "Attili",
-  "Tanuku",
-  "Palakollu",
-  "Nidadavole",
-  "Kovvur",
-  "Yemmiganur",
-  "Rayadurg",
-  "Jammalamadugu",
-  "Punganur",
-  "Puttur",
-  "Venkatagiri",
-  "Gudur",
-  "Parvathipuram",
-  "Salur",
-  "Sattenapalle",
-  "Ponnur",
-  "Piduguralla",
-  "Chirala",
-  "Ichchapuram",
-  "Allagadda",
-  "Kadiri",
-  "Uravakonda",
-  "Kalyandurg",
-  "Nagari",
-];
-
-const DEFAULT_STATE_METADATA = {
-  andhra_pradesh: {
-    solarYieldPerKwYear: 1550,
-    costPerKwResidential: 62000,
-    costPerKwCommercial: 52000,
-    pincodePrefixes: ["51", "52", "53"],
-    cities: ANDHRA_PRADESH_CITIES,
-  },
-};
-
-function uniqueValues(values = []) {
-  return [...new Set(values.filter(Boolean))];
-}
-
 // â”€â”€â”€ defaults â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const DEFAULT_SETTINGS = {
@@ -145,35 +62,8 @@ const DEFAULT_SETTINGS = {
     above3Kw: "78000",
     residentialOnly: true,
   },
-  states: [
-    {
-      id: "ap",
-      key: "andhra_pradesh",
-      name: "Andhra Pradesh",
-      rate: "7.50",
-      solarYieldPerKwYear: 1550,
-      costPerKwResidential: 62000,
-      costPerKwCommercial: 52000,
-      pincodePrefixes: ["51", "52", "53"],
-      cities: ANDHRA_PRADESH_CITIES,
-    },
-  ],
-  discoms: [
-    {
-      id: "apspdcl",
-      stateKey: "andhra_pradesh",
-      name: "Southern Power Distribution Company of AP",
-      code: "APSPDCL",
-      status: "active",
-    },
-    {
-      id: "apepdcl",
-      stateKey: "andhra_pradesh",
-      name: "Eastern Power Distribution Company of AP",
-      code: "APEPDCL",
-      status: "active",
-    },
-  ],
+  states: [],
+  discoms: [],
 };
 
 // â”€â”€â”€ helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -202,13 +92,13 @@ function loadSettings() {
           parsed.subsidy?.maxAmount ??
           structuredClone(DEFAULT_SETTINGS).subsidy.above3Kw,
       },
-      // Restore states and discoms from localStorage if present
-      states: parsed.states?.length
+      // Preserve empty arrays so admin can remove every state/DISCOM.
+      states: Array.isArray(parsed.states)
         ? parsed.states.map((s) =>
             withDefaultStateMetadata({ cities: [], ...s }),
           )
         : structuredClone(DEFAULT_SETTINGS.states),
-      discoms: parsed.discoms?.length
+      discoms: Array.isArray(parsed.discoms)
         ? parsed.discoms
         : structuredClone(DEFAULT_SETTINGS.discoms),
     };
@@ -228,42 +118,22 @@ function toStateKey(name = "") {
 
 function withDefaultStateMetadata(state) {
   const key = state.key || toStateKey(state.name);
-  const defaults = DEFAULT_STATE_METADATA[key];
-
-  if (!defaults) {
-    return {
-      ...state,
-      key,
-      cities: Array.isArray(state.cities) ? state.cities : [],
-      pincodePrefixes: Array.isArray(state.pincodePrefixes)
-        ? state.pincodePrefixes
-        : [],
-    };
-  }
-
   return {
-    ...defaults,
     ...state,
     key,
-    cities: uniqueValues([...(defaults.cities || []), ...(state.cities || [])]),
-    pincodePrefixes: uniqueValues([
-      ...(defaults.pincodePrefixes || []),
-      ...(state.pincodePrefixes || []),
-    ]),
-    solarYieldPerKwYear:
-      state.solarYieldPerKwYear ?? defaults.solarYieldPerKwYear,
-    costPerKwResidential:
-      state.costPerKwResidential ?? defaults.costPerKwResidential,
-    costPerKwCommercial:
-      state.costPerKwCommercial ?? defaults.costPerKwCommercial,
+    cities: Array.isArray(state.cities) ? state.cities : [],
+    pincodePrefixes: Array.isArray(state.pincodePrefixes)
+      ? state.pincodePrefixes
+      : [],
+    solarYieldPerKwYear: state.solarYieldPerKwYear ?? 1500,
+    costPerKwResidential: state.costPerKwResidential ?? 55000,
+    costPerKwCommercial: state.costPerKwCommercial ?? 50000,
   };
 }
 
 function normalizeSettingsForUi(settings) {
   // Preserve all states as-is — just ensure numeric fields are strings for inputs
-  const states = (
-    settings.states?.length ? settings.states : DEFAULT_SETTINGS.states
-  ).map((state) => {
+  const states = (Array.isArray(settings.states) ? settings.states : []).map((state) => {
     const mergedState = withDefaultStateMetadata(state);
     return {
       ...mergedState,
@@ -299,7 +169,7 @@ function normalizeSettingsForUi(settings) {
       residentialOnly: settings.subsidy.residentialOnly !== false,
     },
     states,
-    discoms: (settings.discoms || DEFAULT_SETTINGS.discoms).map((discom) => ({
+    discoms: (Array.isArray(settings.discoms) ? settings.discoms : []).map((discom) => ({
       ...discom,
       status: discom.status === "disabled" ? "disabled" : "active",
     })),
@@ -352,6 +222,21 @@ function isPositiveNumber(v) {
 
 function uid() {
   return Math.random().toString(36).slice(2, 9);
+}
+
+function commitCitiesToSettings(settings, citiesRaw) {
+  return {
+    ...settings,
+    states: settings.states.map((st) => {
+      const raw = citiesRaw[st.id];
+      if (raw === undefined) return st;
+      const cities = raw
+        .split(",")
+        .map((c) => c.trim())
+        .filter(Boolean);
+      return { ...st, cities };
+    }),
+  };
 }
 
 // â”€â”€â”€ sub-components â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -480,6 +365,18 @@ export default function AdminSettingsPage() {
     message: "",
     severity: "success",
   });
+  const [saveFeedback, setSaveFeedback] = useState({
+    message: "",
+    severity: "info",
+  });
+  const [confirmDelete, setConfirmDelete] = useState({
+    open: false,
+    type: "",
+    id: null,
+    title: "",
+    message: "",
+    confirmLabel: "Delete",
+  });
   const [stateErrors, setStateErrors] = useState({});
   // Raw string buffer for cities textarea — keyed by state id
   // This lets users type freely (including trailing commas/spaces) without
@@ -542,16 +439,19 @@ export default function AdminSettingsPage() {
 
   const updatePricing = useCallback((field, value) => {
     setSettings((s) => ({ ...s, pricing: { ...s.pricing, [field]: value } }));
+    setSaveFeedback({ message: "", severity: "info" });
     setIsDirty(true);
   }, []);
 
   const updateBidding = useCallback((field, value) => {
     setSettings((s) => ({ ...s, bidding: { ...s.bidding, [field]: value } }));
+    setSaveFeedback({ message: "", severity: "info" });
     setIsDirty(true);
   }, []);
 
   const updateSubsidy = useCallback((field, value) => {
     setSettings((s) => ({ ...s, subsidy: { ...s.subsidy, [field]: value } }));
+    setSaveFeedback({ message: "", severity: "info" });
     setIsDirty(true);
   }, []);
 
@@ -608,11 +508,18 @@ export default function AdminSettingsPage() {
     });
   }, []);
 
-  const removeState = useCallback((id) => {
-    setSettings((s) => ({
-      ...s,
-      states: s.states.filter((st) => st.id !== id),
-    }));
+  const removeStateNow = useCallback((id) => {
+    setSettings((s) => {
+      const removed = s.states.find((st) => st.id === id);
+      return {
+        ...s,
+        states: s.states.filter((st) => st.id !== id),
+        discoms: (s.discoms || []).filter(
+          (discom) =>
+            discom.stateKey !== id && discom.stateKey !== removed?.key,
+        ),
+      };
+    });
     setStateErrors((e) => {
       const next = { ...e };
       delete next[id];
@@ -626,6 +533,26 @@ export default function AdminSettingsPage() {
     setIsDirty(true);
   }, []);
 
+  const requestRemoveState = useCallback(
+    (row) => {
+      const linkedDiscoms = (settings.discoms || []).filter(
+        (discom) => discom.stateKey === row.id || discom.stateKey === row.key,
+      ).length;
+      setConfirmDelete({
+        open: true,
+        type: "state",
+        id: row.id,
+        title: `Delete ${row.name?.trim() || "this state"}?`,
+        message:
+          linkedDiscoms > 0
+            ? `This will remove the state, its cities, and ${linkedDiscoms} linked distribution ${linkedDiscoms === 1 ? "company" : "companies"}. Save settings afterward to apply it across calculator and booking.`
+            : "This will remove the state and its cities. Save settings afterward to apply it across calculator and booking.",
+        confirmLabel: "Delete State",
+      });
+    },
+    [settings.discoms],
+  );
+
   const addDiscom = useCallback(() => {
     setSettings((s) => ({
       ...s,
@@ -633,7 +560,7 @@ export default function AdminSettingsPage() {
         ...(s.discoms || []),
         {
           id: uid(),
-          stateKey: s.states[0]?.key || "andhra_pradesh",
+          stateKey: s.states[0]?.key || "",
           name: "",
           code: "",
           status: "active",
@@ -673,7 +600,7 @@ export default function AdminSettingsPage() {
     setIsDirty(true);
   }, []);
 
-  const removeDiscom = useCallback((id) => {
+  const removeDiscomNow = useCallback((id) => {
     setSettings((s) => ({
       ...s,
       discoms: (s.discoms || []).filter((discom) => discom.id !== id),
@@ -681,13 +608,49 @@ export default function AdminSettingsPage() {
     setIsDirty(true);
   }, []);
 
+  const requestRemoveDiscom = useCallback((discom) => {
+    setConfirmDelete({
+      open: true,
+      type: "discom",
+      id: discom.id,
+      title: `Delete ${discom.name?.trim() || "this distribution company"}?`,
+      message:
+        "This distribution company will stop appearing in booking after you save the settings.",
+      confirmLabel: "Delete DISCOM",
+    });
+  }, []);
+
+  const closeDeleteDialog = useCallback(() => {
+    setConfirmDelete((dialog) => ({ ...dialog, open: false }));
+  }, []);
+
+  const handleConfirmDelete = useCallback(() => {
+    if (confirmDelete.type === "state") {
+      removeStateNow(confirmDelete.id);
+      setToast({
+        open: true,
+        message: "State deleted. Save settings to publish this change.",
+        severity: "info",
+      });
+    }
+    if (confirmDelete.type === "discom") {
+      removeDiscomNow(confirmDelete.id);
+      setToast({
+        open: true,
+        message: "Distribution company deleted. Save settings to publish this change.",
+        severity: "info",
+      });
+    }
+    closeDeleteDialog();
+  }, [closeDeleteDialog, confirmDelete.id, confirmDelete.type, removeDiscomNow, removeStateNow]);
+
   // â”€â”€ validation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-  function validate() {
+  function validate(settingsToValidate = settings) {
     const errors = [];
-    const p = settings.pricing;
-    const b = settings.bidding;
-    const sub = settings.subsidy;
+    const p = settingsToValidate.pricing;
+    const b = settingsToValidate.bidding;
+    const sub = settingsToValidate.subsidy;
 
     if (!isPositiveNumber(p.standardCostPerKw))
       errors.push("Standard Cost Per kW");
@@ -717,12 +680,12 @@ export default function AdminSettingsPage() {
       Number(sub.above3Kw) < Number(sub.for2Kw)
     )
       errors.push("3kW+ subsidy must be greater than or equal to 2kW subsidy");
-    settings.states.forEach((st, i) => {
+    settingsToValidate.states.forEach((st, i) => {
       if (!st.name.trim()) errors.push(`State row ${i + 1}: name required`);
       if (!isPositiveNumber(st.rate))
         errors.push(`State row ${i + 1}: valid rate required`);
     });
-    (settings.discoms || []).forEach((discom, i) => {
+    (settingsToValidate.discoms || []).forEach((discom, i) => {
       if (!String(discom.stateKey || "").trim())
         errors.push(`DISCOM row ${i + 1}: state required`);
       if (!String(discom.name || "").trim())
@@ -737,32 +700,31 @@ export default function AdminSettingsPage() {
 
   async function handleSave() {
     // Flush any in-progress cities text before validating / saving
-    setSettings((s) => ({
-      ...s,
-      states: s.states.map((st) => {
-        const raw = citiesRaw[st.id];
-        if (raw === undefined) return st;
-        const cities = raw
-          .split(",")
-          .map((c) => c.trim())
-          .filter(Boolean);
-        return { ...st, cities };
-      }),
-    }));
+    const settingsToSave = commitCitiesToSettings(settings, citiesRaw);
+    setSettings(settingsToSave);
 
-    const errors = validate();
+    const errors = validate(settingsToSave);
     if (errors.length) {
+      const message = `Fix: ${errors.slice(0, 2).join(", ")}${errors.length > 2 ? ` +${errors.length - 2} more` : ""}`;
+      setSaveFeedback({
+        message,
+        severity: "error",
+      });
       setToast({
         open: true,
-        message: `Fix: ${errors.slice(0, 2).join(", ")}${errors.length > 2 ? ` +${errors.length - 2} more` : ""}`,
+        message,
         severity: "error",
       });
       return;
     }
     setIsSaving(true);
+    setSaveFeedback({
+      message: "Saving platform settings...",
+      severity: "info",
+    });
     try {
       const saved = await platformSettingsApi.updateSettings(
-        normalizeSettingsForApi(settings),
+        normalizeSettingsForApi(settingsToSave),
       );
       const normalized = normalizeSettingsForUi(saved);
       setSettings(normalized);
@@ -778,17 +740,26 @@ export default function AdminSettingsPage() {
       );
       setSavedAt(Date.now());
       setIsDirty(false);
+      setSaveFeedback({
+        message: "Settings saved successfully. Calculator and booking are updated.",
+        severity: "success",
+      });
       setToast({
         open: true,
-        message: "Platform settings saved successfully.",
+        message: "Settings saved successfully. Calculator and booking are updated.",
         severity: "success",
       });
     } catch (error) {
+      const message =
+        error?.response?.data?.message ||
+        "Unable to save platform settings. Check business service.";
+      setSaveFeedback({
+        message,
+        severity: "error",
+      });
       setToast({
         open: true,
-        message:
-          error?.response?.data?.message ||
-          "Unable to save platform settings. Check business service.",
+        message,
         severity: "error",
       });
     } finally {
@@ -801,7 +772,7 @@ export default function AdminSettingsPage() {
   function handleReset() {
     if (
       !window.confirm(
-        "Reset all settings to factory defaults? This cannot be undone.",
+        "Reset global pricing rules and clear all manual states, cities, and DISCOMs? This cannot be undone.",
       )
     )
       return;
@@ -818,7 +789,7 @@ export default function AdminSettingsPage() {
     );
     setToast({
       open: true,
-      message: "Settings reset to defaults.",
+      message: "Settings reset. States, cities, and DISCOMs are now empty.",
       severity: "info",
     });
   }
@@ -1198,7 +1169,7 @@ export default function AdminSettingsPage() {
                 <Tooltip title="Remove state" placement="top">
                   <IconButton
                     size="small"
-                    onClick={() => removeState(row.id)}
+                    onClick={() => requestRemoveState(row)}
                     sx={{
                       color: "#D74C4C",
                       borderRadius: "0.65rem",
@@ -1220,7 +1191,7 @@ export default function AdminSettingsPage() {
                 }}
               >
                 <Box>
-                  <FieldLabel tooltip="Display name shown to customers in dropdowns (e.g. Andhra Pradesh)">
+                  <FieldLabel tooltip="Display name shown to customers in dropdowns">
                     State Name
                   </FieldLabel>
                   <TextField
@@ -1228,7 +1199,7 @@ export default function AdminSettingsPage() {
                     size="small"
                     value={row.name}
                     onChange={(e) => updateStateName(row.id, e.target.value)}
-                    placeholder="e.g. Andhra Pradesh"
+                    placeholder="e.g. Karnataka"
                     sx={inputSx}
                   />
                 </Box>
@@ -1358,6 +1329,12 @@ export default function AdminSettingsPage() {
             ))}
           </Box>
 
+          {settings.states.length === 0 ? (
+            <Alert severity="warning" sx={{ mb: 1.5, borderRadius: "0.85rem" }}>
+              Add at least one state before assigning distribution companies.
+            </Alert>
+          ) : null}
+
           <Stack spacing={1}>
             {(settings.discoms || []).map((discom) => (
               <Box
@@ -1381,13 +1358,33 @@ export default function AdminSettingsPage() {
                   onChange={(e) =>
                     updateDiscom(discom.id, "stateKey", e.target.value)
                   }
+                  disabled={settings.states.length === 0}
+                  helperText={
+                    settings.states.length === 0 ? "No states added" : undefined
+                  }
+                  SelectProps={{
+                    displayEmpty: true,
+                    renderValue: (selected) => {
+                      if (!selected) return "Select state";
+                      return (
+                        settings.states.find((state) => state.key === selected)
+                          ?.name || "Select state"
+                      );
+                    },
+                  }}
                   sx={inputSx}
                 >
-                  {settings.states.map((state) => (
-                    <MenuItem key={state.id} value={state.key}>
-                      {state.name}
+                  {settings.states.length === 0 ? (
+                    <MenuItem value="" disabled>
+                      No states added
                     </MenuItem>
-                  ))}
+                  ) : (
+                    settings.states.map((state) => (
+                      <MenuItem key={state.id} value={state.key}>
+                        {state.name}
+                      </MenuItem>
+                    ))
+                  )}
                 </TextField>
                 <TextField
                   size="small"
@@ -1437,7 +1434,7 @@ export default function AdminSettingsPage() {
                   <Tooltip title="Remove DISCOM" placement="top">
                     <IconButton
                       size="small"
-                      onClick={() => removeDiscom(discom.id)}
+                      onClick={() => requestRemoveDiscom(discom)}
                       sx={{ color: "#D74C4C", borderRadius: "0.65rem" }}
                     >
                       <DeleteOutlineRoundedIcon sx={{ fontSize: "0.95rem" }} />
@@ -1452,6 +1449,7 @@ export default function AdminSettingsPage() {
             startIcon={<AddRoundedIcon />}
             onClick={addDiscom}
             variant="contained"
+            disabled={settings.states.length === 0}
             sx={{
               mt: 2,
               minHeight: 42,
@@ -1590,7 +1588,44 @@ export default function AdminSettingsPage() {
           </Box>
         </Stack>
 
-        <Stack direction="row" spacing={1.2}>
+        <Stack
+          direction={{ xs: "column", sm: "row" }}
+          spacing={1.2}
+          alignItems={{ xs: "stretch", sm: "center" }}
+          sx={{ ml: "auto" }}
+        >
+          {isSaving || saveFeedback.message ? (
+            <Alert
+              severity={isSaving ? "info" : saveFeedback.severity}
+              variant={
+                saveFeedback.severity === "success" && !isSaving
+                  ? "filled"
+                  : "outlined"
+              }
+              icon={
+                saveFeedback.severity === "success" && !isSaving ? (
+                  <CheckRoundedIcon />
+                ) : undefined
+              }
+              sx={{
+                minHeight: 44,
+                py: 0.45,
+                px: 1.4,
+                borderRadius: "0.9rem",
+                alignItems: "center",
+                fontSize: "0.78rem",
+                fontWeight: 850,
+                maxWidth: { xs: "100%", md: 420 },
+                boxShadow:
+                  saveFeedback.severity === "success" && !isSaving
+                    ? "0 10px 24px rgba(35,150,84,0.22)"
+                    : "none",
+                "& .MuiAlert-message": { py: 0 },
+              }}
+            >
+              {isSaving ? "Saving platform settings..." : saveFeedback.message}
+            </Alert>
+          ) : null}
           <Button
             variant="outlined"
             startIcon={<RestartAltRoundedIcon />}
@@ -1627,25 +1662,105 @@ export default function AdminSettingsPage() {
               "&:disabled": { bgcolor: "#A0B8E0", boxShadow: "none" },
             }}
           >
-            {isSaving ? "Savingâ€¦" : "Save Global Settings"}
+            {isSaving ? "Saving..." : "Save Global Settings"}
           </Button>
         </Stack>
       </Box>
 
+      <Dialog
+        open={confirmDelete.open}
+        onClose={closeDeleteDialog}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: "1.2rem",
+            border: "1px solid rgba(225,232,241,0.96)",
+            boxShadow: "0 24px 70px rgba(16,29,51,0.22)",
+          },
+        }}
+      >
+        <DialogTitle sx={{ pb: 1.2 }}>
+          <Stack direction="row" spacing={1.2} alignItems="center">
+            <Box
+              sx={{
+                width: 38,
+                height: 38,
+                borderRadius: "0.9rem",
+                display: "grid",
+                placeItems: "center",
+                bgcolor: "#FFF0F0",
+                color: "#D74C4C",
+              }}
+            >
+              <DeleteOutlineRoundedIcon sx={{ fontSize: "1.2rem" }} />
+            </Box>
+            <Box>
+              <Typography sx={{ color: "#18253A", fontWeight: 900, fontSize: "1rem" }}>
+                {confirmDelete.title}
+              </Typography>
+              <Typography sx={{ color: "#8B97A8", fontSize: "0.72rem", fontWeight: 700 }}>
+                This action is not published until you save.
+              </Typography>
+            </Box>
+          </Stack>
+        </DialogTitle>
+        <DialogContent sx={{ pt: 0.5 }}>
+          <Typography sx={{ color: "#556478", fontSize: "0.88rem", lineHeight: 1.65 }}>
+            {confirmDelete.message}
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
+          <Button
+            onClick={closeDeleteDialog}
+            variant="outlined"
+            sx={{
+              minHeight: 40,
+              borderRadius: "0.8rem",
+              borderColor: "rgba(225,232,241,0.96)",
+              color: "#556478",
+              fontWeight: 800,
+              textTransform: "none",
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleConfirmDelete}
+            variant="contained"
+            sx={{
+              minHeight: 40,
+              borderRadius: "0.8rem",
+              bgcolor: "#D74C4C",
+              boxShadow: "0 12px 24px rgba(215,76,76,0.22)",
+              fontWeight: 900,
+              textTransform: "none",
+              "&:hover": { bgcolor: "#BF3E3E" },
+            }}
+          >
+            {confirmDelete.confirmLabel}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       {/* Toast */}
       <Snackbar
         open={toast.open}
-        autoHideDuration={3500}
+        autoHideDuration={4500}
         onClose={() => setToast((t) => ({ ...t, open: false }))}
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+        sx={{ zIndex: 10000 }}
       >
         <Alert
           severity={toast.severity}
           onClose={() => setToast((t) => ({ ...t, open: false }))}
+          variant="filled"
           sx={{
             borderRadius: "0.9rem",
-            fontWeight: 700,
-            boxShadow: "0 12px 28px rgba(16,29,51,0.14)",
+            color: "#fff",
+            fontWeight: 800,
+            minWidth: { xs: "calc(100vw - 32px)", sm: 420 },
+            boxShadow: "0 18px 38px rgba(16,29,51,0.2)",
           }}
         >
           {toast.message}

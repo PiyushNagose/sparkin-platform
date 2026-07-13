@@ -14,7 +14,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { publicPlatformSettingsApi } from "@/features/public/api/platformSettingsApi";
 import {
-  getCitiesForState as getStaticCities,
   getCityOptionsForState,
   getDefaultPincodeForCity,
 } from "@/shared/data/stateCities";
@@ -38,7 +37,8 @@ export function usePlatformStates() {
       .catch((err) => {
         if (cancelled) return;
         console.error("[usePlatformStates] Failed to load states:", err);
-        setError("Could not load state list. Using defaults.");
+        setStateOptions([]);
+        setError("Could not load state list.");
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -51,8 +51,8 @@ export function usePlatformStates() {
 
   /**
    * City list for a given state key.
-   * Prefers live API data; falls back to bundled static list.
-   * Returns [] when no cities exist for the state at all.
+   * Uses only live API data. Returns [] when the admin has not configured
+   * cities for the selected state.
    */
   const getCities = useCallback(
     (stateKey) => {
@@ -62,8 +62,7 @@ export function usePlatformStates() {
         const cityOptions = getCityOptionsForState(stateKey, match.cities || []);
         return cityOptions.map((city) => city.name).filter(Boolean);
       }
-      // Fallback for states not yet in the API response
-      return getStaticCities(stateKey);
+      return [];
     },
     [stateOptions],
   );
@@ -77,7 +76,7 @@ export function usePlatformStates() {
           (city) => city.name,
         );
       }
-      return getCityOptionsForState(stateKey, getStaticCities(stateKey));
+      return [];
     },
     [stateOptions],
   );
