@@ -8,6 +8,10 @@ import {
 } from "@mui/material";
 import InboxOutlinedIcon from "@mui/icons-material/InboxOutlined";
 import { forwardRef } from "react";
+import {
+  metricTypography,
+  platformTypography,
+} from "@/shared/ui/data-display/metricTypography";
 
 export const adminUi = {
   colors: {
@@ -23,6 +27,20 @@ export const adminUi = {
     panel: "1.2rem",
     button: "0.85rem",
     pill: "999px",
+  },
+  typography: {
+    pageTitle: {
+      ...platformTypography.pageTitle,
+    },
+    pageSubtitle: platformTypography.pageSubtitle,
+    sectionTitle: platformTypography.sectionTitle,
+    cardTitle: platformTypography.cardTitle,
+    cardText: platformTypography.cardText,
+    smallText: platformTypography.smallText,
+    actionText: platformTypography.actionText,
+    metricLabel: metricTypography.label,
+    metricValue: metricTypography.dashboardValue,
+    metricValueCompact: metricTypography.compactValue,
   },
 };
 
@@ -43,9 +61,7 @@ export function AdminPageHeader({ title, subtitle, subtitleSx, actions }) {
         <Typography
           sx={{
             color: adminUi.colors.text,
-            fontSize: { xs: "1.9rem", md: "2.3rem" },
-            fontWeight: 850,
-            lineHeight: 1,
+            ...adminUi.typography.pageTitle,
           }}
         >
           {title}
@@ -54,19 +70,10 @@ export function AdminPageHeader({ title, subtitle, subtitleSx, actions }) {
           <Typography
             sx={{
               mt: 0.8,
-
               color: "#647387",
-              fontSize: "0.92rem",
-              fontWeight: 500,
-
-              whiteSpace: "nowrap",
-
-              overflow: "hidden",
-
-              textOverflow: "ellipsis",
-
-              width: "100%",
-              maxWidth: "100%",
+              ...adminUi.typography.pageSubtitle,
+              maxWidth: 560,
+              ...subtitleSx,
             }}
           >
             {subtitle}
@@ -110,9 +117,8 @@ export function AdminPrimaryButton({ sx, ...props }) {
         borderRadius: adminUi.radius.button,
         bgcolor: adminUi.colors.primary,
         boxShadow: "0 10px 22px rgba(14,86,200,0.18)",
-        fontSize: "0.74rem",
+        ...adminUi.typography.actionText,
         fontWeight: 800,
-        textTransform: "none",
         "&:hover": { bgcolor: "#0B49AD" },
         ...sx,
       }}
@@ -144,13 +150,13 @@ export function AdminEmptyState({ title, subtitle }) {
     <Box sx={{ py: 4.5, px: 2, textAlign: "center" }}>
       <InboxOutlinedIcon sx={{ color: "#CAD3DF", fontSize: "2.1rem", mb: 1 }} />
       <Typography
-        sx={{ color: adminUi.colors.text, fontSize: "1rem", fontWeight: 850 }}
+        sx={{ color: adminUi.colors.text, ...adminUi.typography.cardTitle }}
       >
         {title}
       </Typography>
       {subtitle ? (
         <Typography
-          sx={{ mt: 0.45, color: adminUi.colors.muted, fontSize: "0.84rem" }}
+          sx={{ mt: 0.45, color: adminUi.colors.muted, ...adminUi.typography.cardText }}
         >
           {subtitle}
         </Typography>

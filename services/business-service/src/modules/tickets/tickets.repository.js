@@ -56,7 +56,7 @@ export const ticketsRepository = {
     const doc = await TicketModel.findByIdAndUpdate(
       id,
       { $set: data },
-      { new: true },
+      { returnDocument: "after" },
     ).lean({ virtuals: true });
     return normalize(doc);
   },
@@ -65,7 +65,7 @@ export const ticketsRepository = {
     const doc = await TicketModel.findByIdAndUpdate(
       id,
       { $push: { messages: message } },
-      { new: true },
+      { returnDocument: "after" },
     ).lean({ virtuals: true });
     return normalize(doc);
   },

@@ -1,5 +1,6 @@
 import { Alert, Box, Button, CircularProgress, Typography } from "@mui/material";
 import RefreshRoundedIcon from "@mui/icons-material/RefreshRounded";
+import { platformTypography } from "@/shared/ui/data-display/metricTypography";
 
 export function CustomerLoadingBlock({ mt = 2, py = 5 }) {
   return (
@@ -21,7 +22,7 @@ export function CustomerErrorBlock({ message, onRetry, mt = 1.5 }) {
             color="inherit"
             onClick={onRetry}
             startIcon={<RefreshRoundedIcon sx={{ fontSize: "0.9rem" }} />}
-            sx={{ textTransform: "none", fontWeight: 700 }}
+            sx={{ ...platformTypography.actionText }}
           >
             Retry
           </Button>
@@ -56,14 +57,13 @@ export function CustomerEmptyCard({
       }}
     >
       {Icon ? <Icon sx={{ color: "#C8D0DC", fontSize: "2rem", mb: 1 }} /> : null}
-      <Typography sx={{ color: "#223146", fontSize: "1rem", fontWeight: 800 }}>{title}</Typography>
+      <Typography sx={{ color: "#223146", ...platformTypography.cardTitle }}>{title}</Typography>
       {description ? (
         <Typography
           sx={{
             mt: 0.5,
             color: "#6F7D8F",
-            fontSize: "0.84rem",
-            lineHeight: 1.65,
+            ...platformTypography.cardText,
             maxWidth: 360,
             mx: "auto",
           }}
@@ -82,9 +82,7 @@ export function CustomerEmptyCard({
             borderRadius: "0.95rem",
             bgcolor: "#0E56C8",
             boxShadow: "0 12px 24px rgba(14,86,200,0.16)",
-            fontSize: "0.75rem",
-            fontWeight: 700,
-            textTransform: "none",
+            ...platformTypography.actionText,
           }}
         >
           {actionLabel}

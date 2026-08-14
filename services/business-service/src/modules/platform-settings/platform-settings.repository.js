@@ -8,7 +8,7 @@ async function upsertGlobal(settings) {
   return PlatformSettingsModel.findOneAndUpdate(
     { settingsId: "global" },
     { $set: { ...settings, settingsId: "global" } },
-    { new: true, upsert: true, runValidators: true },
+    { returnDocument: "after", upsert: true, runValidators: true },
   ).lean();
 }
 

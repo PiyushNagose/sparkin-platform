@@ -5,10 +5,12 @@ import InsightsRoundedIcon from "@mui/icons-material/InsightsRounded";
 import LocationOnRoundedIcon from "@mui/icons-material/LocationOnRounded";
 import SupportAgentRoundedIcon from "@mui/icons-material/SupportAgentRounded";
 import { Link as RouterLink } from "react-router-dom";
+import { useState } from "react";
 import { calculatorStorage } from "@/features/public/calculator/calculatorStorage";
 import regionPlaceholder from "@/shared/assets/images/public/calculator/calculator-region-placeholder.png";
 import styles from "@/features/public/pages/CalculatorPage.module.css";
 import { publicPageSpacing, publicTypography } from "@/features/public/pages/publicPageStyles";
+import { limitEmailInput } from "@/shared/lib/forms/inputConstraints";
 
 const insightCards = [
   {
@@ -29,6 +31,7 @@ const insightCards = [
 ];
 
 export default function CalculatorUnavailablePage() {
+  const [email, setEmail] = useState("");
   const serviceability = calculatorStorage.getServiceability();
   const supportedCities = serviceability?.supportedCities?.join(", ") || "Vijayawada, Visakhapatnam, Guntur, Tirupati";
 
@@ -73,7 +76,7 @@ export default function CalculatorUnavailablePage() {
                   </Typography>
 
                   <Stack direction={{ xs: "column", sm: "row" }} spacing={1} sx={{ alignItems: { sm: "stretch" } }}>
-                    <TextField fullWidth placeholder="Enter your email" InputProps={{ sx: { height: 46, borderRadius: "0.9rem", bgcolor: "#F1F4F8" } }} />
+                    <TextField fullWidth type="email" placeholder="Enter your email" value={email} onChange={(event) => setEmail(limitEmailInput(event.target.value))} InputProps={{ sx: { height: 46, borderRadius: "0.9rem", bgcolor: "#F1F4F8" } }} />
                     <Button variant="contained" sx={{ minWidth: { sm: 112 }, minHeight: 46, borderRadius: "0.9rem", bgcolor: "#1B1F26", color: "white", fontWeight: 700, boxShadow: "none" }}>
                       Notify Me
                     </Button>

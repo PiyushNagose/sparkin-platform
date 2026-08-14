@@ -1,4 +1,5 @@
 import { lazy } from "react";
+import { NotFoundPage } from "@/app/errors/RouteErrorPage";
 import { LazyRoute } from "@/shared/ui/placeholder/LazyRoute";
 
 const AdminDashboardPage = lazy(
@@ -130,4 +131,5 @@ export const adminRoutes = [
     path: "referral-management",
     element: <LazyRoute component={AdminReferralManagementPage} />,
   },
+  { path: "*", element: <NotFoundPage /> },
 ];

@@ -52,7 +52,7 @@ export const updatePlatformSettingsSchema = z.object({
           .default([]),
       }),
     )
-    .min(1),
+    .default([]),
   discoms: z
     .array(
       z.object({

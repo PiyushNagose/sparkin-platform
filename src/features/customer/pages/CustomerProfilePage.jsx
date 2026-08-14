@@ -23,6 +23,10 @@ import { useAuth } from "@/features/auth/AuthProvider";
 import { authApi } from "@/features/auth/authApi";
 import { projectsApi } from "@/features/public/api/projectsApi";
 import customerProfileAvatarPlaceholder from "@/shared/assets/images/customer/profile/customer-profile-avatar-placeholder.svg";
+import {
+  limitPhoneNumber,
+  PHONE_INPUT_PROPS,
+} from "@/shared/lib/forms/inputConstraints";
 
 // ─── constants ────────────────────────────────────────────────────────────────
 
@@ -59,7 +63,7 @@ function getAvatarSrc(user) {
 
 // Basic phone validation — must be 7–15 digits, optional leading +
 function isValidPhone(value) {
-  return !value || /^\+?[0-9]{7,15}$/.test(value.trim());
+  return !value || /^\d{10}$/.test(value.trim());
 }
 
 function isDirty(form, user) {
@@ -105,6 +109,7 @@ function LabeledField({
   fullWidth = false,
   readOnly = false,
   endAdornment,
+  inputProps,
 }) {
   return (
     <Box sx={{ minWidth: 0, gridColumn: fullWidth ? "1 / -1" : "auto" }}>
@@ -126,6 +131,7 @@ function LabeledField({
         type={type}
         value={value}
         onChange={(e) => onChange?.(e.target.value)}
+        inputProps={inputProps}
         InputProps={{ readOnly, endAdornment }}
         sx={{
           "& .MuiOutlinedInput-root": {
@@ -272,7 +278,10 @@ export default function CustomerProfilePage() {
   // ── handlers ──────────────────────────────────────────────────────────────
 
   function updateField(field, value) {
-    setForm((prev) => ({ ...prev, [field]: value }));
+    setForm((prev) => ({
+      ...prev,
+      [field]: field === "phoneNumber" ? limitPhoneNumber(value) : value,
+    }));
   }
 
   function updatePwField(field, value) {
@@ -641,6 +650,7 @@ export default function CustomerProfilePage() {
                 label="Phone Number"
                 value={form.phoneNumber}
                 onChange={(v) => updateField("phoneNumber", v)}
+                inputProps={PHONE_INPUT_PROPS}
               />
               <LabeledField
                 label="Email Address"
@@ -653,7 +663,7 @@ export default function CustomerProfilePage() {
               <Typography
                 sx={{ mt: 0.75, color: "#D92D20", fontSize: "0.72rem" }}
               >
-                Enter a valid phone number (7–15 digits, optional +).
+                Enter a valid 10-digit mobile number.
               </Typography>
             )}
           </SectionCard>

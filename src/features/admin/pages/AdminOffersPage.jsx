@@ -397,7 +397,7 @@ export default function AdminOffersPage() {
               "&:hover": { bgcolor: "#0B49AD" },
             }}
           >
-            + New Strategy
+            New Strategy
           </Button>
         </Stack>
       </Stack>

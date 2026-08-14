@@ -1,5 +1,9 @@
 import { Alert, Box, Button, CircularProgress, Stack, Typography } from "@mui/material";
 import InboxOutlinedIcon from "@mui/icons-material/InboxOutlined";
+import {
+  metricTypography,
+  platformTypography,
+} from "@/shared/ui/data-display/metricTypography";
 
 export const vendorUi = {
   colors: {
@@ -16,6 +20,20 @@ export const vendorUi = {
     panel: "1.35rem",
     button: "0.95rem",
     pill: "999px",
+  },
+  typography: {
+    pageTitle: {
+      ...platformTypography.pageTitle,
+    },
+    pageSubtitle: platformTypography.pageSubtitle,
+    sectionTitle: platformTypography.sectionTitle,
+    cardTitle: platformTypography.cardTitle,
+    cardText: platformTypography.cardText,
+    smallText: platformTypography.smallText,
+    actionText: platformTypography.actionText,
+    metricLabel: metricTypography.label,
+    metricValue: metricTypography.dashboardValue,
+    metricValueCompact: metricTypography.compactValue,
   },
   transition: "all 0.18s cubic-bezier(0.4,0,0.2,1)",
 };
@@ -37,10 +55,7 @@ export function VendorPageHeader({ title, subtitle, actions, sx }) {
         <Typography
           sx={{
             color: vendorUi.colors.text,
-            fontSize: { xs: "1.95rem", md: "2.1rem" },
-            fontWeight: 800,
-            lineHeight: 1.05,
-            letterSpacing: "-0.04em",
+            ...vendorUi.typography.pageTitle,
           }}
         >
           {title}
@@ -51,8 +66,7 @@ export function VendorPageHeader({ title, subtitle, actions, sx }) {
               mt: 0.45,
               maxWidth: 520,
               color: vendorUi.colors.muted,
-              fontSize: "0.92rem",
-              lineHeight: 1.6,
+              ...vendorUi.typography.pageSubtitle,
               whiteSpace: "nowrap",
               overflow: "hidden",
               textOverflow: "ellipsis",
@@ -83,9 +97,7 @@ export function VendorPrimaryButton({ sx, ...props }) {
         borderRadius: vendorUi.radius.button,
         bgcolor: vendorUi.colors.primary,
         boxShadow: vendorUi.primaryShadow,
-        fontSize: "0.75rem",
-        fontWeight: 700,
-        textTransform: "none",
+        ...vendorUi.typography.actionText,
         transition: vendorUi.transition,
         "&:hover": {
           bgcolor: "#0B49AD",
@@ -111,9 +123,7 @@ export function VendorSecondaryButton({ sx, ...props }) {
         borderColor: "rgba(208,216,226,0.95)",
         color: "#223146",
         bgcolor: "#FFFFFF",
-        fontSize: "0.75rem",
-        fontWeight: 700,
-        textTransform: "none",
+        ...vendorUi.typography.actionText,
         transition: vendorUi.transition,
         "&:hover": {
           borderColor: "rgba(184,196,212,0.98)",
@@ -233,14 +243,13 @@ export function VendorEmptyState({
       }}
     >
       <Icon sx={{ color: "#C8D0DC", fontSize: "2rem", mb: 1 }} />
-      <Typography sx={{ color: "#223146", fontSize: "1rem", fontWeight: 800 }}>{title}</Typography>
+      <Typography sx={{ color: "#223146", ...vendorUi.typography.cardTitle }}>{title}</Typography>
       {subtitle ? (
         <Typography
           sx={{
             mt: 0.5,
             color: "#6F7D8F",
-            fontSize: "0.84rem",
-            lineHeight: 1.65,
+            ...vendorUi.typography.cardText,
             maxWidth: 360,
             mx: "auto",
           }}
@@ -259,9 +268,7 @@ export function VendorEmptyState({
             borderRadius: "0.95rem",
             bgcolor: "#0E56C8",
             boxShadow: "0 12px 24px rgba(14,86,200,0.16)",
-            fontSize: "0.75rem",
-            fontWeight: 700,
-            textTransform: "none",
+            ...vendorUi.typography.actionText,
           }}
         >
           {actionLabel}

@@ -32,6 +32,10 @@ import bookingHouseClassic from "@/shared/assets/images/customer/bookings/bookin
 import bookingHouseModern from "@/shared/assets/images/customer/bookings/booking-house-modern-placeholder.png";
 import bookingHouseUnderConstruction from "@/shared/assets/images/customer/bookings/booking-house-underconstruction-placeholder.png";
 import bookingSolarFacility from "@/shared/assets/images/customer/bookings/booking-solar-facility-placeholder.png";
+import {
+  metricTypography,
+  platformTypography,
+} from "@/shared/ui/data-display/metricTypography";
 
 const IMAGE_POOL = [
   bookingHouseModern,
@@ -92,14 +96,12 @@ function KpiCard({ icon, label, value, subtitle, tone, bg }) {
         sx={{
           mt: 1.05,
           color: "#18253A",
-          fontSize: "1.65rem",
-          fontWeight: 800,
-          lineHeight: 1.05,
+          ...metricTypography.dashboardValue,
         }}
       >
         {value}
       </Typography>
-      <Typography sx={{ mt: 0.45, color: "#6F7D8F", fontSize: "0.74rem" }}>
+      <Typography sx={{ mt: 0.45, color: "#6F7D8F", ...platformTypography.smallText }}>
         {subtitle}
       </Typography>
     </Box>
@@ -124,7 +126,7 @@ function DataField({ label, value }) {
         sx={{
           mt: 0.28,
           color: "#223146",
-          fontSize: "0.82rem",
+          ...platformTypography.cardText,
           fontWeight: 700,
         }}
       >
@@ -210,8 +212,7 @@ function BookingCard({ item }) {
             <Typography
               sx={{
                 color: "#223146",
-                fontSize: "1rem",
-                fontWeight: 800,
+                ...platformTypography.cardTitle,
                 lineHeight: 1.25,
               }}
             >
@@ -225,7 +226,7 @@ function BookingCard({ item }) {
               sx={{ mt: 0.25, color: "#7A8799" }}
             >
               <LocationOnOutlinedIcon sx={{ fontSize: "0.82rem" }} />
-              <Typography sx={{ fontSize: "0.7rem", lineHeight: 1.5 }}>
+              <Typography sx={{ ...platformTypography.smallText }}>
                 {item.location} · Submitted {item.submittedAt}
               </Typography>
             </Stack>
@@ -320,9 +321,7 @@ function BookingCard({ item }) {
                   borderColor: "rgba(225,232,241,0.96)",
                   color: "#223146",
                   bgcolor: "#FFFFFF",
-                  fontSize: "0.72rem",
-                  fontWeight: 700,
-                  textTransform: "none",
+                  ...platformTypography.actionText,
                   whiteSpace: "nowrap",
                 }}
               >
@@ -350,9 +349,7 @@ function BookingCard({ item }) {
                 boxShadow: item.actionPrimary
                   ? "0 12px 24px rgba(14,86,200,0.14)"
                   : "none",
-                fontSize: "0.72rem",
-                fontWeight: 700,
-                textTransform: "none",
+                ...platformTypography.actionText,
                 whiteSpace: "nowrap",
               }}
             >
@@ -542,10 +539,7 @@ export default function CustomerBookingsPage() {
           <Typography
             sx={{
               color: "#18253A",
-              fontSize: { xs: "1.95rem", md: "2.05rem" },
-              fontWeight: 800,
-              lineHeight: 1.08,
-              letterSpacing: "-0.04em",
+              ...platformTypography.pageTitle,
             }}
           >
             My Bookings
@@ -554,7 +548,7 @@ export default function CustomerBookingsPage() {
             sx={{
               mt: 0.4,
               color: "#6F7D8F",
-              fontSize: "0.92rem",
+              ...platformTypography.pageSubtitle,
               lineHeight: 1.6,
             }}
           >
@@ -575,9 +569,7 @@ export default function CustomerBookingsPage() {
             borderRadius: "0.95rem",
             bgcolor: "#0E56C8",
             boxShadow: "0 12px 24px rgba(14,86,200,0.16)",
-            fontSize: "0.75rem",
-            fontWeight: 700,
-            textTransform: "none",
+            ...platformTypography.actionText,
           }}
         >
           New Booking
@@ -649,7 +641,7 @@ export default function CustomerBookingsPage() {
             }}
           >
             <Typography
-              sx={{ color: "#223146", fontSize: "1rem", fontWeight: 800 }}
+              sx={{ color: "#223146", ...platformTypography.cardTitle }}
             >
               No bookings yet
             </Typography>
@@ -657,7 +649,7 @@ export default function CustomerBookingsPage() {
               sx={{
                 mt: 0.5,
                 color: "#6F7D8F",
-                fontSize: "0.84rem",
+                ...platformTypography.cardText,
                 lineHeight: 1.65,
                 maxWidth: 360,
                 mx: "auto",
@@ -678,9 +670,7 @@ export default function CustomerBookingsPage() {
                 borderRadius: "0.95rem",
                 bgcolor: "#0E56C8",
                 boxShadow: "0 12px 24px rgba(14,86,200,0.16)",
-                fontSize: "0.75rem",
-                fontWeight: 700,
-                textTransform: "none",
+                ...platformTypography.actionText,
               }}
             >
               Create Booking

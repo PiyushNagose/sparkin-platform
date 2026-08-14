@@ -46,6 +46,11 @@ import {
 } from "@/features/admin/components/AdminPortalUI";
 import { getAdminDashboardData } from "@/features/admin/api/adminApi";
 import { leadsApi } from "@/features/public/api/leadsApi";
+import {
+  limitEmailInput,
+  limitPhoneNumber,
+  PHONE_INPUT_PROPS,
+} from "@/shared/lib/forms/inputConstraints";
 
 const initialLeadForm = {
   fullName: "",
@@ -114,10 +119,23 @@ function formatLeadId(lead) {
 
 function formatLocation(lead) {
   return (
-    [lead.installationAddress?.city, lead.installationAddress?.state]
+    [
+      formatDisplayText(lead.installationAddress?.city),
+      formatDisplayText(lead.installationAddress?.state),
+    ]
       .filter(Boolean)
       .join(", ") || "Location pending"
   );
+}
+
+function formatDisplayText(value = "") {
+  return String(value)
+    .replaceAll("_", " ")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join(" ");
 }
 
 function getLeadSize(lead) {
@@ -274,7 +292,15 @@ function LeadFormDialog({ open, onClose, onSubmit, saving, error }) {
   }, [open]);
 
   function updateField(field, value) {
-    setForm((current) => ({ ...current, [field]: value }));
+    setForm((current) => ({
+      ...current,
+      [field]:
+        field === "phoneNumber"
+          ? limitPhoneNumber(value)
+          : field === "email"
+            ? limitEmailInput(value)
+            : value,
+    }));
   }
 
   function handleSubmit(event) {
@@ -345,6 +371,7 @@ function LeadFormDialog({ open, onClose, onSubmit, saving, error }) {
                 label="Phone Number"
                 value={form.phoneNumber}
                 onChange={(e) => updateField("phoneNumber", e.target.value)}
+                inputProps={PHONE_INPUT_PROPS}
               />
             </Grid>
             <Grid size={{ xs: 12, md: 4 }}>
@@ -591,6 +618,21 @@ export default function AdminLeadsPage() {
     setPage(1);
   }, [filters]);
 
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredRows.length / PAGE_SIZE_LEADS),
+  );
+  const firstVisibleLead = filteredRows.length
+    ? (page - 1) * PAGE_SIZE_LEADS + 1
+    : 0;
+  const lastVisibleLead = filteredRows.length
+    ? Math.min(page * PAGE_SIZE_LEADS, filteredRows.length)
+    : 0;
+  const visibleRows = filteredRows.slice(
+    (page - 1) * PAGE_SIZE_LEADS,
+    page * PAGE_SIZE_LEADS,
+  );
+
   const metrics = useMemo(() => {
     const totalCapacity = filteredRows.reduce(
       (sum, row) => sum + Number(row.systemSizeKw || 0),
@@ -749,7 +791,7 @@ export default function AdminLeadsPage() {
                 <MenuItem value="all">All Regions</MenuItem>
                 {locations.map((location) => (
                   <MenuItem key={location} value={location}>
-                    {location}
+                    {formatDisplayText(location)}
                   </MenuItem>
                 ))}
               </Select>
@@ -909,13 +951,20 @@ export default function AdminLeadsPage() {
             </TableHead>
             <TableBody>
               {filteredRows.length ? (
-                filteredRows
-                  .slice((page - 1) * PAGE_SIZE_LEADS, page * PAGE_SIZE_LEADS)
-                  .map((row) => (
+                visibleRows.map((row) => (
                     <TableRow
                       key={row.raw.id}
                       hover
-                      sx={{ "& td": { borderColor: "#EEF2F6", py: 2 } }}
+                      sx={{
+                        bgcolor: "#FFFFFF",
+                        transition:
+                          "background-color 0.16s ease, box-shadow 0.16s ease",
+                        "& td": { borderColor: "#EEF2F6", py: 2 },
+                        "&:hover": {
+                          bgcolor: "#FAFCFF",
+                          boxShadow: "inset 3px 0 0 #0E56C8",
+                        },
+                      }}
                     >
                       <TableCell>
                         <Typography
@@ -1098,8 +1147,11 @@ export default function AdminLeadsPage() {
           >
             {filteredRows.length === 0
               ? "No leads"
-              : `Showing ${(page - 1) * PAGE_SIZE_LEADS + 1}–${Math.min(page * PAGE_SIZE_LEADS, filteredRows.length)} of ${filteredRows.length} leads`}
+              : filteredRows.length === 1
+                ? "Showing 1 lead"
+                : `Showing ${firstVisibleLead}-${lastVisibleLead} of ${filteredRows.length} leads`}
           </Typography>
+          {totalPages > 1 ? (
           <Stack direction="row" spacing={0.5} alignItems="center">
             <Box
               onClick={() => setPage((p) => Math.max(1, p - 1))}
@@ -1119,31 +1171,28 @@ export default function AdminLeadsPage() {
             </Box>
             {Array.from(
               {
-                length: Math.max(
-                  1,
-                  Math.ceil(filteredRows.length / PAGE_SIZE_LEADS),
-                ),
+                length: totalPages,
               },
               (_, i) => i + 1,
             )
               .filter(
                 (p) =>
                   p === 1 ||
-                  p === Math.ceil(filteredRows.length / PAGE_SIZE_LEADS) ||
+                  p === totalPages ||
                   Math.abs(p - page) <= 1,
               )
               .reduce((acc, p, i, arr) => {
-                if (i > 0 && p - arr[i - 1] > 1) acc.push("…");
+                if (i > 0 && p - arr[i - 1] > 1) acc.push("...");
                 acc.push(p);
                 return acc;
               }, [])
               .map((p, i) =>
-                p === "…" ? (
+                p === "..." ? (
                   <Typography
                     key={`e${i}`}
                     sx={{ color: "#8B97A8", fontSize: "0.8rem", px: 0.3 }}
                   >
-                    …
+                    ...
                   </Typography>
                 ) : (
                   <Box
@@ -1174,10 +1223,7 @@ export default function AdminLeadsPage() {
             <Box
               onClick={() =>
                 setPage((p) =>
-                  Math.min(
-                    Math.ceil(filteredRows.length / PAGE_SIZE_LEADS),
-                    p + 1,
-                  ),
+                  Math.min(totalPages, p + 1),
                 )
               }
               sx={{
@@ -1188,11 +1234,11 @@ export default function AdminLeadsPage() {
                 display: "grid",
                 placeItems: "center",
                 color:
-                  page >= Math.ceil(filteredRows.length / PAGE_SIZE_LEADS)
+                  page >= totalPages
                     ? "#C8D4E4"
                     : "#667386",
                 cursor:
-                  page >= Math.ceil(filteredRows.length / PAGE_SIZE_LEADS)
+                  page >= totalPages
                     ? "default"
                     : "pointer",
                 fontSize: "0.9rem",
@@ -1201,6 +1247,7 @@ export default function AdminLeadsPage() {
               ›
             </Box>
           </Stack>
+          ) : null}
         </Stack>
       </AdminPanel>
 
@@ -1217,7 +1264,7 @@ export default function AdminLeadsPage() {
           <MetricCard
             icon={TrendingUpRoundedIcon}
             title="Revenue Pipeline"
-            value={`₹${(metrics.pipeline / 100000 || 0).toFixed(1)}L`}
+            value={`Rs ${(metrics.pipeline / 100000 || 0).toFixed(1)}L`}
             accent="#8A9700"
           />
         </Grid>

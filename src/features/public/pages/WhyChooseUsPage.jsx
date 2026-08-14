@@ -217,10 +217,10 @@ export default function WhyChooseUsPage() {
                   textAlign: "center",
                 }}
               >
-                <Typography sx={{ color: "#0E56C8", fontSize: { xs: "1.25rem", md: "1.55rem" }, fontWeight: 800 }}>
+                <Typography sx={{ color: "#0E56C8", ...publicTypography.metricValue }}>
                   {stat.value}
                 </Typography>
-                <Typography sx={{ mt: 0.45, color: "#6E7B8E", fontSize: "0.74rem", fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+                <Typography sx={{ mt: 0.45, color: "#6E7B8E", ...publicTypography.metricLabel }}>
                   {stat.label}
                 </Typography>
               </Box>

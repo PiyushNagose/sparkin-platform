@@ -6,10 +6,13 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  scrollbar-width: none;
 }
 
 * {
   box-sizing: border-box;
+  scrollbar-color: transparent transparent;
+  scrollbar-width: thin;
 }
 
 html,
@@ -18,9 +21,28 @@ body,
   min-height: 100%;
 }
 
+html {
+  background: #f2f7f4;
+  scroll-behavior: smooth;
+  overflow-x: hidden;
+  scrollbar-width: none;
+}
+
 body {
   margin: 0;
   background: #f2f7f4;
+  overflow-x: hidden;
+  scrollbar-width: none;
+}
+
+#portal-scroll-container {
+  scrollbar-width: none;
+}
+
+#portal-scroll-container::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
 }
 
 a {
@@ -28,3 +50,81 @@ a {
   text-decoration: none;
 }
 
+*:hover,
+*:focus,
+*:focus-within {
+  scrollbar-color: rgba(14, 86, 200, 0.24) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+  background: transparent;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-track-piece {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  min-height: 44px;
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  background-clip: padding-box;
+}
+
+*:hover::-webkit-scrollbar-thumb,
+*:focus::-webkit-scrollbar-thumb,
+*:focus-within::-webkit-scrollbar-thumb {
+  background-color: rgba(14, 86, 200, 0.24);
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(24, 37, 58, 0.34);
+}
+
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
+.viewport-scrollbar {
+  position: fixed;
+  z-index: 2147483647;
+  width: 5px;
+  pointer-events: none;
+}
+
+.viewport-scrollbar__thumb {
+  width: 3px;
+  margin-left: 1px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(14, 86, 200, 0.52), rgba(34, 201, 126, 0.46));
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12);
+  opacity: 0.2;
+  transition: opacity 160ms ease, width 160ms ease, margin-left 160ms ease;
+}
+
+.viewport-scrollbar[data-active="true"] .viewport-scrollbar__thumb,
+body:hover .viewport-scrollbar__thumb {
+  width: 4px;
+  margin-left: 0;
+  opacity: 0.74;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}

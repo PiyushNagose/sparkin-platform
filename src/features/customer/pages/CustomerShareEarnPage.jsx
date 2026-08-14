@@ -18,6 +18,11 @@ import { Link as RouterLink } from "react-router-dom";
 import { referralsApi } from "@/features/customer/api/referralsApi";
 import { buildReferralUrl } from "@/features/customer/referrals/referralTracking";
 import customerShareEarnHeroPlaceholder from "@/shared/assets/images/customer/referrals/customer-share-earn-hero-placeholder.png";
+import {
+  limitEmailInput,
+  limitPhoneNumber,
+  PHONE_INPUT_PROPS,
+} from "@/shared/lib/forms/inputConstraints";
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -424,7 +429,7 @@ export default function CustomerShareEarnPage() {
                 label="Friend's email"
                 type="email"
                 value={form.email}
-                onChange={(e) => updateField("email", e.target.value)}
+                onChange={(e) => updateField("email", limitEmailInput(e.target.value))}
                 size="small"
                 fullWidth
                 error={form.email.length > 0 && !isValidEmail(form.email)}
@@ -438,7 +443,10 @@ export default function CustomerShareEarnPage() {
               <TextField
                 label="Phone (optional)"
                 value={form.phoneNumber}
-                onChange={(e) => updateField("phoneNumber", e.target.value)}
+                onChange={(e) =>
+                  updateField("phoneNumber", limitPhoneNumber(e.target.value))
+                }
+                inputProps={PHONE_INPUT_PROPS}
                 size="small"
                 fullWidth
                 sx={{ "& .MuiOutlinedInput-root": { borderRadius: "0.75rem" } }}

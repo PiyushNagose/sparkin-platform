@@ -1,45 +1,4 @@
-import http from "node:http";
-import https from "node:https";
 import proxy from "express-http-proxy";
-
-const agentCache = new Map();
-const RETRYABLE_ERROR_CODES = new Set(["ECONNRESET", "EPIPE"]);
-const RETRYABLE_ERROR_MESSAGES = ["socket hang up"];
-const SOCKET_TIMEOUT_MS = 120_000;
-
-function isRetryableProxyError(error) {
-  if (!error) {
-    return false;
-  }
-
-  if (RETRYABLE_ERROR_CODES.has(error.code)) {
-    return true;
-  }
-
-  const message = String(error.message || "").toLowerCase();
-  return RETRYABLE_ERROR_MESSAGES.some((pattern) => message.includes(pattern));
-}
-
-function getKeepAliveAgent(targetUrl) {
-  const cachedAgent = agentCache.get(targetUrl);
-  if (cachedAgent) {
-    return cachedAgent;
-  }
-
-  const protocol = new URL(targetUrl).protocol;
-  const Agent = protocol === "https:" ? https.Agent : http.Agent;
-  const agent = new Agent({
-    keepAlive: true,
-    keepAliveMsecs: 15_000,
-    maxSockets: 100,
-    maxFreeSockets: 10,
-    scheduling: "lifo",
-    timeout: SOCKET_TIMEOUT_MS,
-  });
-
-  agentCache.set(targetUrl, agent);
-  return agent;
-}
 
 function logProxyError(targetUrl, req, error, extra = {}) {
   const ts = new Date().toISOString();
@@ -76,7 +35,7 @@ function logProxyError(targetUrl, req, error, extra = {}) {
   );
 }
 
-function createProxyMiddleware(targetUrl, { useKeepAlive }) {
+function createProxyMiddleware(targetUrl) {
   return proxy(targetUrl, {
     parseReqBody: false,
     proxyReqPathResolver(req) {
@@ -89,11 +48,11 @@ function createProxyMiddleware(targetUrl, { useKeepAlive }) {
         srcReq.ip || srcReq.headers["x-forwarded-for"] || "";
       proxyReqOpts.headers["x-gateway"] = "sparkin-api-gateway";
 
-      // Let Node negotiate connection reuse; forcing the header increases the
-      // chance of reusing a stale downstream socket.
-      delete proxyReqOpts.headers.connection;
-
-      proxyReqOpts.agent = useKeepAlive ? getKeepAliveAgent(targetUrl) : false;
+      // express-http-proxy attaches request timeout listeners to the outgoing
+      // socket. Reusing that socket can accumulate listeners over repeated
+      // proxied calls, so keep gateway-to-service connections fresh.
+      proxyReqOpts.headers.connection = "close";
+      proxyReqOpts.agent = false;
 
       return proxyReqOpts;
     },
@@ -110,47 +69,13 @@ function createProxyMiddleware(targetUrl, { useKeepAlive }) {
 /**
  * Creates a proxy middleware that forwards requests to a downstream service.
  *
- * For idempotent reads, we retry once without keep-alive when a pooled socket
- * has gone stale. This permanently addresses the common "socket hang up"
- * pattern without duplicating mutating requests.
- *
  * @param {string} targetUrl - base URL of the downstream service.
  */
 export function createProxy(targetUrl) {
-  const keepAliveProxy = createProxyMiddleware(targetUrl, {
-    useKeepAlive: true,
-  });
-  const freshConnectionProxy = createProxyMiddleware(targetUrl, {
-    useKeepAlive: false,
-  });
+  const downstreamProxy = createProxyMiddleware(targetUrl);
 
   return (req, res, next) => {
-    keepAliveProxy(req, res, (error) => {
-      const canRetry =
-        !res.headersSent &&
-        !req._gatewayProxyRetried &&
-        ["GET", "HEAD"].includes(req.method) &&
-        isRetryableProxyError(error);
-
-      if (canRetry) {
-        req._gatewayProxyRetried = true;
-        freshConnectionProxy(req, res, (retryError) => {
-          if (retryError) {
-            logProxyError(targetUrl, req, retryError, { retryAttempt: 2 });
-            if (!res.headersSent) {
-              res.status(503).json({
-                message:
-                  "Required backend service is unavailable. Please check service deployment and environment URLs.",
-              });
-            }
-            return;
-          }
-
-          next();
-        });
-        return;
-      }
-
+    downstreamProxy(req, res, (error) => {
       if (error) {
         logProxyError(targetUrl, req, error);
         if (!res.headersSent) {

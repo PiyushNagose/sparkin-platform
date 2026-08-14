@@ -74,7 +74,7 @@ export const offersRepository = {
     const doc = await OfferModel.findByIdAndUpdate(
       id,
       { $set: data },
-      { new: true },
+      { returnDocument: "after" },
     ).lean({ virtuals: true });
     return normalize(doc);
   },
@@ -83,7 +83,7 @@ export const offersRepository = {
     const doc = await OfferModel.findByIdAndUpdate(
       id,
       { $inc: { usedCount: 1 } },
-      { new: true },
+      { returnDocument: "after" },
     ).lean({ virtuals: true });
     return normalize(doc);
   },
