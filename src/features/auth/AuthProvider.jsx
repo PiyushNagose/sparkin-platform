@@ -4,6 +4,7 @@ import { authStorage } from "@/features/auth/authStorage";
 
 const AuthContext = React.createContext(null);
 let bootstrapRefreshPromise = null;
+const validRoles = new Set(["admin", "customer", "vendor"]);
 
 function getRoleHome(role) {
   if (role === "vendor") {
@@ -14,7 +15,15 @@ function getRoleHome(role) {
     return "/admin";
   }
 
-  return "/customer";
+  if (role === "customer") {
+    return "/customer";
+  }
+
+  return "/auth/login";
+}
+
+function isKnownRole(user) {
+  return validRoles.has(user?.role);
 }
 
 export function AuthProvider({ children }) {
@@ -129,7 +138,7 @@ export function AuthProvider({ children }) {
   const value = React.useMemo(
     () => ({
       user,
-      isAuthenticated: Boolean(user),
+      isAuthenticated: isKnownRole(user),
       isBootstrapping,
       register,
       login,

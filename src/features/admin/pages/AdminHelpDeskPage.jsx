@@ -200,7 +200,7 @@ function TicketsTab() {
             <RefreshRoundedIcon sx={{ fontSize: "1.1rem" }} />
           </IconButton>
           <AdminPrimaryButton startIcon={<AddRoundedIcon />} onClick={() => setCreateOpen(true)} sx={{ borderRadius: "999px", minHeight: 40, px: 2 }}>
-            + New Ticket
+            New Ticket
           </AdminPrimaryButton>
         </Stack>
       </Stack>

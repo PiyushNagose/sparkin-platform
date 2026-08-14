@@ -45,13 +45,20 @@ import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import StorefrontOutlinedIcon from "@mui/icons-material/StorefrontOutlined";
 import { useEffect, useMemo, useState, useCallback } from "react";
-import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import {
+  Navigate,
+  NavLink,
+  Outlet,
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
 import { portalNavigation } from "@/shared/config/navigation";
 import { useSocket } from "@/shared/websocket/SocketProvider";
 import logoPlaceholder from "@/shared/assets/logo-placeholder.png";
 import { AppFooter } from "@/shared/components/AppFooter";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { PageTransition } from "@/shared/ui/transition/PageTransition";
+import { ViewportScrollbar } from "@/shared/ui/scroll/ViewportScrollbar";
 import { leadsApi, quotesApi } from "@/features/public/api/leadsApi";
 import { projectsApi } from "@/features/public/api/projectsApi";
 import { paymentsApi } from "@/features/public/api/paymentsApi";
@@ -245,7 +252,7 @@ export function PortalLayout({ portal }) {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const { refreshKey } = useSocket();
-  const { user, logout } = useAuth();
+  const { user, logout, getRoleHome } = useAuth();
 
   const [searchTerm, setSearchTerm] = useState("");
   const [notificationAnchor, setNotificationAnchor] = useState(null);
@@ -758,6 +765,10 @@ export function PortalLayout({ portal }) {
 
   // ── render ─────────────────────────────────────────────────────────────────
 
+  if (user?.role && user.role !== portal) {
+    return <Navigate to={getRoleHome(user.role)} replace />;
+  }
+
   return (
     <Box
       sx={{
@@ -920,9 +931,14 @@ export function PortalLayout({ portal }) {
             {/* Right actions */}
             <Stack
               direction="row"
-              spacing={1.15}
+              spacing={{ xs: 1.2, sm: 1.55, md: 1.85 }}
               alignItems="center"
-              sx={{ ml: "auto" }}
+              sx={{
+                ml: "auto",
+                "& .MuiIconButton-root": {
+                  flexShrink: 0,
+                },
+              }}
             >
               {/* Notifications */}
               <IconButton
@@ -986,19 +1002,6 @@ export function PortalLayout({ portal }) {
                         flex: 1,
                         overflowY: "auto",
                         minHeight: 0,
-                        "&::-webkit-scrollbar": {
-                          width: "6px",
-                        },
-                        "&::-webkit-scrollbar-track": {
-                          bgcolor: "transparent",
-                        },
-                        "&::-webkit-scrollbar-thumb": {
-                          bgcolor: "#D0D8E0",
-                          borderRadius: "3px",
-                          "&:hover": {
-                            bgcolor: "#B8C1CC",
-                          },
-                        },
                       }}
                     >
                       {notificationItems.length > 0 ? (
@@ -1140,19 +1143,6 @@ export function PortalLayout({ portal }) {
                         flex: 1,
                         overflowY: "auto",
                         minHeight: 0,
-                        "&::-webkit-scrollbar": {
-                          width: "6px",
-                        },
-                        "&::-webkit-scrollbar-track": {
-                          bgcolor: "transparent",
-                        },
-                        "&::-webkit-scrollbar-thumb": {
-                          bgcolor: "#D0D8E0",
-                          borderRadius: "3px",
-                          "&:hover": {
-                            bgcolor: "#B8C1CC",
-                          },
-                        },
                       }}
                     >
                       {notificationItems.length > 0 ? (
@@ -1280,19 +1270,6 @@ export function PortalLayout({ portal }) {
                         flex: 1,
                         overflowY: "auto",
                         minHeight: 0,
-                        "&::-webkit-scrollbar": {
-                          width: "6px",
-                        },
-                        "&::-webkit-scrollbar-track": {
-                          bgcolor: "transparent",
-                        },
-                        "&::-webkit-scrollbar-thumb": {
-                          bgcolor: "#D0D8E0",
-                          borderRadius: "3px",
-                          "&:hover": {
-                            bgcolor: "#B8C1CC",
-                          },
-                        },
                       }}
                     >
                       {notificationItems.length > 0 ? (
@@ -1474,9 +1451,14 @@ export function PortalLayout({ portal }) {
                       : "/service-support"
                 }
                 direction="row"
-                spacing={0.5}
+                spacing={0.75}
                 alignItems="center"
-                sx={{ color: "#6D7A8D", textDecoration: "none" }}
+                sx={{
+                  color: "#6D7A8D",
+                  textDecoration: "none",
+                  flexShrink: 0,
+                  px: { xs: 0, sm: 0.35 },
+                }}
               >
                 <HelpOutlineRoundedIcon sx={{ fontSize: "0.95rem" }} />
                 <Typography
@@ -1493,9 +1475,13 @@ export function PortalLayout({ portal }) {
               {/* Profile */}
               <Stack
                 direction="row"
-                spacing={1}
+                spacing={1.15}
                 alignItems="center"
-                sx={{ pl: 0.4, textDecoration: "none" }}
+                sx={{
+                  pl: { xs: 0.35, sm: 0.75, md: 0.95 },
+                  textDecoration: "none",
+                  flexShrink: 0,
+                }}
                 component={NavLink}
                 to={
                   portal === "admin" ? "/admin/settings" : `/${portal}/profile`
@@ -1574,6 +1560,7 @@ export function PortalLayout({ portal }) {
       </Box>
 
       {portal === "customer" ? <AppFooter /> : null}
+      <ViewportScrollbar targetId="portal-scroll-container" />
 
       {/* Logout Confirmation Dialog */}
       <Dialog

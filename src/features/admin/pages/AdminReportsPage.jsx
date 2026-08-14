@@ -29,10 +29,11 @@ import {
   AdminPanel,
   adminUi,
 } from "@/features/admin/components/AdminPortalUI";
+import { metricTypography } from "@/shared/ui/data-display/metricTypography";
 import { getAdminDashboardData } from "@/features/admin/api/adminApi";
 import regionalMapImg from "@/shared/assets/images/admin/reports/admin-reports-regional-map-placeholder.png";
 
-// â”€â”€â”€ constants â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// constants
 
 const RANGE_OPTIONS = [
   { value: "all", label: "All Time" },
@@ -41,7 +42,7 @@ const RANGE_OPTIONS = [
   { value: "1m", label: "Last Month" },
 ];
 
-// months back â†’ cutoff date
+// months back to cutoff date
 function getCutoff(range) {
   if (range === "all") return null;
   const months = range === "6m" ? 6 : range === "3m" ? 3 : 1;
@@ -50,7 +51,7 @@ function getCutoff(range) {
   return d;
 }
 
-// â”€â”€â”€ helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// helpers
 
 const rupeeFormatter = new Intl.NumberFormat("en-IN", {
   style: "currency",
@@ -60,8 +61,8 @@ const rupeeFormatter = new Intl.NumberFormat("en-IN", {
 
 function formatMoney(value) {
   const amount = Number(value || 0);
-  if (amount >= 10_000_000) return `â‚¹${(amount / 10_000_000).toFixed(1)}Cr`;
-  if (amount >= 100_000) return `â‚¹${(amount / 100_000).toFixed(1)}L`;
+  if (amount >= 10_000_000) return `Rs ${(amount / 10_000_000).toFixed(1)}Cr`;
+  if (amount >= 100_000) return `Rs ${(amount / 100_000).toFixed(1)}L`;
   return rupeeFormatter.format(amount);
 }
 
@@ -91,7 +92,7 @@ function downloadBlob(name, content, type = "text/csv;charset=utf-8") {
   URL.revokeObjectURL(url);
 }
 
-// â”€â”€â”€ sub-components â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// sub-components
 
 function KpiCard({
   icon: Icon,
@@ -151,10 +152,7 @@ function KpiCard({
         sx={{
           mt: 1.3,
           color: "#596579",
-          fontSize: "0.68rem",
-          fontWeight: 800,
-          letterSpacing: "0.05em",
-          textTransform: "uppercase",
+          ...metricTypography.label,
         }}
       >
         {label}
@@ -163,9 +161,7 @@ function KpiCard({
         sx={{
           mt: 0.45,
           color: adminUi.colors.text,
-          fontSize: "1.8rem",
-          fontWeight: 950,
-          lineHeight: 1,
+          ...metricTypography.dashboardValue,
         }}
       >
         {value}

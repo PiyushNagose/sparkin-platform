@@ -38,7 +38,7 @@ export function RequireAuth({ allowedRoles, children }) {
   return children ?? <Outlet />;
 }
 
-export function GuestOnly({ children }) {
+export function GuestOnly({ children, allowAuthenticatedRoles = [] }) {
   const { user, isAuthenticated, isBootstrapping, getRoleHome } = useAuth();
 
   if (isBootstrapping) {
@@ -56,7 +56,7 @@ export function GuestOnly({ children }) {
     );
   }
 
-  if (isAuthenticated) {
+  if (isAuthenticated && !allowAuthenticatedRoles.includes(user.role)) {
     return <Navigate to={getRoleHome(user.role)} replace />;
   }
 

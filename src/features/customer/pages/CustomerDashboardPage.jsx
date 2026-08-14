@@ -25,6 +25,10 @@ import { projectsApi } from "@/features/public/api/projectsApi";
 import { serviceRequestsApi } from "@/features/public/api/serviceRequestsApi";
 import customerSolarTipPlaceholder from "@/shared/assets/images/customer/dashboard/customer-solar-tip-placeholder.png";
 import { CustomerErrorBlock, CustomerLoadingBlock } from "@/features/customer/components/CustomerPageStates";
+import {
+  metricTypography,
+  platformTypography,
+} from "@/shared/ui/data-display/metricTypography";
 
 function getGreeting() {
   const hour = new Date().getHours();
@@ -144,13 +148,12 @@ function MetricGlass({ label, value }) {
       <Typography
         sx={{
           color: "rgba(255,255,255,0.74)",
-          fontSize: "0.66rem",
-          fontWeight: 700,
+          ...metricTypography.compactLabel,
         }}
       >
         {label}
       </Typography>
-      <Typography sx={{ mt: 0.45, color: "#FFFFFF", fontSize: "1.15rem", fontWeight: 900 }}>
+      <Typography sx={{ mt: 0.45, color: "#FFFFFF", ...metricTypography.compactValue }}>
         {value}
       </Typography>
     </Box>
@@ -404,20 +407,17 @@ export default function CustomerDashboardPage() {
   const firstName = getFirstName(user);
 
   return (
-    <Box sx={{ width: "100%", maxWidth: 1180, mx: "auto" }}>
+    <Box sx={{ width: "100%" }}>
       <Box sx={{ mb: 2.6 }}>
         <Typography
           sx={{
             color: "#151B22",
-            fontSize: { xs: "1.8rem", md: "2.25rem" },
-            fontWeight: 900,
-            lineHeight: 1.08,
-            letterSpacing: "-0.035em",
+            ...platformTypography.pageTitle,
           }}
         >
           {greeting}, {firstName}
         </Typography>
-        <Typography sx={{ mt: 0.45, color: "#536171", fontSize: "0.94rem", lineHeight: 1.55 }}>
+        <Typography sx={{ mt: 0.45, color: "#536171", ...platformTypography.pageSubtitle }}>
           {projects.length > 0
             ? "Your solar ecosystem is performing at peak efficiency today."
             : "Your booking and quote activity will appear here as vendors respond."}
@@ -456,10 +456,10 @@ export default function CustomerDashboardPage() {
             >
               %
             </Box>
-            <Typography sx={{ fontSize: "1rem", fontWeight: 900 }}>
+            <Typography sx={{ ...platformTypography.cardTitle }}>
               Refer a friend, save INR 5000
             </Typography>
-            <Typography sx={{ mt: 0.4, color: "rgba(255,255,255,0.78)", fontSize: "0.76rem", lineHeight: 1.55 }}>
+            <Typography sx={{ mt: 0.4, color: "rgba(255,255,255,0.78)", ...platformTypography.smallText }}>
               Earn credits on your installation by sharing Sparkin Solar with your network.
             </Typography>
             <Button
@@ -474,9 +474,7 @@ export default function CustomerDashboardPage() {
                 bgcolor: "#FFFFFF",
                 color: "#0E56C8",
                 boxShadow: "none",
-                fontSize: "0.68rem",
-                fontWeight: 850,
-                textTransform: "none",
+                ...platformTypography.actionText,
                 "&:hover": { bgcolor: "#F0F5FF" },
               }}
             >
@@ -518,15 +516,12 @@ export default function CustomerDashboardPage() {
                 <Typography
                   sx={{
                     color: "rgba(255,255,255,0.64)",
-                    fontSize: "0.58rem",
-                    fontWeight: 850,
-                    letterSpacing: "0.12em",
-                    textTransform: "uppercase",
+                    ...metricTypography.label,
                   }}
                 >
                   Total Lifetime Savings
                 </Typography>
-                <Typography sx={{ mt: 0.7, fontSize: { xs: "2.15rem", md: "3.15rem" }, fontWeight: 950, lineHeight: 1 }}>
+                <Typography sx={{ mt: 0.7, ...metricTypography.heroValue }}>
                   {formatCompact(savings.lifetime)}
                 </Typography>
                 <Typography sx={{ mt: 0.8, color: "#83F1A7", fontSize: "0.7rem", fontWeight: 900 }}>
@@ -564,20 +559,20 @@ export default function CustomerDashboardPage() {
                 </Box>
               </Stack>
 
-              <Typography sx={{ mt: 1.2, color: "#151B22", fontSize: "1.05rem", fontWeight: 900 }}>
+              <Typography sx={{ mt: 1.2, color: "#151B22", ...platformTypography.cardTitle }}>
                 {activeLead ? "Active Solar Tender" : "Start a Tender"}
               </Typography>
 
               <Stack spacing={1.1} sx={{ mt: 1.6 }}>
                 <Box sx={{ p: 1.3, borderRadius: "0.9rem", bgcolor: "#F8FAFD" }}>
                   <Stack direction="row" justifyContent="space-between">
-                    <Typography sx={{ color: "#536171", fontSize: "0.76rem" }}>Bids Received</Typography>
+                    <Typography sx={{ color: "#536171", ...platformTypography.smallText }}>Bids Received</Typography>
                     <Typography sx={{ color: "#0E56C8", fontSize: "0.82rem", fontWeight: 900 }}>{leadQuotes.length}</Typography>
                   </Stack>
                 </Box>
                 <Box sx={{ p: 1.3, borderRadius: "0.9rem", bgcolor: "#F8FAFD" }}>
                   <Stack direction="row" justifyContent="space-between">
-                    <Typography sx={{ color: "#536171", fontSize: "0.76rem" }}>Best Offer Price</Typography>
+                    <Typography sx={{ color: "#536171", ...platformTypography.smallText }}>Best Offer Price</Typography>
                     <Typography sx={{ color: "#151B22", fontSize: "0.86rem", fontWeight: 900 }}>
                       {bestQuote ? formatPrice(bestQuote) : "Waiting"}
                     </Typography>
@@ -603,9 +598,7 @@ export default function CustomerDashboardPage() {
                   borderRadius: "0.85rem",
                   bgcolor: "#0E56C8",
                   boxShadow: "0 14px 26px rgba(14,86,200,0.16)",
-                  fontSize: "0.76rem",
-                  fontWeight: 850,
-                  textTransform: "none",
+                  ...platformTypography.actionText,
                 }}
               >
                 {leadQuotes.length > 0 ? "View All Bids" : activeLead ? "Track Tender" : "New Booking"}
@@ -624,7 +617,7 @@ export default function CustomerDashboardPage() {
                 </Box>
               </Stack>
 
-              <Typography sx={{ mt: 1.2, color: "#151B22", fontSize: "1.05rem", fontWeight: 900 }}>
+              <Typography sx={{ mt: 1.2, color: "#151B22", ...platformTypography.cardTitle }}>
                 {activeServiceRequest
                   ? activeServiceRequest.type.replaceAll("_", " ").replace(/\b\w/g, (char) => char.toUpperCase())
                   : "Maintenance Service"}
@@ -644,14 +637,14 @@ export default function CustomerDashboardPage() {
                     <Typography sx={{ mt: 0.65, color: "#151B22", fontSize: "0.82rem", fontWeight: 900 }}>
                       {getServiceStatusLabel(activeServiceRequest.status)}
                     </Typography>
-                    <Typography sx={{ mt: 0.15, color: "#536171", fontSize: "0.72rem", lineHeight: 1.5 }}>
+                    <Typography sx={{ mt: 0.15, color: "#536171", ...platformTypography.smallText }}>
                       {activeServiceRequest.description.length > 70
                         ? `${activeServiceRequest.description.slice(0, 70)}...`
                         : activeServiceRequest.description}
                     </Typography>
                   </>
                 ) : (
-                  <Typography sx={{ color: "#536171", fontSize: "0.74rem", lineHeight: 1.55 }}>
+                  <Typography sx={{ color: "#536171", ...platformTypography.smallText }}>
                     No active service requests. Raise a ticket if you need maintenance or support.
                   </Typography>
                 )}
@@ -671,9 +664,7 @@ export default function CustomerDashboardPage() {
                   borderRadius: "0.85rem",
                   bgcolor: "#E5EAEE",
                   color: "#151B22",
-                  fontSize: "0.76rem",
-                  fontWeight: 850,
-                  textTransform: "none",
+                  ...platformTypography.actionText,
                   "&:hover": { bgcolor: "#DCE3EA" },
                 }}
               >
@@ -694,12 +685,12 @@ export default function CustomerDashboardPage() {
                   <ApartmentRoundedIcon sx={{ fontSize: "1.25rem" }} />
                 </Box>
                 <Box>
-                  <Typography sx={{ color: "#151B22", fontSize: "1.12rem", fontWeight: 900 }}>
+                  <Typography sx={{ color: "#151B22", ...platformTypography.sectionTitle }}>
                     {activeProject
                       ? `Active Project: ${activeProject.system.sizeKw}kW Rooftop`
                       : "No active project yet"}
                   </Typography>
-                  <Typography sx={{ mt: 0.18, color: "#647387", fontSize: "0.76rem" }}>
+                  <Typography sx={{ mt: 0.18, color: "#647387", ...platformTypography.smallText }}>
                     {activeProject
                       ? `Residential Installation - ${projectLocation}`
                       : "Select a vendor quote to begin installation tracking"}
@@ -717,9 +708,7 @@ export default function CustomerDashboardPage() {
                   borderRadius: "999px",
                   bgcolor: "#0E56C8",
                   boxShadow: "0 14px 26px rgba(14,86,200,0.16)",
-                  fontSize: "0.74rem",
-                  fontWeight: 850,
-                  textTransform: "none",
+                  ...platformTypography.actionText,
                 }}
               >
                 {activeProject ? "Track Installation" : "View Bookings"}
@@ -755,10 +744,10 @@ export default function CustomerDashboardPage() {
                 sx={{ width: 92, height: 92, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }}
               />
               <Box>
-                <Typography sx={{ color: "#596800", fontSize: "1rem", fontWeight: 900 }}>
+                <Typography sx={{ color: "#596800", ...platformTypography.cardTitle }}>
                   Solar Pro-Tip: Optimize your morning usage
                 </Typography>
-                <Typography sx={{ mt: 0.45, color: "#6B761E", fontSize: "0.8rem", lineHeight: 1.7, maxWidth: 760 }}>
+                <Typography sx={{ mt: 0.45, color: "#6B761E", ...platformTypography.cardText, maxWidth: 760 }}>
                   Your panels reach peak efficiency between 10:00 AM and 2:00 PM. Schedule heavy appliances
                   like your dishwasher or washing machine during this window to maximize direct consumption
                   and save an additional INR 400 monthly.

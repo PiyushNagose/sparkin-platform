@@ -20,6 +20,7 @@ import {
 import { authApi } from "@/features/auth/authApi";
 import { limitEmailInput } from "@/shared/lib/forms/inputConstraints";
 import { scrollToFieldError } from "@/shared/lib/forms/scrollToFieldError";
+import logoPlaceholder from "@/shared/assets/logo-placeholder.png";
 
 const fieldSx = {
   "& .MuiOutlinedInput-root": {
@@ -241,126 +242,197 @@ export function PasswordRecoveryShell({
         }}
       >
         <Stack
-          spacing={3.1}
           justifyContent="center"
           sx={{
             height: "100%",
             px: { lg: 6.5, xl: 7.6 },
-            py: { lg: 6.25, xl: 7 },
+            py: { lg: 3.5, xl: 4 },
           }}
         >
-          <Box
-            sx={{
-              px: 1.1,
-              py: 0.45,
-              width: "fit-content",
-              borderRadius: 999,
-              bgcolor: "rgba(255,255,255,0.1)",
-              border: "1px solid rgba(255,255,255,0.16)",
-              boxShadow: "0 10px 24px rgba(4,13,29,0.12)",
-              fontSize: "0.66rem",
-              fontWeight: 800,
-              letterSpacing: "0.14em",
-              textTransform: "uppercase",
-            }}
-          >
-            {heroEyebrow}
-          </Box>
-
-          <Box sx={{ maxWidth: 520 }}>
-            <Typography
+          <Stack spacing={{ lg: 3.6, xl: 3.9 }} sx={{ maxWidth: 540 }}>
+            <Box
+              component={RouterLink}
+              to="/"
+              aria-label="Go to Sparkin home"
               sx={{
-                fontSize: { lg: "3.75rem", xl: "4.45rem" },
-                lineHeight: 0.98,
-                fontWeight: 800,
-                letterSpacing: "-0.06em",
+                width: "fit-content",
+                display: "inline-flex",
+                alignItems: "center",
+                textDecoration: "none",
+                transition: "opacity 180ms ease, transform 180ms ease",
+                "&:hover": {
+                  transform: "translateY(-2px)",
+                  opacity: 0.86,
+                },
               }}
             >
-              {heroTitle}
-              <Box component="span" sx={{ display: "block", color: "#D8F600" }}>
-                {heroTitleAccent}
+              <Box
+                component="img"
+                src={logoPlaceholder}
+                alt="Sparkin"
+                sx={{
+                  width: { lg: 142, xl: 154 },
+                  height: "auto",
+                  objectFit: "contain",
+                  objectPosition: "left center",
+                  display: "block",
+                  filter: "drop-shadow(0 10px 18px rgba(3,9,22,0.24))",
+                }}
+              />
+            </Box>
+
+            <Stack spacing={3.1} sx={{ maxWidth: 540 }}>
+              <Box
+                sx={{
+                  px: 1.1,
+                  py: 0.45,
+                  width: "fit-content",
+                  borderRadius: 999,
+                  bgcolor: "rgba(255,255,255,0.1)",
+                  border: "1px solid rgba(255,255,255,0.16)",
+                  boxShadow: "0 10px 24px rgba(4,13,29,0.12)",
+                  fontSize: "0.66rem",
+                  fontWeight: 800,
+                  letterSpacing: "0.14em",
+                  textTransform: "uppercase",
+                }}
+              >
+                {heroEyebrow}
               </Box>
-            </Typography>
 
-            <Typography
+              <Box sx={{ maxWidth: 520 }}>
+                <Typography
+                  sx={{
+                    fontSize: { lg: "3.75rem", xl: "4.45rem" },
+                    lineHeight: 0.98,
+                    fontWeight: 800,
+                    letterSpacing: "-0.06em",
+                  }}
+                >
+                  {heroTitle}
+                  <Box
+                    component="span"
+                    sx={{ display: "block", color: "#D8F600" }}
+                  >
+                    {heroTitleAccent}
+                  </Box>
+                </Typography>
+
+                <Typography
+                  sx={{
+                    mt: 2.5,
+                    color: "rgba(236,242,251,0.92)",
+                    fontSize: "1.05rem",
+                    lineHeight: 1.72,
+                    maxWidth: 410,
+                  }}
+                >
+                  {heroBody}
+                </Typography>
+              </Box>
+            </Stack>
+
+            <Box
               sx={{
-                mt: 2.5,
-                color: "rgba(236,242,251,0.92)",
-                fontSize: "1.05rem",
-                lineHeight: 1.72,
-                maxWidth: 410,
+                width: "100%",
+                maxWidth: 320,
+                p: 1.6,
+                borderRadius: "1.2rem",
+                bgcolor: "rgba(255,255,255,0.1)",
+                border: "1px solid rgba(255,255,255,0.12)",
+                boxShadow: "0 22px 36px rgba(3,9,22,0.2)",
+                backdropFilter: "blur(10px)",
               }}
             >
-              {heroBody}
-            </Typography>
-          </Box>
-
-          <Box
-            sx={{
-              width: "100%",
-              maxWidth: 320,
-              p: 1.6,
-              borderRadius: "1.2rem",
-              bgcolor: "rgba(255,255,255,0.1)",
-              border: "1px solid rgba(255,255,255,0.12)",
-              boxShadow: "0 22px 36px rgba(3,9,22,0.2)",
-              backdropFilter: "blur(10px)",
-            }}
-          >
-            <Typography sx={{ fontSize: "1.5rem", fontWeight: 800, lineHeight: 1.1 }}>
-              {heroStatTitle}
-            </Typography>
-            <Typography
-              sx={{
-                mt: 0.15,
-                color: "rgba(232,240,248,0.82)",
-                fontSize: "0.82rem",
-              }}
-            >
-              {heroStatBody}
-            </Typography>
-          </Box>
+              <Typography
+                sx={{ fontSize: "1.5rem", fontWeight: 800, lineHeight: 1.1 }}
+              >
+                {heroStatTitle}
+              </Typography>
+              <Typography
+                sx={{
+                  mt: 0.15,
+                  color: "rgba(232,240,248,0.82)",
+                  fontSize: "0.82rem",
+                }}
+              >
+                {heroStatBody}
+              </Typography>
+            </Box>
+          </Stack>
         </Stack>
       </Box>
 
       <Box
         sx={{
           bgcolor: "#FBFCFE",
-          display: "grid",
-          placeItems: "center",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
           px: { xs: 2, md: 3.5 },
-          py: { xs: 3, md: 4.2 },
+          py: { xs: 3, md: 4.2, lg: 3.5, xl: 4 },
           minHeight: "100vh",
         }}
       >
         <Box
           component="form"
           onSubmit={isResetMode ? handleResetPassword : handleRequestReset}
-          sx={{ width: "100%", maxWidth: 430 }}
+          sx={{
+            width: "100%",
+            maxWidth: 430,
+          }}
         >
-          <Typography
-            variant="h1"
-            sx={{
-              color: "#20242B",
-              fontSize: { xs: "2.1rem", md: "2.7rem" },
-              lineHeight: 1.04,
-              letterSpacing: "-0.05em",
-            }}
-          >
-            {title}
-          </Typography>
+          <Box>
+            <Box
+              component={RouterLink}
+              to="/"
+              aria-label="Go to Sparkin home"
+              sx={{
+                width: "fit-content",
+                display: { xs: "inline-flex", lg: "none" },
+                alignItems: "center",
+                mb: 2,
+                textDecoration: "none",
+              }}
+            >
+              <Box
+                component="img"
+                src={logoPlaceholder}
+                alt="Sparkin"
+                sx={{
+                  width: 122,
+                  height: 56,
+                  objectFit: "contain",
+                  objectPosition: "left center",
+                  display: "block",
+                }}
+              />
+            </Box>
 
-          <Typography
-            sx={{
-              mt: 0.65,
-              color: "#667084",
-              fontSize: "0.96rem",
-              lineHeight: 1.48,
-              maxWidth: 360,
-            }}
-          >
-            {subtitle}
-          </Typography>
+            <Typography
+              variant="h1"
+              sx={{
+                color: "#20242B",
+                fontSize: { xs: "2.1rem", md: "2.7rem" },
+                lineHeight: 1.04,
+                letterSpacing: "-0.05em",
+              }}
+            >
+              {title}
+            </Typography>
+
+            <Typography
+              sx={{
+                mt: 0.65,
+                color: "#667084",
+                fontSize: "0.96rem",
+                lineHeight: 1.48,
+                maxWidth: 360,
+              }}
+            >
+              {subtitle}
+            </Typography>
+          </Box>
 
           <Stack spacing={1.5} sx={{ mt: 3.1 }}>
             {error ? (
@@ -552,18 +624,19 @@ export function PasswordRecoveryShell({
                 </Typography>
               ) : null}
             </Stack>
+          </Stack>
 
+          <Box sx={{ mt: 2 }}>
             <Typography
               sx={{
                 color: "#98A2B3",
                 fontSize: "0.74rem",
                 lineHeight: 1.45,
-                pt: 0.4,
               }}
             >
               This recovery flow is prepared for your {roleMeta.label} account.
             </Typography>
-          </Stack>
+          </Box>
         </Box>
       </Box>
     </Box>

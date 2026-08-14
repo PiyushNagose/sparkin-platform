@@ -1,6 +1,5 @@
 import { lazy } from "react";
 import { Navigate } from "react-router-dom";
-import { ScreenPlaceholder } from "@/shared/ui/placeholder/ScreenPlaceholder";
 import { LazyRoute } from "@/shared/ui/placeholder/LazyRoute";
 import { RequireAuth } from "@/features/auth/RequireAuth";
 
@@ -93,10 +92,13 @@ const HomePage = lazy(() => import("@/features/public/pages/HomePage"));
 const WhyChooseUsPage = lazy(
   () => import("@/features/public/pages/WhyChooseUsPage"),
 );
+const HowItWorksPage = lazy(
+  () => import("@/features/public/pages/HowItWorksPage"),
+);
 
 function protectedCustomerPage(Component) {
   return (
-    <RequireAuth allowedRoles={["customer", "admin"]}>
+    <RequireAuth allowedRoles={["customer"]}>
       <LazyRoute component={Component} />
     </RequireAuth>
   );
@@ -106,22 +108,7 @@ export const publicRoutes = [
   { index: true, element: <LazyRoute component={HomePage} /> },
   { path: "about", element: <LazyRoute component={AboutPage} /> },
   { path: "about-us", element: <LazyRoute component={AboutPage} /> },
-  {
-    path: "how-it-works",
-    element: (
-      <ScreenPlaceholder
-        eyebrow="How It Works"
-        title="Quote Journey Overview"
-        description="Explain how the lead, bidding, selection, project, and service flow works for customers."
-        sections={[
-          "Broadcast phase",
-          "Competitive bidding",
-          "Selection process",
-          "Bottom CTA",
-        ]}
-      />
-    ),
-  },
+  { path: "how-it-works", element: <LazyRoute component={HowItWorksPage} /> },
   { path: "why-choose-us", element: <LazyRoute component={WhyChooseUsPage} /> },
   { path: "calculator", element: <LazyRoute component={CalculatorPage} /> },
   {

@@ -33,6 +33,10 @@ import {
   VendorPrimaryButton,
   VendorSecondaryButton,
 } from "@/features/vendor/components/VendorPortalUI";
+import {
+  metricTypography,
+  platformTypography,
+} from "@/shared/ui/data-display/metricTypography";
 
 function formatPrice(value) {
   return new Intl.NumberFormat("en-IN", {
@@ -430,7 +434,7 @@ export default function VendorDashboardPage() {
               sx={{ mb: 1.6 }}
             >
               <Typography
-                sx={{ color: "#18253A", fontSize: "1.08rem", fontWeight: 800 }}
+                sx={{ color: "#18253A", ...platformTypography.sectionTitle }}
               >
                 Project Feedback
               </Typography>
@@ -441,13 +445,13 @@ export default function VendorDashboardPage() {
                 <Typography
                   sx={{
                     color: "#F39A20",
-                    fontSize: "0.76rem",
+                    ...platformTypography.smallText,
                     fontWeight: 800,
                   }}
                 >
                   {projects.length ? "4.8" : "-"}
                 </Typography>
-                <Typography sx={{ color: "#8B97A8", fontSize: "0.71rem" }}>
+                <Typography sx={{ color: "#8B97A8", ...platformTypography.smallText }}>
                   ({projects.length} project{projects.length === 1 ? "" : "s"})
                 </Typography>
               </Stack>
@@ -500,7 +504,7 @@ export default function VendorDashboardPage() {
                       sx={{
                         mt: 1.2,
                         color: "#556478",
-                        fontSize: "0.8rem",
+                        ...platformTypography.smallText,
                         lineHeight: 1.65,
                         fontStyle: "italic",
                       }}
@@ -527,7 +531,7 @@ export default function VendorDashboardPage() {
                       <Typography
                         sx={{
                           color: "#223146",
-                          fontSize: "0.75rem",
+                          ...platformTypography.smallText,
                           fontWeight: 700,
                         }}
                       >
@@ -571,8 +575,7 @@ export default function VendorDashboardPage() {
                 <Typography
                   sx={{
                     color: "#18253A",
-                    fontSize: "1.08rem",
-                    fontWeight: 800,
+                    ...platformTypography.sectionTitle,
                   }}
                 >
                   Installation Heatmap
@@ -646,7 +649,7 @@ export default function VendorDashboardPage() {
                 <MapOutlinedIcon sx={{ fontSize: "1rem" }} />
               </Box>
               <Box sx={{ mt: 2.2 }}>
-                <Typography sx={{ fontSize: "1rem", fontWeight: 800 }}>
+                <Typography sx={{ ...platformTypography.cardTitle }}>
                   Total Power Yield
                 </Typography>
                 <Typography
@@ -654,7 +657,7 @@ export default function VendorDashboardPage() {
                     mt: 0.7,
                     maxWidth: 220,
                     color: "rgba(255,255,255,0.78)",
-                    fontSize: "0.82rem",
+                    ...platformTypography.cardText,
                     lineHeight: 1.62,
                   }}
                 >
@@ -675,7 +678,7 @@ export default function VendorDashboardPage() {
                   component="span"
                   sx={{
                     ml: 0.6,
-                    fontSize: "1rem",
+                    ...platformTypography.cardTitle,
                     fontWeight: 700,
                     opacity: 0.82,
                   }}
@@ -749,10 +752,7 @@ function KpiCard({ card }) {
         sx={{
           mt: 1.5,
           color: "#8B97A8",
-          fontSize: "0.67rem",
-          fontWeight: 700,
-          letterSpacing: "0.08em",
-          textTransform: "uppercase",
+          ...metricTypography.label,
         }}
       >
         {card.label}
@@ -761,9 +761,7 @@ function KpiCard({ card }) {
         sx={{
           mt: 0.55,
           color: "#18253A",
-          fontSize: "1.65rem",
-          fontWeight: 800,
-          lineHeight: 1.06,
+          ...metricTypography.dashboardValue,
         }}
       >
         {card.value}
@@ -790,7 +788,7 @@ function ActiveLeadsPanel({ leads }) {
         sx={{ mb: 2 }}
       >
         <Typography
-          sx={{ color: "#18253A", fontSize: "1.12rem", fontWeight: 800 }}
+          sx={{ color: "#18253A", ...platformTypography.sectionTitle }}
         >
           Active Leads
         </Typography>
@@ -799,9 +797,7 @@ function ActiveLeadsPanel({ leads }) {
           to="/vendor/leads"
           sx={{
             color: "#0E56C8",
-            fontSize: "0.74rem",
-            fontWeight: 700,
-            textTransform: "none",
+            ...platformTypography.actionText,
             px: 1,
             borderRadius: "999px",
             "&:hover": { bgcolor: "#EEF4FF" },
@@ -882,20 +878,20 @@ function ActiveLeadsPanel({ leads }) {
                   <Typography
                     sx={{
                       color: "#223146",
-                      fontSize: "0.79rem",
+                      ...platformTypography.smallText,
                       fontWeight: 700,
                     }}
                   >
                     {lead.contact.fullName}
                   </Typography>
                 </Stack>
-                <Typography sx={{ color: "#4E5C70", fontSize: "0.79rem" }}>
+                <Typography sx={{ color: "#4E5C70", ...platformTypography.smallText }}>
                   {formatLocation(lead.installationAddress)}
                 </Typography>
-                <Typography sx={{ color: "#223146", fontSize: "0.79rem" }}>
+                <Typography sx={{ color: "#223146", ...platformTypography.smallText }}>
                   {getLeadSystem(lead)}
                 </Typography>
-                <Typography sx={{ color: "#223146", fontSize: "0.79rem" }}>
+                <Typography sx={{ color: "#223146", ...platformTypography.smallText }}>
                   {getLeadBudget(lead)}
                 </Typography>
                 <Box
@@ -958,9 +954,7 @@ function ActiveLeadsPanel({ leads }) {
         sx={{
           mt: 1.8,
           color: "#0E56C8",
-          fontSize: "0.76rem",
-          fontWeight: 700,
-          textTransform: "none",
+          ...platformTypography.actionText,
           borderRadius: "0.95rem",
           py: 1,
           "&:hover": { bgcolor: "#EEF4FF" },
@@ -984,7 +978,7 @@ function ActivityPanel({ activity }) {
       }}
     >
       <Typography
-        sx={{ color: "#18253A", fontSize: "1.12rem", fontWeight: 800, mb: 1.8 }}
+        sx={{ color: "#18253A", ...platformTypography.sectionTitle, mb: 1.8 }}
       >
         Recent Activity
       </Typography>
@@ -1012,14 +1006,14 @@ function ActivityPanel({ activity }) {
                 <Typography
                   sx={{
                     color: "#223146",
-                    fontSize: "0.79rem",
+                    ...platformTypography.smallText,
                     lineHeight: 1.45,
                   }}
                 >
                   {item.title}
                 </Typography>
                 <Typography
-                  sx={{ mt: 0.25, color: "#8B97A8", fontSize: "0.71rem" }}
+                  sx={{ mt: 0.25, color: "#8B97A8", ...platformTypography.smallText }}
                 >
                   {timeAgo(item.at)}
                 </Typography>
@@ -1047,9 +1041,7 @@ function ActivityPanel({ activity }) {
           borderColor: "rgba(222,228,236,0.96)",
           color: "#556478",
           bgcolor: "#F7F9FC",
-          textTransform: "none",
-          fontSize: "0.76rem",
-          fontWeight: 700,
+          ...platformTypography.actionText,
           transition: "all 0.15s",
           "&:hover": {
             bgcolor: "#EEF4FF",

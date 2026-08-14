@@ -1,3 +1,8 @@
+import {
+  metricTypography,
+  platformTypography,
+} from "@/shared/ui/data-display/metricTypography";
+
 export const publicPageSpacing = {
   pageY: { xs: 8.5, md: 11.5 },
   pageYCompact: { xs: 8, md: 10.5 },
@@ -34,20 +39,24 @@ export const publicTypography = {
     fontWeight: 800,
   },
   body: {
+    ...platformTypography.bodyText,
     fontSize: { xs: "0.94rem", md: "0.98rem" },
     lineHeight: { xs: 1.7, md: 1.76 },
   },
   sectionBody: {
+    ...platformTypography.bodyText,
     fontSize: { xs: "0.95rem", md: "1rem" },
     lineHeight: { xs: 1.72, md: 1.78 },
   },
   cardTitle: {
+    ...platformTypography.cardTitle,
     fontSize: { xs: "1rem", md: "1.08rem" },
-    lineHeight: 1.24,
-    fontWeight: 800,
   },
   cardBody: {
+    ...platformTypography.cardText,
     fontSize: { xs: "0.84rem", md: "0.9rem" },
     lineHeight: { xs: 1.64, md: 1.72 },
   },
+  metricValue: metricTypography.publicValue,
+  metricLabel: metricTypography.label,
 };

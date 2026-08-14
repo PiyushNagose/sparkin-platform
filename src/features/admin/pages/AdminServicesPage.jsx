@@ -41,6 +41,7 @@ import {
   AdminPrimaryButton,
   adminUi,
 } from "@/features/admin/components/AdminPortalUI";
+import { metricTypography } from "@/shared/ui/data-display/metricTypography";
 import { serviceRequestsApi } from "@/features/public/api/serviceRequestsApi";
 
 // ─── constants ────────────────────────────────────────────────────────────────
@@ -182,10 +183,7 @@ function KpiCard({ label, value, tone, bg }) {
       <Typography
         sx={{
           color: "#596579",
-          fontSize: "0.7rem",
-          fontWeight: 800,
-          letterSpacing: "0.05em",
-          textTransform: "uppercase",
+          ...metricTypography.label,
         }}
       >
         {label}
@@ -194,9 +192,7 @@ function KpiCard({ label, value, tone, bg }) {
         sx={{
           mt: 0.4,
           color: adminUi.colors.text,
-          fontSize: "2rem",
-          fontWeight: 950,
-          lineHeight: 1,
+          ...metricTypography.dashboardValue,
         }}
       >
         {value}

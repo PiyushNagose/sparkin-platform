@@ -29,6 +29,8 @@ import {
   adminUi,
 } from "@/features/admin/components/AdminPortalUI";
 import { getAdminDashboardData } from "@/features/admin/api/adminApi";
+import { metricTypography } from "@/shared/ui/data-display/metricTypography";
+import { platformTypography } from "@/shared/ui/data-display/metricTypography";
 
 const rupeeFormatter = new Intl.NumberFormat("en-IN", {
   style: "currency",
@@ -139,10 +141,7 @@ function StatCard({
         <Typography
           sx={{
             color: "#5E6C80",
-            fontSize: "0.72rem",
-            fontWeight: 800,
-            letterSpacing: "0.06em",
-            textTransform: "uppercase",
+            ...metricTypography.label,
           }}
         >
           {title}
@@ -151,9 +150,7 @@ function StatCard({
           sx={{
             mt: 0.7,
             color: adminUi.colors.text,
-            fontSize: "2rem",
-            fontWeight: 900,
-            lineHeight: 1,
+            ...metricTypography.dashboardValue,
           }}
         >
           {value}
@@ -233,7 +230,7 @@ function AlertCard({ title, caption, action, tone, path }) {
       />
       <Box sx={{ minWidth: 0 }}>
         <Typography
-          sx={{ color: "#18253A", fontSize: "0.82rem", fontWeight: 900 }}
+          sx={{ color: "#18253A", ...platformTypography.cardTitle }}
         >
           {title}
         </Typography>
@@ -241,7 +238,7 @@ function AlertCard({ title, caption, action, tone, path }) {
           sx={{
             mt: 0.35,
             color: "#667386",
-            fontSize: "0.72rem",
+            ...platformTypography.smallText,
             fontWeight: 700,
             lineHeight: 1.5,
           }}
@@ -252,10 +249,7 @@ function AlertCard({ title, caption, action, tone, path }) {
           sx={{
             mt: 0.8,
             color: tone.color,
-            fontSize: "0.64rem",
-            fontWeight: 900,
-            textTransform: "uppercase",
-            letterSpacing: "0.06em",
+            ...metricTypography.compactLabel,
           }}
         >
           {action}
@@ -285,8 +279,7 @@ function LogItem({ event }) {
         <Typography
           sx={{
             color: "#1F2C40",
-            fontSize: "0.82rem",
-            fontWeight: 850,
+            ...platformTypography.cardTitle,
             lineHeight: 1.35,
           }}
         >
@@ -296,7 +289,7 @@ function LogItem({ event }) {
           sx={{
             mt: 0.25,
             color: "#7B8797",
-            fontSize: "0.7rem",
+            ...platformTypography.smallText,
             fontWeight: 650,
           }}
         >
@@ -531,8 +524,7 @@ export default function AdminDashboardPage() {
             <Typography
               sx={{
                 color: adminUi.colors.text,
-                fontSize: "1.1rem",
-                fontWeight: 900,
+                ...platformTypography.sectionTitle,
               }}
             >
               System Alerts (High Priority)
@@ -543,7 +535,7 @@ export default function AdminDashboardPage() {
             to="/admin/notifications"
             sx={{
               textTransform: "none",
-              fontSize: "0.78rem",
+              ...platformTypography.actionText,
               fontWeight: 800,
               color: "#0E56C8",
             }}
@@ -608,8 +600,7 @@ export default function AdminDashboardPage() {
               <Typography
                 sx={{
                   color: adminUi.colors.text,
-                  fontSize: "1.1rem",
-                  fontWeight: 900,
+                  ...platformTypography.sectionTitle,
                 }}
               >
                 Performance Metrics
@@ -618,7 +609,7 @@ export default function AdminDashboardPage() {
                 sx={{
                   mt: 0.3,
                   color: adminUi.colors.muted,
-                  fontSize: "0.78rem",
+                  ...platformTypography.smallText,
                 }}
               >
                 Monthly growth and activity distribution
@@ -630,8 +621,8 @@ export default function AdminDashboardPage() {
                 py: 0.65,
                 borderRadius: "999px",
                 bgcolor: "#F2F5F9",
-                fontSize: "0.72rem",
-                fontWeight: 850,
+                ...platformTypography.smallText,
+                fontWeight: 800,
                 color: "#556478",
               }}
             >
@@ -655,7 +646,7 @@ export default function AdminDashboardPage() {
               LEADS OVER TIME
             </Typography>
             <Typography
-              sx={{ color: "#0E56C8", fontSize: "0.72rem", fontWeight: 900 }}
+              sx={{ color: "#0E56C8", ...metricTypography.compactLabel }}
             >
               +{metrics.leads.length > 0 ? "15.4" : "0"}%
             </Typography>
@@ -718,8 +709,7 @@ export default function AdminDashboardPage() {
             <Typography
               sx={{
                 color: adminUi.colors.text,
-                fontSize: "1.1rem",
-                fontWeight: 900,
+                ...platformTypography.sectionTitle,
               }}
             >
               Real-time Log
@@ -760,9 +750,8 @@ export default function AdminDashboardPage() {
               borderRadius: "999px",
               bgcolor: "#FFFFFF",
               color: "#0E56C8",
-              fontSize: "0.73rem",
-              fontWeight: 850,
-              textTransform: "none",
+              ...platformTypography.actionText,
+              fontWeight: 800,
               "&:hover": { bgcolor: "#EEF4FF" },
             }}
           >

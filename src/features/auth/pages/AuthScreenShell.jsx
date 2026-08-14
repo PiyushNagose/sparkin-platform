@@ -30,8 +30,20 @@ import {
   PHONE_INPUT_PROPS,
 } from "@/shared/lib/forms/inputConstraints";
 import { scrollToFieldError } from "@/shared/lib/forms/scrollToFieldError";
+import logoPlaceholder from "@/shared/assets/logo-placeholder.png";
 
 const accountTypes = ["customer", "vendor"];
+
+function getPortalRole(pathname = "") {
+  if (pathname === "/admin" || pathname.startsWith("/admin/")) return "admin";
+  if (pathname === "/customer" || pathname.startsWith("/customer/")) {
+    return "customer";
+  }
+  if (pathname === "/vendor" || pathname.startsWith("/vendor/")) {
+    return "vendor";
+  }
+  return null;
+}
 
 const fieldSx = {
   "& .MuiOutlinedInput-root": {
@@ -197,13 +209,11 @@ export function AuthScreenShell({
       fromPath === "/auth/signup" ||
       fromPath === "/vendor/login" ||
       fromPath === "/vendor/signup";
-    const isVendorPath = fromPath?.startsWith("/vendor");
+    const portalRole = getPortalRole(fromPath);
     const canUseFromPath =
       fromPath &&
       !isAuthPath &&
-      ((user.role === "vendor" && isVendorPath) ||
-        (user.role === "customer" && !isVendorPath) ||
-        user.role === "admin");
+      (!portalRole || portalRole === user.role);
 
     if (canUseFromPath) {
       return fromPath;
@@ -364,115 +374,157 @@ export function AuthScreenShell({
         }}
       >
         <Stack
-          spacing={3.1}
           justifyContent="center"
           sx={{
             height: "100%",
             px: { lg: 6.5, xl: 7.6 },
-            py: { lg: 6.25, xl: 7 },
+            py: { lg: 3.5, xl: 4 },
           }}
         >
-          <Box
-            sx={{
-              px: 1.1,
-              py: 0.45,
-              width: "fit-content",
-              borderRadius: 999,
-              bgcolor: "rgba(255,255,255,0.1)",
-              border: "1px solid rgba(255,255,255,0.16)",
-              boxShadow: "0 10px 24px rgba(4,13,29,0.12)",
-              fontSize: "0.66rem",
-              fontWeight: 800,
-              letterSpacing: "0.14em",
-              textTransform: "uppercase",
-            }}
-          >
-            {heroEyebrow}
-          </Box>
-
-          <Box sx={{ maxWidth: 520 }}>
-            <Typography
+          <Stack spacing={{ lg: 3.6, xl: 3.9 }} sx={{ maxWidth: 540 }}>
+            <Box
+              component={RouterLink}
+              to="/"
+              aria-label="Go to Sparkin home"
               sx={{
-                fontSize: { lg: "3.75rem", xl: "4.45rem" },
-                lineHeight: 0.98,
-                fontWeight: 800,
-                letterSpacing: "-0.06em",
+                width: "fit-content",
+                display: "inline-flex",
+                alignItems: "center",
+                textDecoration: "none",
+                transition: "opacity 180ms ease, transform 180ms ease",
+                "&:hover": {
+                  transform: "translateY(-2px)",
+                  opacity: 0.86,
+                },
               }}
             >
-              {heroTitle}
-              <Box component="span" sx={{ display: "block", color: "#D8F600" }}>
-                {heroTitleAccent}
-              </Box>
-            </Typography>
+              <Box
+                component="img"
+                src={logoPlaceholder}
+                alt="Sparkin"
+                sx={{
+                  width: { lg: 142, xl: 154 },
+                  height: "auto",
+                  objectFit: "contain",
+                  objectPosition: "left center",
+                  display: "block",
+                  filter: "drop-shadow(0 10px 18px rgba(3,9,22,0.24))",
+                }}
+              />
+            </Box>
 
-            <Typography
-              sx={{
-                mt: 2.5,
-                color: "rgba(236,242,251,0.92)",
-                fontSize: "1.05rem",
-                lineHeight: 1.72,
-                maxWidth: 410,
-              }}
-            >
-              {heroBody}
-            </Typography>
-          </Box>
-
-          <Box
-            sx={{
-              width: "100%",
-              maxWidth: 320,
-              p: 1.6,
-              borderRadius: "1.2rem",
-              bgcolor: "rgba(255,255,255,0.1)",
-              border: "1px solid rgba(255,255,255,0.12)",
-              boxShadow: "0 22px 36px rgba(3,9,22,0.2)",
-              backdropFilter: "blur(10px)",
-            }}
-          >
-            <Stack direction="row" spacing={1.15} alignItems="center">
+            <Stack spacing={3.1} sx={{ maxWidth: 540 }}>
               <Box
                 sx={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: "0.95rem",
-                  bgcolor: "#E7FF18",
-                  display: "grid",
-                  placeItems: "center",
-                  color: "#0F2144",
+                  px: 1.1,
+                  py: 0.45,
+                  width: "fit-content",
+                  borderRadius: 999,
+                  bgcolor: "rgba(255,255,255,0.1)",
+                  border: "1px solid rgba(255,255,255,0.16)",
+                  boxShadow: "0 10px 24px rgba(4,13,29,0.12)",
+                  fontSize: "0.66rem",
+                  fontWeight: 800,
+                  letterSpacing: "0.14em",
+                  textTransform: "uppercase",
                 }}
               >
-                <BoltRoundedIcon sx={{ fontSize: "1.2rem" }} />
+                {heroEyebrow}
               </Box>
 
-              <Box>
-                <Typography
-                  sx={{ fontSize: "1.5rem", fontWeight: 800, lineHeight: 1.1 }}
-                >
-                  {heroStatTitle}
-                </Typography>
+              <Box sx={{ maxWidth: 520 }}>
                 <Typography
                   sx={{
-                    mt: 0.15,
-                    color: "rgba(232,240,248,0.82)",
-                    fontSize: "0.82rem",
+                    fontSize: { lg: "3.75rem", xl: "4.45rem" },
+                    lineHeight: 0.98,
+                    fontWeight: 800,
+                    letterSpacing: "-0.06em",
                   }}
                 >
-                  {heroStatBody}
+                  {heroTitle}
+                  <Box
+                    component="span"
+                    sx={{ display: "block", color: "#D8F600" }}
+                  >
+                    {heroTitleAccent}
+                  </Box>
+                </Typography>
+
+                <Typography
+                  sx={{
+                    mt: 2.5,
+                    color: "rgba(236,242,251,0.92)",
+                    fontSize: "1.05rem",
+                    lineHeight: 1.72,
+                    maxWidth: 410,
+                  }}
+                >
+                  {heroBody}
                 </Typography>
               </Box>
             </Stack>
-          </Box>
+
+            <Box
+              sx={{
+                width: "100%",
+                maxWidth: 320,
+                p: 1.6,
+                borderRadius: "1.2rem",
+                bgcolor: "rgba(255,255,255,0.1)",
+                border: "1px solid rgba(255,255,255,0.12)",
+                boxShadow: "0 22px 36px rgba(3,9,22,0.2)",
+                backdropFilter: "blur(10px)",
+              }}
+            >
+              <Stack direction="row" spacing={1.15} alignItems="center">
+                <Box
+                  sx={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: "0.95rem",
+                    bgcolor: "#E7FF18",
+                    display: "grid",
+                    placeItems: "center",
+                    color: "#0F2144",
+                  }}
+                >
+                  <BoltRoundedIcon sx={{ fontSize: "1.2rem" }} />
+                </Box>
+
+                <Box>
+                  <Typography
+                    sx={{
+                      fontSize: "1.5rem",
+                      fontWeight: 800,
+                      lineHeight: 1.1,
+                    }}
+                  >
+                    {heroStatTitle}
+                  </Typography>
+                  <Typography
+                    sx={{
+                      mt: 0.15,
+                      color: "rgba(232,240,248,0.82)",
+                      fontSize: "0.82rem",
+                    }}
+                  >
+                    {heroStatBody}
+                  </Typography>
+                </Box>
+              </Stack>
+            </Box>
+          </Stack>
         </Stack>
       </Box>
 
       <Box
         sx={{
           bgcolor: "#FBFCFE",
-          display: "grid",
-          placeItems: "center",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
           px: { xs: 2, md: 3.5 },
-          py: { xs: 2.5, md: isSignup ? 1.8 : 4.2, lg: isSignup ? 1.2 : 4.2 },
+          py: { xs: 2.5, md: isSignup ? 1.8 : 4.2, lg: 3.5, xl: 4 },
           minHeight: "100vh",
         }}
       >
@@ -485,33 +537,64 @@ export function AuthScreenShell({
             py: { xs: 0.8, lg: isSignup ? 0.6 : 0 },
           }}
         >
-          <Typography
-            variant="h1"
-            sx={{
-              color: "#20242B",
-              fontSize: { xs: "2.1rem", md: isSignup ? "2.42rem" : "2.85rem" },
-              lineHeight: 1.04,
-              letterSpacing: "-0.05em",
-            }}
-          >
-            {title}
-          </Typography>
+          <Box>
+            <Box
+              component={RouterLink}
+              to="/"
+              aria-label="Go to Sparkin home"
+              sx={{
+                width: "fit-content",
+                display: { xs: "inline-flex", lg: "none" },
+                alignItems: "center",
+                mb: 2,
+                textDecoration: "none",
+              }}
+            >
+              <Box
+                component="img"
+                src={logoPlaceholder}
+                alt="Sparkin"
+                sx={{
+                  width: 122,
+                  height: 56,
+                  objectFit: "contain",
+                  objectPosition: "left center",
+                  display: "block",
+                }}
+              />
+            </Box>
 
-          <Typography
-            sx={{
-              mt: 0.65,
-              color: "#667084",
-              fontSize: "0.96rem",
-              lineHeight: 1.48,
-              maxWidth: 330,
-            }}
-          >
-            {subtitle}
-          </Typography>
+            <Typography
+              variant="h1"
+              sx={{
+                color: "#20242B",
+                fontSize: {
+                  xs: "2.1rem",
+                  md: isSignup ? "2.28rem" : "2.85rem",
+                },
+                lineHeight: 1.04,
+                letterSpacing: "-0.05em",
+              }}
+            >
+              {title}
+            </Typography>
+
+            <Typography
+              sx={{
+                mt: 0.65,
+                color: "#667084",
+                fontSize: "0.96rem",
+                lineHeight: isSignup ? 1.38 : 1.48,
+                maxWidth: 330,
+              }}
+            >
+              {subtitle}
+            </Typography>
+          </Box>
 
           <Stack
-            spacing={isSignup ? 0.92 : 1.55}
-            sx={{ mt: isSignup ? 1.55 : 3.1 }}
+            spacing={isSignup ? 0.78 : 1.65}
+            sx={{ mt: isSignup ? 1.25 : 3.25 }}
           >
             {error ? (
               <Alert
@@ -752,8 +835,8 @@ export function AuthScreenShell({
               type="submit"
               disabled={isSubmitting}
               sx={{
-                mt: isSignup ? 0.1 : 0.4,
-                minHeight: isSignup ? 46 : 54,
+                mt: isSignup ? 0 : 0.4,
+                minHeight: isSignup ? 44 : 54,
                 borderRadius: "0.95rem",
                 fontSize: "0.94rem",
                 fontWeight: 700,
@@ -807,8 +890,8 @@ export function AuthScreenShell({
               <Typography
                 sx={{
                   color: "#98A2B3",
-                  fontSize: "0.7rem",
-                  lineHeight: 1.45,
+                  fontSize: "0.68rem",
+                  lineHeight: 1.35,
                   textAlign: "center",
                 }}
               >
@@ -839,23 +922,23 @@ export function AuthScreenShell({
                 .
               </Typography>
             )}
+          </Stack>
 
+          <Box sx={{ mt: isSignup ? 1.25 : 2.25 }}>
             {!isSignup && (
               <Divider
                 sx={{
-                  pt: 1.5,
+                  mb: 1.45,
                   "&::before, &::after": { borderColor: "#E5EAF2" },
                 }}
               />
             )}
-
             <Stack
               direction="row"
               justifyContent="space-between"
               sx={{
                 color: "#98A2B3",
                 fontSize: "0.74rem",
-                pt: isSignup ? 0 : 0.2,
               }}
             >
               <Typography sx={{ fontSize: "0.74rem", color: "#98A2B3" }}>
@@ -890,7 +973,7 @@ export function AuthScreenShell({
                 </Typography>
               </Stack>
             </Stack>
-          </Stack>
+          </Box>
         </Box>
       </Box>
     </Box>

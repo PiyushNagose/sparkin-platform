@@ -1743,7 +1743,7 @@ export default function AdminReferralManagementPage() {
             startIcon={<DownloadRoundedIcon />}
             onClick={handleExport}
           >
-            + Export List
+            Export List
           </AdminPrimaryButton>
         }
       />

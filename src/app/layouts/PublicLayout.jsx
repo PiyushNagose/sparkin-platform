@@ -24,16 +24,10 @@ import { useSocket } from "@/shared/websocket/SocketProvider";
 export function PublicLayout() {
   const { pathname } = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { user } = useAuth();
+  const { isAuthenticated, user, getRoleHome } = useAuth();
   const { refreshKey } = useSocket();
 
-  // Derive dashboard path based on role
-  const dashboardPath =
-    user?.role === "admin"
-      ? "/admin"
-      : user?.role === "vendor"
-        ? "/vendor"
-        : "/customer";
+  const dashboardPath = isAuthenticated ? getRoleHome(user?.role) : "/auth/login";
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });

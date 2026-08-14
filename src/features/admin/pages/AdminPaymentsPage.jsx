@@ -433,6 +433,34 @@ export default function AdminPaymentsPage() {
     });
   }, [payments, filters]);
 
+  useEffect(() => {
+    setPage(1);
+  }, [filters]);
+
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredPayments.length / PAGE_SIZE_PAY),
+  );
+  const firstVisiblePayment = filteredPayments.length
+    ? (page - 1) * PAGE_SIZE_PAY + 1
+    : 0;
+  const lastVisiblePayment = filteredPayments.length
+    ? Math.min(page * PAGE_SIZE_PAY, filteredPayments.length)
+    : 0;
+  const visiblePayments = filteredPayments.slice(
+    (page - 1) * PAGE_SIZE_PAY,
+    page * PAGE_SIZE_PAY,
+  );
+  const pageNumbers = useMemo(() => {
+    if (totalPages <= 5)
+      return Array.from({ length: totalPages }, (_, index) => index + 1);
+
+    const pages = new Set([1, totalPages, page]);
+    if (page > 1) pages.add(page - 1);
+    if (page < totalPages) pages.add(page + 1);
+    return [...pages].sort((a, b) => a - b);
+  }, [totalPages, page]);
+
   const metrics = useMemo(() => {
     const paid = payments.filter((payment) => payment.status === "paid");
     const pending = payments.filter((payment) => payment.status === "pending");
@@ -770,10 +798,8 @@ export default function AdminPaymentsPage() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {filteredPayments.length ? (
-                filteredPayments
-                  .slice((page - 1) * PAGE_SIZE_PAY, page * PAGE_SIZE_PAY)
-                  .map((payment) => {
+              {visiblePayments.length ? (
+                visiblePayments.map((payment) => {
                     const status = getStatusMeta(payment.status);
                     return (
                       <TableRow
@@ -990,11 +1016,23 @@ export default function AdminPaymentsPage() {
           <Typography
             sx={{ color: "#667386", fontSize: "0.8rem", fontWeight: 700 }}
           >
-            Showing 1-{Math.min(10, filteredPayments.length)} of{" "}
-            {filteredPayments.length} payments
+            {filteredPayments.length === 0
+              ? "No payments"
+              : filteredPayments.length === 1
+                ? "Showing 1 payment"
+                : `Showing ${firstVisiblePayment}-${lastVisiblePayment} of ${filteredPayments.length} payments`}
           </Typography>
-          <Stack direction="row" spacing={0.6} alignItems="center">
+          <Stack
+            direction="row"
+            spacing={0.6}
+            alignItems="center"
+            sx={{ display: totalPages > 1 ? "flex" : "none" }}
+          >
             <Box
+              component="button"
+              type="button"
+              disabled={page === 1}
+              onClick={() => setPage((current) => Math.max(1, current - 1))}
               sx={{
                 width: 32,
                 height: 32,
@@ -1005,20 +1043,26 @@ export default function AdminPaymentsPage() {
                 color: "#667386",
                 cursor: "pointer",
                 fontSize: "0.9rem",
+                fontWeight: 900,
+                "&:disabled": { opacity: 0.45, cursor: "not-allowed" },
+                "&:hover:not(:disabled)": { bgcolor: "#EEF4FF" },
               }}
             >
-              ‹
+              {"<"}
             </Box>
-            {[1, 2, 3].map((p) => (
+            {pageNumbers.map((p) => (
               <Box
                 key={p}
+                component="button"
+                type="button"
+                onClick={() => setPage(p)}
                 sx={{
                   width: 32,
                   height: 32,
                   borderRadius: "0.6rem",
-                  bgcolor: p === 1 ? "#0E56C8" : "#FFFFFF",
-                  border: p === 1 ? "none" : "1px solid #E2E8F0",
-                  color: p === 1 ? "#FFFFFF" : "#223146",
+                  bgcolor: p === page ? "#0E56C8" : "#FFFFFF",
+                  border: p === page ? "none" : "1px solid #E2E8F0",
+                  color: p === page ? "#FFFFFF" : "#223146",
                   display: "grid",
                   placeItems: "center",
                   fontSize: "0.8rem",
@@ -1029,26 +1073,39 @@ export default function AdminPaymentsPage() {
                 {p}
               </Box>
             ))}
-            <Typography sx={{ color: "#8B97A8", fontSize: "0.8rem", px: 0.3 }}>
-              …
+            <Typography
+              sx={{
+                display: "none",
+                color: "#8B97A8",
+                fontSize: "0.8rem",
+                px: 0.3,
+              }}
+            >
+              ...
             </Typography>
             <Box
               sx={{
+                display: "none",
                 width: 32,
                 height: 32,
                 borderRadius: "0.6rem",
                 border: "1px solid #E2E8F0",
                 color: "#223146",
-                display: "grid",
                 placeItems: "center",
                 fontSize: "0.8rem",
                 fontWeight: 700,
                 cursor: "pointer",
               }}
             >
-              {Math.max(1, Math.ceil(filteredPayments.length / 10))}
+              {totalPages}
             </Box>
             <Box
+              component="button"
+              type="button"
+              disabled={page === totalPages}
+              onClick={() =>
+                setPage((current) => Math.min(totalPages, current + 1))
+              }
               sx={{
                 width: 32,
                 height: 32,
@@ -1059,9 +1116,12 @@ export default function AdminPaymentsPage() {
                 color: "#667386",
                 cursor: "pointer",
                 fontSize: "0.9rem",
+                fontWeight: 900,
+                "&:disabled": { opacity: 0.45, cursor: "not-allowed" },
+                "&:hover:not(:disabled)": { bgcolor: "#EEF4FF" },
               }}
             >
-              ›
+              {">"}
             </Box>
           </Stack>
         </Stack>

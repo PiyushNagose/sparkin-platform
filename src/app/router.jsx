@@ -71,7 +71,7 @@ export const appRouter = createBrowserRouter([
       {
         path: "/vendor/login",
         element: (
-          <GuestOnly>
+          <GuestOnly allowAuthenticatedRoles={["customer", "admin"]}>
             <AuthLayout />
           </GuestOnly>
         ),
@@ -82,7 +82,7 @@ export const appRouter = createBrowserRouter([
       {
         path: "/vendor/forgot-password",
         element: (
-          <GuestOnly>
+          <GuestOnly allowAuthenticatedRoles={["customer", "admin"]}>
             <AuthLayout />
           </GuestOnly>
         ),
@@ -96,7 +96,7 @@ export const appRouter = createBrowserRouter([
       {
         path: "/vendor/reset-password",
         element: (
-          <GuestOnly>
+          <GuestOnly allowAuthenticatedRoles={["customer", "admin"]}>
             <AuthLayout />
           </GuestOnly>
         ),
@@ -110,7 +110,7 @@ export const appRouter = createBrowserRouter([
       {
         path: "/vendor/signup",
         element: (
-          <GuestOnly>
+          <GuestOnly allowAuthenticatedRoles={["customer", "admin"]}>
             <AuthLayout />
           </GuestOnly>
         ),
@@ -169,7 +169,7 @@ export const appRouter = createBrowserRouter([
       },
       {
         path: "/customer",
-        element: <RequireAuth allowedRoles={["customer", "admin"]} />,
+        element: <RequireAuth allowedRoles={["customer"]} />,
         children: [
           {
             element: <PortalLayout portal="customer" />,
@@ -179,7 +179,7 @@ export const appRouter = createBrowserRouter([
       },
       {
         path: "/vendor",
-        element: <RequireAuth allowedRoles={["vendor", "admin"]} />,
+        element: <RequireAuth allowedRoles={["vendor"]} />,
         children: [
           {
             path: "onboarding",

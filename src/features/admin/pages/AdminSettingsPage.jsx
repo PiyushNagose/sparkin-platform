@@ -1,4 +1,4 @@
-import {
+﻿import {
   Alert,
   Box,
   Button,
@@ -39,11 +39,11 @@ import {
 import { platformSettingsApi } from "@/features/admin/api/adminApi";
 import pricingBannerImg from "@/shared/assets/images/admin/settings/admin-settings-pricing-engine-placeholder.png";
 
-// â”€â”€â”€ storage key â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// storage key
 
 const STORAGE_KEY = "sparkin_admin_platform_settings";
 
-// â”€â”€â”€ defaults â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// defaults
 
 const DEFAULT_SETTINGS = {
   pricing: {
@@ -66,7 +66,7 @@ const DEFAULT_SETTINGS = {
   discoms: [],
 };
 
-// â”€â”€â”€ helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// helpers
 
 function loadSettings() {
   try {
@@ -112,7 +112,7 @@ function saveSettings(settings) {
 }
 
 function toStateKey(name = "") {
-  // Convert a display name to a key: "Andhra Pradesh" → "andhra_pradesh"
+  // Convert a display name to a key, e.g. "Andhra Pradesh" to "andhra_pradesh".
   return name.trim().toLowerCase().replaceAll(/\s+/g, "_");
 }
 
@@ -132,7 +132,7 @@ function withDefaultStateMetadata(state) {
 }
 
 function normalizeSettingsForUi(settings) {
-  // Preserve all states as-is — just ensure numeric fields are strings for inputs
+  // Preserve all states as-is; just ensure numeric fields are strings for inputs.
   const states = (Array.isArray(settings.states) ? settings.states : []).map((state) => {
     const mergedState = withDefaultStateMetadata(state);
     return {
@@ -177,7 +177,7 @@ function normalizeSettingsForUi(settings) {
 }
 
 function normalizeSettingsForApi(settings) {
-  // Build a key→state map so DISCOMs can reference the correct key
+  // Build a key-to-state map so DISCOMs can reference the correct key.
   const stateKeyMap = Object.fromEntries(
     settings.states.map((s) => [s.id, s.key || toStateKey(s.name)]),
   );
@@ -239,7 +239,7 @@ function commitCitiesToSettings(settings, citiesRaw) {
   };
 }
 
-// â”€â”€â”€ sub-components â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// sub-components
 
 const fieldLabelSx = {
   mb: 0.7,
@@ -353,7 +353,7 @@ function ValidationHint({ value, label }) {
   );
 }
 
-// â”€â”€â”€ main page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// main page
 
 export default function AdminSettingsPage() {
   const [settings, setSettings] = useState(loadSettings);
@@ -378,9 +378,9 @@ export default function AdminSettingsPage() {
     confirmLabel: "Delete",
   });
   const [stateErrors, setStateErrors] = useState({});
-  // Raw string buffer for cities textarea — keyed by state id
+  // Raw string buffer for cities textarea, keyed by state id.
   // This lets users type freely (including trailing commas/spaces) without
-  // the array→string join fighting them on every keystroke.
+  // the array-to-string join fighting them on every keystroke.
   const [citiesRaw, setCitiesRaw] = useState(() => {
     const initial = loadSettings();
     return Object.fromEntries(
@@ -435,7 +435,7 @@ export default function AdminSettingsPage() {
     return () => window.removeEventListener("beforeunload", onBeforeUnload);
   }, [isDirty]);
 
-  // â”€â”€ field updaters â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // field updaters
 
   const updatePricing = useCallback((field, value) => {
     setSettings((s) => ({ ...s, pricing: { ...s.pricing, [field]: value } }));
@@ -486,13 +486,13 @@ export default function AdminSettingsPage() {
     setIsDirty(true);
   }, []);
 
-  // Called on every keystroke — only updates the raw display string
+  // Called on every keystroke; only updates the raw display string.
   const handleCitiesRawChange = useCallback((id, value) => {
     setCitiesRaw((prev) => ({ ...prev, [id]: value }));
     setIsDirty(true);
   }, []);
 
-  // Called on blur — parse raw string into the cities array in settings
+  // Called on blur; parse raw string into the cities array in settings.
   const commitCities = useCallback((id) => {
     setCitiesRaw((prev) => {
       const raw = prev[id] ?? "";
@@ -644,7 +644,7 @@ export default function AdminSettingsPage() {
     closeDeleteDialog();
   }, [closeDeleteDialog, confirmDelete.id, confirmDelete.type, removeDiscomNow, removeStateNow]);
 
-  // â”€â”€ validation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // validation
 
   function validate(settingsToValidate = settings) {
     const errors = [];
@@ -654,8 +654,10 @@ export default function AdminSettingsPage() {
 
     if (!isPositiveNumber(p.standardCostPerKw))
       errors.push("Standard Cost Per kW");
-    if (!isPositiveNumber(p.minBidAmount)) errors.push("Minimum Bid Amount");
-    if (!isPositiveNumber(p.maxBidAmount)) errors.push("Maximum Bid Amount");
+    if (!isPositiveNumber(p.minBidAmount))
+      errors.push("Minimum Bid Amount");
+    if (!isPositiveNumber(p.maxBidAmount))
+      errors.push("Maximum Bid Amount");
     if (
       isPositiveNumber(p.minBidAmount) &&
       isPositiveNumber(p.maxBidAmount) &&
@@ -696,7 +698,7 @@ export default function AdminSettingsPage() {
     return errors;
   }
 
-  // â”€â”€ save â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // save
 
   async function handleSave() {
     // Flush any in-progress cities text before validating / saving
@@ -767,7 +769,7 @@ export default function AdminSettingsPage() {
     }
   }
 
-  // â”€â”€ reset â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // reset
 
   function handleReset() {
     if (
@@ -794,7 +796,7 @@ export default function AdminSettingsPage() {
     });
   }
 
-  // â”€â”€ render â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // render
 
   const hasStateErrors = Object.values(stateErrors).some(Boolean);
 
@@ -821,7 +823,7 @@ export default function AdminSettingsPage() {
         >
           <Box>
             <FieldLabel tooltip="Base cost used by the calculator to estimate project value">
-              Standard Cost Per kW (â‚¹)
+              Standard Cost Per kW (Rs)
             </FieldLabel>
             <TextField
               fullWidth
@@ -841,7 +843,7 @@ export default function AdminSettingsPage() {
 
           <Box>
             <FieldLabel tooltip="Vendors cannot submit quotes below this amount">
-              Minimum Bid Amount (â‚¹)
+              Minimum Bid Amount (Rs)
             </FieldLabel>
             <TextField
               fullWidth
@@ -859,7 +861,7 @@ export default function AdminSettingsPage() {
 
           <Box sx={{ gridColumn: { xs: "auto", sm: "1 / -1" } }}>
             <FieldLabel tooltip="Bids above this amount are auto-flagged for admin review">
-              Maximum Bid Amount (â‚¹)
+              Maximum Bid Amount (Rs)
             </FieldLabel>
             <TextField
               fullWidth
@@ -1204,8 +1206,8 @@ export default function AdminSettingsPage() {
                   />
                 </Box>
                 <Box>
-                  <FieldLabel tooltip="Electricity tariff rate per unit (₹/kWh) used in savings calculations">
-                    Rate Per Unit (₹)
+                  <FieldLabel tooltip="Electricity tariff rate per unit (Rs/kWh) used in savings calculations">
+                    Rate Per Unit (Rs)
                   </FieldLabel>
                   <TextField
                     fullWidth
@@ -1239,8 +1241,8 @@ export default function AdminSettingsPage() {
                   placeholder="e.g. Visakhapatnam, Vijayawada, Guntur, Tirupati, Nellore"
                   helperText={
                     (row.cities || []).length > 0
-                      ? `${row.cities.length} ${row.cities.length === 1 ? "city" : "cities"} saved — type more separated by commas`
-                      : "No cities added yet — type names separated by commas"
+                      ? `${row.cities.length} ${row.cities.length === 1 ? "city" : "cities"} saved - type more separated by commas`
+                      : "No cities added yet - type names separated by commas"
                   }
                   sx={{
                     ...inputSx,
@@ -1286,7 +1288,7 @@ export default function AdminSettingsPage() {
               },
             }}
           >
-            + Add New State
+            Add New State
           </Button>
         </Stack>
       </SectionRow>
